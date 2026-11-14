@@ -187,6 +187,7 @@
   "wwEnemy": "Map enemy changed to the WW enemy (khuxwiki): the Japanese map file of this quest places a different enemy than the worldwide quest had, so that one enemy was replaced by the worldwide one (same place, count, level and drops).",
   "boosterEffect": "A reward of this quest is a Booster. Its effect is rebuilt from its original description (the original Booster data lost its effect values): which Medals or keyblade slots it strengthens and by how much are those of the description. It lasts as many days as in the original, counted from when you obtain it.",
   "boosterExpiryWindow": "No surviving notice gives the expiry of this Booster: it lasts until the end of the original event that paid it, counted in days from when you obtain it.",
+  "boardArt": "A card picture of this event's boards is not in any game data we hold: it is the picture of the original card cut from a screenshot of the original board (or taken from the community wiki), not the original file.",
   "boosterIdByName": "The original board names this Booster but not which of its identical copies it paid: each cell pays a different copy, so they add up as in the original.",
   "boosterLater": "A reward of this quest was a Booster, which does not exist on this server yet: it is recorded for you when you complete its objective, and given when the Boosters come (a later update). The other rewards are paid as usual.",
   "noBoardSet": "This event paid Event Coins, but no source names the board set they were for: its Event Coins are not paid here (they are only logged) until its boards are identified.",
@@ -236,5 +237,261 @@
   "new": ["EV-0441", "EV-0467", "EV-0488", "EV-0512", "EV-0536", "EV-0561", "EV-0570", "EV-0592", "EV-0621", "EV-0622", "EV-0647", "EV-0648", "EV-0678", "EV-0679", "EV-0714", "EV-0741", "EV-0781"],
   "challenge": ["EV-1103", "EV-1273"],
   "keybladeWar": ["EV-0941"]
+ },
+ "boardArtNote": "Event Board card pictures (img/sphere_incentive/<sphereBoardId>.png, user 14-11): donor board id -> jp = the JP 4.3.1 card with the same picture (identical to the khuxwiki card picture, or to the card seen on the khuxwiki screenshot of the worldwide board when the two differ: the 2019-12 boards); loc = no JP card: the khuxwiki card picture (Cherub) or the card cut from that screenshot (label boardArt), private files in --loc. make-events.js writes game_data/event_board_art.tsv, imported by build-resources.ps1.",
+ "boardArt": {
+  "2310079": {
+   "loc": "img/sphere_incentive_ev/2310079.png",
+   "from": "wiki card picture"
+  },
+  "2310080": {
+   "loc": "img/sphere_incentive_ev/2310080.png",
+   "from": "wiki card picture"
+  },
+  "2310081": {
+   "jp": "img/sphere_incentive/2300177.png"
+  },
+  "2310082": {
+   "jp": "img/sphere_incentive/2300178.png"
+  },
+  "2310083": {
+   "jp": "img/sphere_incentive/2300179.png"
+  },
+  "2310084": {
+   "jp": "img/sphere_incentive/2300180.png"
+  },
+  "2310085": {
+   "jp": "img/sphere_incentive/2300181.png"
+  },
+  "2310086": {
+   "jp": "img/sphere_incentive/2300182.png"
+  },
+  "2310087": {
+   "jp": "img/sphere_incentive/2300183.png"
+  },
+  "2310088": {
+   "jp": "img/sphere_incentive/2300184.png"
+  },
+  "2310089": {
+   "jp": "img/sphere_incentive/2300185.png"
+  },
+  "2310090": {
+   "jp": "img/sphere_incentive/2300184.png"
+  },
+  "2310091": {
+   "jp": "img/sphere_incentive/2300187.png"
+  },
+  "2310092": {
+   "jp": "img/sphere_incentive/2900707.png"
+  },
+  "2310093": {
+   "jp": "img/sphere_incentive/2300189.png"
+  },
+  "2310094": {
+   "jp": "img/sphere_incentive/2900709.png"
+  },
+  "2310095": {
+   "jp": "img/sphere_incentive/2900710.png"
+  },
+  "2310096": {
+   "jp": "img/sphere_incentive/2900711.png"
+  },
+  "2310097": {
+   "jp": "img/sphere_incentive/2900706.png"
+  },
+  "2310098": {
+   "jp": "img/sphere_incentive/2900707.png"
+  },
+  "2310099": {
+   "jp": "img/sphere_incentive/2300189.png"
+  },
+  "2310100": {
+   "jp": "img/sphere_incentive/2300190.png"
+  },
+  "2310101": {
+   "jp": "img/sphere_incentive/2900710.png"
+  },
+  "2310102": {
+   "jp": "img/sphere_incentive/2900711.png"
+  },
+  "2310103": {
+   "jp": "img/sphere_incentive/2900706.png"
+  },
+  "2310104": {
+   "jp": "img/sphere_incentive/2900707.png"
+  },
+  "2310105": {
+   "jp": "img/sphere_incentive/2300189.png"
+  },
+  "2310106": {
+   "jp": "img/sphere_incentive/2900709.png"
+  },
+  "2310107": {
+   "jp": "img/sphere_incentive/2900710.png"
+  },
+  "2310108": {
+   "jp": "img/sphere_incentive/2900711.png"
+  },
+  "2310109": {
+   "jp": "img/sphere_incentive/2900706.png"
+  },
+  "2310110": {
+   "jp": "img/sphere_incentive/2900707.png"
+  },
+  "2310111": {
+   "jp": "img/sphere_incentive/2900708.png"
+  },
+  "2310112": {
+   "jp": "img/sphere_incentive/2900709.png"
+  },
+  "2310113": {
+   "jp": "img/sphere_incentive/2900710.png"
+  },
+  "2310114": {
+   "jp": "img/sphere_incentive/2900711.png"
+  },
+  "2310115": {
+   "loc": "img/sphere_incentive_ev/2310115.png",
+   "from": "cut from a screenshot of the original game"
+  },
+  "2310116": {
+   "jp": "img/sphere_incentive/2300184.png"
+  },
+  "2310117": {
+   "jp": "img/sphere_incentive/2300213.png"
+  },
+  "2310118": {
+   "jp": "img/sphere_incentive/2300213.png"
+  },
+  "2310119": {
+   "jp": "img/sphere_incentive/2300215.png"
+  },
+  "2310120": {
+   "jp": "img/sphere_incentive/2300215.png"
+  },
+  "2310121": {
+   "jp": "img/sphere_incentive/2300217.png"
+  },
+  "2310122": {
+   "jp": "img/sphere_incentive/2300217.png"
+  },
+  "2310123": {
+   "jp": "img/sphere_incentive/2300219.png"
+  },
+  "2310124": {
+   "jp": "img/sphere_incentive/2300220.png"
+  },
+  "2310125": {
+   "jp": "img/sphere_incentive/2900706.png"
+  },
+  "2310126": {
+   "jp": "img/sphere_incentive/2900707.png"
+  },
+  "2310127": {
+   "jp": "img/sphere_incentive/2300189.png"
+  },
+  "2310128": {
+   "jp": "img/sphere_incentive/2300190.png"
+  },
+  "2310129": {
+   "jp": "img/sphere_incentive/2900710.png"
+  },
+  "2310130": {
+   "jp": "img/sphere_incentive/2900711.png"
+  },
+  "2310131": {
+   "jp": "img/sphere_incentive/2300227.png"
+  },
+  "2310132": {
+   "jp": "img/sphere_incentive/2300228.png"
+  },
+  "2310133": {
+   "jp": "img/sphere_incentive/2300229.png"
+  },
+  "2310134": {
+   "jp": "img/sphere_incentive/2300230.png"
+  },
+  "2310135": {
+   "jp": "img/sphere_incentive/2300231.png"
+  },
+  "2310136": {
+   "jp": "img/sphere_incentive/2300232.png"
+  },
+  "2310137": {
+   "jp": "img/sphere_incentive/2300233.png"
+  },
+  "2310138": {
+   "jp": "img/sphere_incentive/2300234.png"
+  },
+  "2310139": {
+   "jp": "img/sphere_incentive/2300235.png"
+  },
+  "2310140": {
+   "jp": "img/sphere_incentive/2300236.png"
+  },
+  "2310141": {
+   "jp": "img/sphere_incentive/2300237.png"
+  },
+  "2310142": {
+   "jp": "img/sphere_incentive/2300238.png"
+  },
+  "2310143": {
+   "jp": "img/sphere_incentive/2300239.png"
+  },
+  "2310144": {
+   "jp": "img/sphere_incentive/2300240.png"
+  },
+  "2310145": {
+   "jp": "img/sphere_incentive/2300241.png"
+  },
+  "2310146": {
+   "loc": "img/sphere_incentive_ev/2310146.png",
+   "from": "cut from a screenshot of the original game"
+  },
+  "2310147": {
+   "jp": "img/sphere_incentive/2300243.png"
+  },
+  "2310148": {
+   "jp": "img/sphere_incentive/2300244.png"
+  },
+  "2310149": {
+   "jp": "img/sphere_incentive/2300245.png"
+  },
+  "2310150": {
+   "jp": "img/sphere_incentive/2900706.png"
+  },
+  "2310151": {
+   "jp": "img/sphere_incentive/2900707.png"
+  },
+  "2310152": {
+   "jp": "img/sphere_incentive/2300189.png"
+  },
+  "2310153": {
+   "jp": "img/sphere_incentive/2900709.png"
+  },
+  "2310154": {
+   "jp": "img/sphere_incentive/2900710.png"
+  },
+  "2310155": {
+   "jp": "img/sphere_incentive/2900711.png"
+  },
+  "2310156": {
+   "jp": "img/sphere_incentive/2900706.png"
+  },
+  "2310157": {
+   "jp": "img/sphere_incentive/2900707.png"
+  },
+  "2310158": {
+   "jp": "img/sphere_incentive/2900708.png"
+  },
+  "2310159": {
+   "jp": "img/sphere_incentive/2900709.png"
+  },
+  "2310160": {
+   "jp": "img/sphere_incentive/2900710.png"
+  },
+  "2310161": {
+   "jp": "img/sphere_incentive/2900711.png"
+  }
  }
 }

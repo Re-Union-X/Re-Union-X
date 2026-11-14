@@ -1228,3 +1228,18 @@ Coins in the 2019-12 set, `boostrd` = + WW-E38970-1 kept and 50,000 test Raid Co
 Noted: the 2019-12 Event Board cards have no picture (blank cards; board art of that set not served, a separate issue). The EV-0556
 1/10 objectives (all together, 5 chests in 5 rooms) were not completed by bench automation; the special-attack damage with a Medal
 Booster was not measured (automated taps did not trigger a special attack): the client study and the plates cover it.
+
+## Event Board card pictures (14 November 2026)
+
+User 14-11: the Event Board cards were the plain lilac frame since Part 3 (no `img/sphere_incentive/<id>.png` for the event board
+ids; Roboloid has none of them; the worldwide resources we hold do not carry them). Search (private `tmp\eventsoards\wiki_cards`,
+`wiki_shots`): the khuxwiki card pictures («Preview - …», 41 files) and the screenshots of the worldwide boards («Event Board - … KHUX»,
+70 files), downloaded with the user's go, matched against the 3,244 JP 4.3.1 cards on the opaque pixels.
+
+- 83 boards (69 served): 79 JP 4.3.1 originals (34 identical to the wiki card, 37 the same picture with the JP glow, checked one by
+  one at full size, 8 found from the board screenshot), 2 khuxwiki cards (Cherub Male / Female: no JP card), 2 cut from the
+  screenshot (Bad Guy Breaker Booster: the JP card has another drawing; Event Board 1 of October 2019: no JP card), label `boardArt`.
+- The worldwide December 2019 boards show the emblem-only cards (JP 2300227-2300245: the 16 keyblades, then P/S/M); the wiki card
+  pictures of those boards are the versions with the Cid / Huey-Dewey-Louie medals (other runs): the screenshot rules.
+- `event_config.json` `boardArt` (donor board id -> jp / loc), `event-boards.js` art, `make-events.js` writes
+  `game_data/event_board_art.tsv`, imported by `build-resources.ps1` like the raid board cards.

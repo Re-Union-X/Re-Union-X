@@ -73,7 +73,7 @@ const STAGE_KIND = 2;
 const RAID_SPECIAL = [970000, 989999], EGGCOGNITO = 100;
 const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
-const GENERATED_LABELS = ['boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
+const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
   'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
@@ -773,7 +773,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       }
     }
   }
-  const eb = boardSets ? eventBoards.buildEventBoards({ sets, master, ids: allIds, boosters: opts.builtBoosters || null }) : null;
+  const eb = boardSets ? eventBoards.buildEventBoards({ sets, master, ids: allIds, boosters: opts.builtBoosters || null, art: config.boardArt || {} }) : null;
   if (eb) allIds.boards = eb.ids.boards;
   const builtBoards = (k) => ((eb && eb.bySet[k]) || []);
   const enemies = new Set((master.enemy || []).map((e) => e.enemyId));
@@ -1236,6 +1236,10 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       out.sphere.push(...eb.sphereRows.filter((r) => mine.has(r.sphereBoardId)));
       out.sphereArray.push(...eb.arrayRows.filter((r) => mine.has(r.arryId)));
       out.sphereMasu.push(...eb.masuRows.filter((r) => mine.has(r.masuId)));
+      // card pictures of the boards handed out (event_config.json boardArt); a card from the wiki or cut from a screenshot: label boardArt
+      const art = eb.art.filter((a) => mine.has(a.sphereBoardId));
+      out.boardArt = [...(out.boardArt || []), ...art];
+      if (art.some((a) => a.loc)) for (const e of out.index.entries) if (e.boardSet === st.setKey && !e.labels.includes('boardArt')) { e.labels.push('boardArt'); used.add('boardArt'); }
     }
     for (const e of out.index.entries) {
       if (!e.boardSetKey || e.boardSet || handed.has(e.boardSetKey)) continue;
@@ -1490,6 +1494,8 @@ function patch(masterDir, opts = {}) {
   fs.writeFileSync(path.join(gameData, 'events.json'), JSON.stringify({ entries: out.index.entries, reasons: out.index.reasons, ...(out.index.catalog ? { catalog: out.index.catalog } : {}),
     boardSets: out.index.boardSets, own }, null, 1));
   fs.writeFileSync(path.join(gameData, 'event_maps.json'), JSON.stringify(out.maps, null, 1));
+  // Event Board card pictures (event-boards.js artLines), imported by tools/ldplayer/session/build-resources.ps1
+  fs.writeFileSync(path.join(gameData, 'event_board_art.tsv'), eventBoards.artLines(out.boardArt || []));
   // the generated maps (Part 5 Task 3): the list of recon/tools/gen_story_maps.py, config key `events` (the «special» list shape)
   fs.writeFileSync(path.join(gameData, 'event_gen_maps.json'), JSON.stringify(out.genMaps, null, 1));
   // anchors first (only grow: allocateIds never changes one), so ids are never written with keys whose anchor is not saved

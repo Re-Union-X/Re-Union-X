@@ -70,7 +70,8 @@ function allocate(sets, ids) {
 }
 
 // -> {sphereRows, arrayRows, masuRows, art, bySet, chains, ids: {boards}, report: {unmatched, skipped}}
-function buildEventBoards({ sets, master, ids, boosters = null }) {
+// art: event_config.json boardArt {donorId: {jp} | {loc}} (card pictures, user 14-11): out.art [{sphereBoardId, donorId, jp | loc}] of the boards emitted
+function buildEventBoards({ sets, master, ids, boosters = null, art = {} }) {
   const boards = allocate(sets, ids);
   const idx = rb.itemIndex(master);
   const ix = { idx, material: new Set((master.material || []).map((r) => r.materialId)), title: new Set((master.title || []).map((r) => r.titleId)),
@@ -119,6 +120,7 @@ function buildEventBoards({ sets, master, ids, boosters = null }) {
       if (chained) out.chains[id] = idOf(b.openParam);
       out.sphereRows.push({ sphereBoardId: id, boardName: String(b.name).slice(0, 128), kindId: b.kindId || 0, boardId: BACKGROUND, arryId: id, masuId: id, type: TYPE,
         openId: b.openId, openParam: chained ? idOf(b.openParam) : b.openParam || 0, price: 0, detailUrl: '', startDatetime: EV_START, endDatetime: rb.END });
+      if ((art || {})[donorId]) out.art.push({ sphereBoardId: id, donorId: Number(donorId), ...art[donorId] });
       out.arrayRows.push({ arryId: id, ...Object.fromEntries(GRID_KEYS.map((k) => [k, [...b.grid[k]]])) });
       const masu = { masuId: id, sphereBoardId: id };
       for (const key of rb.MASU_KEYS) masu[key] = Array(rb.MASU).fill(0);
@@ -142,4 +144,12 @@ function buildEventBoards({ sets, master, ids, boosters = null }) {
   return out;
 }
 
-module.exports = { buildEventBoards, matchDonor, TYPE, ID_BASE, ID_MAX };
+// game_data/event_board_art.tsv (rows as recon/tools/originals.tsv), imported by build-resources.ps1
+function artLines(art) {
+  const head = ['# Event Board card pictures, written by server/make-events.js from event_config.json boardArt (docs/notes/events.md).',
+    '# Columns as in originals.tsv. jp = the JP 4.3.1 card with the same picture; loc = the card picture from the community wiki or cut from a screenshot of the original board (--loc).'];
+  const line = (a) => [`img/sphere_incentive/${a.sphereBoardId}.png`, a.jp ? 'jp' : 'loc', a.jp || `=${a.loc}`].join('\t');
+  return [...head, ...art.map(line)].join('\n') + '\n';
+}
+
+module.exports = { buildEventBoards, matchDonor, artLines, TYPE, ID_BASE, ID_MAX };
