@@ -228,21 +228,21 @@ Task 2 decisions (user, 14 November 2026): (a) group Boosters: the served medal 
 **Files:**
 - Modify: the four session scripts (revision +1, BOM kept), `docs/notes/events.md` (section «Boosters (Part 6)»).
 
-- [ ] **Step 1:** Master regen (HANDOFF command). Expected log: emblem rows written; served quests +5 (EV-1217) or the held count with reasons; Event Board sets served up from 7 by the built ones; `md5` shows only emblem, stage, evStage, reward, sphere, sphereArray, sphereMasu changed; no served id moves.
-- [ ] **Step 2:** Build the resources (`-Quick` unless Task 6 added more than icons), `update-resources.ps1`, taps (200,1020) and (1220,715). *(Main session.)*
-- [ ] **Step 3:** Saves from `maxpower` with the `mksave2.js` pattern. *(Main session.)*
+- [x] **Step 1:** Master regen (HANDOFF command). Expected log: emblem rows written; served quests +5 (EV-1217) or the held count with reasons; Event Board sets served up from 7 by the built ones; `md5` shows only emblem, stage, evStage, reward, sphere, sphereArray, sphereMasu changed; no served id moves.
+- [x] **Step 2:** Build the resources (`-Quick` unless Task 6 added more than icons), `update-resources.ps1`, taps (200,1020) and (1220,715). *(Main session.)*
+- [x] **Step 3:** Saves from `maxpower` with the `mksave2.js` pattern. *(Main session.)*
   - `boost18`: week of 2018-11-19 (EV-0624 Booster [Mickey], the 2018-10 P/S/M boards kept if the window allows);
   - `boost19`: week of 2019-12-02 (the 19 Booster boards of 2019-12);
   - `boost20`: week of 2020-07-20 (EV-1217 «Get Yourself a Booster»);
   - `boostold`: an old save with the 4 `pendingBoosters`.
-- [ ] **Step 4:** Bench, frames `D:\Progetto_Restauro_KH_UX\screenshots\t6p_*.png`. *(Main session; Claude plays the battles when the user asks.)*
+- [x] **Step 4:** Bench, frames `D:\Progetto_Restauro_KH_UX\screenshots\t6p_*.png`. *(Main session; Claude plays the battles when the user asks.)*
   - `boostold`: login grants the pending Boosters; the dialog lists them with «Expires».
   - EV-1217 1/5: objective popup with the Booster icon, clear, dialog, Medal Details «+30%» on a P medal, none on an S medal; replay grants nothing.
   - A 2019-12 board: Unlock a Booster cell, dialog updated; the board chain.
   - The Gear Golem raid board (April 2018 week): the HD Vanitas cells.
   - Damage: the same special attack on the same enemy with and without the Booster; **show the user the numbers**, wait.
   - Expiry: `-RealNow` past `until`: the Booster leaves the dialog and the plate.
-- [ ] **Step 5:** Record the results in `docs/notes/events.md`; commit.
+- [x] **Step 5:** Record the results in `docs/notes/events.md`; commit.
 
 ### Task 8: Notice, docs, next part
 
