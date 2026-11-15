@@ -199,6 +199,7 @@ def mog_row(gold, pressed):
     return im.resize((w, h), Image.LANCZOS)
 
 
+# Fallbacks since 15-11 (I-102): import_jp_coco.py (patch=moogle_traits / moogle_tabs) writes the JP art over these
 for _name, _gold in (('But29', False), ('But31', True)):
     save_ui(_name + '_Off.png', mog_row(_gold, False))
     save_ui(_name + '_On.png', mog_row(_gold, True))

@@ -62,6 +62,20 @@ References: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Taps i
 - Lock: `LockMask` (over the Exchange button, `Lock_icon` = `img/ui/ShopBut_Lock(_Disable).png`) is shown by the
   client for a row whose exchanges are used up; our Items rows have no limit (`count` 0), so it never shows today.
 
+<a id="schede-righe-trait"></a>
+## Tabs and Traits row backgrounds (I-102, prepared 15-11, bench pending)
+
+- Tabs: the client puts its own button into the ImageViews `tab1`/`tab2` of `MoogleShop_Win_ver410` and loads
+  `img/ui/Mogshop_tab_Off/_On.png` (capital O, natural size, no 9-slice; layout size 220x61). Served so far: our
+  generated 200x48 tabs (`make_textures.py` `mog_tab`), thinner border and smaller radius than the original (tester
+  report 12-11). The JP art `Mogshop_tab_off/_on` (220x61) matches `moogle_shop_01.png`: `patch=moogle_tabs` on
+  `MoogleShopScene_ver410` copies it to `img/ui` (`screenshots\ms_30_tabs_ref_ours_jp.png`).
+- Traits rows: the client loads `img/ui/But29_*` (blue) / `But31_*` (gold) into the 9-slice `Panel`/`Panel_Rare`
+  (700x100, capInsetsX 30). Ours were 704x106 bitmaps (`mog_row`): the cap insets cannot shrink them, so each row
+  drew ~106 tall and the first one touched the list frame (user report 15-11, «first row cut at the top»).
+  `patch=moogle_traits` serves the JP 60x100 art instead (`screenshots\ms_31_traits_rows_ref_bench_jp.png`). The
+  list position (`Area_Traits`) and the row pitch (110, set by the client) are the original ones.
+
 <a id="trait"></a>
 ## Trait exchange
 

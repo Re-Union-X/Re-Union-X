@@ -70,8 +70,17 @@ CUS = re.compile(r'^Txt_.*_Cus$')
 # «Exchange» button and loads into it img/ui/But30_Off/_On/_Disable.png (9-slice). None is in the WW resources: the
 # plain import of 13-10 crashed with 0x2c on opening the shop. It also creates ImageButton_Buy1 and ImageButton_LockMask
 # itself (an existing one is removed first) and does not look up Row_Base/Name_Plate: the JP widgets stay as they are.
+# moogle_tabs (MoogleShopScene_ver410): the client loads img/ui/Mogshop_tab_Off/_On.png (capital O, natural size, no
+# 9-slice) into the ImageViews tab1/tab2 of MoogleShop_Win_ver410 (220x61, JP art Mogshop_tab_off/_on): the original art
+# in place of our generated 200x48 tabs (make_textures.py mog_tab, fallback).
+# moogle_traits (MoogleShop_Traits_Panel_ver410): the client loads img/ui/But29_* (blue) / But31_* (gold) into the 9-slice
+# Panel/Panel_Rare (700x100, capInsetsX 30) of each Traits row: the JP 60x100 art in place of our 704x106 (make_textures.py
+# mog_row, fallback), which the cap insets could not shrink: the row grew to 106 and touched the list frame.
 PATCHES = {
     'moogle_item': {'img': {'img/ui/But30_%s.png' % s: 'But30_%s.png' % s for s in ('Off', 'On', 'Disable')}},
+    'moogle_tabs': {'img': {'img/ui/Mogshop_tab_%s.png' % s: 'Mogshop_tab_%s.png' % s.lower() for s in ('Off', 'On')}},
+    'moogle_traits': {'img': {'img/ui/%s_%s.png' % (b, s): '%s_%s.png' % (b, s) for b in ('But29', 'But31')
+                              for s in ('Off', 'On')}},
 }
 
 ap = argparse.ArgumentParser()
