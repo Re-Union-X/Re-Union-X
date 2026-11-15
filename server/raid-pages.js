@@ -41,7 +41,7 @@ const SECTIONS = [['ww', 'Worldwide', 'raid'], ['jp', 'Japan only', 'jp']];
 const TIER_OPTS = [['all', 'All'], ['beginner', 'Beginner', 'tbeg'], ['intermediate', 'Intermediate', 'tint'], ['advanced', 'Advanced', 'tadv'], ['legendary', 'Legendary', 'tleg'],
   ['epic', 'Epic', 'tepic'], ['single', 'One tier', 'tone']];
 const SHOW_OPTS = [['all', 'All raids'], ['now', 'In Events now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later'],
-  ['removed', 'Not restored yet', 'removed']];
+  ['removed', 'Not built yet', 'removed']];
 const SHOW_SETS = { now: ['now', 'kept'] };
 // PROGRESS (user 03-11): every playable tier of the week (available; a tier not restored cannot be played) with all its
 // objectives done (ctx.stageDone, the crown rule); no playable tier = incomplete
@@ -83,7 +83,7 @@ const detailHref = (id) => `/web/raid/raid/${id}?from=catalog`;
 function statusOf(row, ctx) {
   const st = calendar.rowState(row, ctx);
   if (st === 'removed') {
-    return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not restored yet'), button: null,
+    return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not built yet'), button: null,
       why: 'Its raid boss cannot be served yet: its graphics or data are incomplete in the surviving game files. It comes back when they are recovered.' };
   }
   if (st === 'other') {
@@ -323,7 +323,7 @@ const RECON_TEXT = {
   attribute: 'The boss attribute is deduced from its colour.',
   background: 'The fight background is the closest world to the original map.',
   boardAlias: 'A Raid Board reward is matched to its item by name.',
-  boardPath: 'The cells of the Raid Boards follow one path: their original layout is not restored yet.',
+  boardPath: 'The cells of the Raid Boards follow one path: their original layout is not rebuilt yet.',
   boardTexture: 'One Spirit part picture is rebuilt from the original files.',
   boardCost: 'One Raid Board cell cost is corrected (the source had a typo).',
   boardSet: 'Which Raid Boards ran this week comes from the community lists.',
@@ -416,7 +416,7 @@ const RECON_SHORT = {
   levelDropsPartial: ['rewards', 'Level rewards', 'Some left out: item or amount unknown', 'medal'],
   jpRewardProbable: ['rewards', 'Level reward', 'The worldwide Medal it most probably was', 'medal'],
   boardAlias: ['rewards', 'Board reward names', 'Matched to their items by name', 'btodo'],
-  boardPath: ['rewards', 'Board cell order', 'One path: original layout not restored yet', 'btodo'],
+  boardPath: ['rewards', 'Board cell order', 'One path: original layout not rebuilt yet', 'btodo'],
   boardSet: ['rewards', 'Boards of the week', 'From the community lists', 'btodo'],
   boardTexture: ['rewards', 'Spirit part picture', 'Rebuilt from the original files', 'btodo'],
   boardCost: ['rewards', 'Board cell cost', 'A typo of the source corrected', 'btodo'],
@@ -461,7 +461,7 @@ function srvBox(row, st, o) {
   const codes = [...new Set(row.entries.flatMap((e) => e.reconstructed || []))];
   const off = row.entries.filter((e) => !e.available);
   return srvFrame(st, { ...o, body: (ruleOn() ? ruleBox(o.rule) : '') + reconCards(codes)
-    + (off.length ? `<p class="sbo">${icon('lock')}Not restored yet: ${off.map((e) => esc(`${tierLabel(e.tier)} (${e.boss || ''})`)).join(', ')} (graphics or data incomplete in the surviving game files).</p>` : '') }, 'raid');
+    + (off.length ? `<p class="sbo">${icon('lock')}Not built yet: ${off.map((e) => esc(`${tierLabel(e.tier)} (${e.boss || ''})`)).join(', ')} (graphics or data incomplete in the surviving game files).</p>` : '') }, 'raid');
 }
 const noticeLinks = (row) => [[`/web/raid/raid/${row.evStageId}`, 'This raid in the Raid Catalog ›'], ['/web/raid/catalog', 'Raid Catalog ›']];
 const RAID_DETAIL_CSS = '.tt{table-layout:auto}.tt td:nth-child(4){white-space:nowrap}.tt td.r{color:#ffcd4a}ul.ow{list-style:none;padding:0;margin:4px 0 10px}ul.ow li{padding:6px 0;border-bottom:1px solid #2f5d78}ul.ow a{color:#9fd4ff}';
@@ -478,7 +478,7 @@ function detailPage(index, evStageId, ctx = {}) {
   const pName = GAME_YEARS[gameYearOf(row.start)].name;
   const kv = [['Dates', dateRange(row)], ['Type', FAMILY_LABEL[row.family] || row.family], ['Game year', pName]].map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
   const tierRows = row.entries.map((e) => `<tr><td>${esc(tierLabel(e.tier))}</td><td>${esc(e.boss || '')}</td><td>${e.level ?? ''}</td>`
-    + `<td${e.available ? '' : ' class="r"'}>${e.available ? Number(e.hp || 0).toLocaleString('en-US') : 'Not restored yet'}</td></tr>`).join('');
+    + `<td${e.available ? '' : ' class="r"'}>${e.available ? Number(e.hp || 0).toLocaleString('en-US') : 'Not built yet'}</td></tr>`).join('');
   const ids = [...new Set(row.entries.flatMap((e) => e.sphereBoardIds || []))];
   const names = [...new Set(row.entries.flatMap((e) => e.boards || []))];
   // a Japan-only raid's boards have no census name, only the served boards' own (listed below): no «no boards» line then
@@ -598,7 +598,7 @@ function jpNoticePage(row, doc, ctx, { st, back }) {
   const play = row.entries.filter((e) => e.available);
   const bossRows = (play.length ? play : row.entries).map((e) => {
     const when = e.day ? (e.open === 'day' && row.entries.length > 1 ? `${WEEKDAY[new Date(`${e.day}T12:00:00Z`).getUTCDay()]}s` : niceDay(e.day)) : tierLabel(e.tier);
-    return `<tr><td>${esc(when)}</td><td>${esc(e.boss || '')}</td><td>${e.available ? Number(e.hp || 0).toLocaleString('en-US') : 'Not restored yet'}</td><td>${esc(minutesText(e.upMinutes))}</td></tr>`;
+    return `<tr><td>${esc(when)}</td><td>${esc(e.boss || '')}</td><td>${e.available ? Number(e.hp || 0).toLocaleString('en-US') : 'Not built yet'}</td><td>${esc(minutesText(e.upMinutes))}</td></tr>`;
   }).join('');
   const open = play.some((e) => e.open === 'weekend') ? 'Saturday and Sunday only' : play.some((e) => e.open === 'day') ? 'each boss on its own day' : 'every day of its dates';
   const drops = [...new Set(play.flatMap((e) => (e.levelDrops || []).map((d) => `LV ${d.level}: ${(d.items || []).join(', ')}`)))];

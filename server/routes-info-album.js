@@ -63,7 +63,8 @@ function eventNoticeFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dir
   let x, cfg = {};
   try { x = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
   try { cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'event_config.json'), 'utf8')); } catch { /* no label texts */ }
-  const all = Array.isArray(x.entries) ? x.entries : [];
+  // the BOARD entries (avatar boards of the Avatar Board Catalog, Part 7) are not events
+  const all = (Array.isArray(x.entries) ? x.entries : []).filter((e) => e.type !== 'BOARD');
   const on = all.filter((e) => e.available);
   const quests = all.flatMap((e) => e.quests || []);
   const used = new Set([...all.flatMap((e) => e.labels || []), ...quests.flatMap((q) => q.labels || [])]);
@@ -132,32 +133,69 @@ function boosterFacts(file, eventBoardIds = new Set(), paidIds = [], masuFile = 
   let b;
   try { b = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
   const paid = new Set(paidIds.map(Number));
-  let eventCells = 0, raidCells = 0;
+  let eventCells = 0, raidCells = 0, avatarCells = 0;
   try {
     for (const m of JSON.parse(fs.readFileSync(masuFile, 'utf8'))) {
       (m.rewardSelect || []).forEach((v, i) => {
         // the KEPT twin rows of the avatar boards (5500001-5999999, Part 7 Task 6c) are copies of their originals: not counted
         if (v !== 34 || (m.sphereBoardId > 5500000 && m.sphereBoardId <= 5999999)) return;
         paid.add(Number((m.rewardId || [])[i]));
-        if (eventBoardIds.has(m.sphereBoardId)) eventCells += 1; else raidCells += 1;
+        if (eventBoardIds.has(m.sphereBoardId)) eventCells += 1;
+        else if (m.sphereBoardId >= 5000000 && m.sphereBoardId <= 5499999) avatarCells += 1; // the avatar boards (Part 7)
+        else raidCells += 1;
       });
     }
   } catch { /* no master */ }
   const rows = [...paid].map((id) => (b.byId || {})[id]).filter(Boolean);
   const spans = rows.map((r) => Number(r.spanDays) || 0).filter(Boolean).sort((x, y) => x - y);
   return { count: rows.length, minDays: spans[0] || 0, maxDays: spans[spans.length - 1] || 0,
-    window: rows.filter((r) => r.expiry && r.expiry.source === 'window').length, eventCells, raidCells };
+    window: rows.filter((r) => r.expiry && r.expiry.source === 'window').length, eventCells, raidCells, avatarCells };
 }
 function eventBoosterLines(f) {
   const b = f && f.boosters, q = f && f.challenge ? f.challenge.boosters : 0;
   if (!b || !b.count) return [];
-  const src = [q ? `${q} event quest${q === 1 ? '' : 's'}` : '', b.eventCells ? `${b.eventCells} Event Board cells` : '', b.raidCells ? `${b.raidCells} Raid Board cell${b.raidCells === 1 ? '' : 's'}` : ''].filter(Boolean);
+  const src = [q ? `${q} event quest${q === 1 ? '' : 's'}` : '', b.eventCells ? `${b.eventCells} Event Board cells` : '', b.raidCells ? `${b.raidCells} Raid Board cell${b.raidCells === 1 ? '' : 's'}` : '',
+    b.avatarCells ? `${b.avatarCells} Avatar Board cell${b.avatarCells === 1 ? '' : 's'}` : ''].filter(Boolean);
   return ['## Boosters',
     `The **Boosters** are back: **${b.count} Boosters**, paid by ${nameList(src)}. As in the original game, a Booster raises the damage of the Medals it names, or the slot multipliers of the Keyblade it names, until it expires: you see it in your profile (**Boosters**, with its expiry), as the light-blue **+N%** plate on the Medal Details screen, and in battle. Different Boosters add up.`,
     'No original Booster record with its effect values survives: each effect is **rebuilt from the Booster\'s original description** (the attribute, Upright or Reversed, the group of Medals or the Keyblade it names, and its value). The Medals of a group are the ones the original game data assigns to that Booster.',
     `In the original every Booster expired on a fixed date. Here a Booster lasts, **from the moment you get it**, as many days as it lasted in the original from the start of its event to its expiry (**${b.minDays} to ${b.maxDays} days**) (**not original**: in the original a Booster obtained late in its event lasted less). So a Booster from a past event, a kept event or an older board set works for its full time too.${b.window ? ` For ${b.window} Boosters whose expiry notice did not survive, the end of their event or board is used as the expiry.` : ''}`,
     'Each quest objective and each board cell gives its Booster **once**, ever: a replay does not give it again, not even after it expired. The same Booster from another quest or cell extends the one you have.',
     'A Booster reward recorded before the Boosters arrived (a quest you cleared earlier) is given at your first login after this update, with its full time.'];
+}
+// Events Part 7 Task 7: the avatar boards served (game_data/avatar_boards.json index / report) and the board cards served to the
+// Avatar Board Catalog (game_data/avatar_img/cards.json, git-ignored); null without avatar_boards.json. plain: the boards with a
+// KEPT twin (every board but the level ones) that have no card, null without cards.json
+function avatarNoticeFacts(file = process.env.KHUX_AVATAR_INDEX || path.join(__dirname, 'game_data', 'avatar_boards.json'),
+  cardsFile = path.join(__dirname, 'game_data', 'avatar_img', 'cards.json')) {
+  let x, cards = null;
+  try { x = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+  try { cards = new Set((JSON.parse(fs.readFileSync(cardsFile, 'utf8')).ids || []).map(Number)); } catch { /* no card list */ }
+  const ix = Object.entries(x.index || {}), rec = (x.report && x.report.records) || {};
+  const twinned = ix.filter(([, e]) => e && e.twin);
+  return { sale: ix.filter(([, e]) => e.type === 2).length, free: ix.filter(([, e]) => e.type === 1).length,
+    level: ix.filter(([, e]) => e.group === 'level').length, twins: twinned.length, held: (rec.held || []).length,
+    unmapped: (rec.unmapped || []).map((u) => u.name), skills: Object.keys((x.report && x.report.skillsFromDonor) || {}).length,
+    permanent: ix.filter(([, e]) => e.permanent).map(([, e]) => ({ name: e.name, price: e.price })),
+    plain: cards ? twinned.filter(([k]) => !cards.has(Number(k))).length : null };
+}
+function avatarBoardLines(f) {
+  if (!f) return [];
+  const s = (k, one, many) => (k === 1 ? one : many);
+  const perm = f.permanent.map((p) => `the **${p.name}** (${p.price} Jewels)`);
+  return ['## Avatar boards',
+    `The limited boards of **Avatar Boards** are back: **${f.sale} boards on sale for Jewels** (outfits, skills, Gems, Medals and Jewel Boosters) and **${f.free} free boards** (the Avatar Coin boards, whose cells cost Avatar Coins${f.level ? `, and ${f.level} boards given when your player level reaches theirs` : ''}). Like the Shop, each Story week lists the boards of the matching week of the original game, and «Offer ends in» counts down to the end of your Story week (**not original**: the original counted to the board's own last day).`,
+    'A board you buy is **yours for good**: it stays in Avatar Boards after its week, with its progress, and is never charged twice.',
+    ...(perm.length ? [`${nameList(perm).replace(/^t/, 'T')} ${s(perm.length, 'is', 'are')} on sale in every Story week, with no countdown: the community wiki says it stayed on sale for good from version 2.3.1, whose date is not known (**not original** before that version).`] : []),
+    ...(f.held || f.unmapped.length ? [[f.held ? `${f.held} boards are not here yet: no surviving notice gives their dates (the later monthly Enhancement Set+ sets and the Draw Ticket boards).` : '',
+      f.unmapped.length ? `**${nameList(f.unmapped)}** ${s(f.unmapped.length, 'is', 'are')} left out: no worldwide source names ${s(f.unmapped.length, 'it', 'them')}.` : ''].filter(Boolean).join(' ')] : []),
+    ...(f.skills ? [`${f.skills} skills of the skill boards were missing from the surviving game data and come from another copy of the original data: they work as in the original game, but their description is empty, because no text for them survives.`] : []),
+    'Most board cards are the original pictures. 42 cards whose files did not survive are cut from screenshots of the original game and from the community wiki, with their corners cleaned and lightly sharpened (**reconstructed**).'
+      + (f.plain ? ` ${f.plain} Skill Enhancement ${s(f.plain, 'Board shows a plain card', 'Boards show a plain card')}: no picture of ${s(f.plain, 'it', 'them')} was found.` : ''),
+    '## Avatar Board Catalog',
+    'The **Avatar Board Catalog** is **not original**: its gold banner in the **Special** tab opens the **Training Grounds** when tapped, and its **Details** button lists every past board with its dates, prices and card. Its **Filters** find boards by group, by **Bought** / **Not bought** and by **Progress** (counted on the board cells).',
+    'One past entry at a time can be **kept** there (**not original**), apart from the kept event of the Event Catalog. Leave and re-enter **Avatar Boards**: each kept board appears with «Unlocked an Avatar Board!», at its original price and with no countdown.',
+    'A kept board shows a **KEPT BOARD** tab. It is the same board as the original: its purchase, cells and rewards are shared, so nothing is paid or earned twice. If you stop keeping an entry, a board you bought keeps its KEPT BOARD tab until your next login, then shows as itself.'];
 }
 // Events Part 4 Task 6: the census types of the challenge events, and the quiz board plan (sources of the boards)
 const CHALLENGE_TYPES = ['EQ', 'KEY', 'QUIZ'];
@@ -247,14 +285,14 @@ function raidNoticeLines(f) {
   const jp = 'For now this server serves **only the worldwide raids**. The raids held only in the **Japanese version** of the game are not here: what is known of them is kept aside for a later decision.';
   if (!f) return [jp];
   const out = [];
-  if (f.off) out.push(`**${f.off}** of the ${f.tiers} raid tiers of the worldwide game are marked **Not restored yet**: the graphics or data of their boss are incomplete in the surviving game files. The Raid Catalog lists them, and they come back as soon as their boss is recovered.`);
+  if (f.off) out.push(`**${f.off}** of the ${f.tiers} raid tiers of the worldwide game are marked **Not built yet**: the graphics or data of their boss are incomplete in the surviving game files. The Raid Catalog lists them, and they come back as soon as their boss is recovered.`);
   else out.push(`All **${f.tiers}** raid tiers of the worldwide game (**${f.bosses}** bosses) can be played.`);
   if (f.storyOff.length) out.push(`The Story raid bosses **${nameList(f.storyOff)}** are not back yet: their quests do not bring a boss, and the raid gauge waits for the next quest that can.`);
   // Japan-only raids (I-232): the ones not here and why
   if (!f.jp || !f.jp.rows) out.push(jp);
   else {
     const n = f.jp;
-    if (n.off) out.push(`**${n.off}** raid tiers held only in the **Japanese version** are marked **Not restored yet** in the Raid Catalog: the graphics or data of their boss are incomplete.`);
+    if (n.off) out.push(`**${n.off}** raid tiers held only in the **Japanese version** are marked **Not built yet** in the Raid Catalog: the graphics or data of their boss are incomplete.`);
     if (n.unnamed.length) out.push(`**${n.unnamed.length}** raids held only in the **Japanese version** are not here: no surviving source names their boss (${nameList(n.unnamed.map(usDay))}).`);
     out.push(`The Japanese weekly raids from September 2018${n.sameEvents ? ` and ${n.sameEvents} Japanese raid event${n.sameEvents === 1 ? '' : 's'} of 2018` : ''} were the same raids as the worldwide ones, on the same dates: the Raid Catalog lists them once, as worldwide raids.`);
   }
@@ -521,7 +559,7 @@ const NOTICES = [
       // Raid Catalog (raids Part 2, Task 9; user 02-11: catalogue bosses have a level of their own)
       '## Raid Catalog',
       'The **Raid Catalog** is **not original**: it is an addition of this server, in the style of the Special Catalog. Its banner in the Events tab opens the **Training Grounds** when tapped, and its **Details** button lists every raid week of the game with its bosses, tiers and Raid Boards.',
-      'One **past raid** at a time can be **kept** in the Events tab, beside the raids of the week. Raids later than your Story stay locked (**Unlocks at Story Quest N**), and raids whose boss cannot be served yet are marked **Not restored yet** and cannot be kept.',
+      'One **past raid** at a time can be **kept** in the Events tab, beside the raids of the week. Raids later than your Story stay locked (**Unlocks at Story Quest N**), and raids whose boss cannot be served yet are marked **Not built yet** and cannot be kept.',
       'The catalogue **Filters** (**not original**) find raids by boss, board or reward name, by type, tier and state, and by **Progress**: **Completed** shows the raids whose objectives you have all completed; **Raid Boards** shows the raids whose Raid Boards are all unlocked, or those with cells still to unlock.',
       'A kept raid follows the same AP and Bonus Time rule as every raid (see **Raid AP and Bonus Time**). Its boss has a **level of its own**, starting at **LV 1**: playing it never changes the level of the boss of the week, and the other way round. Its **Raid Boards** are the same as in its week, so a board reward is never given twice; **Raid Coins** are given at every win, as for the raid of the week.',
       'Raid **Lux** is **reconstructed** from what players reported: as in the original game it depends on the HP you take and on your Lux skills, not on hits or damage, and with Lux++ on every Medal a kill is worth about 2% of the boss HP (about 8 billion on Advanced, 14 billion on Legendary, 20 billion on Epic). In **Bonus Time** (here Saturday and Sunday) the Lux of a raid fight is **doubled**, as in the original game Bonus Time: the game counts the normal amount during the fight and the server doubles it when the fight ends.',
@@ -530,13 +568,13 @@ const NOTICES = [
       ...raidNoticeLines(raidNoticeFacts())] },
   // Events Part 1 Task 8 (07-11): event quests, Event Catalog, kept event, short windows, coins, no raid spawns (user decision 07-11,
   // notice 49535), counts and labels from events.json (eventNoticeFacts); docs/notes/events.md
-  { date: '11/15', tag: 'IMPORTANT', title: 'Events',
+  { date: '11/16', tag: 'IMPORTANT', title: 'Events',
     body: ['The **Event Quests** are back: the limited-time events of the original game, with their original maps, enemies, objectives and rewards wherever their files survive. They are in **Quests > Events**, after the raids.',
       'Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.',
       ...eventNoticeLines(eventNoticeFacts()),
       ...eventChallengeLines(eventNoticeFacts()),
       '## Gem quests',
-      'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards and come with the Event Boards in a later update; their notices had no banner, so the Event Catalog shows **No card in the original** for them.',
+      'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
       'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
       'The quest lists of the events whose Event Boards are not served yet show no **Event Boards** button (**not original**): see **Event coins and boards** below.',
       ...eventOrgxiiiLines(eventNoticeFacts()),
@@ -544,7 +582,7 @@ const NOTICES = [
       'An event that was open for only a few minutes or hours in the original game is open here for its **whole original day** (**not original**): it is listed on the real weekday (Pacific time) of that day, all day. An event with one quest a day lists **all its quests for its whole period** (**not original** where the original opened them one a day).',
       '## Event Catalog',
       'The **Event Catalog** is **not original**: it is an addition of this server, in the style of the Special and Raid Catalogs. Its banner in the Events tab opens the **Training Grounds** when tapped, and its **Details** button lists every event of the game with its quests.',
-      'One **past event** at a time can be **kept** in the Events tab (it shows the **KEPT EVENT** tab), beside the events of the week. Events later than your Story stay locked (**Unlocks at Story Quest N**), and events with no quest served yet are marked **Not restored yet** and cannot be kept.',
+      'One **past event** at a time can be **kept** in the Events tab (it shows the **KEPT EVENT** tab), beside the events of the week. Events later than your Story stay locked (**Unlocks at Story Quest N**), and events with no quest served yet are marked **Not built yet** and cannot be kept.',
       '## Rewards',
       'Objective rewards and first-clear items are given **once**, as in the original game. Enemy drops keep their **original chances**: an item that dropped 5% of the time still does.',
       'For **Event Coins**, see **Event coins and boards** below. Each event\'s **Details** shows its original notice as it was.',
@@ -565,6 +603,7 @@ const NOTICES = [
       'The **12 enemies** the challenge events still lacked are back too, built exactly from the original pictures in the same way and approved on their animations: **Nimble Reaper, Loudmouth Parade, Upright Warlock, Gummi Dragon, Vile Reaper, Mysterious Sir, Weapon Master, Reversed Warlock, Circus Balloon, Jewel Princess, Raccoon Dog Rookie** and **Raccoon Dog Soldier**, and the quests that waited for them are served. Nine of them never move in the original files, so their walking pose is their standing pose (**reconstructed**). Their check in battle is still going on: please report anything that looks wrong.',
       ...eventCoinLines(eventNoticeFacts()),
       ...eventBoosterLines(eventNoticeFacts()),
+      ...avatarBoardLines(avatarNoticeFacts()),
       '## SP Chip & Dale',
       'The **SP Chip & Dale** 6★ Medal (+1,000 STR and DEF as Enhancement material), a reward of some event quests, is back. Its data comes from the community wiki; its picture is the community render of the original Medal (**reconstructed**: the original file was not found).',
       ...eventLabelLines(eventNoticeFacts())] },
@@ -940,4 +979,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventOrgxiiiLines };
+module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines };

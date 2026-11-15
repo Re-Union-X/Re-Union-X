@@ -5,7 +5,7 @@ const gacha = require('./gacha');
 const { page, PIN_JS, esc } = gacha;
 const pd = require('./pet-draw');
 
-const EXT_TEXT = 'Not original: once you own every part listed above, this deal also gives the Spirit parts that have no other way to be obtained in this restoration (the original game gave them in events not restored yet).';
+const EXT_TEXT = 'Not original: once you own every part listed above, this deal also gives the Spirit parts that have no other way to be obtained here (the original game gave them in events not built yet).';
 const SOLD_OUT = 'You own every part of this deal.';
 
 // ctx = {owned: Set, rows: petParts rows, elsewhere: Set, listedIds: Set, keepableOf(b), keptRowId, fromCatalog}
@@ -34,7 +34,7 @@ function detailPage(b, ctx) {
     + '<p>Every time you draw, you get a part you do not own yet: no repeats.</p>'
     + keepButton(b, ctx)
     + `<h2>Spirit Parts (${b.poolIds.length}, ${left} not owned)</h2>${partList(b.poolIds, names, ctx.owned)}`
-    + (b.missing.length ? `<p class="n">Also in the original deal, coming once their graphics are restored: ${esc(b.missing.join(', '))}.</p>` : '')
+    + (b.missing.length ? `<p class="n">Also in the original deal, coming once their graphics are rebuilt: ${esc(b.missing.join(', '))}.</p>` : '')
     + (b.extend === 'unobtainable' ? `<div class="why">${EXT_TEXT}${extended ? ` Parts left: ${ids.length}.` : ''}</div>` : '')
     + (!ids.length ? `<p class="k">${SOLD_OUT}</p>` : '')
     + '<p class="n">* Some Spirit parts shown as «Head» in the Outfit menu were listed as «Face» on the original draw odds page.</p>');

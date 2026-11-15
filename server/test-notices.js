@@ -28,8 +28,8 @@ check(pos('Shop') < pos('Missions'), 'newest first: Shop (10/20) before Missions
 check(n.NOTICES.some((x) => x.title === 'Missions' && /joins the rotation only once your Story reaches the date/.test(x.body.join(' '))), 'Missions: campagne con medaglia legate alla storia');
 check(n.NOTICES.some((x) => x.title === 'Missions' && /are given once/.test(x.body.join(' ')) && /did not finish in time come back/.test(x.body.join(' '))), 'Missions: premi unici una volta sola');
 check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /draw rates are reconstructed/.test(x.body.join(' '))), 'probabilita nelle differenze');
-// the Raid Catalog label «Not restored yet» (raids Part 2 Task 9) is quoted in the Raid Bosses notice: the only allowed hit
-check(p.includes('Not restored yet') && !p.replace(/Not restored yet/g, '').includes('restored'), 'niente elenchi di modifiche');
+// Part 7 Task 7: player-facing text never says «restored» (project rule); the catalogue labels are «Not built yet»
+check(!/restored/i.test(p), 'niente «restored» nelle notizie');
 check(p.includes('Differences from the original game') && p.includes('Limited Missions rotate'), 'notizia differenze');
 check(p.includes('<a class="row pin" href="#n0"') && p.includes('id="d0"'), 'struttura elenco');
 
@@ -199,7 +199,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
   const facts = n.raidNoticeFacts(f);
   check(facts && facts.tiers === 3 && facts.off === 1 && facts.bosses === 2 && facts.storyOff.join() === 'Y' && facts.storyQuests === 1 && facts.unknown === 2, `conteggi dei raid: ${JSON.stringify(facts)}`);
   const lines = n.raidNoticeLines(facts).join(' ');
-  check(/\*\*1\*\* of the 3 raid tiers/.test(lines) && /Not restored yet/.test(lines) && /\*\*Y\*\*/.test(lines), `righe dei raid assenti: ${lines}`);
+  check(/\*\*1\*\* of the 3 raid tiers/.test(lines) && /Not built yet/.test(lines) && !/restored/i.test(lines) && /\*\*Y\*\*/.test(lines), `righe dei raid assenti: ${lines}`);
   check(n.raidNoticeFacts(require('path').join(dir, 'missing.json')) === null && n.raidNoticeLines(null).length > 0, 'senza raids.json: righe generiche');
   // I-232: the Japan-only raids are counted apart, with the ones not here (boss not named) and the ones that were WW raids too
   const g = require('path').join(dir, 'raids-jp.json');
@@ -421,8 +421,49 @@ for (const web of [false, true]) {
     const cell = (id) => ({ sphereBoardId: id, rewardSelect: [34, 0], rewardId: [77, 0] });
     fs.writeFileSync(mf, JSON.stringify([cell(4000001), cell(3100001), cell(5000001), cell(5500001)]));
     const f = n.boosterFacts(bf, new Set([4000001]), [], mf);
-    check(f && f.eventCells === 1 && f.raidCells === 2, `twin Booster cells not counted: ${JSON.stringify(f)}`);
+    // Part 7 Task 7: the Booster cells of the avatar boards (5000000-5499999) are counted apart, never as raid cells
+    check(f && f.eventCells === 1 && f.raidCells === 1 && f.avatarCells === 1, `twin Booster cells not counted: ${JSON.stringify(f)}`);
+    const l = n.eventBoosterLines({ boosters: { ...f, count: 1 }, challenge: { boosters: 0 } }).join(' ');
+    check(l.includes('1 Event Board cells') && l.includes('1 Raid Board cell') && l.includes('1 Avatar Board cell'), `Booster sources: ${l.slice(0, 300)}`);
+    // the BOARD entries (avatar boards, Avatar Board Catalog) are not events: not in the «events in the data» count
+    const ef = path.join(dir, 'events.json');
+    fs.writeFileSync(ef, JSON.stringify({ entries: [{ censusId: 'A', type: 'EQ', start: '2018-05-01', available: true, quests: [{ served: true }] },
+      { censusId: 'B', type: 'BOARD', start: '2018-05-01', available: false, quests: [] }], boardSets: {} }));
+    const e = n.eventNoticeFacts(ef);
+    check(e && e.records === 1 && e.events === 1, `BOARD entries not counted as events: ${JSON.stringify(e && { records: e.records, events: e.events })}`);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
+// Part 7 Task 7: the «Avatar boards» section of the Events notice, counts from game_data/avatar_boards.json (fixture) and the
+// served card list (avatar_img/cards.json); the keep and the KEPT twins are declared as not original
+{
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-avatarnotice-'));
+  try {
+    const af = path.join(dir, 'avatar_boards.json'), cf = path.join(dir, 'cards.json');
+    const b = (group, type, extra = {}) => ({ group, type, price: type === 2 ? 2000 : 0, ...extra });
+    fs.writeFileSync(af, JSON.stringify({
+      index: { 2100119: b('level', 1, { level: 285 }), 5000001: b('outfit', 2, { twin: 5500001 }), 5000002: b('skill', 2, { twin: 5500002, name: 'Skill Enhancement Board A' }),
+        5000003: b('avatarCoinBooster', 1, { twin: 5500003 }), 5000453: b('medal', 2, { twin: 5500453, permanent: true, price: 100, name: 'Start-Up Boost Board' }) },
+      report: { records: { held: [{ name: 'Enhancement Set+ 1: Power Gems' }, { name: 'Draw Ticket' }], unmapped: [{ name: 'Medal Fusion Set 1' }] },
+        skillsFromDonor: { 1198: { skillId: 1265 }, 1237: { skillId: 1266 } } } }));
+    fs.writeFileSync(cf, JSON.stringify({ version: 1, ids: [5000001, 5000003, 5000453] }));
+    const f = n.avatarNoticeFacts(af, cf);
+    check(f && f.sale === 3 && f.free === 2 && f.level === 1 && f.twins === 4 && f.held === 2 && f.skills === 2 && f.plain === 1
+      && f.unmapped.join() === 'Medal Fusion Set 1' && f.permanent.length === 1 && f.permanent[0].price === 100, `Avatar boards: fatti ${JSON.stringify(f)}`);
+    const l = n.avatarBoardLines(f).join(' ');
+    check(l.startsWith('## Avatar boards') && l.includes('**3 boards on sale for Jewels**') && l.includes('**2 free boards**') && /Start-Up Boost Board/.test(l) && /100 Jewels/.test(l)
+      && /Medal Fusion Set 1/.test(l) && /2 skills/.test(l) && /description is empty/.test(l) && /1 Skill Enhancement Board shows a plain card/.test(l)
+      && /## Avatar Board Catalog/.test(l) && /Special/.test(l) && /KEPT BOARD/.test(l) && /Unlocked an Avatar Board!/.test(l) && /next login/.test(l)
+      && /never charged twice|nothing is paid or earned twice/.test(l) && /Bought/.test(l) && (l.match(/\*\*not original\*\*/g) || []).length >= 3
+      && !/restored/i.test(l), `Avatar boards: righe ${l.slice(0, 900)}`);
+    check(n.avatarNoticeFacts(path.join(dir, 'nope.json'), cf) === null && n.avatarBoardLines(null).length === 0, 'Avatar boards: senza avatar_boards.json nessuna sezione');
+    const nc = n.avatarNoticeFacts(af, path.join(dir, 'nope.json'));
+    check(nc && nc.plain === null && !/plain card/.test(n.avatarBoardLines(nc).join(' ')), 'Avatar boards: senza cards.json nessuna frase sulle carte semplici');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  // the live Events notice: the section is in it, the Gem Boards sentence points to it and drops the «later update»
+  const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
+  check(/Gem Boards\*\* [^.]*Avatar Boards/.test(t) && !/come with the Event Boards in a later update/.test(t) && !/No card in the original/.test(t), 'Events: frase delle Gem Boards');
+  if (n.avatarNoticeFacts()) check(t.includes('## Avatar boards') && t.includes('## Avatar Board Catalog'), 'Events: sezione Avatar boards');
 }
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');

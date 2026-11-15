@@ -29,7 +29,9 @@ check(!html.includes('class="now"') && html.includes('data-p="all"><b>All years<
 const row = (id) => itemOf(html, id);
 check(row(7105) && !row(7105).includes('data-pin') && row(7105).includes('Reached later in the Story'), 'later: no pin, text');
 check(row(7103).includes('Replaced by N-kb') && !row(7103).includes('data-pin'), 'replaced');
-check(row(7104).includes('>Not restored<') && !row(7104).includes('data-pin'), 'removed');
+check(row(7104).includes('>Not built<') && !row(7104).includes('data-pin'), 'removed');
+// Part 7 Task 7: player-facing text never says «restored» (project rule), the catalogue and the details of a removed quest
+check(!/restored/i.test(html), 'no «restored» in the Special Catalog');
 check(row(7101).includes('Remove from Special') && row(7101).includes('data-pin="/web/special/unpin"'), 'pinned');
 check(row(7102).includes('Keep in Special') && row(7102).includes('/web/special/icon/pin.png') && row(7102).includes('Replaces: N-kb') && row(7102).includes('data-pin="/web/special/pin/7102"'), 'pinnable');
 check(row(7101).includes('/web/special/img/v' + require('./special').SPECIAL_IMG_VERSION + '/7101.png'), 'image');
@@ -185,7 +187,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(line(one('Old Quest')) === 'Old quest — can be kept' && one('Old Quest').includes('data-pin="/web/special/pin/7344"') && one('Old Quest').includes('Replaces: Kept Quest'), 'can be kept + Keep + Replaces');
   check(line(one('Later Quest')) === 'Unlocks at Story Quest 946', 'unlocks at Story Quest 946');
   check(line(one('Replaced Quest')) === 'Replaced by Old Quest', 'replaced');
-  check(line(one('Gone Quest')) === 'Not restored', 'not restored');
+  check(line(one('Gone Quest')) === 'Not built', 'not built');
   // buttons: none where the keepable version is ambiguous or absent
   check(!one('Daily Challenge: Cid').includes('class="pk"') && !one('Monday Quest').includes('class="pk"'), 'no button without a direct action');
   check(one('EXP &amp; Evolve Medals: Power').includes('data-pin="/web/special/pin/7301"'), 'the one keepable version: Keep on the row');

@@ -141,7 +141,7 @@ const TYPE_OPTS = [['all', 'All'], ['weekday', 'Weekday', 'weekday'], ['daily', 
 // VIP ones locked without VIP too), kept, replaced, removed (not restored), later (period not reached in the Story yet);
 // `other` (current period, not this week) has no chip: All only
 const SHOW_OPTS = [['all', 'All quests'], ['now', 'In Special now', 'now'], ['unl', 'Unlocked, not in Special now', 'unlocked'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'],
-  ['replaced', 'Replaced', 'replaced'], ['removed', 'Not restored', 'removed'], ['later', 'Later in the Story', 'later']];
+  ['replaced', 'Replaced', 'replaced'], ['removed', 'Not built', 'removed'], ['later', 'Later in the Story', 'later']];
 // chips covering several statuses (round 15, like the Shop's SHOW): «In Special now» = the banners of the Special tab
 // (listed this week, open or with a padlock, and the KEPT one); «Unlocked, not in Special now» = reached by the Story but
 // not in the tab (past quests, replaced ones, other weeks / days of the current period); later and not restored: neither
@@ -233,8 +233,8 @@ function statusOf(en, ctx, data) {
     return { show: 'later', cls: 'off', pill: pill('off', 'later', text), button: null, why };
   }
   if (en.removed) {
-    return { show: 'removed', cls: 'off', pill: pill('off', 'removed', 'Not restored'), button: null,
-      why: 'This quest is not restored: the materials it gave have no use in this version.' };
+    return { show: 'removed', cls: 'off', pill: pill('off', 'removed', 'Not built'), button: null,
+      why: 'This quest is not built: the materials it gave have no use in this version.' };
   }
   // replaced only once the entry is in the past for the player (as special.pinnable): in its own periods it is a current
   // quest with the normal statuses (bench k5: the free Daily Cid in period 4, replaced from period 5)

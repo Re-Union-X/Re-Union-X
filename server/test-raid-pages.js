@@ -165,7 +165,7 @@ const tests = {
     assert(/\.sbl a\{display:inline-block/.test(n) && /\.rgs\{display:-webkit-box;display:-webkit-flex;display:flex/.test(n), 'CSS: flex with the old WebView prefixes');
     // a tier not restored is named in the box
     const o = pages.noticePage(index(), 8100, { rows: { 'WW-W-2019-10-07': { noticeId: 9 } }, notices: doc.notices }, ctx());
-    assert(/<p class="sbo"><img[^>]*lock\.png[^>]*>Not restored yet: Epic \(Blue Trident Tail\)/.test(o));
+    assert(/<p class="sbo"><img[^>]*lock\.png[^>]*>Not built yet: Epic \(Blue Trident Tail\)/.test(o));
   },
   opening_hours_labels() {
     // I-228: the WW daily raids and the weekday weekly raids of 2018-09 .. 2019-07 name their hours and the 90 AP outside them
@@ -275,14 +275,14 @@ const tests = {
   not_restored_row() {
     const html = catalog(index(), ctx());
     const r = rowOf(html, 8150);
-    assert(/Not restored yet/.test(r));
+    assert(/Not built yet/.test(r));
     assert(!/class="pk"/.test(r), 'no Keep button');
     assert(/class="row [^"]*\boff\b/.test(r));
     const d = pages.detailPage(index(), 8150, ctx());
-    assert(/Not restored yet/.test(d) && !/class="pk"/.test(d));
+    assert(/Not built yet/.test(d) && !/class="pk"/.test(d));
     // a partial week: the missing tier says so on the details page, the row stays keepable
     const p = pages.detailPage(index(), 8100, ctx());
-    assert(/Epic[\s\S]*Not restored yet/.test(p), 'the missing tier');
+    assert(/Epic[\s\S]*Not built yet/.test(p), 'the missing tier');
     assert(/class="pk"/.test(p));
   },
   later_locked() {
@@ -416,6 +416,16 @@ const tests = {
       console.log(`  (real catalogue: ${Buffer.byteLength(page)} bytes packed, ${Buffer.byteLength(pages.expandCatalog(page))} written out)`);
       assert(Buffer.byteLength(page) < 160 * 1024, 'the real catalogue stays light');
     }
+  },
+  // Part 7 Task 7: player-facing text never says «restored» (project rule); a tier with no served boss is «Not built yet»,
+  // as on the event pages
+  no_restored_wording() {
+    const ix = index(), c = ctx({ index: ix });
+    const pagesText = [catalog(ix, c), pages.detailPage(ix, 8100, c), pages.detailPage(ix, 8150, c),
+      pages.noticePage(ix, 8100, { rows: { 'WW-W-2019-10-07': { noticeId: 9 } }, notices: {} }, c)];
+    for (const h of pagesText) assert(typeof h === 'string' && !/restored/i.test(h), 'no «restored» in a raid page');
+    assert(rowOf(pagesText[0], 8150).includes('Not built yet'), 'a tier with no served boss is «Not built yet»');
+    assert(pagesText[1].includes('Not built yet'), 'the details name the tier not built yet');
   },
   html_escape() {
     const html = catalog(index(), ctx());
