@@ -124,8 +124,13 @@ function buildAvatarBoards({ records, master, ids, boosters = null }) {
     return ID_BASE + numbers[String(donorId)];
   };
 
-  const state = new Map(); // donorId -> {cells, done} | {skip}
-  for (const [donorId, { b }] of boards) {
+  const state = new Map(); // donorId -> {cells, done, unpriced?} | {skip, keys?}
+  const priced = (e) => Number(e.price) > 0;
+  for (const [donorId, { b, entries: es }] of boards) {
+    // a Jewel board is never sold at a guessed price: a window without one is held (priceUnknown), the whole board when no window
+    // has one (Task 5 hardening: it used to stop the build)
+    const unpriced = es[0].type === SALE ? es.filter((e) => !priced(e)).map((e) => e.key) : [];
+    if (unpriced.length && unpriced.length === es.length) { state.set(donorId, { skip: 'priceUnknown', keys: unpriced }); continue; }
     const cells = [], miss = [];
     const nodes = new Set(GRID_KEYS.flatMap((k) => (b.grid || {})[k] || []).filter((v) => v > 0 && v < 1000));
     for (const c of b.cells || []) {
@@ -139,7 +144,7 @@ function buildAvatarBoards({ records, master, ids, boosters = null }) {
     if (done.why) { state.set(donorId, { skip: `completion ${(b.completion || {}).name || ''}: ${done.why}` }); continue; }
     if (!cells.length) { state.set(donorId, { skip: 'no matched cells' }); continue; }
     if (miss.length) { state.set(donorId, { skip: `unpayable cells (${[...new Set(miss)].join(', ')})` }); continue; }
-    state.set(donorId, { cells, done });
+    state.set(donorId, { cells, done, unpriced });
   }
   // a chained board (openId 5 after the board openParam) is only reachable through the board before it
   for (let again = true; again;) {
@@ -154,11 +159,13 @@ function buildAvatarBoards({ records, master, ids, boosters = null }) {
   }
 
   for (const [donorId, st] of state) {
-    const { b, entries: es } = boards.get(donorId);
-    if (st.skip) { out.report.held.push({ donorId, name: b.name, why: st.skip }); continue; }
+    const { b, entries: all } = boards.get(donorId);
+    if (st.skip) { out.report.held.push({ donorId, name: b.name, why: st.skip, ...(st.keys ? { keys: st.keys } : {}) }); continue; }
+    // a returning board keeps its priced windows; the others are reported (held in that window only)
+    if (st.unpriced.length) out.report.held.push({ donorId, name: b.name, why: 'priceUnknown', keys: st.unpriced });
+    const es = all.filter((e) => !st.unpriced.includes(e.key));
     const id = idOf(donorId), first = es[0], chained = b.openId === 5;
     const type = first.type === SALE ? SALE : HANDOUT;
-    if (type === SALE && !es.every((e) => Number(e.price) > 0)) throw new Error(`avatar boards: board ${donorId} on sale without a price (${es.map((e) => e.key).join(', ')})`);
     out.sphereRows.push({ sphereBoardId: id, boardName: String(b.name).slice(0, 128), kindId: b.kindId || 0, boardId: b.boardId || 1, arryId: id, masuId: id, type,
       openId: b.openId || 0, openParam: chained ? idOf(b.openParam) : first.group === 'level' ? Number(first.level) || 0 : 0,
       price: type === SALE ? Number(first.price) : 0, detailUrl: '', startDatetime: START, endDatetime: rb.END });
@@ -277,13 +284,14 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   const servedEndDatetime = (row, ctx = {}) => servedRow(row, ctx).endDatetime;
 
   // GET /user/sphere: the boards listed now (state made). setSent true: avatarBoardsSent keeps only the listed ones and takes the
-  // boards on sale (sent by this list, never by a check); a board handed out (type 1) or bought is not marked, so the next check
-  // still announces it once
+  // boards on sale (sent by this list, never by a check); 'merge' (the merged list of 190, as the raid path): the boards sent
+  // before stay and the boards on sale join. A board handed out (type 1) or bought is not marked, so the next check still
+  // announces it once
   function list(player, ctx = {}, kept = null, { setSent = false } = {}) {
     const ids = listedIds(player, ctx, kept);
     for (const id of ids) stateOf(player, id);
-    if (setSent === true) {
-      const keep = (player.avatarBoardsSent || []).map(Number).filter((id) => ids.includes(id));
+    if (setSent === true || setSent === 'merge') {
+      const keep = (player.avatarBoardsSent || []).map(Number).filter((id) => setSent === 'merge' || ids.includes(id));
       player.avatarBoardsSent = [...new Set([...keep, ...ids.filter((id) => onSale(player, id))])].sort((a, b) => a - b);
     }
     return ids;
@@ -348,6 +356,38 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   return { listedIds, listed, list, check, buy, update, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete };
 }
 
+// ------------------------------------------------------------------------------------------------- Event Catalog ---
+
+// Task 5: the entries of game_data/events.json with avatarBoards (make-events.js avatarCatalog: BOARD entries, or an event that
+// also sold boards) joined with doc = game_data/avatar_boards.json: entry.boards [{key, group, type, window, donorId, name,
+// sphereBoardId | null, price, served, why}], every board of every window in record order, then the builder's held boards
+// (entry.held); a board not served carries the why of report.held (build) or report.records.held (builder), null when neither
+// names it (no index yet). available: an event quest served or a board served. Pure: the index is not changed.
+function catalogIndex(index, doc) {
+  if (!index || !Array.isArray(index.entries)) return index;
+  const served = new Map(Object.entries((doc && doc.index) || {}).map(([id, e]) => [e.donorId, { id: Number(id), e }]));
+  const report = (doc && doc.report) || {};
+  const held = [...(report.held || []), ...((report.records || {}).held || [])];
+  const heldWhy = (donorId, key) => (held.find((h) => h.donorId === donorId && (!h.keys || h.keys.includes(key))) || {}).why || null;
+  const entries = index.entries.map((x) => {
+    if (!x || !Array.isArray(x.avatarBoards)) return x;
+    const boards = [];
+    for (const w of x.avatarBoards) {
+      for (const b of w.boards || []) {
+        const s = served.get(b.donorId), win = s && (s.e.windows || []).find((v) => v.key === w.key);
+        const base = { key: w.key, group: w.group, type: w.type, window: w.window, donorId: b.donorId, name: b.name };
+        boards.push(win ? { ...base, sphereBoardId: s.id, price: Number(win.price) || 0, served: true, why: null }
+          : { ...base, sphereBoardId: null, price: w.price, served: false, why: heldWhy(b.donorId, w.key) });
+      }
+    }
+    for (const h of x.held || []) {
+      boards.push({ key: null, group: null, type: null, window: null, donorId: h.donorId, name: h.name, sphereBoardId: null, price: null, served: false, why: h.why || null });
+    }
+    return { ...x, boards, available: !!x.available || boards.some((b) => b.served) };
+  });
+  return { ...index, entries };
+}
+
 // --------------------------------------------------------------------------------------------------------- patch ---
 
 const readJson = (f, dflt) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return dflt; } };
@@ -407,5 +447,5 @@ function patch(masterDir, opts = {}) {
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { buildAvatarBoards, importDonorSkills, avatarBoardRoutes, allocate, checkRanges, matchCell, cellSkill, weekEndFake, patch,
+module.exports = { buildAvatarBoards, importDonorSkills, avatarBoardRoutes, catalogIndex, allocate, checkRanges, matchCell, cellSkill, weekEndFake, patch,
   ID_BASE, ID_MAX, LEVEL_IDS, DONOR_SKILLS, SALE, HANDOUT };

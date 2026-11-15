@@ -9,7 +9,9 @@
 // unlockQuestOf(entry) -> N | null, stageDone(stageId) -> true when that quest has all its objectives done (crown, PROGRESS filter),
 // hasNotice(censusId) -> true when its original notice text is on this server, eventBoard(boardId) -> {name, cells, finish} | null
 // (Event Boards of the details page; their names and rewards also feed FIND), questRewards(stageId) -> [names of the objective
-// rewards] (FIND; absent: none)}.
+// rewards] (FIND; absent: none), boardBought(sphereBoardId) -> true when the player bought that avatar board (Part 7 Task 5)}.
+// Avatar boards (Events Part 7 Task 5): an entry with boards (index joined by avatar-boards.js catalogIndex) lists them with their
+// price and status; a BOARD entry (boards, no quest) has its own status lines and is kept as an event is (one at a time).
 // States (calendar-util.js rowState): now (listed this Shop week), kept, can (past: can be kept), other (dates inside the week,
 // not open now: a short-window event off its day), later, removed (no quest served yet: «Not restored yet», never hidden).
 'use strict';
@@ -63,9 +65,14 @@ function whyPlain(why, reason) {
   return 'Its data is not complete in the surviving game files yet.';
 }
 
+// Avatar boards (Events Part 7 Task 5): an entry with boards (avatar-boards.js catalogIndex, entry.boards) and a BOARD entry, one
+// with boards and no quest of its own (make-events.js avatarCatalog)
+const boardsOf = (e) => (Array.isArray(e.boards) ? e.boards : []);
+const boardOnly = (e) => boardsOf(e).length > 0 && !(e.quests || []).length;
 // Status of an event: show (state), cls (side bar), pill (status line), button (1 Keep, 0 Remove, null none), why (details page)
 function statusOf(e, ctx) {
   const st = rowState(e, ctx);
+  if (boardOnly(e) && ['removed', 'now', 'kept', 'can'].includes(st)) return boardStatus(e, st);
   if (st === 'removed') {
     const raidish = /raid or Special/.test(e.why || '');
     return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not restored yet'), button: null,
@@ -89,6 +96,24 @@ function statusOf(e, ctx) {
   const text = q === undefined ? 'Reached later in the Story' : q === null ? 'Not reached in this version of the Story' : `Unlocks at Story Quest ${q}`;
   const why = q === undefined || q === null ? 'Its dates come later in the Story: it opens when your Story reaches them.' : `Its dates come later in the Story: it opens when you reach Story Quest ${q}.`;
   return { show: 'later', cls: 'off', pill: pill('off', 'later', text), button: null, why };
+}
+// a BOARD entry: its boards are in Avatar Boards while their window is in the story week, or while it is kept
+function boardStatus(e, st) {
+  const sale = boardsOf(e).some((b) => b.served && b.type === 2);
+  if (st === 'removed') {
+    return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not restored yet'), button: null,
+      why: 'None of its boards can be served yet: the reasons are listed with the boards below. They come back when they are recovered.' };
+  }
+  if (st === 'now') {
+    return { show: st, cls: 'now', pill: pill('now', 'now', sale ? 'On sale this week' : 'In Avatar Boards this week'), button: null,
+      why: `Its boards are in Avatar Boards this week${sale ? ', at the price of these dates' : ''}, as in the original game.` };
+  }
+  if (st === 'kept') {
+    return { show: st, cls: 'pinned', pill: pill(PILLS.kept[0], '', `${icon('pin')}Kept: its boards are in Avatar Boards`), button: 0,
+      why: 'You keep these boards in Avatar Boards, beside the ones of the week, at their original price. A board you buy stays yours when you keep another event.' };
+  }
+  return { show: st, cls: 'can', pill: pill(PILLS.can[0], '', `${icon('pin')}Past boards — can be kept`), button: 1,
+    why: 'Its dates are over: you can keep it, one event at a time, and its boards are listed in Avatar Boards again at their original price.' };
 }
 const keptOf = (entries, ctx) => entries.find((e) => rowState(e, ctx) === 'kept');
 // «Replaces: <kept event>» over a Keep button; hidden on the kept row, which gets it back when another event is kept (kxRow)
@@ -127,7 +152,7 @@ rows.forEach(function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el)
 // with its chips, the empty-state line and «Matches:» under a row found by FIND.
 // TYPE of an event: the type of its census row (index entries .type); only the kinds in the index get a chip, an unknown one by its code
 const TYPE_OPTS = [['all', 'All'], ['EQ', 'Event Quests', 'camp'], ['STORY', 'Story Events', 'avatar'], ['GEM', 'Gem Quests', 'jewel'], ['COIN', 'Event Coins', 'medal'],
-  ['KEY', 'Keyblade Challenges', 'skill'], ['QUIZ', 'Quizzes', 'daily'], ['CELEB', 'Celebrations', 'lux']];
+  ['KEY', 'Keyblade Challenges', 'skill'], ['QUIZ', 'Quizzes', 'daily'], ['CELEB', 'Celebrations', 'lux'], ['BOARD', 'Avatar Boards', 'avatar']];
 const typeOf = (e) => String(e.type || 'EQ');
 const SHOW_OPTS = [['all', 'All events'], ['now', 'In Events now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later'],
   ['removed', 'Not restored yet', 'removed']];
@@ -156,7 +181,7 @@ function searchOf(e, ctx, index, boards) {
   const type = TYPE_OPTS.find((o) => o[0] === typeOf(e));
   const parts = [catName(e), e.name, ...questNames(e.quests || []), type ? type[1] : '',
     ...bs.flatMap((b) => [b.name, ...b.cells.map((c) => c.reward), b.finish].map(bareReward)).filter((x) => !/^(Max (HP|AP|Cost) \+|Reward$)/.test(x)),
-    ...(ctx.questRewards ? servedOf(e).flatMap((q) => ctx.questRewards(q.stageId)) : [])];
+    ...(ctx.questRewards ? servedOf(e).flatMap((q) => ctx.questRewards(q.stageId)) : []), ...boardsOf(e).map((b) => b.name)];
   const seen = new Set();
   return parts.map((x) => String(x || '').replace(/\s+/g, ' ').replace(/ \| /g, ' / ').trim())
     .filter((x) => x && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase())).join(' | ');
@@ -236,7 +261,10 @@ function catalogPage(index, ctx = {}) {
     const st = statusOf(e, ctx), href = detailHref(e.evStageId), m = e.start.slice(0, 7), served = servedOf(e).length, all = (e.quests || []).length;
     const label = m !== lastM ? `<div class="ml" data-m="${m}">${monthYear(`${m}-01`)}</div>` : '';
     lastM = m;
-    const line = `${dateLine(e)} · ${served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`}`, name = esc(catName(e)), y = e.start.slice(0, 4);
+    const nb = boardsOf(e).length, nbs = boardsOf(e).filter((b) => b.served).length;
+    const count = boardOnly(e) ? (nbs === nb ? plural(nb, 'avatar board') : `${nbs} of ${plural(nb, 'avatar board')} served`)
+      : served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`;
+    const line = `${dateLine(e)} · ${count}`, name = esc(catName(e)), y = e.start.slice(0, 4);
     const done = doneOf(e, ctx), search = esc(searchOf(e, ctx, index, boards)), t = typeOf(e);
     // one minimal row (Part 4 Task 4, catalog_size_budget: about 340 events): the row opens its page (ROWS_JS, from data-eid), the
     // name is the link, the missing card box and the Keep handler are functions of the page; the rows are sent packed, as the
@@ -274,6 +302,7 @@ function catalogPage(index, ctx = {}) {
     + '<div id="none" class="none" style="display:none"></div>'
     + `<div id="rows">${packed.length ? '' : '<p class="n">No events.</p>'}</div>`
     + (packed.length ? `<script id="kxrows" type="application/json">${packCatalog(packed)}</script><script>${UNPACK_JS}</script>${sheet}` : '')
+    + heldSection(index)
     + `<div id="pinmsg" class="pinmsg"></div><script>${KEEP_JS}</script><script>${ROWS_JS.replace('__PILL__', JSON.stringify(PILLS))}</script>${packed.length ? `<script>${js}</script>` : ''}</body></html>`;
 }
 
@@ -345,6 +374,67 @@ const daysText = (days) => days.map(niceDay).join(', ');
 // a served quest with a Booster reward (make-events.js boosters, label boosterLater): the Booster comes with the Boosters (Part 6)
 const boosterLine = (q) => ((q.boosters || []).length ? `<small>${(q.boosters || []).map((b) => `${esc(b.emblemName)} (${b.objective ? `objective ${b.objective}` : 'first clear'})`).join(', ')}: comes with the Boosters</small>` : '');
 
+// A board not served, in plain words (the builder's note and the build reason of avatar-boards.js stay out of the page)
+const BOARD_WHY = [
+  [/^priceUnknown/, 'Its original price is not known: it is never sold at a guessed price.'],
+  [/^(rewardMissing|unpayable cells|completion|no matched cells)/, 'A reward of this board does not exist on this server yet: the board is held until it is found, never with a replacement.'],
+  [/^(windowUnknown|no dated source|no source)/, 'No surviving notice dates this board: it is held until its dates are found.'],
+  [/^chained/, 'It opens after another board that is not served yet.'],
+];
+function boardWhyPlain(why) {
+  if (!why) return 'Not on this server yet: it comes with a later update.';
+  const hit = BOARD_WHY.find(([re]) => re.test(String(why)));
+  return hit ? hit[1] : 'Its data is not complete in the surviving game files yet.';
+}
+// the record labels of a board window (private builder), one short line each
+const BOARD_LABEL_TEXT = {
+  priceFromKhuxwiki: 'Price from khuxwiki: no surviving notice states it',
+  priceFromDonor: 'Price from later game data: no surviving notice states it',
+  windowFromWiki: 'Dates from khuxwiki: no surviving notice dates them',
+  windowFromOtherCensusRow: 'Dates from another notice of the same sale',
+  windowFixedFromNotice: 'Dates read from the notice text',
+  windowToServiceEnd: 'On sale until the end of the service',
+  weeklyRotation: 'One week of a longer sale, as its notice listed it',
+  instanceByDonorOrder: 'Several identical boards in the game data: matched to the dates in order',
+  pairBySkills: 'Matched to its dates by the skills it gives',
+  skillByEffect: 'A skill matched by its effect',
+  medalVariantLetter: 'A medal variant matched by its letter',
+};
+const num = (n) => Number(n).toLocaleString('en-US');
+const boardPrice = (b) => (b.type === 1 ? 'Handed out' : Number(b.price) > 0 ? `${num(b.price)} Jewels` : '—');
+// «Avatar Boards» of the details page: every board of the entry with its dates, price and status (bought, served, or not served
+// with the reason), the labels of its windows, the keep of past boards declared (not original). ctx.boardBought(sphereBoardId)
+function avatarBoardsSection(e, ctx) {
+  const boards = boardsOf(e);
+  if (!boards.length) return '';
+  const status = (b) => {
+    if (!b.served) return `<td class="r">Not served yet<small>${esc(boardWhyPlain(b.why))}</small></td>`;
+    return ctx.boardBought && ctx.boardBought(b.sphereBoardId) ? `<td class="cd">Bought${CROWN}</td>` : `<td>${b.type === 1 ? 'Served' : 'Served, for sale'}</td>`;
+  };
+  const rows = boards.map((b) => `<tr><td>${esc(b.name)}</td><td>${b.window ? esc(`${niceDay(b.window[0])} – ${niceDay(b.window[1])}`) : '—'}</td><td>${esc(boardPrice(b))}</td>${status(b)}</tr>`).join('');
+  const codes = [...new Set((e.avatarBoards || []).flatMap((w) => w.labels || []))];
+  const notes = codes.length ? `<ul class="pl">${codes.map((c) => `<li>${esc(BOARD_LABEL_TEXT[c] || c)}</li>`).join('')}</ul>` : '';
+  return `<h2>Avatar Boards</h2><table class="tt bt"><tr><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
+    + '<p class="n">A board on sale is bought once with Jewels and stays yours; its nodes are opened with Avatar Coins. In the original game these boards were sold '
+    + 'only in their dates: on this server a past entry can be kept in the Event Catalog, and its boards are listed in Avatar Boards again at their original price '
+    + '(an addition of this server, not original).</p>';
+}
+// the end of the catalogue: the avatar boards no dated window places (index.avatarHeld, make-events.js), with the reason
+function heldSection(index) {
+  const held = (index && index.avatarHeld) || [];
+  if (!held.length) return '';
+  // one line per reason, each name once with its count (about 100 boards: the catalogue stays light)
+  const byWhy = new Map();
+  for (const h of held) {
+    const w = boardWhyPlain(h.why);
+    if (!byWhy.has(w)) byWhy.set(w, new Map());
+    byWhy.get(w).set(String(h.name), (byWhy.get(w).get(String(h.name)) || 0) + 1);
+  }
+  const names = (m) => [...m].map(([n, k]) => (k > 1 ? `${n} (${k})` : n)).join(', ');
+  return `<details class="ah"><summary>Avatar boards with no dates on this server (${held.length})</summary><ul class="pl">`
+    + [...byWhy].map(([w, m]) => `<li>${esc(w)} <b>${esc(names(m))}</b></li>`).join('') + '</ul></details>';
+}
+
 // GET /web/event/event/<evStageId>: header (name, card), the «On this server» box first (status, Keep button, the Story line,
 // Rebuilt values closed, quests not served yet, links), then the event and its quests (each served or «Not served yet» with the
 // reason in plain words). null = unknown id (404).
@@ -354,8 +444,10 @@ function detailPage(index, evStageId, ctx = {}) {
   const st = statusOf(e, ctx), kept = keptOf(entries, ctx), title = catName(e);
   const button = st.button === null ? '' : `<div>${keepButton(e.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"')}</div>`;
   const quests = e.quests || [];
+  const nb = boardsOf(e).length, nbs = boardsOf(e).filter((b) => b.served).length;
   const kv = [['Dates', dateRange(e)], ['Game year', GAME_YEARS[gameYearOf(e.start)].name],
-    ['Quests', quests.length === servedOf(e).length ? String(quests.length) : `${servedOf(e).length} of ${quests.length} served`],
+    ...(boardOnly(e) ? [] : [['Quests', quests.length === servedOf(e).length ? String(quests.length) : `${servedOf(e).length} of ${quests.length} served`]]),
+    ...(nb ? [['Avatar boards', nbs === nb ? String(nb) : `${nbs} of ${nb} served`]] : []),
     ...(Array.isArray(e.days) && e.days.length ? [['Open', `Only on ${daysText(e.days)} (its whole day)`]] : [])].map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
   const qRows = quests.map((q) => {
     const done = q.served && ctx.stageDone && ctx.stageDone(q.stageId);
@@ -377,7 +469,8 @@ function detailPage(index, evStageId, ctx = {}) {
   return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
     + `<h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140)}>${box}`
     + `<h2>Event</h2><table class="kv">${kv}</table>`
-    + cards + boardsSection(index, e, ctx) + `<h2>Quests</h2><table class="tt"><tr><th>Quest</th><th>LV</th><th>AP</th><th>Status</th></tr>${qRows}</table>`
+    + cards + boardsSection(index, e, ctx) + avatarBoardsSection(e, ctx)
+    + (boardOnly(e) ? '' : `<h2>Quests</h2><table class="tt"><tr><th>Quest</th><th>LV</th><th>AP</th><th>Status</th></tr>${qRows}</table>`)
     + `<p class="n">The Event Catalog is an addition of this server: in the original game an event was played only in its own dates.</p>${back}<script>${KEEP_JS}</script></body></html>`;
 }
 
@@ -422,4 +515,4 @@ function noticePage(index, evStageId, doc, ctx = {}) {
   }
 }
 
-module.exports = { catalogPage, detailPage, noticePage, statusOf, whyPlain, entriesOf, expandCatalog };
+module.exports = { catalogPage, detailPage, noticePage, statusOf, whyPlain, boardWhyPlain, entriesOf, expandCatalog };

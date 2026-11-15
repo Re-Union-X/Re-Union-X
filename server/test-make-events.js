@@ -1584,6 +1584,45 @@ const tests = {
     assert.deepStrictEqual(me.questMusic({ stageId: 5 }, {}), {});
     assert.throws(() => me.questMusic({ stageId: 5 }, { 5: { bgm: [1, 0, 3] } }), /three sound ids/);
   },
+  // Events Part 7 Task 5: the avatar board records (KHUX_AVATAR_BOARDS) give the Event Catalog its BOARD entries: one per census id,
+  // or per entry key when khuxwiki alone dates it (windowFromWiki: censusId null); a census id with quests gets its boards on its
+  // own entry. No evStage row, no quest; the number from event_ids.json rows (append-only, no donor id). The builder's held
+  // boards go to the entry of their window, else to index.avatarHeld with the unmapped ones; the level boards are not dated
+  board_entries_from_records() {
+    const ab = () => ({ entries: [
+      { censusId: 'EV-B1', key: 'EV-B1/outfit', group: 'outfit', type: 2, window: ['2017-04-03', '2017-04-16'], price: 3000, labels: [], boards: [{ donorId: 9001, name: 'Outfit M' }, { donorId: 9002, name: 'Outfit F' }] },
+      { censusId: 'EV-B1', key: 'EV-B1/skill', group: 'skill', type: 2, window: ['2017-04-10', '2017-04-23'], price: 2000, labels: [], boards: [{ donorId: 9003, name: 'Skill A' }] },
+      { censusId: null, key: 'khuxwiki@2017-05-01/outfit', group: 'outfit', type: 2, window: ['2017-05-01', '2017-05-07'], price: 2000, labels: ['priceFromKhuxwiki', 'windowFromWiki'],
+        boards: [{ donorId: 9004, name: 'Wiki Outfit' }] },
+      { censusId: 'E-1', key: 'E-1/gem', group: 'gem', type: 2, window: ['2019-04-01', '2019-04-07'], price: 2000, labels: [], boards: [{ donorId: 9005, name: 'Gem' }] },
+      { censusId: null, key: 'level/285', group: 'level', type: 1, window: null, level: 285, price: null, labels: [], boards: [{ donorId: 2100119, name: 'Level' }] },
+    ], held: [{ donorId: 9006, name: 'Held One', why: 'rewardMissing: cell 3: medal not found (windows: 2017-04-03..2017-04-16)' },
+      { donorId: 9007, name: 'Draw', why: 'windowUnknown: no dated notice' }], unmapped: [{ donorId: 9008, name: 'Lost', why: 'no source at all' }] });
+    const out = me.buildEvents(records(), CONFIG, master(), undefined, undefined, null, null, { avatarBoards: ab() });
+    const b1 = entry(out, 'EV-B1');
+    assert.ok(b1, 'a BOARD entry per census id');
+    assert.deepStrictEqual([b1.type, b1.reason, b1.noQuests, b1.start, b1.end, b1.available, b1.quests.length, b1.stageIds.length],
+      ['BOARD', 'avatarBoards', 'avatarBoards', '2017-04-03', '2017-04-23', false, 0, 0]);
+    assert.strictEqual(b1.evStageId, CONFIG.evStageBase + out.ids.rows['EV-B1']);
+    assert.ok(!out.evStage.some((r) => r.eventStageId === b1.evStageId), 'no evStage row');
+    assert.deepStrictEqual(b1.avatarBoards.map((w) => [w.key, w.group, w.type, w.price, w.boards.map((b) => b.donorId)]),
+      [['EV-B1/outfit', 'outfit', 2, 3000, [9001, 9002]], ['EV-B1/skill', 'skill', 2, 2000, [9003]]]);
+    assert.ok(/Outfit M/.test(b1.name) && /Skill Enhancement/.test(b1.name), b1.name);
+    assert.deepStrictEqual(b1.held, [{ donorId: 9006, name: 'Held One', why: 'rewardMissing: cell 3: medal not found (windows: 2017-04-03..2017-04-16)' }]);
+    const w = entry(out, 'khuxwiki@2017-05-01/outfit');
+    assert.ok(w && w.type === 'BOARD' && w.avatarBoards[0].labels.includes('windowFromWiki'), 'a khuxwiki-dated entry: its key is its id (the keep value)');
+    const e1 = entry(out, 'E-1');
+    assert.ok(e1.quests.length && e1.type === 'EQ' && e1.available, 'an event with quests keeps them');
+    assert.deepStrictEqual(e1.avatarBoards.map((x) => x.key), ['E-1/gem'], 'and lists its boards');
+    assert.ok(!out.index.entries.some((e) => /level/.test(e.censusId)), 'no entry for the level boards');
+    assert.deepStrictEqual(out.index.avatarHeld.map((h) => h.donorId), [9007, 9008]);
+    assert.ok(!Object.keys(out.ids.rows).some((k) => /900\d/.test(k)), 'no donor id in event_ids.json');
+    const again = me.buildEvents(records(), CONFIG, master(), out.ids, out.anchors, null, null, { avatarBoards: ab() });
+    assert.deepStrictEqual(again.ids.rows, out.ids.rows, 'numbers kept');
+    const none = me.buildEvents(records(), CONFIG, master(), out.ids, out.anchors, null, null, {});
+    assert.strictEqual(none.ids.rows['EV-B1'], out.ids.rows['EV-B1'], 'no records: the numbers stay');
+    assert.ok(!entry(none, 'EV-B1') && !entry(none, 'E-1').avatarBoards, 'no records: no BOARD entry');
+  },
   // the id ranges: a run that needs more numbers than the range holds stops with the range and the count
   id_range_overflow() {
     const cfg = { ...CONFIG, stageMax: CONFIG.stageBase + 2 };

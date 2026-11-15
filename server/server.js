@@ -66,14 +66,20 @@ const playerBoosters = () => boostersMod.boosters({ player, index: boosterIndex(
 // the tests), read again when the file changes
 const avatarBoardsMod = require('./avatar-boards');
 let avatarIndexCache = null;
-function avatarBoardIndex() {
+// the whole file (index, report: the held boards for the Event Catalog, Task 5); {} without it
+function avatarBoardDoc() {
   const f = process.env.KHUX_AVATAR_INDEX || path.join(__dirname, 'game_data', 'avatar_boards.json');
   try {
     const m = fs.statSync(f).mtimeMs;
-    if (!avatarIndexCache || avatarIndexCache.m !== m) avatarIndexCache = { m, data: JSON.parse(fs.readFileSync(f, 'utf8')).index || {} };
-    return avatarIndexCache.data;
-  } catch { return {}; }
+    if (!avatarIndexCache || avatarIndexCache.m !== m) {
+      const doc = JSON.parse(fs.readFileSync(f, 'utf8'));
+      avatarIndexCache = { m, doc, data: doc.index || {} };
+    }
+    return avatarIndexCache.doc;
+  } catch { return NO_AVATAR_DOC; }
 }
+const NO_AVATAR_DOC = Object.freeze({}); // one object: eventIndex() joins again only when the file changes
+function avatarBoardIndex() { return avatarBoardDoc().index || {}; }
 // emblemIds of every response that carries it: the Boosters not expired (the client never drops an expired one itself)
 const activeEmblemIds = () => playerBoosters().activeIds();
 const campaignGifts = require('./campaign-gifts'); // conditional Present campaigns (I-234)
@@ -702,12 +708,24 @@ function servedMasterRows(name, realMs) {
   });
 }
 
+// what the served sphere rows depend on beyond the file (masterBody cache key); an error gives a key that never repeats a stale body
+function sphereServedKey() {
+  try {
+    const realMs = sessionRealMs(), f = process.env.KHUX_AVATAR_INDEX || path.join(__dirname, 'game_data', 'avatar_boards.json');
+    let m = 0;
+    try { m = fs.statSync(f).mtimeMs; } catch { /* no index: no avatar board */ }
+    return `${avatarKept()}:${storyCtx().shopFrom}:${clock.weekIndex(realMs)}:${m}`;
+  } catch (e) { return `err${Date.now()}`; }
+}
 const masterBodyCache = new Map(); // nome -> {key, body, md5}
 function masterBody(name) {
   const file = path.join(MASTER_DIR, name + '.json');
   if (!/^[A-Za-z0-9]+$/.test(name) || !fs.existsSync(file)) return null;
   const st = fs.statSync(file);
-  const key = `${sessionRevision()}:${st.mtimeMs}:${st.size}`;
+  let key = `${sessionRevision()}:${st.mtimeMs}:${st.size}`;
+  // sphere: the served type-2 rows follow the kept event (Event Catalog, a keep can change mid-session), the story week and the
+  // real week of their countdown, and the avatar board index (servedMasterRows)
+  if (name === 'sphere') key += `:${sphereServedKey()}`;
   const hit = masterBodyCache.get(name);
   if (hit && hit.key === key) return hit.body;
   const json = Buffer.from(JSON.stringify(servedMasterRows(name, sessionRealMs())), 'utf8');
@@ -4841,8 +4859,16 @@ function grantRaidItem(item) {
   grantItem(item.type, item.id, item.num);
   if (item.type === 3 && item.skillId) giveSkill((player.medals || []).slice(before), item.skillId, item.skillLv);
 }
-// game_data/events.json (make-events.js). Read once; without it the Events tab lists only the raids, with one warning.
+// game_data/events.json (make-events.js). Read once; without it the Events tab lists only the raids, with one warning. The entries
+// with avatar boards (Events Part 7 Task 5) are joined with game_data/avatar_boards.json (avatar-boards.js catalogIndex: served
+// boards, prices, held reasons), again whenever that file changes
+var eventJoined = null; // var: eventIndex can run before this line
 function eventIndex() {
+  const raw = eventIndexRaw(), doc = avatarBoardDoc();
+  if (!eventJoined || eventJoined.raw !== raw || eventJoined.doc !== doc) eventJoined = { raw, doc, index: avatarBoardsMod.catalogIndex(raw, doc) };
+  return eventJoined.index;
+}
+function eventIndexRaw() {
   if (eventMemo) return eventMemo;
   try {
     eventMemo = JSON.parse(fs.readFileSync(EVENT_INDEX, 'utf8'));
@@ -5043,7 +5069,8 @@ function respondRaidWeb(res, url) {
 const eventPageCtx = (fromCatalog = false) => ({ ...eventRoutes().catalogCtx(), imgVersion: routesEvents.EVENT_IMG_VERSION, fromCatalog,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   stageDone: (id) => catalogStageDone(id), hasNotice: (censusId) => !!eventNotices()?.rows?.[censusId],
-  eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup() });
+  eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup(),
+  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)) });
 // GET /web/event/catalog (Details of the Event Catalog banner; a kept event the index lost is cleared first), /web/event/event/
 // <evStageId> (details page; ?from=catalog: BACK), /web/event/notice/<evStageId> (Details of an event card: its original
 // notice, ?from=event: BACK; always a page, «not available» without it), /web/event/img/v<N>/<evStageId>[-kept].png (the card;

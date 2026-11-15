@@ -28,7 +28,7 @@
 const fs = require('fs');
 const path = require('path');
 const calendar = require('./event-calendar');
-const { rowState, ptWeekday, weekdayOf } = require('./calendar-util');
+const { rowState, ptWeekday, weekdayOf, weekTo } = require('./calendar-util');
 const special = require('./special');
 
 const CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, 'event_config.json'), 'utf8'));
@@ -178,9 +178,17 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   // its days, as the raids kept from the catalogue open on their real days
   const entryOf = (censusId) => entries().find((e) => e.censusId === censusId);
   // kept: null when the index no longer has that census id (a record dropped): inert here, cleared by pruneKept
+  // Part 7 Task 5: a BOARD entry (avatar boards, joined by avatar-boards.js catalogIndex: entry.boards) is «now» while one of its
+  // served boards has a window in the story week (on sale or handed out there), and is kept once past as an event is (one kept at
+  // a time): the kept value is its census id, or its entry key when khuxwiki alone dates it (the id make-events.js gives it)
+  const boardWeek = (e, week) => !!(e && e.available && week.shopFrom
+    && (e.boards || []).some((b) => b.served && b.window && b.window[0] <= weekTo(week) && b.window[1] >= week.shopFrom));
+  const boardKeepable = (e) => !!(e && e.available && (e.boards || []).some((b) => b.served));
   function catalogCtx(realMs = realNow()) {
     const { shopFrom, shopTo } = storyWeek(), kept = view().kept || null;
-    return { shopFrom, shopTo, current: new Set(currentEntries(realMs).map((e) => e.censusId)), kept: kept && entryOf(kept) ? kept : null };
+    const current = new Set(currentEntries(realMs).map((e) => e.censusId));
+    for (const e of entries()) if (e.boards && boardWeek(e, { shopFrom, shopTo })) current.add(e.censusId);
+    return { shopFrom, shopTo, current, kept: kept && entryOf(kept) ? kept : null };
   }
   // GET /web/event/catalog: a kept census id the index no longer has is cleared (saved), so the save holds no dead id; listing the
   // Events tab never writes the save
@@ -209,11 +217,11 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   // an entry by its id or by the id of one of its rows (the Details and Keep buttons of a row card)
   const entryById = (id) => entries().find((x) => x.evStageId === id || (x.rows || []).some((r) => r.evStageId === id));
   // POST /web/event/keep/<evStageId> and /web/event/unkeep (Task 5 buttons): {code, body {ok, why?}}. Only a past event with a
-  // served quest can be kept (else why: now, other, later, removed); keeping one replaces the previous.
+  // served quest (or a served avatar board, Part 7) can be kept (else why: now, other, later, removed); keeping one replaces the previous.
   function keep(evStageId) {
     const id = Number(evStageId), e = entryById(id);
     if (!e) return { code: 404, body: { ok: false, why: 'unknown event' } };
-    const st = calendar.listable(e) ? rowState(e, { ...catalogCtx(), kept: null }) : 'removed';
+    const st = calendar.listable(e) || boardKeepable(e) ? rowState(e, { ...catalogCtx(), kept: null }) : 'removed';
     if (st !== 'can') return { code: 409, body: { ok: false, why: st } };
     state().kept = e.censusId;
     savePlayer();

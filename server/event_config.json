@@ -137,7 +137,8 @@
   "notice": "An information notice of the original game, not an event: it had no quests of its own.",
   "objectiveUnmapped": "An objective of this quest is known only from its text, and no surviving game data proves its code, so the quest is held back: it is never served with a guessed objective.",
   "scheduleLine": "A second notice of an event that is listed under its own row: it had no quests of its own.",
-  "enemyAmbiguous": "This quest has no original map, and our game data holds several versions of one of its enemies with different strength: the quest is held back until the right version is confirmed, never guessed."
+  "enemyAmbiguous": "This quest has no original map, and our game data holds several versions of one of its enemies with different strength: the quest is held back until the right version is confirmed, never guessed.",
+  "avatarBoards": "Avatar boards sold or handed out for a time, with no quest of their own: the boards served on this server are listed on this page with their price."
  },
  "labelPhrases": {
   "wikiQuest": "wikiQuest",

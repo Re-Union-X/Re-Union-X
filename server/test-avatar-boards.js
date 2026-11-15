@@ -306,6 +306,30 @@ const tests = {
     assert.ok(hb && hb.rewardSelect[3] === 34 && hb.rewardId[3] === 1905201);
     assert.ok(!Object.values(out.index).some((e) => [H, HB, HC].includes(e.donorId)), 'never in the index');
   },
+  // Task 5 hardening: a Jewel board whose window has no price is held (priceUnknown), never sold at a guessed price, and never
+  // stops the build; a returning board keeps its priced windows
+  price_unknown_held() {
+    const recs = RECORDS();
+    recs.entries.push({ censusId: 'EV-6', key: 'EV-6/outfit', group: 'outfit', type: 2, window: ['2017-07-03', '2017-07-09'], price: null, labels: [], boards: [board(9501, 'No Price')] });
+    recs.entries.push({ censusId: 'EV-7', key: 'EV-7/outfit', group: 'outfit', type: 2, window: ['2019-02-04', '2019-02-10'], price: 0, labels: [], boards: [board(A, 'Test Outfit')] });
+    const out = ab.buildAvatarBoards({ records: recs, master: MASTER(), ids: {}, boosters: [] });
+    const held = out.report.held.filter((h) => h.why === 'priceUnknown');
+    assert.deepStrictEqual(held.map((h) => [h.donorId, h.keys]), [[A, ['EV-7/outfit']], [9501, ['EV-6/outfit']]]);
+    assert.ok(!out.sphereRows.some((r) => r.sphereBoardId === idOf(out, 9501)) && !idOf(out, 9501), 'no row, no index entry');
+    const a = out.index[idOf(out, A)];
+    assert.deepStrictEqual(a.windows.map((w) => [w.key, w.price]), [['EV-1/outfit', 3000], ['EV-4/outfit', 1500]], 'the priced windows stay');
+  },
+  // Task 5 hardening: the merged list of 190 (setSent 'merge') records the boards on sale it sends and keeps the ones sent before
+  merge_records_sent() {
+    const w = world(), a = idOf(w.out, A), g1 = idOf(w.out, G1);
+    w.player.avatarBoardsSent = [4242];
+    w.r.list(w.player, WEEK1, null, { setSent: 'merge' });
+    assert.deepStrictEqual(w.player.avatarBoardsSent, [4242, a, g1].sort((x, y) => x - y), 'merge: the earlier ones stay, the boards on sale join');
+    w.r.list(w.player, WEEK1, null, { setSent: true });
+    assert.deepStrictEqual(w.player.avatarBoardsSent, [a, g1].sort((x, y) => x - y), 'GET: only the listed ones');
+    w.r.list(w.player, WEEK1, null);
+    assert.deepStrictEqual(w.player.avatarBoardsSent, [a, g1].sort((x, y) => x - y), 'no setSent: unchanged');
+  },
 };
 
 // ---- server.js: two fixture boards on the local master (an outfit on sale with a skill medal, a coin board) ----
@@ -417,6 +441,27 @@ if (haveMaster) {
       assert.strictEqual(a.price, 3000);
       assert.strictEqual(c.endDatetime, rb.END);
       if (std) assert.strictEqual(std.endDatetime, JSON.parse(readFile(path.join(MASTER_DIR, 'sphere.json'), 'utf8')).find((r) => r.sphereBoardId === 2100001).endDatetime);
+    },
+    // Task 5 hardening: the cached sphere body follows the kept event (a keep in the Event Catalog changes the shown price mid-session)
+    server_sphere_body_follows_keep() {
+      // the outfit as a returning board of two past windows: 3000 Jewels first, 1500 when it came back (EV-7)
+      const doc = JSON.parse(readFile(process.env.KHUX_AVATAR_INDEX, 'utf8'));
+      doc.index[SA].windows = [{ key: 'EV-6/outfit', censusId: 'EV-6', window: ['2015-01-05', '2015-01-11'], price: 3000, labels: [] },
+        { key: 'EV-7/outfit', censusId: 'EV-7', window: ['2015-02-02', '2015-02-08'], price: 1500, labels: [] }];
+      fs.writeFileSync(process.env.KHUX_AVATAR_INDEX, JSON.stringify(doc));
+      fs.utimesSync(process.env.KHUX_AVATAR_INDEX, new Date(), new Date(Date.now() + 5000));
+      const ev = p.events;
+      try {
+        const body = () => t.masterBody('sphere').toString('utf8');
+        const shown = () => quiet(() => t.servedMasterRows('sphere', t.realNow())).find((r) => r.sphereBoardId === SA).price;
+        p.events = { kept: null, cleared: {} };
+        const before = quiet(body);
+        assert.strictEqual(shown(), 3000);
+        assert.strictEqual(quiet(body), before, 'same state: the cached body');
+        p.events = { kept: 'EV-7', cleared: {} };
+        assert.strictEqual(shown(), 1500, 'kept: the price of the kept window');
+        assert.notStrictEqual(quiet(body), before, 'kept changed: the body is made again');
+      } finally { p.events = ev; }
     },
   });
 } else console.log('test-avatar-boards: server part skipped (no master_data)');

@@ -84,10 +84,11 @@ const QUIZ_BOARD_LABELS = ['quizBoard', 'quizBoardFootage', 'quizBoardScreenshot
 // board drama is not listed in quizDramas), objectiveMismatch (the private record's khuxwiki objective text contradicts the donor
 // code: held, Task 1 ruling), notice (an information notice of the records, noQuests 'notice': no row, no catalogue row).
 // Part 5 Task 3: objectiveUnmapped (an objective known only as text, code null: held, never a stopgap code; plan Global
-// Constraints «Nothing half-served»), scheduleLine (a second notice of an event, scheduleLineOf: no row, no card, no catalogue row)
+// Constraints «Nothing half-served»), scheduleLine (a second notice of an event, scheduleLineOf: no row, no card, no catalogue row).
+// Part 7 Task 5: avatarBoards (a BOARD entry of the avatar board records: boards only, no quest, avatarCatalog)
 const REASONS = ['shared', 'board', 'coin', 'undated', 'wikiEmpty', 'rewardItemMissing', 'notSelected',
   'enemyMissing', 'mapUnusable', 'mapKeyUsed', 'rewardRowsMissing', 'raidSpecial', 'worldMismatch',
-  'boosterOnly', 'rewardTypeUnknown', 'quizTextMissing', 'objectiveMismatch', 'notice', 'objectiveUnmapped', 'scheduleLine', 'enemyAmbiguous'];
+  'boosterOnly', 'rewardTypeUnknown', 'quizTextMissing', 'objectiveMismatch', 'notice', 'objectiveUnmapped', 'scheduleLine', 'enemyAmbiguous', 'avatarBoards'];
 // flags the private builder writes in a quest label (Task 1): this generator decides them itself (payableTypes, quizDramas,
 // objectiveMismatch), so they carry no label of their own. objectiveResolved (I-251): a note, the donor objective is served as recorded
 const RECORD_FLAGS = ['boosterLater', 'boosterOnly', 'quizTextMissing', 'rewardTypeUnknown', 'objectiveMismatch', 'objectiveResolved'];
@@ -743,6 +744,66 @@ function questMusic(q, over) {
   return { bgmField: m[0], bgmBattle: m[1], bgmBoss: m[2] };
 }
 
+// Avatar boards in the Event Catalog (Events Part 7 Task 5, plan docs/superpowers/plans/2026-11-15-events-part7-avatar-boards.md):
+// the private board records (KHUX_AVATAR_BOARDS, avatar-boards.js reads the same file) give one BOARD entry per census id, or per
+// entry key when only khuxwiki dates the window (windowFromWiki, censusId null): that id is the value the Event Catalog keeps
+// (player.events.kept) and avatar-boards.js isKept reads. An event record with the same census id lists its boards on its own
+// entry. A BOARD entry has no evStage row and no quest; its number is a `rows` number of event_ids.json (append-only, the same
+// space as the event rows: a census id that gets quests later keeps it). entry.avatarBoards [{key, group, type, window, price,
+// labels, boards [{donorId, name}]}]; which board is served (and at which price) or held is joined at run time from
+// game_data/avatar_boards.json (avatar-boards.js catalogIndex). The builder's held boards go to the entry whose window their note
+// names (entry.held), else, with the unmapped ones, to index.avatarHeld (listed at the end of the catalogue with the reason).
+// The level boards are not dated: no entry.
+const BOARD_GROUP_TITLE = { outfit: 'Avatar Boards', gem: 'Gem Boards', skill: 'Skill Enhancement Boards', medal: 'Medal Boards', avatarCoin: 'Avatar Coin Boards',
+  jewelBooster: 'Jewel Booster Boards', avatarCoinBooster: 'Avatar Coin Booster Boards' };
+const BOARD_NAMED = new Set(['outfit', 'medal']);
+function boardEntryName(windows) {
+  return [...new Set(windows.map((w) => w.group))].map((g) => {
+    const t = BOARD_GROUP_TITLE[g] || 'Avatar Boards';
+    if (!BOARD_NAMED.has(g)) return t;
+    const names = [...new Set(windows.filter((w) => w.group === g).flatMap((w) => w.boards.map((b) => String(b.name))))];
+    return `${t}: ${names.length > 4 ? `${names.slice(0, 4).join(', ')} and ${names.length - 4} more` : names.join(', ')}`;
+  }).join(' & ');
+}
+const heldWindow = (why) => { const m = /\(windows: (\d{4}-\d\d-\d\d)\.\.(\d{4}-\d\d-\d\d)\)/.exec(String(why || '')); return m ? [m[1], m[2]] : null; };
+function avatarCatalog(out, records, ids, config, textOf) {
+  const dated = ((records && records.entries) || []).filter((e) => e.group !== 'level' && Array.isArray(e.window) && e.window.length === 2);
+  const byId = new Map();
+  for (const e of dated) {
+    const cid = e.censusId || e.key;
+    if (!cid) throw new Error('events: an avatar board record has neither censusId nor key');
+    if (!byId.has(cid)) byId.set(cid, []);
+    byId.get(cid).push({ key: e.key, group: e.group, type: e.type, window: [...e.window], price: Number(e.price) > 0 ? Number(e.price) : null, labels: [...(e.labels || [])],
+      boards: (e.boards || []).map((b) => ({ donorId: b.donorId, name: b.name })) });
+  }
+  let next = Math.max(0, ...Object.values(ids.rows), ...Object.values(ids.subRows || {})) + 1;
+  const made = [];
+  for (const [cid, windows] of byId) {
+    const own = out.index.entries.find((x) => x.censusId === cid);
+    if (own) { own.avatarBoards = windows; continue; }
+    if (!(cid in ids.rows)) ids.rows[cid] = next++;
+    const evStageId = config.evStageBase + ids.rows[cid];
+    const start = windows.map((w) => w.window[0]).sort()[0], end = windows.map((w) => w.window[1]).sort().slice(-1)[0];
+    made.push({ censusId: cid, evStageId, name: boardEntryName(windows), type: 'BOARD', start, end, stageIds: [], useAp: null, label: 'original', labels: [], noticeIds: [],
+      banner: `/web/event/img/v${config.imgVersion}/${evStageId}.png`, boardSet: null, available: false, reason: 'avatarBoards', noQuests: 'avatarBoards', why: textOf('avatarBoards'),
+      quests: [], avatarBoards: windows });
+  }
+  checkRoom({ ...ids.rows, ...(ids.subRows || {}) }, 'evStage', config.evStageBase, config.evStageMax);
+  checkNumbers({ ...ids.rows, ...(ids.subRows || {}) }, 'row', config.evStageMax - config.evStageBase);
+  out.index.entries.push(...made.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.evStageId - b.evStageId)));
+  // the builder's held boards: to the entry of their window, else listed apart
+  const withBoards = out.index.entries.filter((x) => x.avatarBoards);
+  out.index.avatarHeld = [];
+  for (const h of (records && records.held) || []) {
+    const w = heldWindow(h.why);
+    const to = w && withBoards.find((x) => x.avatarBoards.some((b) => b.window[0] === w[0] && b.window[1] === w[1]));
+    const item = { donorId: h.donorId, name: h.name, why: h.why };
+    if (to) (to.held ||= []).push(item);
+    else out.index.avatarHeld.push(item);
+  }
+  for (const u of (records && records.unmapped) || []) out.index.avatarHeld.push({ donorId: u.donorId, name: u.name, why: u.why });
+}
+
 function buildEvents(records0, config, master, ids, anchors = {}, maps = null, boardSets = null, opts = {}) {
   const records = applyDatesOf(records0);
   const dramas = opts.dramas ? new Set(opts.dramas) : null;
@@ -1352,6 +1413,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     out.catalogEvStage = row;
     out.index.catalog = { evStageId: config.catalogEvStage, stageIds: [config.catalogStage], useAp: [Number(training.useAp) || 0] };
   }
+  if (opts.avatarBoards) avatarCatalog(out, opts.avatarBoards, allIds, config, textOf);
   for (const e of out.index.entries) for (const r of [e.reason, ...e.quests.map((x) => x.reason)]) if (r && !REASONS.includes(r)) throw new Error(`events: unknown reason ${r}`);
   for (const l of [...used].sort()) {
     const why = (config.reconstructedWhy || {})[l];
@@ -1473,7 +1535,12 @@ function patch(masterDir, opts = {}) {
   }
   // the built Boosters (make-emblems.js, Part 6): game_data/boosters.json byId; none: every Booster stays boosterLater / boosterOnly
   const builtBoosters = opts.builtBoosters || Object.keys(readJson(path.join(__dirname, 'game_data', 'boosters.json'), { byId: {} }).byId || {}).map(Number);
-  const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters });
+  // the avatar board records (Part 7, private: KHUX_AVATAR_BOARDS, as avatar-boards.js patch): the BOARD entries of the Event Catalog;
+  // none: no BOARD entry (their event_ids.json numbers stay)
+  let avatarBoards = opts.avatarBoards;
+  if (avatarBoards === undefined) avatarBoards = process.env.KHUX_AVATAR_BOARDS ? readJson(process.env.KHUX_AVATAR_BOARDS) : null;
+  if (!avatarBoards && !opts.records) console.warn('events: KHUX_AVATAR_BOARDS not set (the private avatar board records): no BOARD entry in the Event Catalog');
+  const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters, avatarBoards });
   const added = { stage: out.stage, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...out.evStage], reward: out.reward,
     sphere: out.sphere, sphereArray: out.sphereArray, sphereMasu: out.sphereMasu };
   const clashR = out.reward.find((r) => master.reward.some((m) => m.rewardId === r.rewardId));
@@ -1492,7 +1559,7 @@ function patch(masterDir, opts = {}) {
   }
   own.poi = Object.keys(out.poi).sort((a, b) => a - b);
   fs.writeFileSync(path.join(gameData, 'events.json'), JSON.stringify({ entries: out.index.entries, reasons: out.index.reasons, ...(out.index.catalog ? { catalog: out.index.catalog } : {}),
-    boardSets: out.index.boardSets, own }, null, 1));
+    boardSets: out.index.boardSets, ...(out.index.avatarHeld ? { avatarHeld: out.index.avatarHeld } : {}), own }, null, 1));
   fs.writeFileSync(path.join(gameData, 'event_maps.json'), JSON.stringify(out.maps, null, 1));
   // Event Board card pictures (event-boards.js artLines), imported by tools/ldplayer/session/build-resources.ps1
   fs.writeFileSync(path.join(gameData, 'event_board_art.tsv'), eventBoards.artLines(out.boardArt || []));
