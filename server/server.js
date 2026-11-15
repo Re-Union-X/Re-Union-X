@@ -1249,11 +1249,19 @@ function userAvatarData() {
 // Tutti gli abiti salvati (fino a 6, «Create and save up to six different patterns!»): l'indossato e quelli di
 // player.avatarPatterns (myCoordinateNo -> parti), per /user/avatar/all e /user/avatar/update
 const AVATAR_FIELDS = ['gender', 'hairPartsId', 'hairColorPartsId', 'facePartsId', 'bodyPartsId', 'skinPartsId', 'accessoriesPartsIds'];
+// Always the 6 slots (I-262, 15-11): the orange OUTFIT button steps to the next slot by index, and with fewer entries the client
+// aborted (std::out_of_range: vector, bench 15-11, no request sent). A slot never saved shows the worn outfit, as the Spirit's
+// outfits do (pet.js coordinatesList).
+const AVATAR_SLOTS = 6;
 function userAvatarsData() {
   const worn = userAvatarData();
-  const others = Object.entries(player.avatarPatterns || {}).filter(([no]) => Number(no) !== worn.myCoordinateNo)
-    .map(([no, a]) => ({ ...userAvatarData(), ...a, myCoordinateNo: Number(no), accessoriesPartsIds: a.accessoriesPartsIds || [] }));
-  return [worn, ...others].sort((x, y) => x.myCoordinateNo - y.myCoordinateNo);
+  const saved = player.avatarPatterns || {};
+  const out = [];
+  for (let no = 1; no <= AVATAR_SLOTS; no++) {
+    const a = no === worn.myCoordinateNo ? null : saved[no];
+    out.push(a ? { ...worn, ...a, myCoordinateNo: no, accessoriesPartsIds: a.accessoriesPartsIds || [] } : { ...worn, myCoordinateNo: no });
+  }
+  return out;
 }
 
 // POST /user/avatar/update (azione 43, Outfits > Save): corpo {updateAvatarData: [{myCoordinateNo, gender, defaultFlag,

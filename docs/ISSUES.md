@@ -67,7 +67,7 @@ Last revision: 14 November 2026.
 
 | ID | Status | Title | Detail | Proof |
 |---|---|---|---|---|
-| I-262 | OPEN | **Outfits: «change outfit» does not move to the next default outfit** (tester report 12-11, always) | to reproduce on the bench | |
+| I-262 | DONE | **Outfits: «change outfit» does not move to the next default outfit** (tester report 12-11, always) | **DONE 15-11:** reproduced on the bench as a crash (orange OUTFIT button, `std::out_of_range: vector`, no request sent): the server listed only the saved outfits. `userAvatarsData` now always sends the 6 slots (an unsaved slot shows the worn outfit, as the Spirit outfits); bench: slots 1-6 cycle, Save on slot 2 kept. | |
 | I-263 | OPEN | **Outfits: the default avatar pieces are missing for both genders** (tester report 12-11; maybe the same cause as I-262) | to reproduce on the bench | |
 | I-264 | OPEN | **Titles: with both titles set to «None» the home still shows «Budding Newbie»** (tester report 12-11, always) | server: title update with id 0 | |
 | I-015 | OPEN | Profile message: `adb input text` cannot fill the native EditBox; bench check with the real keyboard (user) still to do. Empty message -> «Nice to meet you!» (I-071) | [home_profilo](notes/home_profilo.md#profilo) | 63e716e |

@@ -26,7 +26,10 @@ check(JSON.parse(fs.readFileSync(SAVE, 'utf8')).avatar?.bodyPartsId === 59, 'out
 check(t.userAvatarPartsData().some((p) => p.avatarPartsId === 59), 'body part 59 not in the owned parts');
 // a second pattern (myCoordinateNo 2, not worn) is kept and listed by /user/avatar/all, the worn one does not change
 const r2 = call(t.respondAvatarUpdate, { updateAvatarData: [{ ...outfit, myCoordinateNo: 2, defaultFlag: 0, bodyPartsId: 1 }] });
-check(r2?.userAvatars?.length === 2, `two patterns expected: ${JSON.stringify(r2?.userAvatars)}`);
+// always the 6 slots (I-262: the OUTFIT button steps by index; fewer entries crashed the client): slot 2 saved, the others the worn look
+const av = r2?.userAvatars || [];
+check(av.length === 6 && av.map((a) => a.myCoordinateNo).join() === '1,2,3,4,5,6', `six slots expected: ${JSON.stringify(av)}`);
+check(av[1].bodyPartsId === 1 && [0, 2, 3, 4, 5].every((i) => av[i].bodyPartsId === 59), `slot 2 saved, others worn: ${JSON.stringify(av)}`);
 check(t.userAvatarData().bodyPartsId === 59, 'saving a non-worn pattern changed the worn outfit');
 fs.rmSync(SAVE, { force: true });
 console.log(errors.length ? errors.map((e) => 'FAIL: ' + e).join('\n') : 'OK');
