@@ -1285,7 +1285,9 @@ tab / Traits row pictures of 905c5caf).
   then the 13 Speed Gem Premium boards and the Sun Gem Board, cut from the top-left corner of khuxwiki's board-layout screenshots
   (`Avatar Board - Speed Gem KHUX` for 2017, `... Speed Gem 2 KHUX` for 2018, `... Sun Gem Board KHUX`; review
   `screenshotsv_cards_cropped.png`).
-  9 boards keep the plain card: Prime - Halloween Sora (khuxwiki has no page or screenshot for it) and the 8 Skill Enhancement runs
+  Prime - Halloween Sora is cut from the clean card in the purchase popup of a player video of 12 October 2018 (the list view
+  draws «Offer ends» and the price over the card, the popup does not).
+  8 boards keep the plain card: the 8 Skill Enhancement runs
   (2020-02-21, 2020-04-20, 2020-10-12, 2020-11-02): khuxwiki has no section for them and none of its board screenshots carries
   their skills. Review sheets: `screenshotsv_cards_found_1.png`, `av_cards_found_2.png`, `av_cards_missing.png`.
 
