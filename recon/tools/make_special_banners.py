@@ -906,13 +906,14 @@ def left_shade(im, rgb, strength=150, width=380):
     return Image.alpha_composite(im, dark)
 
 
-def family_finish(im, title, sub, ink):
+def family_finish(im, title, sub, ink, max_right=None):
     """the common part of every catalogue card: gold title (the old Raid Catalog lettering) as large as fits left of the
-    TRAINING sticker, the white subtitle, the sticker in the top right corner and the square gold frame.
-    im.info['title_box'] = the title's box (tests: never under the sticker)"""
+    TRAINING sticker (or of max_right: a long title that must leave its art clear, Avatar Board Catalog), the white subtitle,
+    the sticker in the top right corner and the square gold frame. im.info['title_box'] = the title's box (tests: never under
+    the sticker)"""
     im = im.copy()
-    px = 46
-    while px > 28 and 20 + ImageDraw.Draw(im).textlength(title, font=title_font(px)) + 6 > TITLE_MAX_RIGHT:
+    px, right = 46, min(TITLE_MAX_RIGHT, max_right or TITLE_MAX_RIGHT)
+    while px > 28 and 20 + ImageDraw.Draw(im).textlength(title, font=title_font(px)) + 6 > right:
         px -= 1
     f = title_font(px)
     m = Image.new('L', im.size, 0)
@@ -1079,6 +1080,85 @@ def event_option(style, coin=None):
             im = paste_shadowed(im, c0.resize((22, 22), Image.LANCZOS), (509, 82), blur=1, alpha=60)
         return family_finish(left_shade(im, (0, 50, 60), 140), EVENT_CATALOG_TITLE, EVENT_CATALOG_SUB, (0, 60, 70))
     raise ValueError('event style %r' % style)
+
+
+# Avatar Board Catalog (Events Part 7 Task 5b, user 15-11: our own banner in this family, in GOLD, as the other catalogue cards
+# composed of original pieces): the gold card of the Special tab (evStage = event_ids.json rows['@avatarBoardCatalog'], written by
+# make_avatar_catalog_banner.py to game_data/event_img). Pieces: original avatar board cards (the 306x306 sphere_incentive cards
+# served to the client, raid_loc/img/sphere_incentive_av/<donorId>.png, local only) and the Avatar Coin of the game UI (the gold
+# heart coin, img/incentive/IncentiveIcon_30.png of the local JP 4.3.1 data, the same coin as SpherePointIcon_VIP)
+AVATAR_CATALOG_TITLE, AVATAR_CATALOG_SUB = 'AVATAR BOARD CATALOG', 'Tap: Training Grounds · Details: all boards'
+AVATAR_CARDS_DIR = os.path.join(ROOT, 'raid_loc', 'img', 'sphere_incentive_av')
+AVATAR_CARDS = (2510033, 2510032, 2510037)     # Formal Minnie (back left), Formal Mickey (front), Ariel (back right)
+AVATAR_COIN = ('img', 'incentive', 'IncentiveIcon_30.png')
+AVATAR_INK = (96, 52, 0)
+
+
+def avatar_coin_path():
+    try:
+        import private_tools
+        return private_tools.local_path('jp_data', *AVATAR_COIN)
+    except Exception:  # noqa: BLE001 - no local data: no coin
+        return None
+
+
+AVATAR_TITLE_RIGHT = 424   # the long title ends here: the coins and the avatars keep the right part of the card
+AVATAR_CUT = 176 / 306     # an original board card: its medals on the left, its avatar from here to the right edge
+
+
+def avatar_figure(card):
+    """the avatar of an original board card: the card's right part from AVATAR_CUT (its medals left out), the cut edge
+    faded over 8 px, trimmed to its visible pixels"""
+    part = card.crop((int(card.width * AVATAR_CUT), 0, card.width, card.height))
+    ramp = Image.new('L', part.size, 255)
+    rd = ImageDraw.Draw(ramp)
+    for x in range(8):
+        rd.line((x, 0, x, part.height - 1), fill=x * 32)
+    part.putalpha(ImageChops.multiply(part.getchannel('A'), ramp))
+    bb = part.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox()
+    return part.crop(bb) if bb else part
+
+
+def avatar_option(style='A', cards_dir=None, coin=None):
+    """640x140 RGBA of the Avatar Board Catalog card: gold rays and a warm glow, the Avatar Coin large behind the avatars of
+    three original board cards (Formal Mickey in front, Formal Minnie and Ariel behind, a little smaller and darker), two
+    small coins, then the family finish (gold title, subtitle, TRAINING, frame), the title kept left of the art"""
+    if style != 'A':
+        raise ValueError('avatar style %r' % style)
+    _ART_BOXES.clear()
+    cards_dir = cards_dir or AVATAR_CARDS_DIR
+    coin = coin if coin is not None else avatar_coin_path()
+    im = background((255, 214, 104), (186, 112, 12), ray=(255, 250, 214), centre=(520, 70), n=18, ray_alpha=40)
+    glow = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse((420, -6, 620, 146), fill=(255, 248, 210, 170))
+    im = Image.alpha_composite(im, inner_clip(glow.filter(ImageFilter.GaussianBlur(18))))
+    if coin is None:
+        warn('Avatar Coin left out of the Avatar Board Catalog card: no local JP data')
+    c0 = art(coin, 128, 'Avatar Coin') if coin else None
+    if c0 is not None:   # the emblem behind the avatars (the Event Catalog's large coin), two small tilted ones at the sides
+        big = c0.resize((104, 104), Image.LANCZOS)
+        im = paste_shadowed(im, big, (486 - 52, 66 - 52), blur=3, alpha=90, colour=(90, 40, 0))
+        for x, y, sz, a in ((612, 110, 34, -16), (448, 116, 30, 14)):
+            ci = c0.resize((sz, sz), Image.LANCZOS).rotate(a, Image.BICUBIC, expand=True)
+            im = paste_shadowed(im, ci, (x - ci.width / 2, y - ci.height / 2), blur=1, alpha=80, colour=(90, 40, 0))
+    # the avatars: (donorId, height, centre x, foot y, darken); back ones first
+    for did, h, cx, foot, dark in ((AVATAR_CARDS[0], 104, 506, 134, 40), (AVATAR_CARDS[2], 104, 590, 134, 40), (AVATAR_CARDS[1], 122, 548, 136, 0)):
+        c = art(os.path.join(cards_dir, '%d.png' % did), 306, 'board card %d' % did)
+        if c is None:
+            continue
+        f = avatar_figure(c)
+        f = f.resize((max(1, int(f.width * h / f.height)), h), Image.LANCZOS)
+        if dark:
+            f = Image.alpha_composite(f, tinted(f, (70, 34, 0, dark)))
+        im = paste_shadowed(im, f, (cx - f.width / 2, foot - h), blur=3, alpha=110, colour=(70, 30, 0))
+    return family_finish(left_shade(im, (110, 58, 0), 165, 400), AVATAR_CATALOG_TITLE, AVATAR_CATALOG_SUB, AVATAR_INK, AVATAR_TITLE_RIGHT)
+
+
+def build_avatar(evstage, event_img, cards_dir=None, coin=None):
+    """writes event_img/<evstage>.png (the Avatar Board Catalog card); -> its path"""
+    path = os.path.join(event_img, '%d.png' % evstage)
+    save_catalog(avatar_option('A', cards_dir, coin), path)
+    return path
 
 
 # ---- Raid option B variants (user 06-11: «Raid B, improved»): dark red / black, raid board cells, one big boss ----

@@ -1,15 +1,16 @@
-"""Banner of the Avatar Board Catalog in the Special tab (Events Part 7 Task 5b, user 15-11): an ORIGINAL picture, never drawn.
+"""Banner of the Avatar Board Catalog in the Special tab (Events Part 7 Task 5b; user 15-11: our own banner in the gold catalogue
+family, in GOLD, composed of original pieces as the Special / Raid / Event Catalog banners; make_special_banners.avatar_option).
 
-    python -I recon/tools/make_avatar_catalog_banner.py [--config F] [--index F] [--out D] [--root D]
-        -> server/game_data/event_img/<evStageId>.png (git-ignored; evStageId = events.json avatarCatalog, make-events.js)
+    python -I recon/tools/make_avatar_catalog_banner.py [--config F] [--ids F] [--out D]
+        -> server/game_data/event_img/<evStageId>.png (git-ignored)
     python -I recon/tools/make_avatar_catalog_banner.py --montage [F]
-        -> D:/Progetto_Restauro_KH_UX/screenshots/avb_catalog_banner_candidates.png (the candidates at banner size, for the user)
+        -> D:/Progetto_Restauro_KH_UX/screenshots/avb_catalog_banner_gold.png (the four catalogue banners, for the user)
 
-The picture is server/event_config.json avatarCatalogBanner, one of avatarCatalogBannerCandidates (paths under --root,
-D:/Progetto_Restauro_KH_UX: original WW notice banners of reference/event_banners_ww, local only, never in the repository).
-The choice is that one line. The file is fitted to 640x140 by make_banner_images.fit (centre crop when the ratio differs) and
-nothing is added to it. Run after make-events.js (the banner's evStage id); after a change bump imgVersion in event_config.json,
-then the master revision.
+evStageId = event_config.json evStageBase + server/event_ids.json rows[avatarCatalogKey]: the number make-events.js gives the
+banner at the master regen (with KHUX_AVATAR_BOARDS). Run after that regen; before it the id does not exist and the run stops.
+Pieces (local only, never in the repository): the original board cards of raid_loc/img/sphere_incentive_av and the Avatar
+Coin of the local JP 4.3.1 data; a missing piece is left out with a WARNING. After a change of the picture bump imgVersion in
+event_config.json, then the master revision.
 """
 import argparse
 import json
@@ -18,15 +19,19 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image, ImageDraw  # noqa: E402
-import make_banner_images as mbi  # noqa: E402
+import make_special_banners as msb  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 ROOT = os.path.dirname(os.path.dirname(REPO))
 CONFIG = os.path.join(REPO, 'server', 'event_config.json')
-INDEX = os.path.join(REPO, 'server', 'game_data', 'events.json')
+IDS = os.path.join(REPO, 'server', 'event_ids.json')
 OUT = os.path.join(REPO, 'server', 'game_data', 'event_img')
-MONTAGE = os.path.join(ROOT, 'screenshots', 'avb_catalog_banner_candidates.png')
+MONTAGE = os.path.join(ROOT, 'screenshots', 'avb_catalog_banner_gold.png')
+# the three catalogue banners already served (game_data, git-ignored), beside the new one in the montage
+SERVED = [('Special Catalog', os.path.join(REPO, 'server', 'game_data', 'special_img', '7000.png')),
+          ('Raid Catalog', os.path.join(REPO, 'server', 'game_data', 'raid_img', '8000.png')),
+          ('Event Catalog', os.path.join(REPO, 'server', 'game_data', 'event_img', '20000.png'))]
 
 
 def _json(path):
@@ -34,40 +39,33 @@ def _json(path):
         return json.load(f)
 
 
-def chosen(config):
-    pick, cands = config.get('avatarCatalogBanner'), config.get('avatarCatalogBannerCandidates') or []
-    if not pick or pick not in cands:
-        sys.exit(f'avatarCatalogBanner {pick!r} is not one of avatarCatalogBannerCandidates (the user picks among the candidates)')
-    return pick
+def evstage_id(config_file=CONFIG, ids_file=IDS):
+    config, ids = _json(config_file), _json(ids_file)
+    n = (ids.get('rows') or {}).get(config.get('avatarCatalogKey'))
+    if not n:
+        sys.exit('%s has no rows[%r] yet: run the master regen with KHUX_AVATAR_BOARDS first (make-events.js numbers the banner)'
+                 % (ids_file, config.get('avatarCatalogKey')))
+    return int(config['evStageBase']) + int(n)
 
 
-def build(config_file=CONFIG, index_file=INDEX, out_dir=OUT, root=ROOT):
-    """writes <out_dir>/<evStageId>.png from the chosen original; -> its path"""
-    config, index = _json(config_file), _json(index_file)
-    ev = (index.get('avatarCatalog') or {}).get('evStageId')
-    if not ev:
-        sys.exit(f'{index_file}: no avatarCatalog (make-events.js writes it with KHUX_AVATAR_BOARDS and the Training Grounds row)')
-    src = os.path.join(root, chosen(config))
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, f'{ev}.png')
-    mbi.fit(Image.open(src)).save(path)
-    return path
+def build(config_file=CONFIG, ids_file=IDS, out_dir=OUT, cards_dir=None, coin=None):
+    """writes <out_dir>/<evStageId>.png; -> its path"""
+    return msb.build_avatar(evstage_id(config_file, ids_file), out_dir, cards_dir, coin)
 
 
-def montage(config_file=CONFIG, out=MONTAGE, root=ROOT):
-    """the candidates one under the other at 640x140, each with its file name; the chosen one framed in gold"""
-    config = _json(config_file)
-    cands, pick = config.get('avatarCatalogBannerCandidates') or [], config.get('avatarCatalogBanner')
-    head, gap = 22, 8
-    sheet = Image.new('RGB', (640 + 2 * gap, len(cands) * (mbi.H + head + gap) + gap), (12, 24, 36))
-    draw = ImageDraw.Draw(sheet)
-    for i, rel in enumerate(cands):
-        y = gap + i * (mbi.H + head + gap)
-        mark = '  <- default pick' if rel == pick else ''
-        draw.text((gap, y + 4), f'{chr(65 + i)}. {os.path.basename(rel)}{mark}', fill=(255, 205, 74) if mark else (220, 230, 240))
-        sheet.paste(mbi.fit(Image.open(os.path.join(root, rel))).convert('RGB'), (gap, y + head))
-        if mark:
-            draw.rectangle((gap - 3, y + head - 3, gap + 640 + 2, y + head + mbi.H + 2), outline=(255, 205, 74), width=3)
+def montage(out=MONTAGE, cards_dir=None, coin=None):
+    """the Special, Raid and Event Catalog banners as served and the new Avatar Board Catalog banner, one under the other at
+    640x140 with their names"""
+    rows = [(name, Image.open(p).convert('RGB') if os.path.exists(p) else None) for name, p in SERVED]
+    rows.append(('Avatar Board Catalog (new, gold)', msb.avatar_option('A', cards_dir, coin).convert('RGB')))
+    head, gap = 20, 8
+    sheet = Image.new('RGB', (640 + 2 * gap, len(rows) * (140 + head + gap) + gap), (22, 30, 58))
+    d = ImageDraw.Draw(sheet)
+    for i, (name, im) in enumerate(rows):
+        y = gap + i * (140 + head + gap)
+        d.text((gap, y + 4), name if im is not None else name + ' (not built here)', fill=(255, 255, 255))
+        if im is not None:
+            sheet.paste(im, (gap, y + head))
     os.makedirs(os.path.dirname(out) or '.', exist_ok=True)
     sheet.save(out)
     return out
@@ -76,15 +74,11 @@ def montage(config_file=CONFIG, out=MONTAGE, root=ROOT):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--config', default=CONFIG)
-    ap.add_argument('--index', default=INDEX)
+    ap.add_argument('--ids', default=IDS)
     ap.add_argument('--out', default=OUT)
-    ap.add_argument('--root', default=ROOT)
     ap.add_argument('--montage', nargs='?', const=MONTAGE, default=None)
     a = ap.parse_args()
-    if a.montage:
-        print(montage(a.config, a.montage, a.root))
-    else:
-        print(build(a.config, a.index, a.out, a.root))
+    print(montage(a.montage) if a.montage else build(a.config, a.ids, a.out))
 
 
 if __name__ == '__main__':
