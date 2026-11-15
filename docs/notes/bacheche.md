@@ -188,3 +188,45 @@ To test the popups again: stop the server, `unlock` of 2100001 to [1..5], `spher
 - Seen on the bench 5 Nov 2026 (kept raids of 9/3/20, 9/14/20, 10/12/20): nodes paying a Draw Ticket, a Power Gem, Spirit part 402109, 6★ Sora & Moogle B and 10 Spooky Cookies, each with its popup and its item in the save ([ISSUES](../ISSUES.md) I-221).
   Also the seasonal ones (rewardSelect 41 with rewardId 1-3: icon and «Draw Ticket» text expected, balance in the Shop's
   seasonal banner) and the new items Sora & Moogle B, Balloon Mike & Sulley, Balloon Axel.
+
+<a id="limited-boards"></a>
+## Limited avatar boards: client behaviour
+
+Bench of 15 November 2026 (master revision 324, save `boostbd`, Events Part 7 Task 1) with six hand-made rows that were
+removed afterwards: two type-1 rows with `openId` 3 and a `price` (one with an `endDatetime` in the past), one type-1 row
+with `openId` 2 and an `openParam` above the player's level, and three type-2 rows with a Jewel `price` (a Gem Board without
+`detailUrl`, two avatar boards with a `detailUrl`, one of them with an `endDatetime` in the past).
+
+- **What is listed.** A board appears in the Avatar Boards list only when its id is both in the master and in the client's
+  board list (`userSphereDatas`). The six master rows alone changed nothing (118/118); sent in `userSphereDatas` they were
+  all listed (124/124), whatever their type, `openId`, `openParam`, `price` or dates. The main list takes types 1, 2, 6, 8,
+  10, 11 and 12 (its check sends `boardTypes` [1,2,6,8,10,11]); the list is ordered by `sphereBoardId`.
+- **Type 1 ignores price, window and opening rule.** A type-1 row with `price` 3000 and an `endDatetime` in the past looks
+  and opens like a standard board: «No. N» tab, Avatar Coins «To Complete», no Jewel price, no countdown; the row with
+  `openParam` 800 opens at LV 304. So for type 1 the server alone decides (by handing the id out) when a board exists. In the
+  donated master `openId` reads: 1 = open from the start, 2 = opened by the Lux level in `openParam` (the standard boards),
+  3 = handed out by the server (Avatar Coin, Booster and all type-2 boards), 5 = opened when the board `openParam` is complete
+  (chained boards).
+- **«No. N» tab.** Shown for type 1 only; N is the last digits of `sphereBoardId` (2100118 shows 118, a test row ending in 6
+  showed 6).
+- **Type 2 not bought (`isBuy` 0).** The card shows the Jewel price plate with `price`, no «No.» tab and no «To Complete».
+  `endDatetime` is read: the card says «Offer ends in N minutes» (a date in the past shows 0 minutes and the board stays in
+  the list: the client hides nothing, the server must drop it). A blue «Details» button appears only when `detailUrl` is not
+  empty; it opens `detailUrl` as given in the web view (a path without host became a `file://` address: an absolute URL is
+  needed).
+- **Buying.** Tapping a type-2 card with `isBuy` 0 opens the purchase popup `SphereBoard_Account_ver120`, a layout our
+  resources do not have yet: the client crashed natively there and sent no request. The popup looks up a copy of the card
+  (`Select_Base`, `Select_Board`, `Select_Kind`), `Txt_Wording`, `Txt_CrownPossessed` and `Txt_CrownPossessed_Label` (the
+  Jewels held), `Button_OK`, `Button_Close` and `Txt_Cancel`. Its OK sends `POST /user/sphere/buy {"sphereBoardId": N}`;
+  the answer must carry `userSphere` as one UserSphereData object, not an array (see the protocol notes). The server has no
+  route for it today and would answer with the generic schema reply (fields at the root), which the client rejects.
+- **Type 2 bought (`isBuy` 1).** The price plate gives way to a Jewel badge on the card; the board opens like a standard one
+  and its nodes are paid in Avatar Coins (the donated Gem Board nodes cost 0). The unlock request is the usual
+  `POST /user/sphere/update {"sphereBoardId", "releaseMasuId"}`. The client shows the node reward popup from the master even
+  when the server refuses the node, so the server must accept type 2 in `/user/sphere/update` (today it refuses every type
+  but 1, 4 and 5).
+- **«Unlocked an Avatar Board!»** Every new entry of `userSphereDatas` in a check answer opens the popup, for type 1 and type
+  2 alike and also for a board that is not bought: boards on sale must not be announced as unlocked.
+- **Card art.** `Board_%04d` of `boardId`: 2 is the gold Jewel-board background, 12 a plain yellow one (Avatar Coin
+  boards), 103 a blue star (level reward boards); all three are in the client's resources. A board without its
+  `img/sphere_incentive/<id>.png` shows an empty card, without errors.
