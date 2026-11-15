@@ -187,7 +187,8 @@ function buildAvatarBoards({ records, master, ids, boosters = null }) {
     out.art.push({ sphereBoardId: id, donorId, boardId: b.boardId || 1 });
     const windows = es.map((e) => ({ key: e.key, censusId: e.censusId || null, window: e.window || null, price: type === SALE ? Number(e.price) : 0, labels: e.labels || [] }));
     out.index[id] = { key: first.key, group: first.group, type, window: first.window || null, price: windows[0].price, windows,
-      ...(first.group === 'level' ? { level: Number(first.level) } : {}), ...(chained ? { chain: idOf(b.openParam) } : {}), donorId, name: b.name };
+      ...(first.group === 'level' ? { level: Number(first.level) } : {}), ...(chained ? { chain: idOf(b.openParam) } : {}),
+      ...(es.every((e) => e.permanent === true) ? { permanent: true } : {}), donorId, name: b.name };
   }
   return out;
 }
@@ -283,11 +284,12 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   // the price served and charged: the window it is listed in (a returning board was often cheaper), else the row's
   function priceNow(id, ctx, kept) { const w = windowNow(id, ctx, kept), e = info(id); return w ? w.price : e ? e.price : 0; }
 
-  // the master row as served: a type-2 row counts down to the end of the story week and shows the price of its window now
+  // the master row as served: a type-2 row counts down to the end of the story week and shows the price of its window now; a
+  // permanent one (Start-Up Boost Board, Task 6b: listed in every week) keeps the far end of its row (no weekly countdown)
   function servedRow(row, ctx = {}, kept = null) {
     const e = info(row.sphereBoardId);
     if (!e || e.type !== SALE) return row;
-    return { ...row, ...(ctx.weekEnd ? { endDatetime: ctx.weekEnd } : {}), price: priceNow(row.sphereBoardId, ctx, kept) || row.price };
+    return { ...row, ...(ctx.weekEnd && !e.permanent ? { endDatetime: ctx.weekEnd } : {}), price: priceNow(row.sphereBoardId, ctx, kept) || row.price };
   }
   const servedEndDatetime = (row, ctx = {}) => servedRow(row, ctx).endDatetime;
 

@@ -199,6 +199,32 @@ const tests = {
     assert.strictEqual(w.r.servedRow(row(c), ctx), row(c), 'type 1: unchanged');
     assert.strictEqual(w.r.servedRow({ sphereBoardId: 2100001, type: 1, endDatetime: rb.END }, ctx).endDatetime, rb.END, 'standard boards: unchanged');
   },
+  // Start-Up Boost Board (Task 6b): a permanent type-2 board (khuxwiki «permanently available from version 2.3.1», date unknown):
+  // listed in every story week, keyblade cost cells (rewardSelect 22, value 5) and no weekly countdown (the row's far end stays)
+  permanent_board_no_countdown() {
+    const P = 9501;
+    const cells = [{ idx: 0, cost: 0, rewardSelect: 22, rewardId: 0, num: 5 }, { idx: 1, cost: 0, rewardSelect: 3, rewardId: 1, num: 1, name: '6★ Test Hero' },
+      { idx: 2, cost: 0, rewardSelect: 22, rewardId: 0, num: 5 }];
+    const rec = { entries: [{ censusId: null, key: 'startUpBoost/medal', group: 'medal', type: 2, window: ['2016-04-07', '2021-06-29'], price: 100,
+      permanent: true, labels: ['permanentFromWiki'], boards: [{ ...board(P, 'Boost Board', 3), cells, completion: { rewardSelect: 3, rewardId: 1, num: 1, name: '6★ Test Hero' } }] }], held: [], unmapped: [] };
+    const out = ab.buildAvatarBoards({ records: rec, master: MASTER(), ids: {}, boosters: [] });
+    const id = idOf(out, P);
+    assert.strictEqual(out.index[id].permanent, true, 'the index says the board is permanent');
+    const masu = out.masuRows[0];
+    assert.deepStrictEqual([masu.rewardSelect[0], masu.rewardValue[0], masu.rewardSelect[2], masu.rewardValue[2]], [22, 5, 22, 5], 'keyblade cost +5 cells');
+    const tables = { sphere: out.sphereRows, sphereArray: out.arrayRows, sphereMasu: out.masuRows };
+    const r = ab.avatarBoardRoutes({ index: out.index, master: (t) => tables[t] || [], now: () => 1, nextUserSphereId: () => 1 });
+    const row = out.sphereRows[0];
+    const ctx = { ...WEEK_LATE, weekEnd: '2019-01-14 08:00:00' };
+    assert.strictEqual(r.servedEndDatetime(row, ctx), rb.END, 'permanent: no weekly countdown, the far end of the row');
+    assert.strictEqual(r.servedRow(row, ctx).price, 100);
+    for (const wk of [WEEK1, WEEK2, WEEK_LATE, { shopFrom: '2016-04-07', shopTo: '2016-04-13' }, { shopFrom: '2021-06-03', shopTo: '2021-06-09' }]) {
+      assert.deepStrictEqual(r.listedIds({}, wk), [id], `listed in the week ${wk.shopFrom}`);
+    }
+    // a non-permanent board still counts down
+    const w = world();
+    assert.strictEqual(w.out.index[idOf(w.out, A)].permanent, undefined, 'only a permanent entry carries the flag');
+  },
   type2_node_unlock_accepted() {
     const w = world(), a = idOf(w.out, A), c = idOf(w.out, C);
     w.player.spherePoint = 100;
