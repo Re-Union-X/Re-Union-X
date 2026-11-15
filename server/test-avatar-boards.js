@@ -225,6 +225,19 @@ const tests = {
     const w = world();
     assert.strictEqual(w.out.index[idOf(w.out, A)].permanent, undefined, 'only a permanent entry carries the flag');
   },
+  // user 15-11 (Task 6b): a board listed only through the kept catalogue entry has no weekly countdown (the keep does not end
+  // with the week); a board in this week's window keeps the week end, also when its entry is kept
+  kept_board_no_countdown() {
+    const w = world(), a = idOf(w.out, A);
+    const row = w.out.sphereRows.find((r) => r.sphereBoardId === a);
+    const end = '2019-01-14 08:00:00';
+    // A: windows EV-1 (2017-04-03..16) and EV-4 (2018-03-19..25)
+    assert.strictEqual(w.r.servedEndDatetime(row, { ...WEEK1, weekEnd: end }), end, 'week board: the end of the story week');
+    assert.strictEqual(w.r.servedRow(row, { ...WEEK_LATE, weekEnd: end }, 'EV-1').endDatetime, rb.END, 'kept only: the far end of the row');
+    assert.strictEqual(w.r.servedRow(row, { ...WEEK_LATE, weekEnd: end }, 'EV-1').price, 3000, 'kept only: the price of the kept window');
+    assert.strictEqual(w.r.servedRow(row, { ...WEEK1, weekEnd: end }, 'EV-1').endDatetime, end, 'in the week and kept: the week end');
+    assert.strictEqual(w.r.servedRow(row, { ...WEEK_RET, weekEnd: end }, 'EV-1').endDatetime, end, 'in the week (another window) and kept: the week end');
+  },
   type2_node_unlock_accepted() {
     const w = world(), a = idOf(w.out, A), c = idOf(w.out, C);
     w.player.spherePoint = 100;

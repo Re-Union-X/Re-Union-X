@@ -284,12 +284,14 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   // the price served and charged: the window it is listed in (a returning board was often cheaper), else the row's
   function priceNow(id, ctx, kept) { const w = windowNow(id, ctx, kept), e = info(id); return w ? w.price : e ? e.price : 0; }
 
-  // the master row as served: a type-2 row counts down to the end of the story week and shows the price of its window now; a
-  // permanent one (Start-Up Boost Board, Task 6b: listed in every week) keeps the far end of its row (no weekly countdown)
+  // the master row as served: a type-2 row with a window in the story week counts down to the end of that week and shows the price
+  // of its window now. A permanent one (Start-Up Boost Board, Task 6b: listed in every week) and one listed only through the kept
+  // catalogue entry (user 15-11: the keep does not end with the week) keep the far end of their row (no weekly countdown)
   function servedRow(row, ctx = {}, kept = null) {
     const e = info(row.sphereBoardId);
     if (!e || e.type !== SALE) return row;
-    return { ...row, ...(ctx.weekEnd && !e.permanent ? { endDatetime: ctx.weekEnd } : {}), price: priceNow(row.sphereBoardId, ctx, kept) || row.price };
+    const week = !e.permanent && (e.windows || []).some((w) => inWeek(w.window, ctx));
+    return { ...row, ...(ctx.weekEnd && week ? { endDatetime: ctx.weekEnd } : {}), price: priceNow(row.sphereBoardId, ctx, kept) || row.price };
   }
   const servedEndDatetime = (row, ctx = {}) => servedRow(row, ctx).endDatetime;
 
