@@ -945,6 +945,11 @@ require('./make-raid').patch(OUT);
 require('./make-events').patch(OUT);
 // Raid «AP 0» campaign: evCampaign rows type 7 power 0 over the raid quest stages written just above (make-ev-campaign.js)
 require('./make-ev-campaign').patch(OUT);
+// Limited, returning and level avatar boards (Events Part 7, avatar-boards.js): the 6 skills of the donated master (KHUX_DONOR_MASTER,
+// label skillFromDonor) into skill.json, then the rows of the private board records (KHUX_AVATAR_BOARDS; without it no board)
+// after the Raid and Event Boards: sphere 5000000+ (event_ids.json avatarBoards) and the level boards 2100119-2100126;
+// game_data/avatar_boards.json (index of the server). After make-emblems (Booster cells) and before the reward renumbering below
+require('./avatar-boards').patch(OUT);
 // rewards written above by the generators that read Roboloid-numbered sources (special, raid, story): medal ids mapped (I-225)
 console.log('medal-renumber (rewards):', JSON.stringify(medalRenumber.patch(OUT)));
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +

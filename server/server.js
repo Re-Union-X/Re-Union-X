@@ -62,6 +62,18 @@ function boosterIndex() {
   } catch { return { byId: {}, byName: {} }; }
 }
 const playerBoosters = () => boostersMod.boosters({ player, index: boosterIndex(), realNow, log: (l) => console.log(l) });
+// Limited and returning avatar boards (Events Part 7, avatar-boards.js): game_data/avatar_boards.json index (KHUX_AVATAR_INDEX for
+// the tests), read again when the file changes
+const avatarBoardsMod = require('./avatar-boards');
+let avatarIndexCache = null;
+function avatarBoardIndex() {
+  const f = process.env.KHUX_AVATAR_INDEX || path.join(__dirname, 'game_data', 'avatar_boards.json');
+  try {
+    const m = fs.statSync(f).mtimeMs;
+    if (!avatarIndexCache || avatarIndexCache.m !== m) avatarIndexCache = { m, data: JSON.parse(fs.readFileSync(f, 'utf8')).index || {} };
+    return avatarIndexCache.data;
+  } catch { return {}; }
+}
 // emblemIds of every response that carries it: the Boosters not expired (the client never drops an expired one itself)
 const activeEmblemIds = () => playerBoosters().activeIds();
 const campaignGifts = require('./campaign-gifts'); // conditional Present campaigns (I-234)
@@ -283,6 +295,7 @@ function route(url) {
   if (p.startsWith('/user/album/') && !p.startsWith('/user/album/challenge')) return 'album';
   if (p === '/user/sphere') return 'spherelist';
   if (p === '/user/sphere/update') return 'sphereupdate';
+  if (p === '/user/sphere/buy') return 'spherebuy'; // purchase of a type-2 avatar board (action 73)
   if (p.startsWith('/user/sphere/check')) return 'spherecheck';
   if (p === '/user/mission/receive') return 'missionreceive';
   if (p === '/user/update') return 'userupdate';
@@ -655,6 +668,14 @@ function servedMasterRows(name, realMs) {
     const off = clockOffset();
     const idx = boosterIndex().byId || {};
     return makeEmblems.servedRows(rows, playerBoosters().activeUntil(realMs), (ms) => clock.fakeString(ms, off), realMs, (id) => (idx[id] || {}).spanDays);
+  }
+  // sphere: the type-2 avatar boards count down to the end of the story week (the Shop's rotation, fake time) and show the price of
+  // the window they are listed in (avatar-boards.js servedRow)
+  if (name === 'sphere') {
+    try {
+      const ctx = avatarCtx(realMs), kept = avatarKept(), ab = avatarBoards();
+      return rows.map((r) => ab.servedRow(r, ctx, kept));
+    } catch (e) { console.log(`[avatar boards] served rows: ${e.message}`); return rows; }
   }
   if (name === 'moogleshop') {
     const end = clock.fakeString(clock.weekStartOf(clock.weekIndex(realMs) + 1), clock.twinOffset(realMs));
@@ -2880,16 +2901,17 @@ function sphereNodes(board) {
 // Only type 1 boards open with the level: Raid Boards (type 5) are handed out by the raid they belong to.
 function sphereBoards() {
   player.sphere = player.sphere || {};
-  const level = luxRankFor(player.lux);
+  const level = luxRankFor(player.lux), avatarIds = avatarBoardIndex();
   for (const b of masterRows('sphere')) {
-    if (b.type !== 1 || b.price || b.openParam > level || player.sphere[b.sphereBoardId]) continue;
+    // the limited and level avatar boards (avatar-boards.js) are listed by their own rules
+    if (b.type !== 1 || b.price || b.openParam > level || player.sphere[b.sphereBoardId] || avatarIds[b.sphereBoardId]) continue;
     player.sphere[b.sphereBoardId] = { id: nextUserSphereId(), unlock: [], getDatetime: realNow() };
   }
   return player.sphere;
 }
 // userSphereBoardId: one sequence for the standard, Raid (type 5) and Event Boards (type 4)
 const nextUserSphereId = () => Math.max(0, ...[...Object.values(player.sphere || {}), ...Object.values(player.raidSphere || {}),
-  ...Object.values(player.eventSphere || {})].map((s) => s.id)) + 1;
+  ...Object.values(player.eventSphere || {}), ...Object.values(player.avatarSphere || {})].map((s) => s.id)) + 1;
 
 // Raid Boards (type 5, master rows of make-raid.js / raid-boards.js; client path docs/notes/bacheche.md «Raid Boards»).
 // player.raidSphere[sphereBoardId] = {id, unlock[], getDatetime}, made when the board is first handed out and kept for good,
@@ -2904,13 +2926,15 @@ function raidSphereBoards() {
   for (const id of active) if (!player.raidSphere[id]) player.raidSphere[id] = { id: nextUserSphereId(), unlock: [], getDatetime: realNow() };
   return { active, all: new Set([...ids.all, ...Object.keys(player.raidSphere).map(Number)]) };
 }
-const sphereState = (sphereBoardId) => sphereBoards()[sphereBoardId] || (player.raidSphere || {})[sphereBoardId] || (player.eventSphere || {})[sphereBoardId];
+const sphereState = (sphereBoardId) => sphereBoards()[sphereBoardId] || (player.raidSphere || {})[sphereBoardId] || (player.eventSphere || {})[sphereBoardId]
+  || (player.avatarSphere || {})[sphereBoardId];
 
 function userSphereData(sphereBoardId) {
   const s = sphereState(sphereBoardId);
   const board = masterRows('sphere').find((r) => r.sphereBoardId === Number(sphereBoardId));
   const done = board && sphereNodes(board).every((n) => s.unlock.includes(n));
-  return { userSphereBoardId: s.id, sphereBoardId: Number(sphereBoardId), isBuy: 1, status: done ? 3 : 1,
+  // isBuy 0 only on a type-2 avatar board not bought (price plate, «Offer ends in», the tap opens the purchase popup)
+  return { userSphereBoardId: s.id, sphereBoardId: Number(sphereBoardId), isBuy: avatarBoards().isBuy(player, sphereBoardId), status: done ? 3 : 1,
     unlockMasuIds: s.unlock.slice(0, 23), getDatetime: outTime(s.getDatetime, serverTime()) };
 }
 
@@ -2922,7 +2946,10 @@ function userSphereAll({ setSent = false } = {}) {
   if (setSent) player.raidSphereSent = [...new Set([...(setSent === 'merge' ? player.raidSphereSent || [] : []), ...raidIds])];
   let eventIds = [];
   try { eventIds = eventBoards().list({ setSent }); } catch (e) { console.log(`[event boards] list: ${e.message}`); }
-  return { userSphereDatas: [...Object.keys(sphereBoards()).map(Number), ...raidIds, ...eventIds].map(userSphereData), notChargedSphereBoardIds: [] };
+  // the avatar boards listed now: on sale (type 2, only ever sent by this list), bought, handed out, level (avatar-boards.js)
+  let avatarIds = [];
+  try { avatarIds = avatarBoards().list(player, avatarCtx(), avatarKept(), { setSent }); } catch (e) { console.log(`[avatar boards] list: ${e.message}`); }
+  return { userSphereDatas: [...Object.keys(sphereBoards()).map(Number), ...raidIds, ...eventIds, ...avatarIds].map(userSphereData), notChargedSphereBoardIds: [] };
 }
 
 // POST /user/sphere/check (azioni 60/61): ogni voce di userSphereDatas e' per il client una
@@ -2956,9 +2983,12 @@ function respondSphereCheck(res, req) {
   let ev = { add: [], close: [] };
   try { ev = eventBoards().check(req || {}); } catch (e) { console.log(`[event boards] check: ${e.message}`); }
   if (ev.add.length || ev.close.length) console.log(`[event boards] check ${JSON.stringify(req)}: +${ev.add.join(',') || '-'} closed ${ev.close.join(',') || '-'}`);
+  // avatar boards: a board on sale is never in this answer (every entry pops «Unlocked an Avatar Board!»)
+  let av = { add: [], close: [] };
+  try { av = avatarBoards().check(player, req || {}, avatarCtx(), avatarKept()); } catch (e) { console.log(`[avatar boards] check: ${e.message}`); }
   savePlayer();
-  const userSphere = { userSphereDatas: [...fresh.map(userSphereData), ...add.map(userSphereData), ...ev.add.map(userSphereData)], notChargedSphereBoardIds: [] };
-  send(res, 200, { ret: ret(), userSphere, closeEventSphereBoardIds: [...close, ...ev.close] });
+  const userSphere = { userSphereDatas: [...fresh.map(userSphereData), ...add.map(userSphereData), ...ev.add.map(userSphereData), ...av.add.map(userSphereData)], notChargedSphereBoardIds: [] };
+  send(res, 200, { ret: ret(), userSphere, closeEventSphereBoardIds: [...close, ...ev.close, ...av.close] });
 }
 
 // premio di un nodo (rewardSelect di sphereMasu): 12 HP, 21 AP, 22 costo del deck (bonus sommati
@@ -2970,8 +3000,12 @@ function grantSphereReward(masu, i) {
   if (sel === 12) bonus.hp += val;
   else if (sel === 21) bonus.ap += val;
   else if (sel === 22) bonus.cost += val;
-  else if (sel === 3) grantItem(3, id, val);
-  else if (sel === 19 || sel === 20 || sel === 23) player.avatarParts = [...new Set([...(player.avatarParts || []), id])];
+  else if (sel === 3) {
+    // a skill medal (avatar boards: the 6★ Scrooge with rewardExpand 3, rewardExpandId = the skill) comes with its skill
+    const before = (player.medals || []).length, skill = avatarBoardsMod.cellSkill(masu, i);
+    grantItem(3, id, val);
+    if (skill) giveSkill((player.medals || []).slice(before), skill);
+  } else if (sel === 19 || sel === 20 || sel === 23) player.avatarParts = [...new Set([...(player.avatarParts || []), id])];
   else if (sel === 2) grantItem(2, 0, val);
   else if (sel === 5 || sel === 7 || sel === 33 || sel === 41) grantItem(sel, id, val);
   // a Booster cell (Event or Raid Board, Events Part 6): once per board cell, ever (boosters.js)
@@ -2989,6 +3023,19 @@ function respondSphereUpdate(res, req) {
   const boardId = Number(req?.sphereBoardId);
   const board = masterRows('sphere').find((r) => r.sphereBoardId === boardId);
   const isRaid = board?.type === 5;
+  // limited and level avatar boards (avatar-boards.js): listed now, a type-2 one bought; paid in Avatar Coins, completion index 22
+  if (board && avatarBoards().isAvatarBoard(boardId)) {
+    const r = avatarBoards().update(player, boardId, req?.releaseMasuId, !!req?.allOpen, avatarCtx(), avatarKept());
+    console.log(r.ok ? `[sphere] avatar board ${boardId}: nodes ${r.nodes.join(',')} (-${r.cost} Avatar Coin)` : `[sphere] unlock refused: avatar board ${boardId} (${r.why})`);
+    const as = (player.avatarSphere || {})[boardId];
+    savePlayer();
+    return send(res, 200, {
+      ret: ret(),
+      userData: { userPoint: userPointData(now), userDetail: userDetailData() },
+      userSphere: { userSphereDatas: as ? [userSphereData(boardId)] : [], notChargedSphereBoardIds: [] },
+      ...inventoryBlocks(now, snap),
+    });
+  }
   // Event Boards (type 4): routes-event-boards.js update (focus set, chain, window, the set's Event Coins, each reward once)
   if (board?.type === 4) {
     const r = eventBoards().update(boardId, req?.releaseMasuId, !!req?.allOpen);
@@ -3032,6 +3079,23 @@ function respondSphereUpdate(res, req) {
     userSphere: { userSphereDatas: s ? [userSphereData(boardId)] : [], notChargedSphereBoardIds: [] },
     ...inventoryBlocks(now, snap),
   });
+}
+
+// POST /user/sphere/buy (action 73), body {sphereBoardId} from the purchase popup SphereBoard_Account_ver120: a type-2 avatar board
+// listed now, for the Jewels of its window (avatar-boards.js buy). Answer: userSphere = ONE UserSphereData object, not the list
+// (docs/notes/bacheche.md); the client merges it (isBuy 1: the board opens). A refusal is {ret} only, as the Shop's: the client
+// shows «200 ERROR :73» and charges nothing
+function respondSphereBuy(res, req) {
+  const id = Number(req?.sphereBoardId);
+  let r;
+  try { r = avatarBoards().buy(player, id, avatarCtx(), avatarKept()); } catch (e) { r = { ok: false, why: e.message }; }
+  if (!r.ok) {
+    console.log(`[sphere] purchase refused: board ${id} (${r.why}${r.why === 'jewels' ? `: ${player.freeStone || 0} < ${r.price}` : ''})`);
+    return send(res, 200, { ret: ret() });
+  }
+  savePlayer();
+  console.log(`[sphere] avatar board ${id} bought: -${r.price} Jewels (${player.freeStone} left)`);
+  send(res, 200, { ret: ret(), userSphere: userSphereData(id) });
 }
 
 // Liste dell'inventario delle risposte 44/49/190.
@@ -4806,6 +4870,18 @@ function eventRoutes() {
     grantBooster: (emblemId, from) => playerBoosters().grant(emblemId, from),
   });
 }
+// Limited and level avatar boards (avatar-boards.js): game_data/avatar_boards.json, the story week of storyCtx(), the Lux level and
+// the kept event (Event Catalog, player.events.kept: a census id or an avatar entry key)
+var avatarBoardsMemo = null; // var: userSphereData can run before this line
+function avatarBoards() {
+  return avatarBoardsMemo ??= avatarBoardsMod.avatarBoardRoutes({ index: avatarBoardIndex, master: masterRows, grantSphereReward, now: realNow, nextUserSphereId,
+    log: (l) => console.log(l) });
+}
+function avatarCtx(realMs = realNow()) {
+  const c = storyCtx();
+  return { shopFrom: c.shopFrom, shopTo: c.shopTo, level: luxRankFor(player.lux), weekEnd: avatarBoardsMod.weekEndFake(clock, realMs) };
+}
+const avatarKept = () => (player.events && player.events.kept) || null;
 // Event Coins and Event Boards (type 4, routes-event-boards.js): the sets of events.json boardSets, available while a feeder
 // event is in the story week (eventRoutes().currentEntries) or is the kept one (Event Catalog)
 var eventBoardsMemo = null; // var: grantItem and userPointData can run before this line
@@ -5448,6 +5524,7 @@ function handler(scheme) {
       // /check/170119 (azioni 60/61: userSphere in merge, closeEventSphereBoardIds se checkTypes ha 3)
       if (kind === 'spherelist') { const userSphere = userSphereAll({ setSent: true }); savePlayer(); return send(res, 200, { ret: ret(), userSphere }); }
       if (kind === 'sphereupdate') return respondSphereUpdate(res, entry.bodyDecoded);
+      if (kind === 'spherebuy') return respondSphereBuy(res, entry.bodyDecoded);
       if (kind === 'spherecheck') return respondSphereCheck(res, entry.bodyDecoded);
       if (kind === 'missionreceive') return respondMissionReceive(res, entry.bodyDecoded);
       if (kind === 'userdetailupdate') return respondUserDetailUpdate(res, req.url.split('?')[0], entry.bodyDecoded);
@@ -5777,6 +5854,7 @@ module.exports._test = {
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
   eventRoutes, eventIndex, // server/test-event-routes.js
   eventBoards, // server/test-event-board-routes.js
+  avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
   respondEventWeb, respondEventPost, // server/test-event-pages.js
   raidIndex, respondSphereCheck, respondSphereUpdate, userSphereAll, raidPageCtx, // server/test-raid-boards.js
   storyCtx, // server/test-raid-routes.js, server/test-raid-boards.js (the Shop week the raids follow)
