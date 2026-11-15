@@ -1420,3 +1420,30 @@ User design 15-11: a board listed in Avatar Boards **only because of the Avatar 
 - **Fix round 1:** unkeeping a bought board gives its original back silently (marked sent by the check, no «Unlocked an Avatar
   Board!» for a board the player owns); a hand-out board delivered as its twin counts as owned (catalogue filter); the twin
   rows are left out of the Booster-cell count of the Events notice.
+
+### KEPT twin boards served and benched (master revision 331, resources 130, 16 November 2026)
+
+Regen: the r328 line plus `KHUX_AVATAR_BOARDS` («+461 boards (type 2: 343, type 1: 118) and 453 KEPT twins»), `event_ids.json
+avatarTwins` 453 (n = the avatarBoards number). Twin cards made again from the cleaned section 56 cards (445). `build-resources.ps1
+-Append` -> resources **130**: 487 records, 68 MB (445 twin cards + the 42 cleaned loc cards), 1804 s (first cached run: the
+raid-model stamp and the btf_fix states were made, `import_jp_coco` 457 s, `resource_pack` 321 s, `import_originals` 270 s,
+`btf_fix` 245 s). Bench save `avb20` with 20000 test Jewels (pre-6c copy `tmp\t6c_saves\avb20.pre6c.json`).
+
+| Check | Result | Screenshots (D:\Progetto_Restauro_KH_UX\screenshots) |
+|---|---|---|
+| Kept entry EV-0311 at login | Power / Speed / Magic Gem (Oct. 2017) listed as KEPT BOARD cards, 2000 Jewels, no «Offer ends» plate; this week's Festive Robe / Gold «Offer ends in 8 hours»; no popup on the home | t6c_av1, t6c_av2, t6c_av6 |
+| Buy through a twin | KEPT Power Gem: «Spend 2000 Jewels», 20000 -> 18000 once; save: bought 5000094 (the original id) | t6c_buy1, t6c_buy2 |
+| Unlock on the twin | «Unlocked Power Gem!»; save: `avatarSphere[5000094].unlock [19]`, no twin key | t6c_open1, t6c_node1 |
+| Unkeep, re-enter | Speed / Magic twins gone (176 -> 174); the bought Power Gem stays as its twin, 1/19, until the next login | t6c_unk2 |
+| Login after the unkeep | the Power Gem back as itself, no popup (174) | t6c_home3, t6c_av8 |
+| Re-keep | one «Unlocked an Avatar Board!» per twin with the KEPT card; Power Gem twin 1/19 (progress kept), Jewels unchanged | t6c_rk1, t6c_rk4, t6c_rk5 |
+| NEW flag | the client marks every newly added id «NEW» (the twins after a keep); it keeps the flag per id | t6c_rk4, t6c_moon |
+| Cleaned cards | Gem 2017 / 2018, Sun, Moon, Prime - Halloween Sora twins: no coloured corners | t6c_sun2, t6c_moon, t6c_hs1, t6c_g18b |
+| Avatar Board Catalog | board cards in the rows; Filters Bought + In progress = 2 entries (Gem Boards Oct. 2017, Avatar Coin Booster Boards); entry page table Board / Dates / Price / Status, Power Gem «Bought» | t6c_cat1, t6c_f2, t6c_f3, t6c_page2 |
+| Crash | none (no tombstone, game alive to the end) | t6c_end |
+
+**Bug found and fixed on the bench (6c5bfa05):** after the unkeep the bought Power Gem vanished from Avatar Boards (173). The fix
+round 1 «silent» path marked it sent on the server, but the client learns a board only from a check answer (a popup) or the
+login list. Now a bought board stays listed as the twin the client holds until the next login list, which gives the original
+back with no popup (re-benched: t6c_unk2, t6c_av8). Not benched: a bought board in its own later week (needs a week change; covered
+by `twin_buy_once` / `twin_unkeep_bought_no_popup`).
