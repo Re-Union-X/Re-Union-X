@@ -661,6 +661,27 @@ const tests = {
     const v = world(), c = idOf(v.out, C);
     assert.deepStrictEqual(v.r.check(v.player, HOME_CHECK, WEEK2, null).add.filter((id) => id !== L), [c]);
   },
+  // fix round 2: a hand-out board delivered only as its twin is not announced again as itself after the unkeep (nor when its own
+  // week comes); one kept without being delivered still is
+  twin_unkeep_handout_no_popup() {
+    const HOME_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
+    const LIST_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] };
+    const w = world(), c = idOf(w.out, C), tc = twinOf(w.out, C);
+    w.player.avatarBoardsSent = [];
+    w.r.markKept(w.player, WEEK_LATE, 'EV-3');
+    assert.deepStrictEqual(w.r.check(w.player, LIST_CHECK, WEEK_LATE, 'EV-3').add, [tc], 'delivered as the twin');
+    w.r.markKept(w.player, WEEK_LATE, null);
+    assert.deepStrictEqual(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, null).close, [tc]);
+    // its own week (EV-3, WEEK2): listed as itself, no popup, held silently
+    for (const body of [LIST_CHECK, HOME_CHECK]) assert.ok(!w.r.check(w.player, body, WEEK2, null).add.includes(c), 'no second popup');
+    assert.ok(w.player.avatarBoardsSent.includes(c));
+    // kept and unkept without ever entering the list: the twin never reached the client, the original is announced once
+    const v = world(), vc = idOf(v.out, C);
+    v.player.avatarBoardsSent = [];
+    v.r.markKept(v.player, WEEK_LATE, 'EV-3');
+    v.r.markKept(v.player, WEEK_LATE, null);
+    assert.ok(v.r.check(v.player, HOME_CHECK, WEEK2, null).add.includes(vc));
+  },
   // fix round 1 (review finding 2): a hand-out board delivered only as its twin is owned
   twin_owned_through_twin() {
     const w = world(), c = idOf(w.out, C), tc = twinOf(w.out, C);

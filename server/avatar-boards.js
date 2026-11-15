@@ -374,6 +374,15 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     if (!s.twinId) s.twinId = nextUserSphereId();
     return { id: s.twinId, unlock: s.unlock, getDatetime: s.getDatetime };
   }
+  // fix round 2: a twin id the client was given marks its original's state (twinHeld): the board reached the client, so the
+  // original listed again later (unkeep, its own week) is held silently, never announced a second time
+  function markTwinsHeld(player) {
+    for (const id of (player.avatarBoardsSent || []).map(Number)) {
+      if (!isTwin(id)) continue;
+      const st = (player.avatarSphere || {})[origOf(id)];
+      if (st) st.twinHeld = true;
+    }
+  }
   const isBuy = (player, id) => (info(id) && info(id).type === SALE && !bought(player).has(origOf(id)) ? 0 : 1);
   const onSale = (player, id) => isBuy(player, id) === 0;
 
@@ -406,6 +415,7 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
       // listState is 'kept'; a stale pending id is dropped)
       const pending = (player.avatarBoardsKeptPending || []).map(Number).filter((id) => ids.includes(id) && listState(player, id, ctx, kept) === 'kept');
       player.avatarBoardsSent = [...new Set([...keep, ...ids.filter((id) => onSale(player, id)), ...pending])].sort((a, b) => a - b);
+      markTwinsHeld(player);
       delete player.avatarBoardsKeptPending;
     }
     return ids;
@@ -433,10 +443,14 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     const typeOk = (id) => !boards || boards.includes(info(id).type);
     // a bought original listed again without being held (its KEPT twin was closed on an unkeep, Task 6c fix round 1) takes the
     // twin's place SILENTLY: the player owns it, no «Unlocked an Avatar Board!» (the same as a board bought: never announced)
-    const silent = ids.filter((id) => !sent.has(id) && !isTwin(id) && !pending.has(id) && info(id).type === SALE && bought(player).has(id));
+    // fix round 2: also an original whose twin the client was given (twinHeld: a hand-out board delivered as its twin)
+    const twinHeld = (id) => !!((player.avatarSphere || {})[id] || {}).twinHeld;
+    const silent = ids.filter((id) => !sent.has(id) && !isTwin(id) && !pending.has(id)
+      && ((info(id).type === SALE && bought(player).has(id)) || (twinHeld(id) && !onSale(player, id))));
     const add = ids.filter((id) => !sent.has(id) && !silent.includes(id) && typeOk(id) && (pending.has(id) ? listCheck : !onSale(player, id)));
     for (const id of add) stateOf(player, id);
     player.avatarBoardsSent = [...sent, ...silent, ...add];
+    markTwinsHeld(player);
     if (player.avatarBoardsKeptPending) {
       const left = [...pending].filter((id) => !add.includes(id));
       if (left.length) player.avatarBoardsKeptPending = left; else delete player.avatarBoardsKeptPending;
@@ -460,6 +474,7 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     stateOf(player, asked);
     // the client merges the board from this answer: it holds it now, so a later check must not announce it
     player.avatarBoardsSent = [...new Set([...(player.avatarBoardsSent || []).map(Number), asked])];
+    markTwinsHeld(player);
     log(`[avatar boards] ${id}${asked !== id ? ` (KEPT twin ${asked})` : ''} bought for ${price} Jewels`);
     return { ok: true, price };
   }
