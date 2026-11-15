@@ -1321,3 +1321,41 @@ User decision 15-11: avatar boards are not playable events, so they leave the Ev
 - **Package save:** `make-package-save.js` clears `avatarBoards.kept` too.
 - **Own keep:** `player.avatarBoards.kept` (routes-events.js `keepBoard` / `unkeepBoard`, POST `/web/avatar/keep/<id>` and `/web/avatar/unkeep`). One entry at a time, independent of `player.events.kept`. `avatarKept()` and the sphere body cache key read it. An older save whose `events.kept` holds a BOARD entry is read as the board keep and moved at login (`migrateKept`); one that kept an event with served boards (EV-0741) keeps the event and gets the same key as board keep (once: `player.avatarBoards` marks the save as migrated). An entry whose boards are all held is «Not built yet», never keepable.
 - **Bench fixes:** the keep messages say «Leave and re-enter Avatar Boards»; a kept entry's boards join `avatarBoardsSent` silently (`avatar-boards.js markKept`), so the next check pops no «Unlocked an Avatar Board!».
+
+## Start-Up Boost Board, catalogue banner and keep delivery (Events Part 7, Task 6b, 15 November 2026)
+
+Master revision **330**, resources **129** (incremental on 128: 43 records = the 42 new cards of section 56 and the
+Start-Up Boost Board card). Regen: the r328 HANDOFF line (`KHUX_WORLDTOUR=0`) plus `KHUX_AVATAR_BOARDS`.
+- **Start-Up Boost Board** (donor 2510000, user ruling 15-11): khuxwiki «permanently available from version 2.3.1»; the date of
+  2.3.1 is in none of our sources, so the entry `startUpBoost/medal` is listed in every story week (window 2016-04-07, the first
+  Shop story week, to 2021-06-29, end of service), 100 Jewels, label `permanentFromWiki` with its `reconstructedWhy`. 19 nodes at
+  0 Avatar Coins: 8 x «Increase Keyblade cost capacity by 5» (rewardSelect 22, value 5) and 11 x 6★ Cid 10 (medal 90078),
+  completion 6★ Cid 10. The builder checks these counts and stops if the donor row differs. Served id 5000453; card = khuxwiki
+  «Preview - Start-Up Boost Board» (the original file is already 306x306). «Medal Fusion Set 1» (2500001) stays unmapped.
+- **Builder fix:** `build_avatar_boards.py` read our served `sphere` rows as standard boards; after a regen with
+  `KHUX_AVATAR_BOARDS` the served avatar boards (5000000-5999999, level 2100119-2100126) are in it and 25 entries vanished
+  (avatarCoin runs 2020-21 and level 285-300). Those ids are now left out of that read: 297 entries (296 + Start-Up), 29 held,
+  1 unmapped, the other 296 entries byte-identical to Task 6.
+- **No weekly countdown** (`avatar-boards.js servedRow`): a type-2 row gets the end of the story week only when one of its
+  windows is in the story week. A permanent board (`index.permanent`) and a board listed only through the kept catalogue entry
+  keep the row's far end (2099-12-31): the client then draws the card **with no «Offer ends» plate at all** (bench: Start-Up
+  Boost Board, Sun / Moon Gem Board, Prime - Halloween Sora), next to week boards that say «Offer ends in 10 hours».
+- **Kept boards reach the client** (`markKept` / `check`): the client asks `GET /user/sphere` only at login, so a board kept
+  mid-session was never delivered (Task 5b had marked it as sent). The kept boards now wait in `player.avatarBoardsKeptPending`:
+  the home check (boardTypes 1-11) skips them, the Avatar Boards list check (boardTypes [1,2,6,8,10,11], sent on entering the
+  list) delivers them, on sale or not; a login list delivers them too. The client shows one «Unlocked an Avatar Board!» per
+  delivered board, in the list (not on the home).
+- **Avatar Board Catalog banner**: evStage **22929** (`@avatarBoardCatalog` 2929; the Start-Up entry took 2928 first),
+  picture `game_data/event_img/22929.png` from `make_avatar_catalog_banner.py`.
+
+| Check | Result | Screenshots (D:\Progetto_Restauro_KH_UX\screenshots) |
+|---|---|---|
+| Special tab | gold «Avatar Board Catalog» banner right after the Special Catalog banner; both open the Training Grounds, no error | t6b_sp1, t6b_sp2, t6b_sp4 |
+| Banner Details | opens the Avatar Board Catalog (266 entries, no BACK bar from the banner); entry page BACK returns to the list | t6b_cat1, t6b_det1, t6b_back1 |
+| Event Catalog | 415 events, no BOARD entry; link to the Avatar Board Catalog | t6b_evc1 |
+| Login migration (avb20) | `events.kept` EV-1331 moved to `avatarBoards.kept` at login (log «moved to the Avatar Board Catalog keep») | — |
+| Keep a past entry | «Kept! Leave and re-enter Avatar Boards to see it.»; no popup on the home | t6b_keep1, t6b_keep2, t6b_home6 |
+| Re-enter Avatar Boards | kept boards delivered with one popup each (Prime - Halloween Sora; Power / Speed / Magic Gem Oct. 2017), listed at the original price (8000, 5000) with no countdown | t6b_av12, t6b_pop1-4, t6b_halloween, t6b_kept_vs_week |
+| Event keep vs board keep | event keep EV-1095 leaves the board keep EV-0591; board keep EV-0311 leaves the event keep | t6b_evkeep, t6b_keep3 |
+| Cards | Start-Up, Sun Gem, Moon Gem (gold), Prime - Halloween Sora, Power / Magic Gem gold (2017), Speed Gem (cropped) | t6b_startup1, t6b_kept_vs_week, t6b_pop1-3 |
+| Start-Up Boost Board | listed with no countdown, 100 Jewels, bought (100 -> 0), «Keyblade cost capacity increased by 5!», Unlock All 19/19, completion «You got a Cost Medal!» (Cid 10); Equipment Cost 80/461 -> 80/501 (+40) | t6b_cost1, t6b_buy1, t6b_buy2, t6b_open1, t6b_node1, t6b_all1, t6b_equip0, t6b_equip1 |
