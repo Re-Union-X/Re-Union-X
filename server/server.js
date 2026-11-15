@@ -1282,13 +1282,27 @@ function respondAvatarUpdate(res, body) {
   send(res, 200, { ret: ret(), userAvatars: userAvatarsData(), userData: { userPoint: userPointData(serverTime()), userDetail: userDetailData() } });
 }
 
+// The default avatar parts every player owns, both genders (I-263, 15-11): khuxwiki «Avatar Parts», «Obtained: Default» = the
+// clothes Sporty Blue/Yellow, Cool Black/Red (M), Action Pink/Black, Cosmic Sky/Amber (F) with their gloves, the hairstyles Short,
+// Faux Hawk, Layered (M), Asymmetrical, Layered Bob, Chignon Bun (F); faces (type 4, the status 1 rows: the others never served),
+// skin colors (type 5) and hair colors (type 6) were all free choices (khuxwiki changelog: «New facial expressions and skin colors
+// have been added» for everyone).
+const AVATAR_DEFAULT_IDS = [1, 2, 7, 8, 11, 12, 13, 14, 109001, 109002, 109007, 109008, 109011, 109012, 109013, 109014,
+  40001, 40002, 40003, 41002, 41003, 41005];
+function avatarDefaultIds() {
+  const rows = masterRows('avatarParts');
+  const have = new Set(rows.map((r) => r.avatarPartsId));
+  return [...AVATAR_DEFAULT_IDS.filter((id) => have.has(id)),
+    ...rows.filter((r) => (r.partsType === 4 && r.status === 1) || r.partsType === 5 || r.partsType === 6).map((r) => r.avatarPartsId)];
+}
+
 // Parti possedute: quelle indossate (tipo dalla tabella avatarParts).
 function userAvatarPartsData() {
   const a = userAvatarData();
-  // indossate e guadagnate (premi degli Avatar Boards, player.avatarParts)
+  // indossate e guadagnate (premi degli Avatar Boards, player.avatarParts), più quelle di default
   const ids = [a.hairPartsId, a.hairColorPartsId, a.facePartsId, a.bodyPartsId, a.skinPartsId, ...a.accessoriesPartsIds,
     ...Object.values(player.avatarPatterns || {}).flatMap((p) => [p.hairPartsId, p.hairColorPartsId, p.facePartsId, p.bodyPartsId, p.skinPartsId, ...(p.accessoriesPartsIds || [])]),
-    ...(player.avatarParts || [])].filter(Boolean);
+    ...(player.avatarParts || []), ...avatarDefaultIds()].filter(Boolean);
   const rows = masterRows('avatarParts');
   return [...new Set(ids)].map((id, i) => ({
     userAvatarPartsId: i + 1, // uint64

@@ -24,6 +24,10 @@ check(t.userAvatarData().bodyPartsId === 59, `worn outfit not saved: ${JSON.stri
 check(JSON.parse(fs.readFileSync(SAVE, 'utf8')).avatar?.bodyPartsId === 59, 'outfit not written to the save file');
 // the parts worn stay owned (Outfits list)
 check(t.userAvatarPartsData().some((p) => p.avatarPartsId === 59), 'body part 59 not in the owned parts');
+// I-263: the default parts of both genders are owned (wiki «Obtained: Default», active faces, every skin and hair color)
+const own = new Set(t.userAvatarPartsData().map((p) => p.avatarPartsId));
+check([1, 2, 7, 8, 11, 14, 109001, 109014, 40001, 41005, 20001, 20024, 30001, 30032, 50001, 51010].every((id) => own.has(id)), 'default avatar parts missing');
+check(!own.has(20007), 'an inactive face (20007) is owned by default');
 // a second pattern (myCoordinateNo 2, not worn) is kept and listed by /user/avatar/all, the worn one does not change
 const r2 = call(t.respondAvatarUpdate, { updateAvatarData: [{ ...outfit, myCoordinateNo: 2, defaultFlag: 0, bodyPartsId: 1 }] });
 // always the 6 slots (I-262: the OUTFIT button steps by index; fewer entries crashed the client): slot 2 saved, the others the worn look
