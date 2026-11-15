@@ -1280,12 +1280,14 @@ tab / Traits row pictures of 905c5caf).
   card of that board or run (Skill Enhancement runs by date section, Enhancement Set+, medal boards, Monstropolis, Jewel
   Boosters, the Avatar Coin Booster boards = the cards of the December 2019 Event Boards), 34 Avatar Coin Boards with the
   khuxwiki card (the JP card carries a Japanese date banner), 4 Bad Guy Breaker Booster boards with the card cut in Part 6.
-  27 of the 50 got a gold-background card later (user 15-11): the khuxwiki Power / Magic Gem (Premium) pictures (2017 and 2018
-  versions) and the Moon Gem Board, resized to 306x306 (`img\sphere_incentive_av`, review `screenshotsv_cards_gold_added.png`).
-  23 boards keep the plain card: the 13 Speed Gem Premium boards (khuxwiki has no Speed picture; the Power / Magic one is not a
-  substitute), Sun Gem Board and Prime - Halloween Sora (no picture found), 8 Skill Enhancement runs khuxwiki has no section for
-  (2020-02-21, 2020-04-20, 2020-10-12, 2020-11-02). Review sheets: `screenshotsv_cards_found_1.png`, `av_cards_found_2.png`,
-  `av_cards_missing.png`.
+  41 of the 50 got a gold-background card later (user 15-11): the khuxwiki Power / Magic Gem (Premium) pictures (2017 and 2018
+  versions) and the Moon Gem Board, resized to 306x306 (`img\sphere_incentive_av`, review `screenshotsv_cards_gold_added.png`);
+  then the 13 Speed Gem Premium boards and the Sun Gem Board, cut from the top-left corner of khuxwiki's board-layout screenshots
+  (`Avatar Board - Speed Gem KHUX` for 2017, `... Speed Gem 2 KHUX` for 2018, `... Sun Gem Board KHUX`; review
+  `screenshotsv_cards_cropped.png`).
+  9 boards keep the plain card: Prime - Halloween Sora (khuxwiki has no page or screenshot for it) and the 8 Skill Enhancement runs
+  (2020-02-21, 2020-04-20, 2020-10-12, 2020-11-02): khuxwiki has no section for them and none of its board screenshots carries
+  their skills. Review sheets: `screenshotsv_cards_found_1.png`, `av_cards_found_2.png`, `av_cards_missing.png`.
 
 Bench (saves `avb19` = events2 with 30,000 test Jewels, story week of 18 April 2019; `avb20` = hol20g with 100 Jewels, week
 of 17 December 2020; both bench only):

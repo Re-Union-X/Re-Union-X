@@ -21647,7 +21647,7 @@ img/ui/emblem/Emblem_52.png	loc	=img/ui/emblem/Emblem_52.png	# original icon, co
 #     card cut from the Event Board screenshot (Bad Guy Breaker, section of Part 6), private files in --loc. Boards with no card
 #     found keep the plain card (docs/notes/events.md «Avatar boards served»).
 #     Gold-background loc cards (user 15-11): the khuxwiki «Preview - Power/Magic Gem (Premium)» (2017 / 2018 version) and «Moon Gem Board»
-#     pictures resized to 306x306, no Speed card (khuxwiki has none) - private files in --loc. The level boards 2100119-2100126 already have theirs.
+#     pictures resized to 306x306 - private files in --loc. Later the 13 Speed Gem (Premium) boards (2017 = Avatar_Board_-_Speed_Gem_KHUX, 2018 = ..._Speed_Gem_2_KHUX) and the Sun Gem Board are the card cut from the top-left corner of the khuxwiki board-layout screenshot (user 15-11). The level boards 2100119-2100126 already have theirs.
 img/sphere_incentive/5000001.png	loc	=img/sphere_incentive_av/2500016.png
 img/sphere_incentive/5000002.png	loc	=img/sphere_incentive_av/2500017.png
 img/sphere_incentive/5000003.png	loc	=img/sphere_incentive_av/2500018.png
@@ -22077,3 +22077,17 @@ img/sphere_incentive/5000136.png	loc	=img/sphere_incentive_av/2510143.png
 img/sphere_incentive/5000138.png	loc	=img/sphere_incentive_av/2510145.png
 img/sphere_incentive/5000141.png	loc	=img/sphere_incentive_av/2510148.png
 img/sphere_incentive/5000143.png	loc	=img/sphere_incentive_av/2510150.png
+img/sphere_incentive/5000064.png	loc	=img/sphere_incentive_av/2510071.png
+img/sphere_incentive/5000071.png	loc	=img/sphere_incentive_av/2510078.png
+img/sphere_incentive/5000078.png	loc	=img/sphere_incentive_av/2510085.png
+img/sphere_incentive/5000083.png	loc	=img/sphere_incentive_av/2510090.png
+img/sphere_incentive/5000088.png	loc	=img/sphere_incentive_av/2510095.png
+img/sphere_incentive/5000095.png	loc	=img/sphere_incentive_av/2510102.png
+img/sphere_incentive/5000100.png	loc	=img/sphere_incentive_av/2510111.png
+img/sphere_incentive/5000111.png	loc	=img/sphere_incentive_av/2510118.png
+img/sphere_incentive/5000118.png	loc	=img/sphere_incentive_av/2510125.png
+img/sphere_incentive/5000123.png	loc	=img/sphere_incentive_av/2510130.png
+img/sphere_incentive/5000128.png	loc	=img/sphere_incentive_av/2510135.png
+img/sphere_incentive/5000137.png	loc	=img/sphere_incentive_av/2510144.png
+img/sphere_incentive/5000142.png	loc	=img/sphere_incentive_av/2510149.png
+img/sphere_incentive/5000132.png	loc	=img/sphere_incentive_av/2510139.png
