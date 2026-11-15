@@ -21645,7 +21645,9 @@ img/ui/emblem/Emblem_52.png	loc	=img/ui/emblem/Emblem_52.png	# original icon, co
 #     jp = the JP 4.3.1 card with the same picture as the khuxwiki card of that board (or of that run); loc = the worldwide card
 #     (Roboloid image archive, same board id) or the khuxwiki card picture where the JP card carries a Japanese date banner, or the
 #     card cut from the Event Board screenshot (Bad Guy Breaker, section of Part 6), private files in --loc. Boards with no card
-#     found keep the plain card (docs/notes/events.md «Avatar board cards»). The level boards 2100119-2100126 already have theirs.
+#     found keep the plain card (docs/notes/events.md «Avatar boards served»).
+#     Gold-background loc cards (user 15-11): the khuxwiki «Preview - Power/Magic Gem (Premium)» (2017 / 2018 version) and «Moon Gem Board»
+#     pictures resized to 306x306, no Speed card (khuxwiki has none) - private files in --loc. The level boards 2100119-2100126 already have theirs.
 img/sphere_incentive/5000001.png	loc	=img/sphere_incentive_av/2500016.png
 img/sphere_incentive/5000002.png	loc	=img/sphere_incentive_av/2500017.png
 img/sphere_incentive/5000003.png	loc	=img/sphere_incentive_av/2500018.png
@@ -22048,3 +22050,30 @@ img/sphere_incentive/5000449.png	loc	=img/sphere_incentive_ev/2310146.png
 img/sphere_incentive/5000450.png	jp	img/sphere_incentive/2300243.png
 img/sphere_incentive/5000451.png	jp	img/sphere_incentive/2300244.png
 img/sphere_incentive/5000452.png	jp	img/sphere_incentive/2300245.png
+img/sphere_incentive/5000063.png	loc	=img/sphere_incentive_av/2510070.png
+img/sphere_incentive/5000065.png	loc	=img/sphere_incentive_av/2510072.png
+img/sphere_incentive/5000070.png	loc	=img/sphere_incentive_av/2510077.png
+img/sphere_incentive/5000072.png	loc	=img/sphere_incentive_av/2510079.png
+img/sphere_incentive/5000077.png	loc	=img/sphere_incentive_av/2510084.png
+img/sphere_incentive/5000079.png	loc	=img/sphere_incentive_av/2510086.png
+img/sphere_incentive/5000082.png	loc	=img/sphere_incentive_av/2510089.png
+img/sphere_incentive/5000084.png	loc	=img/sphere_incentive_av/2510091.png
+img/sphere_incentive/5000087.png	loc	=img/sphere_incentive_av/2510094.png
+img/sphere_incentive/5000089.png	loc	=img/sphere_incentive_av/2510096.png
+img/sphere_incentive/5000094.png	loc	=img/sphere_incentive_av/2510101.png
+img/sphere_incentive/5000096.png	loc	=img/sphere_incentive_av/2510103.png
+img/sphere_incentive/5000099.png	loc	=img/sphere_incentive_av/2510110.png
+img/sphere_incentive/5000101.png	loc	=img/sphere_incentive_av/2510112.png
+img/sphere_incentive/5000110.png	loc	=img/sphere_incentive_av/2510117.png
+img/sphere_incentive/5000112.png	loc	=img/sphere_incentive_av/2510119.png
+img/sphere_incentive/5000117.png	loc	=img/sphere_incentive_av/2510124.png
+img/sphere_incentive/5000119.png	loc	=img/sphere_incentive_av/2510126.png
+img/sphere_incentive/5000122.png	loc	=img/sphere_incentive_av/2510129.png
+img/sphere_incentive/5000124.png	loc	=img/sphere_incentive_av/2510131.png
+img/sphere_incentive/5000127.png	loc	=img/sphere_incentive_av/2510134.png
+img/sphere_incentive/5000129.png	loc	=img/sphere_incentive_av/2510136.png
+img/sphere_incentive/5000133.png	loc	=img/sphere_incentive_av/2510140.png
+img/sphere_incentive/5000136.png	loc	=img/sphere_incentive_av/2510143.png
+img/sphere_incentive/5000138.png	loc	=img/sphere_incentive_av/2510145.png
+img/sphere_incentive/5000141.png	loc	=img/sphere_incentive_av/2510148.png
+img/sphere_incentive/5000143.png	loc	=img/sphere_incentive_av/2510150.png
