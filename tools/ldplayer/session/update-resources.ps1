@@ -43,6 +43,9 @@ for ($t = 0; $t -lt 900; $t += 10) {
     if ($data -eq $wantData -and $index -eq $wantIndex) { "installate: dati $data, indice $index ($t s)"; break }
     Start-Sleep 10
 }
-if ($data -ne $wantData -or $index -ne $wantIndex) { throw "installazione incompleta: dati $data/$wantData, indice $index/$wantIndex" }
+# the script never taps KHUX START (200,1020) nor Download (1220,715): with nobody tapping, the guest keeps the
+# previous version and the sizes stay at the old chain (14-11: resources 123 «failed» twice this way, then
+# installed fine once Download was tapped)
+if ($data -ne $wantData -or $index -ne $wantIndex) { throw "installazione incompleta: dati $data/$wantData, indice $index/$wantIndex (toccato Download (1220,715)?)" }
 Start-Sleep 5
 & "$PSScriptRoot\relogin.ps1" -Tag 'upd_home' -Revision $Revision | Select-Object -Last 1
