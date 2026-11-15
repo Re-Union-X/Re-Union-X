@@ -19,6 +19,7 @@ from multiprocessing import Pool
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bgad                                             # noqa: E402
+import resource_cache                                   # noqa: E402
 from resource_index import obfuscate_name, record      # noqa: E402
 
 # --cache: se il pacchetto c'e' gia' ed e' fatto con gli stessi file (nome, dimensione, data) e la
@@ -41,6 +42,14 @@ def make_record(job):
     return rec, hashlib.sha1(plain).hexdigest(), len(plain)
 
 
+def file_stamps(root):
+    """sorted [(name with /, size, mtime_ns)] of the files under root. The stats come from the directory listing
+    (stamp_cache.scan_tree: on Windows no extra system call per file; same size and mtime as os.stat), not one os.stat per
+    file: the static packs list ~140k files at every build."""
+    from stamp_cache import scan_tree
+    return sorted((n, st.st_size, st.st_mtime_ns) for n, (_, st) in scan_tree(root).items())
+
+
 def content_stamp(key, items):
     """Stamp of the CONTENT of a folder: sha1 over the key and, per file in name order, name|size|sha1(bytes). Unlike the mtime stamp it
     survives a re-copy of identical files (import_originals / robocopy give every file a new date), so a static pack is not rebuilt for it."""
@@ -50,19 +59,27 @@ def content_stamp(key, items):
     return h.hexdigest()
 
 
+def mtime_stamp(root, key, stamps=None):
+    """first line of <uscita.png>.src: sha1 over the key and name|size|mtime_ns of every file, in name order"""
+    h = hashlib.sha1(key)
+    for name, size, mtime_ns in (file_stamps(root) if stamps is None else stamps):
+        h.update(('%s|%d|%d\n' % (name, size, mtime_ns)).encode())
+    return h.hexdigest()
+
+
 def main():
     args = sys.argv[1:]
+    if args[:1] == ['--stamp']:
+        # build-resources.ps1 -Append: is raid_gen\files still as it was when the raid model stamp was saved?
+        print(mtime_stamp(args[1], bytes.fromhex(args[2])))
+        return
     cache = '--cache' in args
     if cache:
         args.remove('--cache')
     root, key, out_data, out_index = args[0], bytes.fromhex(args[1]), args[2], args[3]
-    files = sorted(os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
-                   for d, _, fs in os.walk(root) for f in fs)
-    h = hashlib.sha1(key)
-    for name in files:
-        st = os.stat(os.path.join(root, name))
-        h.update(('%s|%d|%d\n' % (name, st.st_size, st.st_mtime_ns)).encode())
-    stamp = h.hexdigest()
+    stamps = file_stamps(root)
+    files = [n for n, _, _ in stamps]
+    stamp = mtime_stamp(root, key, stamps)
     src = out_index + '.src'
     # <uscita.png>.src: riga 1 = impronta con le date (veloce), riga 2 = impronta del contenuto (file piu' vecchi: assente)
     if cache and os.path.exists(out_data) and os.path.exists(out_index) and os.path.exists(src):
@@ -85,25 +102,35 @@ def main():
         os.remove(src)
 
     offsets, pos, items = [], 0, []
+    # sidecar <out_data>.rec (resource_cache.py): per record its length and the sha1 of its bytes, and the sha1 of its plain
+    # content, so resource_delta.py neither re-reads nor decrypts this pack
+    side_recs, side_plain = {}, {}
     jobs = [(root, name, key) for name in files]
+    sidecar = resource_cache.sidecar_path(out_data)
+    if os.path.exists(sidecar):
+        os.remove(sidecar)
     # scritto in un file temporaneo e poi rinominato: un pacchetto finito non cambia mai sul posto (le versioni di risorse lo
     # collegano con un hard link invece di copiarlo) e un build interrotto non lascia un pacchetto a meta' al posto di quello buono
     tmp_data, tmp_index = out_data + '.tmp', out_index + '.tmp'
+
+    def put(rec, digest, size, name):
+        nonlocal pos
+        offsets.append(pos)
+        out.write(rec)
+        raw = hashlib.sha1(rec).digest()
+        side_recs[pos] = (len(rec), raw)
+        side_plain[raw] = bytes.fromhex(digest)
+        pos += len(rec)
+        items.append((name, size, digest))
     with open(tmp_data, 'wb') as out:                   # scritto man mano: niente GB in memoria
         if WORKERS > 1 and len(jobs) > 64:
             with Pool(WORKERS) as pool:
                 for (rec, digest, size), name in zip(pool.imap(make_record, jobs, chunksize=16), files):
-                    offsets.append(pos)
-                    out.write(rec)
-                    pos += len(rec)
-                    items.append((name, size, digest))
+                    put(rec, digest, size, name)
         else:
             for job in jobs:
                 rec, digest, size = make_record(job)
-                offsets.append(pos)
-                out.write(rec)
-                pos += len(rec)
-                items.append((job[1], size, digest))
+                put(rec, digest, size, job[1])
 
     pool_names, name_offs = bytearray(), []
     for name in files:
@@ -120,6 +147,7 @@ def main():
     os.replace(tmp_index, out_index)
     with open(src, 'w') as fh:
         fh.write(stamp + '\n' + content_stamp(key, items))
+    resource_cache.write_sidecar(out_data, side_recs, side_plain)
     print('%d file, %d byte -> %s, %s' % (n, pos, out_data, out_index))
 
 

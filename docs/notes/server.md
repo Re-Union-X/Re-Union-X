@@ -314,7 +314,9 @@ its saved user data.
     random nonce, so equal bytes = same, otherwise both records are decrypted; cache in `khux_bgi_cache/plain-1.pkl`):
     changed and new names go into one appended pack (`d0000`), then `resource_merge.py --last-wins` (index of N + chain
     data + pack) and `resource_delta.py check` (every name of the full build reads the same content). Removed names
-    stay until a new full base (`-Version N`). `-Quick`/`-DryRun` refuse an incremental latest version.
+    stay until a new full base (`-Version N`). `-Quick`/`-DryRun` refuse an incremental latest version. Since 15-11 the
+    run reuses cached record hashes and MD5 states (`check --cached` at every run, `-Verify` for the independent check,
+    `-NoCache` for the old run): [risorse_layout.md](risorse_layout.md#-append-speed-15-nov-2026).
   - packages (`make-play-package.ps1`): the pieces and `base.txt` of every version of the chain, the index only of
     the latest.
   - test 12-11 with the real server code: game at 112, chain 112 > 113 > 114 → `mode 2`

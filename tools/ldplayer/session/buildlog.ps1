@@ -7,11 +7,12 @@ function python {
   $label = ($args | Where-Object { $_ -is [string] -and $_ -match '\.py$' } | Select-Object -First 1)
   if (-not $label) { $label = "$($args | Select-Object -First 2)" }
   $label = Split-Path -Leaf $label
+  $t0 = Get-Date
   $sw = [Diagnostics.Stopwatch]::StartNew()
   $input | & (Get-Command python.exe -CommandType Application | Select-Object -First 1).Source @args   # $input: forwards `$x | python ...`
   $code = $LASTEXITCODE
   $sw.Stop()
-  [void]$script:BuildSteps.Add([pscustomobject]@{ Step = $label; Sec = [math]::Round($sw.Elapsed.TotalSeconds, 1); Exit = $code })
+  [void]$script:BuildSteps.Add([pscustomobject]@{ Step = $label; Sec = [math]::Round($sw.Elapsed.TotalSeconds, 1); Exit = $code; At = $t0 })
   $global:LASTEXITCODE = $code
 }
 function Show-BuildSteps {
@@ -20,7 +21,9 @@ function Show-BuildSteps {
   $by = $script:BuildSteps | Group-Object Step | ForEach-Object { [pscustomobject]@{ Step = $_.Name; Calls = $_.Count; Sec = [math]::Round(($_.Group | Measure-Object Sec -Sum).Sum, 1) } } | Sort-Object Sec -Descending
   $lines = @("build-resources: total $tot s, python steps $([math]::Round($py,1)) s, other (powershell/adb/copy) $([math]::Round($tot-$py,1)) s") + ($by | Select-Object -First 12 | ForEach-Object { '  {0,7} s  x{1}  {2}' -f $_.Sec, $_.Calls, $_.Step })
   $lines
-  Add-Content -Path 'D:\Progetto_Restauro_KH_UX\logs\build-resources-steps.log' -Value (@("--- $(Get-Date -Format s)") + $lines) -Encoding utf8
+  # every call in order (start time, seconds, script): only in the log file, for per-step comparisons (15-11)
+  $calls = @($script:BuildSteps | ForEach-Object { '    {0:HH:mm:ss} {1,7} s  {2}' -f $_.At, $_.Sec, $_.Step })
+  Add-Content -Path 'D:\Progetto_Restauro_KH_UX\logs\build-resources-steps.log' -Value (@("--- $(Get-Date -Format s)") + $lines + '  calls:' + $calls) -Encoding utf8
 }
 
 # Pre-flight checks (04-11): a build killed half way by memory pressure (Claude Code reaps background jobs when the machine is

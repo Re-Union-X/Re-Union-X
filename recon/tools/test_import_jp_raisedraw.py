@@ -184,6 +184,31 @@ with tempfile.TemporaryDirectory() as t:
     s = open(os.path.join(out, 'img', 'ui', 'S_SB.png'), 'rb').read()
     check(s.startswith(b'\x89BTF') and tuple(btf.info(s)['canvas']) == (6, 3), 'STATIC copiato in BTF')
 
+    # --stamp-cache (15 Nov 2026): the same files; a second run rewrites nothing (mtimes kept); a changed source is converted
+    def albero(root):
+        return {os.path.relpath(os.path.join(r_, f), root): open(os.path.join(r_, f), 'rb').read()
+                for r_, _, fs in os.walk(root) for f in fs}
+    sc = os.path.join(t, 'sc.json')
+    out_c, r_c = corsa('cache', '--stamp-cache', sc)
+    check(r_c == r and albero(out_c) == albero(out), 'stamp-cache: same report and files')
+    t_old = 1_000_000_000_000_000_000
+    for r_, _, fs in os.walk(out_c):
+        for f in fs:
+            os.utime(os.path.join(r_, f), ns=(t_old, t_old))
+    out_c, r_c = corsa('cache', '--stamp-cache', sc)
+    check(all(os.stat(os.path.join(r_, f)).st_mtime_ns == t_old for r_, _, fs in os.walk(out_c) for f in fs),
+          'stamp-cache: nothing rewritten on the second run')
+    src_tex = os.path.join(jp, 'lwf', 'medal', 'Syn', tex)
+    with open(src_tex, 'wb') as f:
+        f.write(png(8, 4, (0, 255, 0, 255)))
+    os.utime(src_tex, ns=(t_old + 10 ** 9, t_old + 10 ** 9))
+    out_c, r_c = corsa('cache', '--stamp-cache', sc)
+    d = open(os.path.join(out_c, *rel.split('/'), tex), 'rb').read()
+    check(d == btf.encode(Image.open(io.BytesIO(png(8, 4, (0, 255, 0, 255)))).convert('RGBA')),
+          'stamp-cache: a changed source is converted again')
+    with open(src_tex, 'wb') as f:
+        f.write(png(8, 4, (255, 0, 0, 255)))
+
     # --replace: la texture scritta e' quella del file di sostituzione
     out, r = corsa('rep', '--replace', f'{pub}={rep}')
     check(r.get(rel, {}).get('status') == 'ok', f'replace ok: {r}')

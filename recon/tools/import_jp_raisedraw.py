@@ -71,6 +71,66 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import btf  # noqa: E402
 
 sys.stdout.reconfigure(encoding='utf-8')
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+class Writer:
+    """Writes the outputs. With a stamp cache (--stamp-cache, build-resources.ps1 -Append, 15 Nov 2026) an output that
+    already holds the right bytes is not rewritten (its mtime stays, so btf_fix --state, the static pack stamp of
+    resource_pack.py --cache and the LWF sound cache do not see a change), and the sha1 of a texture converted from a PNG
+    source is remembered by the source's size and mtime (stamp_cache.py), so an unchanged texture is neither converted
+    nor written. Without it every output is written, as before."""
+
+    def __init__(self, cache=None, image=None):
+        self.cache, self.image = cache, image
+        self.written = self.kept = 0
+
+    def write(self, dst, data):
+        if self.cache is not None and os.path.isfile(dst) and os.path.getsize(dst) == len(data):
+            with open(dst, 'rb') as fh:
+                if fh.read() == data:
+                    self.kept += 1
+                    return
+        with open(dst, 'wb') as d:
+            d.write(data)
+        self.written += 1
+
+    def final(self, src, encode):
+        """the bytes written for src: a PNG becomes BTF when encode"""
+        data = open(src, 'rb').read()
+        if encode and not data.startswith(b'\x89BTF'):
+            data = btf.encode(self.image.open(io.BytesIO(data)).convert('RGBA'))
+        return data
+
+    def texture(self, dst, src, encode):
+        if self.cache is None:
+            self.write(dst, self.final(src, encode))
+            return
+        made = {}
+
+        def compute(p):
+            made['data'] = self.final(p, encode)
+            return hashlib.sha1(made['data']).hexdigest()
+        digest = self.cache.get('raisedraw_out_%d' % bool(encode), src, compute)
+        if 'data' not in made and os.path.isfile(dst):
+            with open(dst, 'rb') as fh:
+                if hashlib.sha1(fh.read()).hexdigest() == digest:
+                    self.kept += 1
+                    return
+        self.write(dst, made['data'] if 'data' in made else self.final(src, encode))
+
+
+def stamp_cache_version():
+    import zlib
+    h = hashlib.sha1(b'import_jp_raisedraw-1')
+    for f in ('import_jp_raisedraw.py', 'btf.py', 'stamp_cache.py'):
+        with open(os.path.join(HERE, f), 'rb') as fh:
+            h.update(f.encode() + b'\0' + fh.read() + b'\0')
+    pil = getattr(sys.modules.get('PIL'), '__version__', None)
+    h.update(repr((sys.version, zlib.ZLIB_RUNTIME_VERSION, pil)).encode())
+    return h.hexdigest()
+
+
 D = r'D:\Progetto_Restauro_KH_UX'
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 JP = private_tools.local_path('jp_data')
@@ -358,12 +418,20 @@ def main(argv=None):
     ap.add_argument('--replace', action='append', default=[], metavar='PERCORSO=PNG',
                     help='sostituisce la texture pubblicata (es. lwf/.../X_<hex>.png) con un PNG, dopo la '
                          'copia; le dimensioni devono essere quelle dichiarate dalla LWF')
+    ap.add_argument('--stamp-cache', default=None,
+                    help='stamp_cache.json: outputs with the right bytes are not rewritten, converted textures '
+                         'remembered by their source (class Writer)')
     a = ap.parse_args(argv)
     replaces = parse_replace(a.replace)
     usati = set()
     Image = None
     if not a.check:
         from PIL import Image
+    sc = None
+    if a.stamp_cache and not a.check:
+        from stamp_cache import StampCache
+        sc = StampCache(a.stamp_cache, stamp_cache_version())
+    writer = Writer(sc, Image)
     served = served_names()
     refs = {}
     for prefix, rel in REFS.items():
@@ -435,14 +503,10 @@ def main(argv=None):
             continue
         dst = os.path.join(a.out, *rel.split('/'))
         os.makedirs(dst, exist_ok=True)
-        with open(lwf, 'rb') as s, open(os.path.join(dst, base + '.lwf'), 'wb') as d:
-            d.write(s.read())
+        with open(lwf, 'rb') as s:
+            writer.write(os.path.join(dst, base + '.lwf'), s.read())
         for k, (kind, src) in files.items():
-            data = open(src, 'rb').read()
-            if kind == 'jp' and not data.startswith(b'\x89BTF'):
-                data = btf.encode(Image.open(io.BytesIO(data)).convert('RGBA'))
-            with open(os.path.join(dst, k), 'wb') as d:
-                d.write(data)
+            writer.texture(os.path.join(dst, k), src, kind == 'jp')
     # immagini singole: devono esserci; il file di --replace deve avere le dimensioni del PNG JP
     for pub in STATIC:
         orig = os.path.join(JP, *pub.split('/'))
@@ -459,11 +523,8 @@ def main(argv=None):
         report[pub] = {'status': 'ok', 'size': list(wh)}
         if a.check:
             continue
-        if not data.startswith(b'\x89BTF'):
-            data = btf.encode(Image.open(io.BytesIO(data)).convert('RGBA'))
         os.makedirs(os.path.join(a.out, *pub.split('/')[:-1]), exist_ok=True)
-        with open(os.path.join(a.out, *pub.split('/')), 'wb') as d:
-            d.write(data)
+        writer.texture(os.path.join(a.out, *pub.split('/')), src, True)
     ignoti = sorted(set(replaces) - usati)
     if ignoti:
         raise SystemExit(f'--replace: nessuna texture con questo percorso pubblicato: {ignoti}')
@@ -474,6 +535,9 @@ def main(argv=None):
             if rel in WANTED and r['status'] != 'ok' and os.path.isdir(dst):
                 shutil.rmtree(dst)
                 print(f'{rel}: tolta la copia precedente')
+    if sc is not None:
+        sc.save()
+        print(f'--stamp-cache: {writer.written} file scritti, {writer.kept} gia\' uguali (non riscritti)')
     os.makedirs(os.path.dirname(os.path.abspath(a.report)), exist_ok=True)
     with open(a.report, 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=1)

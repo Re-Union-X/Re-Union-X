@@ -121,6 +121,47 @@ try:
     put(b16, 'img/x/a+b(1).png', 'plus')
     io.run(io.parse(['img/x/a+b(1).png\tb16']), b16, jp, out)
     assert rd('img/x/a+b(1).png') == 'plus'
+
+    # --skip-unless-changed (15 Nov 2026): the --skip-prefix destinations are skipped only while their inputs (source, size,
+    # mtime, salt) are those of the last copy; otherwise copied exactly as without --skip-prefix (same files, same report)
+    def tree(root):
+        return {os.path.relpath(os.path.join(r, f), root): open(os.path.join(r, f)).read()
+                for r, _, fs in os.walk(root) for f in fs}
+    rows2 = io.parse(['lwf/mog/\tjp', 'img/ui/h.png\tb16,jp', 'lwf/mog/mog.lwf\tjp\timg/ui/h.png'])
+    ref, cond = os.path.join(t, 'ref'), os.path.join(t, 'cond')
+    io.jp_listing.cache_clear()
+    io.plain_listing.cache_clear()
+    rep_ref = io.run(rows2, b16, jp, ref)
+    s1 = {}
+    rep1 = io.run(rows2, b16, jp, cond, skip_prefixes=('lwf/mog/',), stats=s1, skip_stamp='')   # no earlier copy
+    assert s1['prefix_skipped'] is False and rep1 == rep_ref and tree(cond) == tree(ref), (rep1, rep_ref)
+    assert open(os.path.join(cond, 'lwf/mog/mog.lwf')).read() == 'plain', 'later row wins'
+    shutil.rmtree(cond)
+    s2 = {}
+    rep2 = io.run(rows2, b16, jp, cond, skip_prefixes=('lwf/mog/',), stats=s2, skip_stamp=s1['prefix_stamp'])
+    assert s2['prefix_skipped'] is True and s2['prefix_stamp'] == s1['prefix_stamp']
+    assert not os.path.exists(os.path.join(cond, 'lwf')) and rep2[0]['skippedPrefix'] == 2 and rep2[2]['skippedPrefix'] == 1
+    s3 = {}
+    io.run(rows2, b16, jp, cond, skip_prefixes=('lwf/mog/',), stats=s3, skip_stamp=s1['prefix_stamp'], salt='btf v2')
+    assert s3['prefix_skipped'] is False and tree(cond) == tree(ref), 'another salt: copied'
+    os.utime(os.path.join(jp, 'lwf/mog/mog_0.00300000.png'), ns=(10 ** 18, 10 ** 18))   # a source touched
+    io.jp_listing.cache_clear()
+    io.plain_listing.cache_clear()
+    s4 = {}
+    io.run(rows2, b16, jp, cond, skip_prefixes=('lwf/mog/',), stats=s4, skip_stamp=s1['prefix_stamp'])
+    assert s4['prefix_skipped'] is False and s4['prefix_stamp'] != s1['prefix_stamp'], 'changed source: copied'
+    # the command line: stamp file in, stamp and decision out
+    lst = os.path.join(t, 'rows.tsv')
+    open(lst, 'w').write('lwf/mog/\tjp\n')
+    so, sf = os.path.join(t, 'stamp.out'), os.path.join(t, 'stamp.txt')
+    argv = ['import_originals.py', lst, b16, jp, cond, '--skip-prefix', 'lwf/mog/', '--skip-unless-changed', sf,
+            '--prefix-stamp-out', so, '--stamp-salt', 'v']
+    io.main(argv)
+    first = open(so).read().split('\n')
+    assert first[1] == 'copied', first
+    open(sf, 'w').write(first[0] + '\nTREE\n')
+    io.main(argv)
+    assert open(so).read().split('\n')[:2] == [first[0], 'skipped']
 finally:
     shutil.rmtree(t)
 print('OK: import_originals')

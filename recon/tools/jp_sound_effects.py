@@ -380,6 +380,11 @@ def main(argv=None):
     ap.add_argument('--json', default=None, help='rapporto completo')
     ap.add_argument('--no-static', action='append', default=[], choices=STATIC_PACKS,
                     help="pacchetto statico non nell'indice (-NoRooms/-NoEnemies/-NoRaisedraw)")
+    ap.add_argument('--static-root', action='append', default=[],
+                    help="altra cartella files\\ di un pacchetto statico (build-resources.ps1 -Append: raid_gen\\files, "
+                         "quando i modelli dei boss raid non sono ricopiati nel generato perche' invariati)")
+    ap.add_argument('--stamp-cache', default=None,
+                    help='stamp_cache.json for the sound names of the LWF files (size + mtime), as import_jp_coco')
     ap.add_argument('--apply', action='store_true',
                     help="copia in --out gli AKB e i testi mancanti (build-resources, dopo import_originals.py: "
                          "i LWF originali importati dopo import_jp_coco hanno suoni propri)")
@@ -395,9 +400,23 @@ def main(argv=None):
     # musica delle BGM Medals: la scrive import_jp_coco.py (stessa radice JP), non conta come aggiunta
     bgm = json.load(open(os.path.join(HERE, '..', '..', 'server', 'medal_bgm.json'), encoding='utf-8'))['medals']
     writes = {akb_name(i): ('jp', None, None) for i in set(bgm.values())}
+    sc = None
+    if a.stamp_cache:
+        # the sound names of an LWF depend only on this code and the file (15 Nov 2026: ~60k LWF files re-read at every
+        # build, raid models and static packs included)
+        sys.path.insert(0, HERE)
+        import hashlib
+        from stamp_cache import StampCache
+        h = hashlib.sha1(b'jp_sound_effects-lwf-1')
+        for f in ('jp_sound_effects.py', 'stamp_cache.py'):
+            with open(os.path.join(HERE, f), 'rb') as fh:
+                h.update(fh.read())
+        sc = StampCache(a.stamp_cache, h.hexdigest())
     p = collect(a.out, names, writes=writes, owned=owned, jp_root=a.jp, served=served,
-                static_roots=static_dirs(a.no_static),
-                cache_path=a.cache or os.path.join(rep_dir, 'served_lwf_sounds.json'))
+                static_roots=static_dirs(a.no_static) + a.static_root,
+                cache_path=a.cache or os.path.join(rep_dir, 'served_lwf_sounds.json'), cache=sc)
+    if sc is not None:
+        sc.save()
     # file gia' nel generato, senza quelli che il piano riscrive (corsa precedente dell'import)
     gen = sum(os.path.getsize(f) for n, f in walk_names(a.out).items() if n not in p['add'] and n not in p['texts'])
     print(summary(p))

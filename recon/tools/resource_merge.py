@@ -38,9 +38,15 @@ import struct
 import sys
 import tempfile
 
-filler, index_size, fast, last_wins, alias_file = None, None, False, False, None
+filler, index_size, fast, last_wins, alias_file, md5_cache = None, None, False, False, None, False
 while sys.argv[1].startswith('--'):
     flag = sys.argv.pop(1)
+    if flag == '--md5-cache':
+        # -Append (15 Nov 2026): the md5 of the data resumes from the MD5 state stored after the longest unchanged prefix of
+        # the data files (resource_cache.md5_files): the previous chain (~5.4 GB on the HDD) is not read again, only the
+        # new piece. Same md5 value as reading everything.
+        md5_cache = True
+        continue
     if flag == '--alias':
         alias_file = sys.argv.pop(1)
         continue
@@ -89,6 +95,7 @@ def _read_bgi(path):
 
 
 offsets, seen, entries, base, total_md5 = [], {}, [], 0, hashlib.md5()
+md5_paths = []                                          # --md5-cache: the files to hash, in order, hashed at the end
 for index, datas in packs:
     offs, names = read_bgi(index)
     first = len(offsets)
@@ -110,11 +117,30 @@ for index, datas in packs:
         if fast and (index, datas) != packs[-1]:
             base += os.path.getsize(d)
             continue
+        if md5_cache:
+            md5_paths.append(d)
+            base += os.path.getsize(d)
+            continue
         with open(d, 'rb') as fh:
             for chunk in iter(lambda: fh.read(1 << 24), b''):
                 total_md5.update(chunk)
         base += os.path.getsize(d)
     print('%s: record %d, nomi %d (nuovi %d)' % (index, len(offs), len(names), kept))
+
+
+class _Md5Value:
+    """total_md5 stand-in when the md5 comes from resource_cache.md5_files"""
+
+    def __init__(self, hexdigest):
+        self.value = hexdigest
+
+    def hexdigest(self):
+        return self.value
+
+
+if md5_cache:
+    import resource_cache                               # noqa: E402
+    total_md5 = _Md5Value(resource_cache.md5_files(md5_paths, log=print))
 
 # --alias <tsv>: righe «nome<TAB>bersaglio»; il nome nuovo punta allo stesso record del bersaglio (nessun dato
 # in piu': l'indice originale ha gia' piu' nomi per record). Saltati i nomi gia' presenti e i bersagli assenti.

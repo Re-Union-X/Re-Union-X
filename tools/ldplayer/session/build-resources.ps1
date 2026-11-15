@@ -38,7 +38,21 @@
 #   restano e i record sostituiti restano nei dati come byte morti: una base completa nuova (-Version N) li toglie.
 #   La versione e' sempre l'ultima + 1 (consecutive: il gioco salva minVersion + numero di versioni - 1). -Quick e -DryRun non valgono su una versione incrementale.
 #   .\build-resources.ps1 -Append
-param([int]$Version, [switch]$Quick, [switch]$Append, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies, [switch]$NoRaisedraw, [switch]$NoCompact, [string]$TestStraddle)
+#   Speed (15 Nov 2026, docs/notes/risorse_layout.md «-Append speed»: ~61 min -> ~10 min for a small change; same version: same
+#   delta pack, index, md5). An -Append run reuses what did not change since the last one:
+#   - raid boss models: not copied into stage_gen (import_originals --skip-unless-changed) while the stamp of their inputs
+#     (sources, sizes, mtimes, btf_fix --version) and raid_gen\files are those of the last copy ($D\raid_gen\models.stamp);
+#     their sounds are then looked up in raid_gen\files (jp_sound_effects --static-root);
+#   - btf_fix --state, jp_sound_effects --stamp-cache, import_jp_raisedraw --stamp-cache: unchanged files not opened again;
+#   - resource_delta / resource_merge --md5-cache / resource_delta check --cached: record hashes and MD5 states of unchanged
+#     data files from resource_cache.py (khux_bgi_cache in %TEMP%), the new pack's from its .rec sidecar (resource_pack.py).
+#   -Verify: the independent check (every name of the full build read and decrypted again, md5 of the whole chain read
+#   again, ~15 min more): before a tester package and every ~10 versions (docs). -NoCache: all of the above off (the run
+#   before 15 Nov 2026, for comparisons; implies -Verify).
+#   -OutDir <folder> (tests only): the new incremental version goes to <folder>\<N>, never into resource_data (the server
+#   would announce it). The chain is still read from resource_data.
+param([int]$Version, [switch]$Quick, [switch]$Append, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies, [switch]$NoRaisedraw, [switch]$NoCompact, [string]$TestStraddle,
+  [switch]$Verify, [switch]$NoCache, [string]$OutDir)
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\buildlog.ps1"
 Assert-BuildPreflight
@@ -67,6 +81,12 @@ function Resource-Chain([int]$n) {
   , $c
 }
 if ($Append -and ($Quick -or $DryRun -or $TestStraddle)) { throw '-Append non va con -Quick, -DryRun o -TestStraddle' }
+if (($Verify -or $NoCache -or $OutDir) -and -not $Append) { throw '-Verify, -NoCache and -OutDir are -Append switches' }
+if ($NoCache) { $Verify = $true }
+# the caches of -Append (see the header): on unless -NoCache
+$fast = $Append -and -not $NoCache
+$vRoot = if ($OutDir) { $OutDir } else { "$D\resource_data" }
+if ($OutDir -and ([IO.Path]::GetFullPath($OutDir).TrimEnd('\') -eq [IO.Path]::GetFullPath("$D\resource_data").TrimEnd('\'))) { throw '-OutDir is for test versions: not resource_data' }
 if ($Quick) {
   $Version = $latestV
   if (Test-Path "$D\resource_data\$Version\base.txt") { throw "la versione $Version e' incrementale (base.txt): -Quick e -DryRun non valgono, usa -Append" }
@@ -82,6 +102,7 @@ if ($Quick) {
 # compattazione) i pacchetti condivisi di $D\compact su cui conta il -Quick della versione installata
 if ($TestStraddle -and $Quick) { throw '-TestStraddle vale solo per una versione completa (-Version N), non con -Quick o -DryRun' }
 if (-not $Quick -and (Test-Path "$D\resource_data\$Version")) { throw "$D\resource_data\$Version esiste gia'" }
+if ($OutDir -and (Test-Path "$OutDir\$Version")) { throw "$OutDir\$Version esiste gia'" }
 # chiave delle risorse: dalla configurazione locale fuori dal repository (recon/tools/private_tools.py)
 $key = python -I recon\tools\private_tools.py key
 if ($LASTEXITCODE -or -not $key) { throw 'chiave delle risorse non disponibile: vedi recon/tools/private_tools.py' }
@@ -280,7 +301,8 @@ if (-not $NoRaisedraw -and (-not $Quick -or -not (Test-Path "$xg\files"))) {
   $burst = 'lwf/medal/guilt_bonus/GuiltBonus_BurstLvup/GuiltBonus_BurstLvup_'
   $novaReplace = @('--replace', "${burst}42757273745f4c6f676f2e706e67.png=$xg\nova\Burst_Logo.png",
                    '--replace', "${burst}42757273745f4c6f676f5f422e706e67.png=$xg\nova\Burst_Logo_B.png")
-  python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$xg\files" --report "$xg\raisedraw_report.json" @novaReplace
+  $rdCache = @(); if ($fast) { $rdCache = @('--stamp-cache', "$xg\stamp_cache.json") }
+  python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$xg\files" --report "$xg\raisedraw_report.json" @novaReplace @rdCache
   if ($LASTEXITCODE) { throw 'import_jp_raisedraw fallito' }
 }
 # layout originali dai dati JP 4.3.1 al posto dei nostri generati (I-117): elenco versionato in
@@ -315,11 +337,31 @@ if ($i440Need) { python -I recon\tools\res_get.py "$D\ipa440\names440misc.tsv" "
 # -Quick with raid_gen in the installed version: the raid boss models (lwf/character/raid, lwf/raid/demo) are taken out of
 # the generated pack further down anyway; do not copy (and btf_fix) their ~37k files first (04-11: 70% of this step, ~5 min)
 $origSkip = @()
+$rmg = "$D\raid_gen"
 if ($Quick -and $instPacks -contains 'raid_gen') { $origSkip = @('--skip-prefix', 'lwf/character/raid/', '--skip-prefix', 'lwf/raid/demo/') }
+# -Append (15 Nov 2026): the raid models are not copied (nor converted, nor mirrored: ~37k files, ~25 min of the 61 with
+# the scans they caused) while their inputs are those of the last copy into raid_gen. $rmg\models.stamp: line 1 = stamp of
+# the inputs (import_originals prefix_stamp, salt = btf_fix --version), line 2 = the mtime stamp of raid_gen\files right
+# after that copy (resource_pack .src line 1). A raid_gen\files touched since (a full build mirrors it again) drops the stamp.
+$raidStamp = "$rmg\models.stamp"
+$btfState = @()
+if ($fast) {
+  if (Test-Path $raidStamp) {
+    $tree = python -I recon\tools\resource_pack.py --stamp "$rmg\files" $key
+    if ($LASTEXITCODE) { throw 'resource_pack --stamp fallito' }
+    if (@(Get-Content $raidStamp)[1] -ne $tree) { Remove-Item $raidStamp; 'raid_gen\files changed since the raid model stamp: models copied again' }
+  }
+  $btfVer = python recon\tools\btf_fix.py --version
+  if ($LASTEXITCODE -or -not $btfVer) { throw 'btf_fix --version fallito' }
+  $origSkip = @('--skip-prefix', 'lwf/character/raid/', '--skip-prefix', 'lwf/raid/demo/', '--skip-unless-changed', $raidStamp,
+                '--prefix-stamp-out', "$sg\raid_models.stamp.new", '--stamp-salt', $btfVer)
+  $btfState = @('--state', "$sg\btf_state.json")
+}
 python -I recon\tools\import_originals.py recon\tools\originals.tsv "$refWork\bundle2016\files" `
   "$jpData" "$sg\files" `
   --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv" --i440 $i440 --jp501 "$D\tmp\jp501\x" --loc "$D\raid_loc" --report "$sg\originals.json" @origSkip
 if ($LASTEXITCODE) { throw 'import_originals fallito' }
+$raidSkipped = $fast -and (@(Get-Content "$sg\raid_models.stamp.new")[1] -eq 'skipped')
 # Raid Board card pictures, one per board id (list written by server/make-raid.js; the cards cut from screenshots are made
 # in --loc by recon/tools/raid_board_screens.py, docs/notes/bacheche.md «Raid Boards»)
 if (Test-Path server\game_data\raid_board_art.tsv) {
@@ -336,18 +378,27 @@ if (Test-Path server\game_data\event_board_art.tsv) {
 }
 # suoni se_<nome> dei LWF originali appena importati (KeyBlade_Evolution/StepUp, training_SE dei pet): la
 # ricerca di import_jp_coco e' girata prima, sui LWF generati senza eventi (banco 19-10: evoluzione muta)
-python -I recon\tools\jp_sound_effects.py --out "$sg\files" --apply @seOpt
+# -Append: the raid LWFs not copied into stage_gen are read from raid_gen\files (the same files); the sound names of
+# unchanged LWFs come from a stamp cache
+$seApply = @()
+if ($raidSkipped) { $seApply += @('--static-root', "$rmg\files") }
+if ($fast) { $seApply += @('--stamp-cache', "$sg\jp_import\sound_effects_cache.json") }
+python -I recon\tools\jp_sound_effects.py --out "$sg\files" --apply @seOpt @seApply
 if ($LASTEXITCODE) { throw 'jp_sound_effects fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
-python recon\tools\btf_fix.py "$sg\files"
+python recon\tools\btf_fix.py @btfState "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
 # Raid boss models (I-221, Raids Part 2): lwf/character/raid and lwf/raid/demo (~210 MB) leave the generated pack for the
 # static pack raid_gen, built once with --cache (later versions do not rebuild it). A -Quick run takes them out of the
 # generated pack only if the installed version carries raid_gen; without it they stay where the installed version has them.
-$rmg = "$D\raid_gen"
 if (-not $Quick -or $instPacks -contains 'raid_gen') {
   foreach ($rd in @('lwf\character\raid', 'lwf\raid\demo')) {
-    if (-not $Quick) {
+    if ($raidSkipped -and (Test-Path "$sg\files\$rd")) {
+      # the mirror below would replace raid_gen's copy with this partial folder: stop (a generator other than
+      # import_originals writes there; run with -NoCache and see what)
+      throw "$sg\files\$rd written although the raid models were not copied (import_originals --skip-unless-changed)"
+    }
+    if (-not $Quick -and -not $raidSkipped) {
       robocopy "$sg\files\$rd" "$rmg\files\$rd" /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
       if ($LASTEXITCODE -ge 8) { throw "copia di $rd in raid_gen non riuscita" }
       $global:LASTEXITCODE = 0
@@ -366,7 +417,8 @@ if (Test-Path "$mg\files") {
   # Trait Medal (I-084 parte B): medaglia associata in bianco e nero, id 9000000+N (server/trait_medals.json);
   # ~180 MB, oltre la riserva del pacchetto generato: stanno col pacchetto delle medaglie
   if (-not $Quick) { python recon\tools\make_trait_medal_images.py server\trait_medals.json "$mg\files" "$mg\files"; if ($LASTEXITCODE) { throw 'make_trait_medal_images fallito' } }
-  if (-not $Quick) { python recon\tools\btf_fix.py "$mg\files"; python -I recon\tools\resource_pack.py --cache "$mg\files" $key "$mg\gen.mp4" "$mg\gen.png"; if ($LASTEXITCODE) { throw 'resource_pack medaglie fallito' } }
+  $mgState = @(); if ($fast) { $mgState = @('--state', "$mg\btf_state.json") }
+  if (-not $Quick) { python recon\tools\btf_fix.py @mgState "$mg\files"; python -I recon\tools\resource_pack.py --cache "$mg\files" $key "$mg\gen.mp4" "$mg\gen.png"; if ($LASTEXITCODE) { throw 'resource_pack medaglie fallito' } }
   if (Test-Path "$mg\gen.png") { $medalPack = @("$mg\gen.png", "$mg\gen.mp4") }
 }
 if ($LASTEXITCODE) { throw 'resource_pack fallito' }
@@ -417,7 +469,8 @@ if ($Quick) {
     $raisedrawPack = @("$xg\gen.png", "$xg\gen.mp4")
   }
 } elseif (-not $NoRaisedraw -and (Test-Path "$xg\files")) {
-  python recon\tools\btf_fix.py "$xg\files"
+  $xgState = @(); if ($fast) { $xgState = @('--state', "$xg\btf_state.json") }
+  python recon\tools\btf_fix.py @xgState "$xg\files"
   if ($LASTEXITCODE) { throw 'btf_fix raisedraw fallito' }
   python -I recon\tools\resource_pack.py --cache "$xg\files" $key "$xg\gen.mp4" "$xg\gen.png"
   if ($LASTEXITCODE) { throw 'resource_pack raisedraw fallito' }
@@ -435,6 +488,8 @@ if ($Quick) {
   python -I recon\tools\resource_pack.py --cache "$rmg\files" $key "$rmg\gen.mp4" "$rmg\gen.png"
   if ($LASTEXITCODE) { throw 'resource_pack raid fallito' }
   $raidPack = @("$rmg\gen.png", "$rmg\gen.mp4")
+  # -Append: the raid model stamp (inputs of this copy, raid_gen\files as it is now = .src line 1 just written or checked)
+  if ($fast) { Set-Content -Encoding ascii $raidStamp @(@(Get-Content "$sg\raid_models.stamp.new")[0], @(Get-Content "$rmg\gen.png.src")[0]) }
 }
 if ($raidPack) {
   python -I recon\tools\check_raid_models.py "$rmg\files" server\game_data\raid_models.json --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv"
@@ -583,26 +638,32 @@ if ($Append) {
   # la versione precedente: il suo indice e i pezzi di tutta la sua catena, in ordine
   $prevData = @(); foreach ($c in $prevChain) { $prevData += @(Get-ChildItem "$D\resource_data\$c\data" -File | Sort-Object Name | ForEach-Object FullName) }
   $prevIdx = "$D\resource_data\$prevV\index\misc.png"
-  python -I recon\tools\resource_delta.py recon\tools $lib $key "$sg\delta.png" "$sg\delta.mp4" $prevIdx ($prevData -join ',') $fullIdx ($fullData -join ',')
+  # record hashes of unchanged data files from resource_cache.py (-NoCache: every record read again, as before 15-11)
+  $deltaOpt = @(); if ($NoCache) { $deltaOpt = @('--no-cache') }
+  python -I recon\tools\resource_delta.py @deltaOpt recon\tools $lib $key "$sg\delta.png" "$sg\delta.mp4" $prevIdx ($prevData -join ',') $fullIdx ($fullData -join ',')
   if ($LASTEXITCODE -eq 2) { throw "niente di cambiato rispetto alla versione ${prevV}: nessuna versione nuova" }
   if ($LASTEXITCODE) { throw 'resource_delta fallito' }
   if ((Get-Item "$sg\delta.mp4").Length -ge 2147483648) { throw "pacchetto delle differenze da 2 GiB o piu' (il client lo rifiuta): serve una base completa (-Version N)" }
-  # in resource_data\_build_<N> e rinominata dopo i controlli, come una versione completa
-  $v = "$D\resource_data\_build_$Version"
+  # in resource_data\_build_<N> e rinominata dopo i controlli, come una versione completa (-OutDir: a test folder)
+  $v = "$vRoot\_build_$Version"
   if (Test-Path $v) { Remove-Item -Recurse -Force $v }
   New-Item -ItemType Directory -Force "$v\data", "$v\index" | Out-Null
   Copy-Item "$sg\delta.mp4" "$v\data\d0000"
   Set-Content -Encoding ascii "$v\base.txt" $prevV
   # indice di N + differenze in coda (l'ultimo vince): offset di N invariati, size = dati della catena + d0000
-  python -I recon\tools\resource_merge.py --last-wins recon\tools $lib $key "$v\index\misc.png" $prevIdx ($prevData -join ',') "$sg\delta.png" "$v\data\d0000"
+  # --md5-cache: the md5 resumes after the chain (MD5 state stored by an earlier run); -Verify reads the whole chain again
+  $md5Opt = @(); if (-not $Verify) { $md5Opt = @('--md5-cache') }
+  python -I recon\tools\resource_merge.py --last-wins @md5Opt recon\tools $lib $key "$v\index\misc.png" $prevIdx ($prevData -join ',') "$sg\delta.png" "$v\data\d0000"
   if ($LASTEXITCODE) { throw 'resource_merge della versione incrementale fallito' }
-  # ogni nome della build completa ha lo stesso contenuto nella versione incrementale
-  python -I recon\tools\resource_delta.py check recon\tools $lib $key "$v\index\misc.png" (($prevData + "$v\data\d0000") -join ',') $fullIdx ($fullData -join ',')
+  # ogni nome della build completa ha lo stesso contenuto nella versione incrementale: every name compared at every run;
+  # --cached takes the record hashes from resource_cache.py, -Verify reads and decrypts everything again (independent)
+  $checkOpt = @(); if (-not $Verify) { $checkOpt = @('--cached') }
+  python -I recon\tools\resource_delta.py check @checkOpt recon\tools $lib $key "$v\index\misc.png" (($prevData + "$v\data\d0000") -join ',') $fullIdx ($fullData -join ',')
   if ($LASTEXITCODE) { throw 'la versione incrementale non legge gli stessi file della build completa' }
   $total = ($prevData | ForEach-Object { (Get-Item $_).Length } | Measure-Object -Sum).Sum + (Get-Item "$v\data\d0000").Length
   if ($total -gt 10 * [int64]2147483648) { throw "dati della catena oltre 20 GiB ($total byte): il client legge solo misc.mp4 .. misc.mp4.9; serve una base completa" }
   Rename-Item $v "$Version"
-  "versione incrementale $Version pronta: base $prevV (catena $($prevChain -join ' > ') > $Version), pezzo di $((Get-Item "$D\resource_data\$Version\data\d0000").Length) byte, dati della catena $([math]::Round($total / 1GB, 2)) GiB"
+  "versione incrementale $Version pronta in ${vRoot}: base $prevV (catena $($prevChain -join ' > ') > $Version), pezzo di $((Get-Item "$vRoot\$Version\data\d0000").Length) byte, dati della catena $([math]::Round($total / 1GB, 2)) GiB$(if ($Verify) { ', full verification' } else { '' })"
   Show-BuildSteps
   return
 }

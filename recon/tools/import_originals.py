@@ -30,11 +30,20 @@ quindi un originale che sparisce da' ancora errore). Lo usa build-resources.ps1 
 (lwf/character/raid/, lwf/raid/demo/) quando la versione installata li ha nel pacchetto statico raid_gen: lo script li
 toglierebbe dal pacchetto generato subito dopo, e copiarli (37 mila file, ~70% degli originali) costava ~5 minuti.
 
+--skip-unless-changed <stamp file> --prefix-stamp-out <file> [--stamp-salt <text>] (build-resources.ps1 -Append, 15 Nov 2026):
+the --skip-prefix destinations are skipped only while their inputs are those of the last copy. The stamp is the sha1 of the
+salt (the btf_fix.py --version: the conversion that follows), the prefixes and, per destination under them, its name, its
+source path, size and mtime. Equal to the first line of <stamp file> -> skipped (the static pack raid_gen\\files already
+holds them, converted); otherwise (or with no stamp file) they are copied as without --skip-prefix. The stamp goes to the
+first line of --prefix-stamp-out, «skipped» or «copied» to the second (the script mirrors the copied ones into raid_gen and
+then saves the stamp).
+
 Speed (4 Nov 2026): every row is resolved first (a vanished original stops the run before anything is written), then each
 destination is written once (the last row naming it wins, as before): a destination that already holds the same bytes is
 not rewritten, the others are copied by ORIG_WORKERS threads (default 8; copying waits on the disk, not on Python).
 """
 import fnmatch
+import hashlib
 import functools
 import json
 import os
@@ -44,6 +53,15 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 REV = re.compile(r'^(?P<stem>.+?)\.(?P<rev>\d{8})(?P<ext>\.[^.]+)$')
+SRC_STAT = {}           # source path -> (size, mtime_ns) from the listings (DirEntry.stat: no extra call on Windows)
+
+
+def _seen(e):
+    try:
+        st = e.stat()
+        SRC_STAT[e.path] = (st.st_size, st.st_mtime_ns)
+    except OSError:
+        pass
 
 
 @functools.lru_cache(maxsize=None)
@@ -62,16 +80,39 @@ def jp_listing(folder):
             m = REV.match(f)
             name, rev = (m.group('stem') + m.group('ext'), int(m.group('rev'))) if m else (f, -1)
             if name not in best or rev > best[name][0]:
-                best[name] = (rev, e.path)
-    return {k: v[1] for k, v in best.items()}
+                best[name] = (rev, e)
+    out = {}
+    for k, (_, e) in best.items():
+        _seen(e)
+        out[k] = e.path
+    return out
 
 
 @functools.lru_cache(maxsize=None)
 def plain_listing(folder):
     if not os.path.isdir(folder):
         return {}
+    out = {}
     with os.scandir(folder) as it:
-        return {e.name: e.path for e in it if e.is_file()}
+        for e in it:
+            if e.is_file():
+                _seen(e)
+                out[e.name] = e.path
+    return out
+
+
+def prefix_stamp(plan, prefixes, salt=''):
+    """sha1 of the inputs of the destinations under prefixes: salt, prefixes, and per destination its source and the
+    source's size and mtime (from the listings; os.stat for the others)"""
+    h = hashlib.sha1(('origstamp-1|%s|%s\n' % (salt, '|'.join(sorted(prefixes)))).encode())
+    for rel in sorted(r for r in plan if r.startswith(tuple(prefixes))):
+        src = plan[rel]
+        st = SRC_STAT.get(src)
+        if st is None:
+            s = os.stat(src)
+            st = (s.st_size, s.st_mtime_ns)
+        h.update(('%s|%s|%d|%d\n' % (rel, os.path.normcase(os.path.abspath(src)), st[0], st[1])).encode())
+    return h.hexdigest()
 
 
 def resolve(src, roots):
@@ -157,11 +198,15 @@ def copy_plan(plan, out, workers=None):
     return copied, len(items) - copied
 
 
-def run(rows, b16, jp, out, served=frozenset(), i440=None, jp501=None, loc=None, skip_prefixes=(), stats=None):
+def run(rows, b16, jp, out, served=frozenset(), i440=None, jp501=None, loc=None, skip_prefixes=(), stats=None,
+        skip_stamp=None, salt=''):
+    """skip_stamp: the stamp of the last copy of the skip_prefixes destinations; they are skipped only when the stamp of
+    their inputs now is the same (stats['prefix_stamp'], stats['prefix_skipped']). None: skipped always (-Quick)."""
     roots = {'b16': (b16, 'b16'), 'jp': (jp, 'jp'), 'i440': (i440 or '', 'i440'), 'jp501': (jp501 or '', 'jp501'),
              'loc': (loc or '', 'loc')}
     report = []
     plan = {}
+    held = {}               # conditional skip: the skip_prefixes destinations, put in the plan only if their inputs changed
     for r in rows:
         hits, used = [], None
         for s in r['sources']:
@@ -182,11 +227,25 @@ def run(rows, b16, jp, out, served=frozenset(), i440=None, jp501=None, loc=None,
                 continue
             if skip_prefixes and rel.startswith(tuple(skip_prefixes)):
                 skipped_prefix += 1
+                if skip_stamp is not None:
+                    held.pop(rel, None)
+                    held[rel] = path
                 continue
             plan.pop(rel, None)          # a later row naming the same destination wins (and keeps the serial order)
             plan[rel] = path
         report.append({'dest': r['dest'], 'source': used, 'files': len(hits) - skipped - skipped_prefix, 'servedWW': skipped,
                        'skippedPrefix': skipped_prefix})
+    if skip_stamp is not None:
+        stamp = prefix_stamp(held, skip_prefixes, salt)
+        skip = bool(skip_stamp) and stamp == skip_stamp
+        if not skip:
+            # inputs changed (or no earlier copy): the destinations are copied, as without --skip-prefix
+            plan.update(held)
+            for r in report:
+                r['files'] += r['skippedPrefix']
+                r['skippedPrefix'] = 0
+        if stats is not None:
+            stats.update(prefix_stamp=stamp, prefix_skipped=skip)
     # every row is resolved before anything is written: a vanished original stops the run with the output untouched
     copied, unchanged = copy_plan(plan, out)
     if stats is not None:
@@ -202,10 +261,26 @@ def main(argv):
     jp501 = argv[argv.index('--jp501') + 1] if '--jp501' in argv else None
     loc = argv[argv.index('--loc') + 1] if '--loc' in argv else None
     skip = [argv[i + 1] for i, a in enumerate(argv) if a == '--skip-prefix']
+    skip_stamp, stamp_out, salt = None, None, ''
+    if '--skip-unless-changed' in argv:
+        f = argv[argv.index('--skip-unless-changed') + 1]
+        skip_stamp = open(f, encoding='ascii').read().split('\n')[0].strip() if os.path.exists(f) else ''
+        stamp_out = argv[argv.index('--prefix-stamp-out') + 1]
+        salt = argv[argv.index('--stamp-salt') + 1] if '--stamp-salt' in argv else ''
+        if not skip:
+            raise SystemExit('--skip-unless-changed vuole almeno un --skip-prefix')
+        if os.path.exists(stamp_out):
+            os.remove(stamp_out)
     stats = {}
-    report = run(rows, b16, jp, out, served, i440, jp501, loc, skip, stats)
+    report = run(rows, b16, jp, out, served, i440, jp501, loc, skip, stats, skip_stamp, salt)
     if '--report' in argv:
         json.dump(report, open(argv[argv.index('--report') + 1], 'w', encoding='utf8'), indent=1)
+    if stamp_out:
+        with open(stamp_out, 'w', encoding='ascii') as fh:
+            fh.write('%s\n%s\n' % (stats['prefix_stamp'], 'skipped' if stats['prefix_skipped'] else 'copied'))
+        print('--skip-prefix: %s (inputs %s)' % (
+            'skipped, inputs unchanged since the last copy' if stats['prefix_skipped'] else 'copied, inputs changed or no earlier copy',
+            stats['prefix_stamp'][:12]))
     print('originali: %d righe, %d file (%s)%s' % (len(report), sum(r['files'] for r in report),
           ', '.join('%s %d' % (k, sum(r['files'] for r in report if r['source'] == k)) for k in ('b16', 'jp', 'i440', 'jp501', 'loc')),
           ', %d saltati (--skip-prefix)' % sum(r['skippedPrefix'] for r in report) if skip else ''))

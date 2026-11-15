@@ -128,6 +128,18 @@ with tempfile.TemporaryDirectory() as t:
     check(pc == m.collect(out, {'text/audio/ui2_se_000039'}, **kw) and pc['sound_names'] == 5 and
           'lwf/medal/nova/nova.lwf' in pc['refs'][509000900], 'collect: cache, changed LWF read again')
     scrivi(os.path.join(st, 'lwf', 'medal', 'nova', 'nova.lwf'), lwf_eventi(['se_ui2_se_000074', 'se_static_se']))
+    # -Append with unchanged raid models (15 Nov 2026): the raid LWFs are read from raid_gen\files (--static-root) instead of
+    # the generated pack: the same plan as with them in the generated pack
+    import shutil  # noqa: E402
+    raid = os.path.join(t, 'raid_gen', 'files')
+    scrivi(os.path.join(raid, 'lwf', 'character', 'raid', '0001', 'wait.lwf'), lwf_eventi(['se_raid_se']))
+    scrivi(os.path.join(jp, 'text', 'audio', 'raid_se'), '509000960')
+    scrivi(os.path.join(jp, 'audio', '509000960.akb'), b'akb_raid')
+    p_extra = m.collect(out, {'text/audio/ui2_se_000039'}, **dict(kw, static_roots=[st, raid]))
+    shutil.copytree(os.path.join(raid, 'lwf', 'character'), os.path.join(out, 'lwf', 'character'))
+    p_gen = m.collect(out, {'text/audio/ui2_se_000039'}, **kw)
+    shutil.rmtree(os.path.join(out, 'lwf', 'character'))
+    check(p_extra == p_gen and 509000960 in p_gen['ids'] and p_gen != p, 'collect: raid LWFs from --static-root = in the generated pack')
     # una scrittura gia' decisa (es. BGM Medal) conta come presente; un LWF generato vince sul servito
     p2 = m.collect(out, set(), writes=dict(writes, **{'audio/509000740.akb': ('jp', 'x', None)}),
                    owned=set(), jp_root=jp, served=None, static_roots=[st])

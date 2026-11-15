@@ -460,3 +460,49 @@ backup paths).
   change of that flow (keep them out of `stage_gen` when `raid_gen` already holds them) would remove that cost.
 - `make_trait_medal_images.py` 80 s in the 20:16 build was not a skip miss: that was the first full build after the skip landed
   (script changed at 14:13, so `DEPS_MTIME` was newer than every output); now all 939 outputs are skipped.
+
+## `-Append` speed (15 Nov 2026)
+
+`build-resources.ps1 -Append` took ~61 min for resources 129 (43 new card files): total 3691 s, of which `resource_delta.py`
+853.6 s (delta + check), `resource_pack.py` 594.8 s, `btf_fix.py` 578.7 s, `import_originals.py` 455.4 s, `import_jp_coco.py`
+282.4 s, `jp_sound_effects.py` 232.2 s, `import_jp_raisedraw.py` 155.1 s, `resource_merge.py` 118.5 s. There is no 5.8 GB
+«append_full» pack: `append_full.png` is only the merged index (46 MB). The cost was re-reading on the D: HDD:
+
+- `resource_delta.py` hashed every record of the previous chain (~5.4 GB) and of the new full build (~5.8 GB) at every call, and
+  the independent `check` read both again and decrypted every record whose bytes differ (the whole generated pack: random nonce);
+- `resource_merge.py` read the whole chain again for the md5 of the new index;
+- the raid boss models (~37k files) were copied into `stage_gen`, converted by `btf_fix`, scanned for sounds, mirrored into
+  `raid_gen` (new mtimes: `raid_gen` re-read for its content stamp) and deleted, at every run; `import_jp_raisedraw` rewrote all its
+  outputs (new mtimes again) and `btf_fix` opened every texture.
+
+What `-Append` reuses now (all switched off by `-NoCache`):
+
+| piece | how | file |
+|---|---|---|
+| record hashes | per data file stamp (path, size, mtime ns): length + sha1 of each record; a new pack's table and plain-content sha1s come from the `<pack>.rec` sidecar written by `resource_pack.py` | `recon/tools/resource_cache.py`, `%TEMP%\khux_bgi_cache\rec-1` |
+| md5 of the index | MD5 state (OpenSSL `MD5_CTX` of the libcrypto Python ships, checked against hashlib at load) stored after each data file; `resource_merge.py --md5-cache` resumes after the longest unchanged prefix | `khux_bgi_cache\md5-1` |
+| check | `resource_delta.py check --cached`: every name of the full build still compared with the new version, over the cached hashes | |
+| raid models | `import_originals.py --skip-unless-changed`: skipped while the stamp of their inputs (rows, sources, sizes, mtimes, `btf_fix --version`) and `raid_gen\files` (`resource_pack.py --stamp`) are those of the last copy; `jp_sound_effects.py --static-root raid_gen\files` then reads their LWFs there | `D:\Progetto_Restauro_KH_UX\raid_gen\models.stamp` |
+| textures | `btf_fix.py --state`: a texture with the size and mtime it had after the last run is not opened | `stage_gen\btf_state.json`, `medal_gen\`, `raisedraw_gen\` |
+| sounds, raisedraw | `jp_sound_effects.py --stamp-cache`, `import_jp_raisedraw.py --stamp-cache` (outputs with the right bytes not rewritten, converted textures remembered by source) | `stage_gen\jp_import\sound_effects_cache.json`, `raisedraw_gen\stamp_cache.json` |
+| static pack stamps | `resource_pack.py` takes sizes and mtimes from the directory listing (same values as `os.stat`, checked on the five static packs) | |
+
+A file written in the last 3 seconds is never remembered (its mtime could come back after another write). Measured, back end of
+version 129 replayed on its own inputs (`tmp\append_opt\r129`, copies of the 129 build's `gen.mp4`, `append_full.png`, delta):
+
+| step | old (129 build) | new, first run (cold caches) | new, later runs |
+|---|---|---|---|
+| `resource_delta.py` delta | ~360 s | 278 s | 4.4 s |
+| `resource_merge.py` (new index, md5) | ~95 s | 90.5 s | 2.6 s |
+| `resource_delta.py check` | ~490 s | 14.5 s (`--cached`) | 10.8 s |
+
+Same outputs: `delta.mp4` and `delta.png` byte-identical to the ones of the old path, the new index decodes to the same 278,819
+records / 519,259 names, the same md5 `b19f306f8926a0848c8bcaa58eacccbc` and size as the published `resource_data\129`. The
+generator half (raid skip, `btf_fix --state`, the stamp caches) is covered by the tool tests (same files with and without each
+cache) but its end-to-end timing was not measured yet: a full `-Append` test run (`-OutDir`) was stopped to leave the disk to the
+bench. Expected from the 129 numbers: ~10-15 min for a small change.
+
+Switches: `-Verify` = independent check (every record read and decrypted again) and the md5 of the whole chain read again (~15
+min more): use it before a tester package and every ~10 incremental versions. `-NoCache` = the run before 15 Nov 2026 (implies
+`-Verify`). `-OutDir <folder>` (tests only) writes the incremental version outside `resource_data` (the server would announce it).
+The first `-Append` after this change fills the caches (raid models copied once, chain hashed once): only the later runs are fast.
