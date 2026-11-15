@@ -329,7 +329,13 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     const week = (e.windows || []).some((w) => inWeek(w.window, ctx));
     if (e.type === SALE && bought(player).has(Number(id))) {
       if (week) return 'week';
-      return twinServed(id) && (e.windows || []).some((w) => isKept(w, kept)) ? 'kept' : 'bought';
+      const t = twinServed(id);
+      if (t && (e.windows || []).some((w) => isKept(w, kept))) return 'kept';
+      // bench 6c (r331): the client learns a board only from a check answer (a popup) or the login list, so after the unkeep a
+      // bought board stays listed as the twin the client holds; the next login list (ctx.fresh) gives the original back
+      const sent = (player.avatarBoardsSent || []).map(Number);
+      if (t && !ctx.fresh && sent.includes(t) && !sent.includes(Number(id))) return 'kept';
+      return 'bought';
     }
     if (e.chain && !complete(player, e.chain)) return week ? 'chain' : 'none';
     if (e.group === 'level') return Number(ctx.level) >= e.level ? 'level' : 'none';
@@ -406,7 +412,9 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   // boards on sale (sent by this list, never by a check); 'merge' (the merged list of 190, as the raid path): the boards sent
   // before stay and the boards on sale join. A board handed out (type 1) or bought is not marked, so the next check still
   // announces it once
-  function list(player, ctx = {}, kept = null, { setSent = false } = {}) {
+  function list(player, ctx0 = {}, kept = null, { setSent = false } = {}) {
+    // GET /user/sphere replaces the client's list: a bought board held as its twin since an unkeep comes back as itself (fresh)
+    const ctx = setSent === true ? { ...ctx0, fresh: true } : ctx0;
     const ids = listedIds(player, ctx, kept);
     for (const id of ids) stateOf(player, id);
     if (setSent === true || setSent === 'merge') {

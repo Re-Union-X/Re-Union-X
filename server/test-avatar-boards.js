@@ -648,11 +648,23 @@ const tests = {
       w.r.markKept(w.player, WEEK_LATE, 'EV-1');
       assert.deepStrictEqual(w.r.check(w.player, LIST_CHECK, WEEK_LATE, 'EV-1').add, [ta]);
       assert.deepStrictEqual(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, 'EV-1').close, [a]);
-      // unkeep
+      // unkeep. Bench 6c (r331): the client learns a board only from a check answer (popup) or the login list, so a board marked
+      // sent silently vanished from the list until the next login. The bought board stays listed AS ITS TWIN while the client
+      // holds the twin; the next login list (GET, setSent true) gives the original back, with no popup
       w.r.markKept(w.player, WEEK_LATE, null);
-      assert.deepStrictEqual(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, null).close, [ta], 'the twin closed');
+      assert.deepStrictEqual(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, null).close, [], 'the bought twin stays');
+      assert.ok(w.r.listedIds(w.player, WEEK_LATE, null).includes(ta) && !w.r.listedIds(w.player, WEEK_LATE, null).includes(a));
+      for (const body of [LIST_CHECK, HOME_CHECK]) assert.ok(!w.r.check(w.player, body, WEEK_LATE, null).add.length, `cycle ${cycle}: no popup`);
+      w.player.freeStone = 9999;
+      assert.strictEqual(w.r.buy(w.player, ta, WEEK_LATE, null).why, 'bought', 'never sold again');
+      w.player.spherePoint = 100;
+      assert.ok(w.r.update(w.player, ta, 1 + cycle, false, WEEK_LATE, null).ok, 'still played through the twin');
+      // login: GET /user/sphere lists the original, the twin is no longer held
+      const got = w.r.list(w.player, WEEK_LATE, null, { setSent: true });
+      assert.ok(got.includes(a) && !got.includes(ta), 'the login list gives the original back');
       for (const body of [LIST_CHECK, HOME_CHECK]) assert.ok(!w.r.check(w.player, body, WEEK_LATE, null).add.includes(a), `cycle ${cycle}: no popup for the bought original`);
-      assert.ok(w.player.avatarBoardsSent.includes(a), 'the original is held again (sent silently)');
+      assert.ok(w.player.avatarBoardsSent.includes(a) && !w.player.avatarBoardsSent.includes(ta), 'the original is held again');
+      assert.deepStrictEqual(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, null).close, [], 'nothing to close after the login');
       assert.ok(w.r.list(w.player, WEEK_LATE, null).includes(a));
     }
     // its own week returns: still no popup
