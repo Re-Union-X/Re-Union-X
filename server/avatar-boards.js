@@ -16,7 +16,7 @@
 //   rewardExpandId = our skill id and medalCategory (the board reward grant gives the medal with that skill, cellSkill). A board
 //   with any cell we cannot pay is held (nothing half-served), and so is a board chained (openId 5) behind a held one.
 // - Runtime (avatarBoardRoutes): a board is listed while one of its windows overlaps the story week (storyCtx shopFrom / shopTo),
-//   when it is bought (player.avatarBoardsBought, kept for good), when its entry is the kept one (Event Catalog, Task 5), a level
+//   when it is bought (player.avatarBoardsBought, kept for good), when its entry is the kept one (Avatar Board Catalog, Task 5b), a level
 //   board from its level; a chained board only once the board before is complete (the client enforces neither). A type-2 board
 //   not bought is never announced by a check (the client pops «Unlocked an Avatar Board!» per new entry): it reaches the client
 //   only through GET /user/sphere. Its served `endDatetime` is the end of the story week in fake time, the moment the Shop
@@ -232,7 +232,8 @@ const weekEndFake = (clock, realMs) => clock.fakeString(clock.weekStartOf(clock.
 const cellSkill = (masu, i) => (masu && masu.rewardSelect[i] === 3 && (masu.rewardExpand || [])[i] === 3 ? Number((masu.rewardExpandId || [])[i]) || 0 : 0);
 
 // index: game_data/avatar_boards.json index; master(table) rows; ctx of every call: {shopFrom, shopTo, level, weekEnd?}; kept: the
-// kept census id / entry key (Event Catalog) or null
+// kept census id / entry key of the Avatar Board Catalog (its own keep since Task 5b: player.avatarBoards.kept, routes-events.js
+// boardKept; never the kept event) or null
 function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = Date.now, nextUserSphereId, log = () => {} }) {
   const ix = () => (typeof index === 'function' ? index() : index) || {};
   const info = (id) => ix()[Number(id)];
@@ -359,8 +360,18 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     return { ok: true, nodes: todo, cost };
   }
 
+  // Avatar Board Catalog keep (Task 5b, routes-events.js keepBoard): the boards listed only because of the kept entry ('kept') join
+  // avatarBoardsSent silently, with their progress, so the next check announces none of them (the Task 6 bench saw one «Unlocked an
+  // Avatar Board!» popup per kept board, 21 in a row); GET /user/sphere lists them, so they are in Avatar Boards. -> the ids marked
+  function markKept(player, ctx = {}, kept = null) {
+    const ids = listedIds(player, ctx, kept).filter((id) => listState(player, id, ctx, kept) === 'kept');
+    for (const id of ids) stateOf(player, id);
+    player.avatarBoardsSent = [...new Set([...(player.avatarBoardsSent || []).map(Number), ...ids])].sort((a, b) => a - b);
+    return ids;
+  }
+
   const isAvatarBoard = (id) => !!info(id);
-  return { listedIds, listed, listState, list, check, buy, update, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete };
+  return { listedIds, listed, listState, list, check, buy, update, markKept, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete };
 }
 
 // ------------------------------------------------------------------------------------------------- Event Catalog ---

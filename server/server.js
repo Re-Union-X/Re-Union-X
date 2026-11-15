@@ -213,6 +213,7 @@ function route(url) {
   if (p.startsWith('/web/special/')) return 'specialweb'; // immagini dei banner Special
   if (p.startsWith('/web/raid/')) return 'raidweb'; // raid banners
   if (p.startsWith('/web/event/')) return 'eventweb'; // Event Catalog, event details and notices, event cards
+  if (p.startsWith('/web/avatar/')) return 'avatarweb'; // Avatar Board Catalog (Events Part 7 Task 5b)
   if (p.startsWith('/web/medals/')) return 'medalweb'; // Medal Gallery and its pictures (I-242)
   if (p.includes('system/status')) return 'status';
   if (p.includes('system/login')) return 'login';
@@ -439,6 +440,8 @@ function respondLogin(res) {
   // Boosters recorded before Part 6 (player.pendingBoosters): granted once now with a full span (boosters.js payPending)
   try { if (player.created && playerBoosters().payPending()) console.log('[booster] pending Boosters granted at login'); } catch (e) { console.log(`[booster] payPending: ${e.message}`); }
   try { if (player.created && eventRoutes().payBonuses()) console.log('[event] community goal bonus paid at login'); } catch (e) { console.log(`[event] payBonuses: ${e.message}`); }
+  // an older save that kept a BOARD entry through the shared Event Catalog keep (Task 5): moved to the Avatar Board Catalog keep (Task 5b)
+  migrateAvatarKeep();
   if (player.created) savePlayer();
   const body = {
     ret: ret(),
@@ -4783,7 +4786,9 @@ function respondSpecialWeb(res, url) {
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
   const page = (html) => { const b = Buffer.from(html, 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (p === '/web/special/catalog') {
-    return page(specialPages.catalogPage(specialIndex(), { ...specialCtx(), names: specialPages.buildNames(masterRows), unlockQuestOf: specialUnlockQuest, stageDone: catalogStageDone })); // names: search box (drop and objective rewards)
+    // avatarBoardCatalog: the Avatar Board Catalog block (Task 5b), when the event index has avatar boards
+    return page(specialPages.catalogPage(specialIndex(), { ...specialCtx(), names: specialPages.buildNames(masterRows), unlockQuestOf: specialUnlockQuest, stageDone: catalogStageDone, // names: search box (drop and objective rewards)
+      avatarBoardCatalog: hasAvatarBoardCatalog() }));
   }
   const det = /^\/web\/special\/(?:quest|detail)\/(\d+)$/i.exec(p); // round 13: /quest/<id>; /detail/<id> (vecchi link) e' la stessa pagina
   if (det) {
@@ -4894,12 +4899,15 @@ function eventRoutes() {
     addPresent: (type, id, num, comment) => addPresent(type, id, num, comment),
     // a built Booster (type 34, Events Part 6): once per quest objective or first-clear item, ever (boosters.js)
     grantBooster: (emblemId, from) => playerBoosters().grant(emblemId, from),
-    // the avatar board listing's decision for this player (Event Catalog status, Part 7 Task 5 fix round 2)
+    // the avatar board listing's decision for this player (Avatar Board Catalog status, Part 7 Task 5 fix round 2)
     avatarBoardState: (id) => avatarBoards().listState(player, id, avatarCtx(), null),
+    // a kept board entry: its boards join avatarBoardsSent silently, never one popup per board (Task 5b, Task 6 bench)
+    markBoardsSent: (kept) => avatarBoards().markKept(player, avatarCtx(), kept),
   });
 }
 // Limited and level avatar boards (avatar-boards.js): game_data/avatar_boards.json, the story week of storyCtx(), the Lux level and
-// the kept event (Event Catalog, player.events.kept: a census id or an avatar entry key)
+// the kept board entry (Avatar Board Catalog, Task 5b: player.avatarBoards.kept, a census id or an avatar entry key; an older save's
+// BOARD entry in player.events.kept is read as it until migrateAvatarKeep moves it)
 var avatarBoardsMemo = null; // var: userSphereData can run before this line
 function avatarBoards() {
   return avatarBoardsMemo ??= avatarBoardsMod.avatarBoardRoutes({ index: avatarBoardIndex, master: masterRows, grantSphereReward, now: realNow, nextUserSphereId,
@@ -4909,7 +4917,10 @@ function avatarCtx(realMs = realNow()) {
   const c = storyCtx();
   return { shopFrom: c.shopFrom, shopTo: c.shopTo, level: luxRankFor(player.lux), weekEnd: avatarBoardsMod.weekEndFake(clock, realMs) };
 }
-const avatarKept = () => (player.events && player.events.kept) || null;
+const avatarKept = () => eventRoutes().boardKept();
+function migrateAvatarKeep() {
+  try { if (player.created && eventRoutes().migrateKept()) console.log('[event] kept avatar board entry moved to the Avatar Board Catalog keep'); } catch (e) { console.log(`[event] migrateKept: ${e.message}`); }
+}
 // Event Coins and Event Boards (type 4, routes-event-boards.js): the sets of events.json boardSets, available while a feeder
 // event is in the story week (eventRoutes().currentEntries) or is the kept one (Event Catalog)
 var eventBoardsMemo = null; // var: grantItem and userPointData can run before this line
@@ -5103,6 +5114,35 @@ function respondEventWeb(res, url) {
   const b = fs.readFileSync(file);
   res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
   return res.end(b);
+}
+// Avatar Board Catalog (Events Part 7 Task 5b, event-pages.js boardCatalogPage / boardDetailPage): the entries with avatar boards of
+// the event index, the board catalogue's context (routes-events.js boardCatalogCtx: its own keep) plus the page lookups.
+// GET /web/avatar/catalog[?from=special|event] (BACK to that catalogue; an older keep moved and a lost one cleared first),
+// /web/avatar/board/<evStageId> (?from=catalog: BACK); the cards are those of /web/event/img. POST /web/avatar/keep/<evStageId> and
+// /web/avatar/unkeep: routes-events.js keepBoard / unkeepBoard, JSON {ok, why?}.
+function hasAvatarBoardCatalog() {
+  try { return (eventIndex().entries || []).some((e) => e && (e.boards || []).length > 0); } catch { return false; }
+}
+const avatarPageCtx = (extra = {}) => ({ ...eventRoutes().boardCatalogCtx(), imgVersion: routesEvents.EVENT_IMG_VERSION,
+  unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
+  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...extra });
+function respondAvatarWeb(res, url) {
+  const p = url.split('?')[0], from = new URLSearchParams(url.split('?')[1] || '').get('from');
+  const page = (html, code = 200) => { const b = Buffer.from(html, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  if (/^\/web\/avatar\/catalog$/i.test(p)) {
+    eventRoutes().pruneBoardKept();
+    return page(eventPages.boardCatalogPage(eventIndex(), avatarPageCtx({ from })));
+  }
+  const det = /^\/web\/avatar\/board\/(\d+)$/i.exec(p);
+  const html = det && eventPages.boardDetailPage(eventIndex(), Number(det[1]), avatarPageCtx({ fromCatalog: from === 'catalog' }));
+  return html ? page(html) : page('not found', 404);
+}
+function respondAvatarPost(res, url) {
+  const p = url.split('?')[0];
+  const json = (code, o) => { const b = Buffer.from(JSON.stringify(o), 'utf8'); res.writeHead(code, { 'Content-Type': 'application/json', 'Content-Length': b.length }); res.end(b); };
+  const m = /^\/web\/avatar\/keep\/(\d+)$/i.exec(p);
+  const out = m ? eventRoutes().keepBoard(Number(m[1])) : /^\/web\/avatar\/unkeep$/i.test(p) ? eventRoutes().unkeepBoard() : { code: 404, body: { ok: false, why: 'unknown route' } };
+  return json(out.code, out.body);
 }
 // POST /web/event/keep/<evStageId> and /web/event/unkeep (buttons of the Event Catalog): routes-events.js keep / unkeep, JSON {ok, why?}
 function respondEventPost(res, url) {
@@ -5513,6 +5553,7 @@ function handler(scheme) {
       if (kind === 'specialweb') return req.method === 'POST' ? respondSpecialPost(res, req.url) : respondSpecialWeb(res, req.url);
       if (kind === 'raidweb') return req.method === 'POST' ? respondRaidPost(res, req.url) : respondRaidWeb(res, req.url);
       if (kind === 'eventweb') return req.method === 'POST' ? respondEventPost(res, req.url) : respondEventWeb(res, req.url);
+      if (kind === 'avatarweb') return req.method === 'POST' ? respondAvatarPost(res, req.url) : respondAvatarWeb(res, req.url);
       if (kind === 'medalweb') return respondMedalWeb(res, req.url, req);
       // tempi del popup Notices (segnalazione dell'utente 19-10: a volte resta vuoto a lungo al primo avvio): la
       // pagina chiama /web/notices/shown appena disegnata; il log dice quanto e' passato dalla richiesta
@@ -5884,7 +5925,7 @@ module.exports._test = {
   eventRoutes, eventIndex, // server/test-event-routes.js
   eventBoards, // server/test-event-board-routes.js
   avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
-  respondEventWeb, respondEventPost, // server/test-event-pages.js
+  respondEventWeb, respondEventPost, respondAvatarWeb, respondAvatarPost, migrateAvatarKeep, // server/test-event-pages.js
   raidIndex, respondSphereCheck, respondSphereUpdate, userSphereAll, raidPageCtx, // server/test-raid-boards.js
   storyCtx, // server/test-raid-routes.js, server/test-raid-boards.js (the Shop week the raids follow)
   respondShopCampaign, // server/test-shop-campaign.js (Task 15)

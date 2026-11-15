@@ -11,7 +11,10 @@
 // (Event Boards of the details page; their names and rewards also feed FIND), questRewards(stageId) -> [names of the objective
 // rewards] (FIND; absent: none), boardBought(sphereBoardId) -> true when the player bought that avatar board (Part 7 Task 5)}.
 // Avatar boards (Events Part 7 Task 5): an entry with boards (index joined by avatar-boards.js catalogIndex) lists them with their
-// price and status; a BOARD entry (boards, no quest) has its own status lines and is kept as an event is (one at a time).
+// price and status. Task 5b (user 15-11: boards are not playable events): the BOARD entries (boards, no quest) are not in the Event
+// Catalog; they and the boards of an event that also sold some are in the Avatar Board Catalog (boardCatalogPage, /web/avatar/
+// catalog, reached from the Special Catalog), with its own keep (routes-events.js boardCatalogCtx / keepBoard, one kept entry at a
+// time, independent of the kept event) and its own details page (boardDetailPage, /web/avatar/board/<evStageId>).
 // States (calendar-util.js rowState): now (listed this Shop week), kept, can (past: can be kept), other (dates inside the week,
 // not open now: a short-window event off its day), later, removed (no quest served yet: «Not built yet», never hidden).
 'use strict';
@@ -24,12 +27,15 @@ const { PAGE_HEAD, pill, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues,
   FILTER_BUTTON, filterOpts, optLabels, filterSheet } = parts;
 
 const BASE = '/web/event';
+const BOARD_BASE = '/web/avatar'; // the Avatar Board Catalog (Task 5b)
+const BOARD_WHERE = 'Avatar Boards'; // the screen its kept boards are listed in (keep button and messages)
 const keepButton = (id, on, extra = '') => parts.keepButton(BASE, id, on, extra);
+const boardKeepButton = (id, on, extra = '') => parts.keepButton(BOARD_BASE, id, on, extra, '', BOARD_WHERE);
 const KEEP_JS = parts.keepJs(BASE, 'event');
-// the pills the page script writes after a keep / remove: [row class, html]
-// a BOARD row (data-b, Part 7 Task 5 fix round 1) takes the b-pills: its boards, not the Events tab
-const PILLS = { kept: ['pinned', `${icon('pin')}Kept in the event list`], can: ['can', `${icon('pin')}Past event — can be kept`],
-  bkept: ['pinned', `${icon('pin')}Kept: its boards are in Avatar Boards`], bcan: ['can', `${icon('pin')}Past boards — can be kept`] };
+const BOARD_KEEP_JS = parts.keepJs(BOARD_BASE, 'entry', BOARD_WHERE);
+// the pills the page script writes after a keep / remove: [row class, html]; the Avatar Board Catalog has its own
+const PILLS = { kept: ['pinned', `${icon('pin')}Kept in the event list`], can: ['can', `${icon('pin')}Past event — can be kept`] };
+const BOARD_PILLS = { kept: ['pinned', `${icon('pin')}Kept: its boards are in Avatar Boards`], can: ['can', `${icon('pin')}Past boards — can be kept`] };
 const dateRange = (e) => `${niceDay(e.start)} – ${niceDay(e.end || e.start)}`;
 // the catalogue's date line: one day once (Part 4: about 340 short events, catalog_size_budget)
 const dateLine = (e) => (!e.end || e.end === e.start ? niceDay(e.start) : dateRange(e));
@@ -43,6 +49,7 @@ const NO_CARD_JS = `function kxNc(im){var s=document.createElement('span');s.cla
 const NO_CARD_CSS = '.nc{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:320px;max-width:100%;height:70px;border:1px solid #2f6f93;'
   + 'border-radius:6px;background:#06283e;color:#b9cfdc;font-size:13px}';
 const detailHref = (id) => `${BASE}/event/${id}?from=catalog`;
+const boardDetailHref = (id) => `${BOARD_BASE}/board/${id}?from=catalog`;
 const servedOf = (e) => (e.quests || []).filter((q) => q.served);
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
@@ -73,8 +80,8 @@ const boardsOf = (e) => (Array.isArray(e.boards) ? e.boards : []);
 const boardOnly = (e) => boardsOf(e).length > 0 && !(e.quests || []).length;
 // Status of an event: show (state), cls (side bar), pill (status line), button (1 Keep, 0 Remove, null none), why (details page)
 function statusOf(e, ctx) {
+  if (boardOnly(e)) return boardStatusOf(e, ctx);
   const st = rowState(e, ctx);
-  if (boardOnly(e) && ['removed', 'now', 'kept', 'can', 'other'].includes(st)) return boardStatus(e, st, ctx);
   if (st === 'removed') {
     const raidish = /raid or Special/.test(e.why || '');
     return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not built yet'), button: null,
@@ -94,12 +101,21 @@ function statusOf(e, ctx) {
     return { show: st, cls: 'can', pill: pill(PILLS.can[0], '', PILLS.can[1]), button: 1,
       why: 'Its dates are over: you can keep it in the Events tab, one event at a time. Its rewards are the same as in its dates, so a quest reward is never given twice.' };
   }
+  return laterStatus(e, ctx);
+}
+function laterStatus(e, ctx) {
   const q = ctx.unlockQuestOf ? ctx.unlockQuestOf(e) : undefined;
   const text = q === undefined ? 'Reached later in the Story' : q === null ? 'Not reached in this version of the Story' : `Unlocks at Story Quest ${q}`;
   const why = q === undefined || q === null ? 'Its dates come later in the Story: it opens when your Story reaches them.' : `Its dates come later in the Story: it opens when you reach Story Quest ${q}.`;
   return { show: 'later', cls: 'off', pill: pill('off', 'later', text), button: null, why };
 }
-// a BOARD entry: its boards are in Avatar Boards while their window is in the story week, or while it is kept
+// Status of an entry in the Avatar Board Catalog (a BOARD entry, or an event that also sold boards: its boards only). ctx is the
+// board catalogue's (routes-events.js boardCatalogCtx: current = a board of the entry listed this week, kept = the kept board entry)
+function boardStatusOf(e, ctx = {}) {
+  const st = rowState(e, ctx);
+  return st === 'later' ? laterStatus(e, ctx) : boardStatus(e, st, ctx);
+}
+// its boards are in Avatar Boards while their window is in the story week, or while it is kept
 function boardStatus(e, st, ctx = {}) {
   const sale = boardsOf(e).some((b) => b.served && b.type === 2);
   if (st === 'removed') {
@@ -111,8 +127,8 @@ function boardStatus(e, st, ctx = {}) {
       why: `Its boards are in Avatar Boards this week${sale ? ', at the price of these dates' : ''}, as in the original game.` };
   }
   if (st === 'kept') {
-    return { show: st, cls: 'pinned', pill: pill(PILLS.bkept[0], '', PILLS.bkept[1]), button: 0,
-      why: 'You keep these boards in Avatar Boards, beside the ones of the week, at their original price. A board you buy stays yours when you keep another event.' };
+    return { show: st, cls: 'pinned', pill: pill(BOARD_PILLS.kept[0], '', BOARD_PILLS.kept[1]), button: 0,
+      why: 'You keep these boards in Avatar Boards, beside the ones of the week, at their original price. A board you buy stays yours when you keep another entry. Your kept event is not changed.' };
   }
   if (st === 'other' && ctx.boardLocked && ctx.boardLocked.has(e.censusId)) {
     return { show: st, cls: 'other', pill: pill('other', '', 'Unlocks after the previous board'), button: null,
@@ -122,8 +138,8 @@ function boardStatus(e, st, ctx = {}) {
     return { show: st, cls: 'other', pill: pill('other', '', 'This week, no board on sale'), button: null,
       why: 'Your Story week is inside its dates, but none of its boards served here is on sale or handed out this week (each board has its own dates). It cannot be kept while its dates are current.' };
   }
-  return { show: st, cls: 'can', pill: pill(PILLS.bcan[0], '', PILLS.bcan[1]), button: 1,
-    why: 'Its dates are over: you can keep it, one event at a time, and its boards are listed in Avatar Boards again at their original price.' };
+  return { show: st, cls: 'can', pill: pill(BOARD_PILLS.can[0], '', BOARD_PILLS.can[1]), button: 1,
+    why: 'Its dates are over: you can keep it, one entry at a time, and its boards are listed in Avatar Boards again at their original price. Your kept event is not changed.' };
 }
 const keptOf = (entries, ctx) => entries.find((e) => rowState(e, ctx) === 'kept');
 // «Replaces: <kept event>» over a Keep button; hidden on the kept row, which gets it back when another event is kept (kxRow)
@@ -137,6 +153,9 @@ const doneOf = (e, ctx) => !!ctx.stageDone && servedOf(e).length > 0 && servedOf
 const catName = (e) => e.catalogName || e.name || e.censusId;
 const entriesOf = (index) => ((index && index.entries) || []).filter((e) => e && e.censusId && e.evStageId && e.start && !informative(e))
   .slice().sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.evStageId - b.evStageId));
+// the Event Catalog lists events only (Task 5b); the Avatar Board Catalog every entry with avatar boards
+const eventEntriesOf = (index) => entriesOf(index).filter((e) => !boardOnly(e));
+const boardEntriesOf = (index) => entriesOf(index).filter((e) => boardsOf(e).length > 0);
 // an entry by its id or by the id of one of its original evStage rows (Part 2 Task 5: the Details of a row card)
 const entryOfId = (entries, id) => entries.find((x) => x.evStageId === id) || entries.find((x) => (x.rows || []).some((r) => r.evStageId === id));
 
@@ -144,10 +163,10 @@ const entryOfId = (entries, id) => entries.find((x) => x.evStageId === id) || en
 const ROWS_JS = `(function(){var PILL=__PILL__;
 function attr(el,a){return el.getAttribute(a);}
 var rows=[].slice.call(document.querySelectorAll('.row'));
-function href(el){return '/web/event/event/'+attr(el,'data-eid')+'?from=catalog';}
+function href(el){return __HREF__+attr(el,'data-eid')+'?from=catalog';}
 function nameOf(el){var n=el.querySelector('.nm');return n?n.textContent:'';}
 window.kxK=function(b){return kxKeep(b,function(on){kxRow(b.getAttribute('data-id'),on);});};
-function setRow(el,st){var pc=PILL[(attr(el,'data-b')?'b':'')+st]||PILL[st];el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');var s=el.querySelector('.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
+function setRow(el,st){var pc=PILL[st];el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');var s=el.querySelector('.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
 var b=el.querySelector('.pk');if(b)kxSet(b,attr(el,'data-eid'),st==='kept');}
 window.kxRow=function(id,on){var name='',i,el;for(i=0;i<rows.length;i++){el=rows[i];if(attr(el,'data-show')==='kept')setRow(el,'can');if(attr(el,'data-eid')===id){setRow(el,on?'kept':'can');if(on)name=nameOf(el);}}
 for(i=0;i<rows.length;i++){var x=rows[i].querySelector('.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';x.style.display=name&&attr(rows[i],'data-show')==='can'?'':'none';}}if(window.kxRender)kxRender();};
@@ -228,7 +247,7 @@ for(i=0;i<rows.length;i++){r=rows[i];if(match(r,cur,true)){c.all++;c[r.p]=(c[r.p
 for(i=0;i<kids.length;i++){el=kids[i];if(/(^| )ml( |$)/.test(el.className)){if(lab)hide(lab,!any);lab=el;any=false;}else if(/(^| )row( |$)/.test(el.className)&&!/ hide/.test(el.className))any=true;}
 if(lab)hide(lab,!any);
 [].forEach.call(tabs.querySelectorAll('.tab'),function(t){var p=attr(t,'data-p'),k=t.querySelector?t.querySelector('.c'):null;t.className='tab'+(p===cur.p?' on':'');if(k)k.textContent=c[p]||0;});
-var f=nf(cur),h='<span class="n1">'+plural(n,'event')+'</span>';
+var f=nf(cur),h='<span class="n1">'+plural(n,__NOUN__)+'</span>';
 if(cur.p!=='all')h+=' in <b>'+esc(PN[cur.p])+'</b>';
 if(!f)h+=' · no filters';
 else{h+=' match your filters:';
@@ -239,7 +258,7 @@ if(cur.q)h+=' '+tag('q','Find: &quot;'+esc(cur.q)+'&quot;');
 h+=' <a href="#" class="clear" data-x="all">Clear all</a>';}
 $('sum').innerHTML=h;if(typeof kxImgs==='function')kxImgs();$('fdot').textContent=f?f:'';
 for(i=0;i<rows.length;i++){r=rows[i];if(!r.mt)continue;var w=cur.q&&r.el.className.indexOf(' hide')<0?hits(r,cur.q,3):[];r.mt.textContent=w.length?'Matches: '+w.join(', '):'';r.mt.style.display=w.length?'block':'none';}
-var none=$('none'),wq=(cur.prog==='done'?'completed ':cur.prog==='todo'?'incomplete ':'')+'events';none.textContent=n?'':(cur.q?'No '+wq+' match "'+cur.q+'"':'No '+wq+' match your filters');none.style.display=n?'none':'';}
+var none=$('none'),wq=(cur.prog==='done'?'completed ':cur.prog==='todo'?'incomplete ':'')+__NOUN__+'s';none.textContent=n?'':(cur.q?'No '+wq+' match "'+cur.q+'"':'No '+wq+' match your filters');none.style.display=n?'none':'';}
 window.kxRender=render;
 function sync(){[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){var g=attr(box,'data-g');[].forEach.call(box.children,function(o){o.className=o.className.replace(/ on/g,'')+(attr(o,'data-v')===dr[g]?' on':'');});});
 $('fok').textContent='Show '+plural(count(dr),'result');}
@@ -257,60 +276,98 @@ tabs.onclick=function(e){var t=e.target;while(t&&t!==tabs&&!attr(t,'data-p'))t=t
 var h=location.hash?$(location.hash.slice(1)):null;if(h&&cur.p!=='all'&&attr(h,'data-p')&&attr(h,'data-p')!==cur.p)cur.p=attr(h,'data-p');
 render();if(h&&h.scrollIntoView)h.scrollIntoView();})();`;
 
-// GET /web/event/catalog: every event of the index by date, one month label per month, one minimal row per event (card, name,
-// date line, ONE status line, at most ONE Keep button, «›»). A record with no quest served yet is listed as «Not built yet».
-function catalogPage(index, ctx = {}) {
-  const entries = entriesOf(index), kept = keptOf(entries, ctx);
+// The two catalogues built by catalogOf: the Event Catalog (events only, Task 5b) and the Avatar Board Catalog (every entry with
+// avatar boards, its own keep). A mode holds what differs: routes, words, entries, status, the count and TYPE of a row.
+// TYPE of an entry in the Avatar Board Catalog: the group of its boards (the first window's), as the records name it
+const BOARD_TYPE_OPTS = [['all', 'All'], ['outfit', 'Outfit Boards', 'avatar'], ['gem', 'Gem Boards', 'jewel'], ['skill', 'Skill Boards', 'skill'],
+  ['medal', 'Medal Boards', 'medal'], ['avatarCoin', 'Avatar Coin Boards', 'camp'], ['avatarCoinBooster', 'Avatar Coin Booster Boards', 'camp'], ['jewelBooster', 'Jewel Booster Boards', 'jewel']];
+const boardTypeOf = (e) => String(((e.avatarBoards || [])[0] || boardsOf(e)[0] || {}).group || 'BOARD');
+const BOARD_SHOW_OPTS = [['all', 'All entries'], ['now', 'In Avatar Boards now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'],
+  ['later', 'Later in the Story', 'later'], ['removed', 'Not built yet', 'removed']];
+const boardCount = (e) => {
+  const nb = boardsOf(e).length, nbs = boardsOf(e).filter((b) => b.served).length;
+  return nbs === nb ? plural(nb, 'avatar board') : `${nbs} of ${plural(nb, 'avatar board')} served`;
+};
+const MODES = {
+  event: { base: BASE, title: 'Event Catalog', noun: 'event', entries: eventEntriesOf, status: statusOf, pills: PILLS, keepJs: KEEP_JS, href: detailHref, button: keepButton,
+    typeOf, typeOpts: TYPE_OPTS, showOpts: SHOW_OPTS, placeholder: 'Event, quest or reward name',
+    hint: 'Matches the start of words in event and quest names and in the rewards of the quests and Event Boards (e.g. Halloween, Marluxia, Dewey).',
+    count: (e) => { const served = servedOf(e).length, all = (e.quests || []).length; return served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`; },
+    intro: () => '<p class="n">Every event of the game, by date. Tap an event for its quests. A past event can be kept in the Events tab, one at a time. The Event Catalog is an addition of this server.</p>'
+      + `<p class="n">Avatar boards on sale are in the <a href="${BOARD_BASE}/catalog?from=event">Avatar Board Catalog ›</a>, also reached from the Special Catalog.</p>`,
+    end: () => '' },
+  board: { base: BOARD_BASE, title: 'Avatar Board Catalog', noun: 'entry', entries: boardEntriesOf, status: boardStatusOf, pills: BOARD_PILLS, keepJs: BOARD_KEEP_JS,
+    href: boardDetailHref, button: boardKeepButton, typeOf: boardTypeOf, typeOpts: BOARD_TYPE_OPTS, showOpts: BOARD_SHOW_OPTS, placeholder: 'Board or event name',
+    hint: 'Matches the start of words in board and event names (e.g. Nick Wilde, Gem, Booster).',
+    count: boardCount,
+    intro: () => '<p class="n">Every limited avatar board of the game, by the dates it was on sale or handed out. Tap an entry for its boards and prices. '
+      + 'Boards of the week are in Avatar Boards, as in the original game. A past entry can be kept, one at a time: its boards are listed in Avatar Boards again at their '
+      + 'original price. The keep of past boards and this catalogue are an addition of this server, not original. Keeping an entry never changes your kept event.</p>',
+    end: (index) => heldSection(index) },
+};
+const plural2 = (n, w) => `${n} ${w === 'entry' ? (n === 1 ? 'entry' : 'entries') : `${w}${n === 1 ? '' : 's'}`}`;
+// the page script's plural (FILTER_JS plural(n, noun), «No <noun>s match»): «entry» has its own plural
+const NOUN_JS = { event: "'event'", entry: "'entry'" };
+
+// GET /web/event/catalog and /web/avatar/catalog: every entry of the mode by date, one month label per month, one minimal row per
+// entry (card, name, date line, ONE status line, at most ONE Keep button, «›»). A record with nothing served yet is «Not built yet».
+// ctx.from (Avatar Board Catalog): 'special' or 'event', the BACK bar to the catalogue it was opened from.
+function catalogOf(index, ctx, m) {
+  const entries = m.entries(index), kept = keptOf(entries, ctx);
   let lastM = '';
   const packed = [], boards = new Map();
   for (const e of entries) {
-    const st = statusOf(e, ctx), href = detailHref(e.evStageId), m = e.start.slice(0, 7), served = servedOf(e).length, all = (e.quests || []).length;
-    const label = m !== lastM ? `<div class="ml" data-m="${m}">${monthYear(`${m}-01`)}</div>` : '';
-    lastM = m;
-    const nb = boardsOf(e).length, nbs = boardsOf(e).filter((b) => b.served).length;
-    const count = boardOnly(e) ? (nbs === nb ? plural(nb, 'avatar board') : `${nbs} of ${plural(nb, 'avatar board')} served`)
-      : served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`;
-    const line = `${dateLine(e)} · ${count}`, name = esc(catName(e)), y = e.start.slice(0, 4);
-    const done = doneOf(e, ctx), search = esc(searchOf(e, ctx, index, boards)), t = typeOf(e);
+    const st = m.status(e, ctx), href = m.href(e.evStageId), mo = e.start.slice(0, 7);
+    const label = mo !== lastM ? `<div class="ml" data-m="${mo}">${monthYear(`${mo}-01`)}</div>` : '';
+    lastM = mo;
+    const line = `${dateLine(e)} · ${m.count(e)}`, name = esc(catName(e)), y = e.start.slice(0, 4);
+    const done = m === MODES.event && doneOf(e, ctx), search = esc(searchOf(e, ctx, index, boards)), t = m.typeOf(e);
     // one minimal row (Part 4 Task 4, catalog_size_budget: about 340 events): the row opens its page (ROWS_JS, from data-eid), the
     // name is the link, the missing card box and the Keep handler are functions of the page; the rows are sent packed, as the
     // Raid Catalog's (catalog-pages.js packCatalog), and the cards load from data-src once the rows are built (kxImgs). The
     // filters read data-p (game year), data-show, data-type, data-done and data-search (FIND names); «Matches:» goes in .mt
-    packed.push({ label, fields: { s: search, d: line, n: name, e: String(e.evStageId), y, t }, html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}"${boardOnly(e) ? ' data-b="1"' : ''} data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
+    packed.push({ label, fields: { s: search, d: line, n: name, e: String(e.evStageId), y, t }, html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}" data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
       + ` data-type="${t}" data-done="${done ? 1 : 0}" data-search="${search}">`
       + `<span class="im"><img width="320" height="70" data-src="${imgOf(ctx, e.evStageId)}" alt="" onerror="kxNc(this)"></span>`
       + `<div class="info"><a class="nm" href="${href}">${name}${done ? CROWN : ''}</a><div class="d">${line}</div>${st.pill}`
-      + `${replacesLine(st, kept)}${st.button === null ? '' : `<div>${keepButton(e.evStageId, st.button, ' onclick="return kxK(this)"')}</div>`}`
+      + `${replacesLine(st, kept)}${st.button === null ? '' : `<div>${m.button(e.evStageId, st.button, ' onclick="return kxK(this)"')}</div>`}`
       + '<div class="mt"></div></div><span class="go">›</span></div>\n' });
   }
-  // game-year tabs (the Raid Catalog's): All years + every game year with events, its count; the year of the Story week first
+  // game-year tabs (the Raid Catalog's): All years + every game year with entries, its count; the year of the Story week first
   const perYear = GAME_YEARS.map((g, i) => entries.filter((e) => gameYearOf(e.start) === i).length);
   const shopYear = ctx.shopFrom ? gameYearOf(ctx.shopFrom) : null, def = shopYear !== null && perYear[shopYear] ? String(shopYear) : 'all';
   const tab = (p, name, sub, n) => `<button type="button" class="tab${p === def ? ' on' : ''}" data-p="${p}"><b>${esc(name)}</b><small>${esc(sub)}</small><span class="c">${n}</span></button>`;
   const tabsHtml = entries.length ? `<div class="tabs" id="tabs" data-def="${def}">${tab('all', 'All years', YEAR_SPAN, entries.length)}`
     + `${GAME_YEARS.map((g, i) => (perYear[i] ? tab(String(i), g.name, g.sub, perYear[i]) : '')).join('')}</div><div class="tabline"></div>` : '';
   // the Filters sheet (the Raid Catalog's: FIND, SHOW, PROGRESS, then TYPE with the kinds of the index only)
-  const kinds = new Set(entries.map(typeOf));
-  const typeOpts = [...TYPE_OPTS.filter((o, i) => !i || kinds.has(o[0])), ...[...kinds].filter((k) => !TYPE_OPTS.some((o) => o[0] === k)).sort().map((k) => [k, k])];
+  const kinds = new Set(entries.map(m.typeOf));
+  const typeOpts = [...m.typeOpts.filter((o, i) => !i || kinds.has(o[0])), ...[...kinds].filter((k) => !m.typeOpts.some((o) => o[0] === k)).sort().map((k) => [k, k])];
   const n0 = def === 'all' ? entries.length : perYear[Number(def)];
   const js = FILTER_JS.replace('__PN__', JSON.stringify(Object.fromEntries(GAME_YEARS.map((g, i) => [i, g.name])))).replace('__TYPE__', optLabels(typeOpts))
-    .replace('__SHOW__', optLabels(SHOW_OPTS)).replace('__PROG__', optLabels(PROG_OPTS)).replace('__SHOWSET__', JSON.stringify(SHOW_SETS)).replace('__MATCH__', () => MATCH_JS);
-  const sheet = filterSheet({ placeholder: 'Event, quest or reward name', n: n0,
-    hint: 'Matches the start of words in event and quest names and in the rewards of the quests and Event Boards (e.g. Halloween, Marluxia, Dewey).',
-    groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(SHOW_OPTS, (v) => (v === 'all' ? '' : ` st-${v}`))}</div>`],
+    .replace('__SHOW__', optLabels(m.showOpts)).replace('__PROG__', optLabels(PROG_OPTS)).replace('__SHOWSET__', JSON.stringify(SHOW_SETS)).replace('__MATCH__', () => MATCH_JS)
+    .split('__NOUN__').join(NOUN_JS[m.noun]);
+  const sheet = filterSheet({ placeholder: m.placeholder, n: n0, hint: m.hint,
+    groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(m.showOpts, (v) => (v === 'all' ? '' : ` st-${v}`))}</div>`],
       ['PROGRESS', `<div class="opts" data-g="prog">${filterOpts(PROG_OPTS, progCls)}</div>`],
       ['TYPE', `<div class="opts" data-g="type">${filterOpts(typeOpts)}</div>`]] });
-  return PAGE_HEAD('Event Catalog', CSS + NO_CARD_CSS) + `<body><script>${NO_CARD_JS}</script>`
-    + `<div class="hdr"><h1>Event Catalog</h1>${packed.length ? FILTER_BUTTON : ''}</div>`
-    + '<p class="n">Every event of the game, by date. Tap an event for its quests. A past event can be kept in the Events tab, one at a time. The Event Catalog is an addition of this server.</p>'
+  const backTo = { special: '/web/special/catalog', event: `${BASE}/catalog` }[ctx.from];
+  const back = m === MODES.board && backTo ? backBar(backTo) : '';
+  return PAGE_HEAD(m.title, CSS + NO_CARD_CSS) + `<body${back ? ' class="hb"' : ''}><script>${NO_CARD_JS}</script>`
+    + `<div class="hdr"><h1>${m.title}</h1>${packed.length ? FILTER_BUTTON : ''}</div>`
+    + m.intro()
     + tabsHtml
-    + `<div class="sum" id="sum"><span class="n1">${plural(n0, 'event')}</span>${def === 'all' ? '' : ` in <b>${esc(GAME_YEARS[Number(def)].name)}</b>`} · no filters</div>`
+    + `<div class="sum" id="sum"><span class="n1">${plural2(n0, m.noun)}</span>${def === 'all' ? '' : ` in <b>${esc(GAME_YEARS[Number(def)].name)}</b>`} · no filters</div>`
     + '<div id="none" class="none" style="display:none"></div>'
-    + `<div id="rows">${packed.length ? '' : '<p class="n">No events.</p>'}</div>`
+    + `<div id="rows">${packed.length ? '' : `<p class="n">No ${plural2(2, m.noun).slice(2)}.</p>`}</div>`
     + (packed.length ? `<script id="kxrows" type="application/json">${packCatalog(packed)}</script><script>${UNPACK_JS}</script>${sheet}` : '')
-    + heldSection(index)
-    + `<div id="pinmsg" class="pinmsg"></div><script>${KEEP_JS}</script><script>${ROWS_JS.replace('__PILL__', JSON.stringify(PILLS))}</script>${packed.length ? `<script>${js}</script>` : ''}</body></html>`;
+    + m.end(index)
+    + `<div id="pinmsg" class="pinmsg"></div><script>${m.keepJs}</script><script>${ROWS_JS.replace('__PILL__', JSON.stringify(m.pills)).replace('__HREF__', JSON.stringify(`${m.base}/${m === MODES.board ? 'board' : 'event'}/`).replace(/"/g, "'"))}</script>`
+    + `${packed.length ? `<script>${js}</script>` : ''}${back}</body></html>`;
 }
+// GET /web/event/catalog: the Event Catalog (events only)
+const catalogPage = (index, ctx = {}) => catalogOf(index, ctx, MODES.event);
+// GET /web/avatar/catalog: the Avatar Board Catalog (Task 5b)
+const boardCatalogPage = (index, ctx = {}) => catalogOf(index, ctx, MODES.board);
 
 // The labels of events.json in the player's words: [group, short label, one short line, icon]; the full sentence is the reason
 // of the index (event_config.json reconstructedWhy), folded under «Why these values?»
@@ -409,8 +466,9 @@ const BOARD_LABEL_TEXT = {
 const num = (n) => Number(n).toLocaleString('en-US');
 const boardPrice = (b) => (b.type === 1 ? 'Handed out' : Number(b.price) > 0 ? `${num(b.price)} Jewels` : '—');
 // «Avatar Boards» of the details page: every board of the entry with its dates, price and status (bought, served, or not served
-// with the reason), the labels of its windows, the keep of past boards declared (not original). ctx.boardBought(sphereBoardId)
-function avatarBoardsSection(e, ctx) {
+// with the reason), the labels of its windows, the keep of past boards declared (not original). ctx.boardBought(sphereBoardId).
+// On the Event Catalog page of an event that also sold boards (Task 5b): the link to its Avatar Board Catalog page, where they are kept
+function avatarBoardsSection(e, ctx, onEventPage = false) {
   const boards = boardsOf(e);
   if (!boards.length) return '';
   const status = (b) => {
@@ -422,8 +480,8 @@ function avatarBoardsSection(e, ctx) {
   const notes = codes.length ? `<ul class="pl">${codes.map((c) => `<li>${esc(BOARD_LABEL_TEXT[c] || c)}</li>`).join('')}</ul>` : '';
   return `<h2>Avatar Boards</h2><table class="tt bt"><tr><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
     + '<p class="n">A board on sale is bought once with Jewels and stays yours; its nodes are opened with Avatar Coins. In the original game these boards were sold '
-    + 'only in their dates: on this server a past entry can be kept in the Event Catalog, and its boards are listed in Avatar Boards again at their original price '
-    + '(an addition of this server, not original).</p>';
+    + `only in their dates: on this server a past entry can be kept in the ${onEventPage ? `<a href="${BOARD_BASE}/board/${e.evStageId}">Avatar Board Catalog ›</a>` : 'Avatar Board Catalog'}, `
+    + 'and its boards are listed in Avatar Boards again at their original price (an addition of this server, not original). Keeping it never changes your kept event.</p>';
 }
 // the end of the catalogue: the avatar boards no dated window places (index.avatarHeld, make-events.js), with the reason
 function heldSection(index) {
@@ -445,7 +503,7 @@ function heldSection(index) {
 // Rebuilt values closed, quests not served yet, links), then the event and its quests (each served or «Not served yet» with the
 // reason in plain words). null = unknown id (404).
 function detailPage(index, evStageId, ctx = {}) {
-  const entries = entriesOf(index), e = entryOfId(entries, Number(evStageId));
+  const entries = eventEntriesOf(index), e = entryOfId(entries, Number(evStageId));
   if (!e) return null;
   const st = statusOf(e, ctx), kept = keptOf(entries, ctx), title = catName(e);
   const button = st.button === null ? '' : `<div>${keepButton(e.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"')}</div>`;
@@ -475,7 +533,7 @@ function detailPage(index, evStageId, ctx = {}) {
   return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
     + `<h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140)}>${box}`
     + `<h2>Event</h2><table class="kv">${kv}</table>`
-    + cards + boardsSection(index, e, ctx) + avatarBoardsSection(e, ctx)
+    + cards + boardsSection(index, e, ctx) + avatarBoardsSection(e, ctx, true)
     + (boardOnly(e) ? '' : `<h2>Quests</h2><table class="tt"><tr><th>Quest</th><th>LV</th><th>AP</th><th>Status</th></tr>${qRows}</table>`)
     + `<p class="n">The Event Catalog is an addition of this server: in the original game an event was played only in its own dates.</p>${back}<script>${KEEP_JS}</script></body></html>`;
 }
@@ -521,4 +579,25 @@ function noticePage(index, evStageId, doc, ctx = {}) {
   }
 }
 
-module.exports = { catalogPage, detailPage, noticePage, statusOf, whyPlain, boardWhyPlain, entriesOf, expandCatalog, informative };
+// GET /web/avatar/board/<evStageId> (Task 5b): an entry of the Avatar Board Catalog, its boards with dates, prices and status, the
+// «On this server» box with its own Keep button. null = no such entry with boards (404). ctx: boardCatalogCtx plus the page lookups.
+function boardDetailPage(index, evStageId, ctx = {}) {
+  const entries = boardEntriesOf(index), e = entryOfId(entries, Number(evStageId));
+  if (!e) return null;
+  const st = boardStatusOf(e, ctx), kept = keptOf(entries, ctx), title = catName(e);
+  const button = st.button === null ? '' : `<div>${boardKeepButton(e.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"')}</div>`;
+  const kv = [['Dates', dateRange(e)], ['Game year', GAME_YEARS[gameYearOf(e.start)].name], ['Avatar boards', boardCount(e)]]
+    .map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
+  const back = ctx.fromCatalog ? backBar(`${BOARD_BASE}/catalog#q${e.evStageId}`) : '';
+  const links = [...((e.quests || []).length ? [[`${BASE}/event/${e.evStageId}`, 'This event in the Event Catalog ›']] : []), [`${BOARD_BASE}/catalog`, 'Avatar Board Catalog ›']];
+  const box = srvFrame(st, { after: `<div id="pinmsg" class="pinmsg"></div>${replacesLine(st, kept)}${button}`,
+    intro: `This server follows your Story, not the calendar: these boards of the original game (${esc(dateRange(e))}) are listed in Avatar Boards when your Story reaches their dates.`,
+    links }, 'avatar');
+  return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
+    + `<h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140)}>${box}`
+    + `<h2>Entry</h2><table class="kv">${kv}</table>${avatarBoardsSection(e, ctx)}`
+    + `<p class="n">The Avatar Board Catalog is an addition of this server: in the original game a board was sold only in its own dates.</p>${back}<script>${BOARD_KEEP_JS}</script></body></html>`;
+}
+
+module.exports = { catalogPage, detailPage, noticePage, statusOf, boardCatalogPage, boardDetailPage, boardStatusOf, whyPlain, boardWhyPlain, entriesOf, eventEntriesOf, boardEntriesOf,
+  boardOnly, expandCatalog, informative };

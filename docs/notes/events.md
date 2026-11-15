@@ -1304,3 +1304,12 @@ of 17 December 2020; both bench only):
 | Kept BOARD entry (Nov. 2020 Avatar Coin / Booster boards) | Event Catalog FIND «Treasure», «Keep in Events» → «Kept: its boards are in Avatar Boards»; 21 boards announced on the home, count 172 → 193 | t6_k6-12, t6_kpop3 |
 | Event Catalog load (165 KB) | page drawn 2.7-3.8 s after the tap | t6_cl1-6 |
 | Moogle Shop JP art (905c5caf) | Traits rows gold and blue drawn with rounded corners and a small gap under the frame; tabs JP art, on and off; no crash | t6_ms_traits, t6_ms_items |
+
+## Avatar Board Catalog (Events Part 7, Task 5b)
+
+User decision 15-11: avatar boards are not playable events, so they leave the Event Catalog.
+- **Event Catalog:** events only (no BOARD entry, no undated board list). Its intro links to the Avatar Board Catalog. On the real data it is 111 KB packed (was 165 KB).
+- **Avatar Board Catalog** (`event-pages.js boardCatalogPage`, `GET /web/avatar/catalog`): every entry with avatar boards (the 264 BOARD entries plus EV-0741, an event that also sold boards), with the Task 5 status lines, «Unlocks after the previous board», «On sale this week» from `listState`, the prices of each window and the undated held boards at the end. TYPE filter by board group. Details: `GET /web/avatar/board/<evStageId>`. 84 KB packed on the real data.
+- **Entry point:** a block under the intro of the Special Catalog page (`special-pages.js`, as the Medal Gallery block of the Banner Catalog), so no master row and no client change. No picture: the board cards are client resources, not web pictures.
+- **Own keep:** `player.avatarBoards.kept` (routes-events.js `keepBoard` / `unkeepBoard`, POST `/web/avatar/keep/<id>` and `/web/avatar/unkeep`). One entry at a time, independent of `player.events.kept`. `avatarKept()` and the sphere body cache key read it. An older save whose `events.kept` holds a BOARD entry is read as the board keep and moved at login (`migrateKept`).
+- **Bench fixes:** the keep messages say «Leave and re-enter Avatar Boards»; a kept entry's boards join `avatarBoardsSent` silently (`avatar-boards.js markKept`), so the next check pops no «Unlocked an Avatar Board!».

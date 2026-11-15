@@ -11,6 +11,8 @@ const avatarBoards = require('./avatar-boards');
 const { rowState } = require('./calendar-util');
 // the catalogue with its rows written out (sent packed since Events Part 4 Task 4, as the Raid Catalog: catalog-pages.js packCatalog)
 const catalog = (...a) => pages.expandCatalog(pages.catalogPage(...a));
+// the Avatar Board Catalog (Task 5b), packed the same way
+const boardCatalog = (...a) => pages.expandCatalog(pages.boardCatalogPage(...a));
 
 const REASONS = JSON.parse(fs.readFileSync(path.join(__dirname, 'event_config.json'), 'utf8')).reconstructedWhy;
 const REASON_TEXT = JSON.parse(fs.readFileSync(path.join(__dirname, 'event_config.json'), 'utf8')).reasonText;
@@ -482,61 +484,203 @@ const tests = {
     // Part 5 Task 3: an objective known only as text (objectiveUnmapped), in plain words without the builder's note
     assert.ok(/objective/i.test(pages.whyPlain('x («Clear within 75 seconds»)', 'objectiveUnmapped')) && !/75/.test(pages.whyPlain('x («Clear within 75 seconds»)', 'objectiveUnmapped')));
   },
-  // Events Part 7 Task 5: a BOARD entry (make-events.js, avatar board records) joined at run time with game_data/avatar_boards.json
-  // (avatar-boards.js catalogIndex): its boards with their price, a held board with its reason in plain words; a board-only entry
-  // with no served board is «Not restored yet»; the held boards no window places are listed at the end of the catalogue
+  // Events Part 7 Task 5, moved to the Avatar Board Catalog by Task 5b (user 15-11): a BOARD entry (make-events.js, avatar board
+  // records) joined at run time with game_data/avatar_boards.json (avatar-boards.js catalogIndex): its boards with their price, a
+  // held board with its reason in plain words; a board-only entry with no served board is «Not built yet»; the held boards no
+  // window places are listed at the end of the Avatar Board Catalog
   board_entry_listed() {
     const ix = BOARD_INDEX();
-    const html = catalog(ix, ctx({ current: new Set(['E-1', 'B-1']) }));
+    const html = boardCatalog(ix, ctx({ current: new Set(['B-1']) }));
     const show = (id) => (/data-show="(\w+)"/.exec(rowOf(html, id)) || [])[1];
     assert.deepStrictEqual([29920, 29921, 29922, 29929].map(show), ['can', 'now', 'can', 'removed']);
-    assert.ok(rowOf(html, 29920).includes('data-type="BOARD"') && rowOf(html, 29920).includes('1 of 3 avatar boards served'));
-    assert.ok(rowOf(html, 29920).includes('data-pin="/web/event/keep/29920"'), 'a past BOARD entry can be kept');
+    assert.ok(rowOf(html, 29920).includes('1 of 3 avatar boards served'));
+    assert.ok(rowOf(html, 29920).includes('data-pin="/web/avatar/keep/29920"'), 'a past BOARD entry can be kept, in its own catalogue');
+    assert.ok(rowOf(html, 29920).includes('data-eid="29920"') && /data-type="outfit"/.test(rowOf(html, 29920)), 'TYPE by board group');
     assert.ok(/data-search="[^"]*Red Coat/.test(rowOf(html, 29920)), 'FIND knows its boards');
     assert.ok(rowOf(html, 29921).includes('On sale this week'));
     assert.ok(rowOf(html, 29929).includes('Not built yet') && !rowOf(html, 29929).includes('class="pk'));
-    assert.ok(html.includes('Avatar Boards'), 'TYPE chip of the BOARD entries');
     // the held boards with no window in the records: listed with the reason
     assert.ok(html.includes('Draw Ticket Board 1') && html.includes(pages.boardWhyPlain('windowUnknown: no dated notice')));
-    const d = pages.detailPage(ix, 29920, ctx());
+    const d = pages.boardDetailPage(ix, 29920, ctx());
     assert.ok(d.includes('<h2>Avatar Boards</h2>') && d.includes('Red Coat') && d.includes('3,000 Jewels'));
     assert.ok(/Blue Coat.{0,200}price/i.test(d), 'priceUnknown: never sold at a guessed price');
     assert.ok(/Lost Coat.{0,300}reward/i.test(d) && !d.includes('cell 2: medal'), 'a held board: its reason in plain words, not the builder note');
     assert.ok(!d.includes('<h2>Quests</h2>'), 'no quest table for a board-only entry');
     assert.ok(/original price/.test(d) && /not original|addition of this server/.test(d), 'the keep of past boards is declared');
     assert.ok(/khuxwiki/i.test(d), 'its labels in plain words');
-    const k = pages.detailPage(ix, 29920, ctx({ kept: 'B-0', boardBought: (id) => id === 5000001 }));
+    assert.ok(d.includes('data-pin="/web/avatar/keep/29920"') && d.includes('/web/avatar/catalog'), 'kept from its own catalogue');
+    const k = pages.boardDetailPage(ix, 29920, ctx({ kept: 'B-0', boardBought: (id) => id === 5000001 }));
     assert.ok(/Red Coat.{0,200}Bought/.test(k), 'a bought board says so');
+    assert.ok(k.includes('Remove from Avatar Boards'), 'the kept entry offers Remove');
+    assert.strictEqual(pages.boardDetailPage(ix, 29900, ctx()), null, 'an event without boards has no Avatar Board page');
   },
-  // Fix round 1: no player-facing «restored» in the catalogue (plan rule), the SHOW filter still selects those rows
+  // Task 5b: the Event Catalog lists events only; every BOARD entry is in the Avatar Board Catalog, with an event that also sold
+  // boards (its boards only there); the BOARD entries have no Event Catalog page and the event keep refuses them
+  board_catalog_separate() {
+    const ix = BOARD_INDEX();
+    // E-0 also sold a board (EV-0741 in the real data): avatarBoards on its own entry
+    ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
+    const ev = catalog(ix, ctx({ current: new Set(['E-1', 'B-1']) }));
+    for (const id of [29920, 29921, 29922, 29929]) assert.ok(!ev.includes(`id="q${id}"`), `BOARD entry ${id} not in the Event Catalog`);
+    for (const id of [29900, 29901, 29903, 29909]) assert.ok(ev.includes(`id="q${id}"`), `event ${id} in the Event Catalog`);
+    assert.ok(!ev.includes('data-b="1"') && !/data-type="BOARD"/.test(ev), 'no BOARD row');
+    assert.ok(!ev.includes('Draw Ticket Board 1'), 'the undated boards are in the Avatar Board Catalog');
+    assert.ok(/Avatar Board Catalog/.test(ev), 'the Event Catalog says where the boards went');
+    assert.strictEqual(pages.detailPage(ix, 29920, ctx()), null, 'no Event Catalog page for a BOARD entry');
+    const bc = boardCatalog(ix, ctx({ current: new Set(['B-1']) }));
+    for (const id of [29900, 29920, 29921, 29922, 29929]) assert.ok(bc.includes(`id="q${id}"`), `entry ${id} in the Avatar Board Catalog`);
+    for (const id of [29901, 29903, 29909]) assert.ok(!bc.includes(`id="q${id}"`), `event ${id} without boards not in the Avatar Board Catalog`);
+    // the event with boards: its Event Catalog page lists its boards and sends the keep of past boards to the Avatar Board Catalog
+    const d = pages.detailPage(ix, 29900, ctx());
+    assert.ok(d.includes('Event Coat') && d.includes('/web/avatar/board/29900'), 'its boards, kept from the Avatar Board Catalog');
+    // the event keep: a BOARD entry is refused (kept from the Avatar Board Catalog)
+    const player = {};
+    const r = routesEvents({ player, savePlayer() {}, masterRows: () => [], eventIndex: () => ix, storyWeek: () => ({ shopFrom: '2019-04-08', shopTo: '2019-04-14' }),
+      realNow: () => Date.parse('2026-11-03T20:00:00Z'), serverTimeAt: String, clock: { weekEnd: (x) => x, dayEnd: (x) => x }, stageState: () => ({}), grantItem() {}, grantObjective() {},
+      webBase: '', log() {} });
+    assert.strictEqual(r.keep(29920).body.ok, false, 'a BOARD entry is not kept as an event');
+    assert.ok(!r.catalogCtx().current.has('B-1'), 'a BOARD entry is never «now» in the Event Catalog');
+    assert.ok(r.boardCatalogCtx().current.has('B-1'), 'it is «now» in the Avatar Board Catalog');
+  },
+  // Task 5b: the Avatar Board Catalog has its own keep (player.avatarBoards.kept), independent of the kept event, both orders;
+  // the boards listed follow the board keep only
+  board_keep_independent() {
+    const ix = BOARD_INDEX();
+    const week = { shopFrom: '2019-04-08', shopTo: '2019-04-14' };
+    const av = avatarBoards.avatarBoardRoutes({ index: AVATAR_DOC().index, master: (t) => (t === 'sphere' ? [5000001, 5000003, 5000005].map((id) => ({ sphereBoardId: id, type: 2 })) : []),
+      nextUserSphereId: () => 1 });
+    const make = (player) => routesEvents({ player, savePlayer() {}, masterRows: () => [], eventIndex: () => ix, storyWeek: () => week,
+      realNow: () => Date.parse('2026-11-03T20:00:00Z'), serverTimeAt: String, clock: { weekEnd: (x) => x, dayEnd: (x) => x }, stageState: () => ({}), grantItem() {}, grantObjective() {},
+      webBase: '', log() {}, markBoardsSent: (kept) => av.markKept(player, week, kept) });
+    for (const order of [['event', 'board'], ['board', 'event']]) {
+      const player = {}, ev = make(player);
+      for (const what of order) assert.deepStrictEqual(what === 'event' ? ev.keep(29900).body : ev.keepBoard(29920).body, { ok: true }, `${order}: ${what}`);
+      assert.strictEqual(player.events.kept, 'E-0', `${order}: the event stays kept`);
+      assert.strictEqual(player.avatarBoards.kept, 'B-0', `${order}: the board entry stays kept`);
+      assert.strictEqual(ev.boardKept(), 'B-0');
+      assert.strictEqual(ev.catalogCtx().kept, 'E-0');
+      assert.strictEqual(ev.boardCatalogCtx().kept, 'B-0');
+      assert.deepStrictEqual(ev.events().map((e) => e.eventStageId), [29900, 29901], `${order}: the kept event card`);
+      // the kept boards are on sale at their window's price
+      assert.deepStrictEqual(av.listedIds(player, week, ev.boardKept()), [5000001, 5000003]);
+      assert.strictEqual(av.priceNow(5000001, week, ev.boardKept()), 3000, 'the original price of the kept window');
+      assert.strictEqual(av.isBuy(player, 5000001), 0, 'for sale, not given');
+    }
+    const player = {}, ev = make(player);
+    assert.deepStrictEqual(ev.keepBoard(29921).body, { ok: false, why: 'now' });
+    assert.deepStrictEqual(ev.keepBoard(29929).body, { ok: false, why: 'removed' });
+    assert.deepStrictEqual(ev.keepBoard(29901).body.ok, false, 'an event without boards is not kept here');
+    assert.strictEqual(ev.keepBoard(29922).body.ok, true);
+    assert.strictEqual(player.avatarBoards.kept, 'khuxwiki@2019-02-01/outfit', 'a khuxwiki-dated entry is kept by its key');
+    assert.deepStrictEqual(av.listedIds(player, week, ev.boardKept()), [5000003, 5000005]);
+    assert.strictEqual(av.priceNow(5000005, week, ev.boardKept()), 2000);
+    assert.strictEqual(ev.keepBoard(29920).body.ok, true, 'one kept board entry at a time');
+    assert.strictEqual(player.avatarBoards.kept, 'B-0');
+    assert.ok(!(player.events || {}).kept, 'no event kept by the board keep');
+    assert.deepStrictEqual(ev.unkeepBoard().body, { ok: true });
+    assert.strictEqual(ev.boardKept(), null);
+    assert.deepStrictEqual(av.listedIds(player, week, ev.boardKept()), [5000003], 'not kept: only the week');
+  },
+  // Task 5b: an old save whose events.kept holds a BOARD entry key (Task 5 shared keep) ends with that entry kept in the Avatar
+  // Board Catalog and no event kept; read before the migration writes, the board keep already sees it
+  board_keep_migrates() {
+    const ix = BOARD_INDEX();
+    const make = (player, saves) => routesEvents({ player, savePlayer() { saves.n++; }, masterRows: () => [], eventIndex: () => ix,
+      storyWeek: () => ({ shopFrom: '2019-04-08', shopTo: '2019-04-14' }), realNow: () => Date.parse('2026-11-03T20:00:00Z'), serverTimeAt: String,
+      clock: { weekEnd: (x) => x, dayEnd: (x) => x }, stageState: () => ({}), grantItem() {}, grantObjective() {}, webBase: '', log() {} });
+    for (const kept of ['B-0', 'khuxwiki@2019-02-01/outfit']) {
+      const player = { events: { kept, cleared: {} } }, saves = { n: 0 }, ev = make(player, saves);
+      assert.strictEqual(ev.boardKept(), kept, 'read: the old shared keep is the board keep');
+      assert.strictEqual(ev.catalogCtx().kept, null, 'read: no event kept');
+      assert.strictEqual(saves.n, 0, 'reading never writes the save');
+      assert.strictEqual(ev.migrateKept(), true);
+      assert.strictEqual(player.avatarBoards.kept, kept);
+      assert.strictEqual(player.events.kept, null);
+      assert.strictEqual(saves.n, 1);
+      assert.strictEqual(ev.migrateKept(), false, 'once');
+    }
+    // an event kept stays an event keep
+    const p2 = { events: { kept: 'E-0', cleared: {} } }, ev2 = make(p2, { n: 0 });
+    assert.strictEqual(ev2.migrateKept(), false);
+    assert.strictEqual(p2.events.kept, 'E-0');
+    assert.strictEqual(ev2.boardKept(), null);
+    // keeping an event before the migration ran: the old board keep is moved first, not lost
+    const p3 = { events: { kept: 'B-0', cleared: {} } }, ev3 = make(p3, { n: 0 });
+    assert.strictEqual(ev3.keep(29900).body.ok, true);
+    assert.deepStrictEqual([p3.events.kept, p3.avatarBoards.kept], ['E-0', 'B-0']);
+  },
+  // Task 6 bench: keeping a BOARD entry popped «Unlocked an Avatar Board!» once per board (21 in a row). The kept boards join
+  // avatarBoardsSent silently when the keep is stored: the next check announces none of them, GET /user/sphere still lists them
+  board_keep_no_popup_flood() {
+    const ix = BOARD_INDEX();
+    const week = { shopFrom: '2019-04-08', shopTo: '2019-04-14' };
+    const doc = AVATAR_DOC();
+    const coins = [5000041, 5000042, 5000043];
+    coins.forEach((id, i) => { doc.index[id] = { key: 'B-H/avatarCoin', group: 'avatarCoin', type: 1, donorId: 9041 + i, name: `Coin Board ${i + 1}`, price: 0,
+      windows: [{ key: 'B-H/avatarCoin', censusId: 'B-H', window: ['2019-03-04', '2019-03-10'], price: 0, labels: [] }] }; });
+    ix.entries.push({ ...boardEntry('B-H', 29940, '2019-03-04', '2019-03-10', coins.map((id, i) => ({ donorId: 9041 + i, name: `Coin Board ${i + 1}` }))),
+      boards: coins.map((id, i) => ({ key: 'B-H/avatarCoin', group: 'avatarCoin', type: 1, window: ['2019-03-04', '2019-03-10'], donorId: 9041 + i, name: `Coin Board ${i + 1}`,
+        sphereBoardId: id, price: 0, served: true, why: null })), available: true });
+    const player = { avatarBoardsSent: [5000003] };
+    const av = avatarBoards.avatarBoardRoutes({ index: doc.index, master: (t) => (t === 'sphere' ? [5000001, 5000003, 5000005, ...coins].map((id) => ({ sphereBoardId: id, type: 2 })) : []),
+      nextUserSphereId: (() => { let n = 0; return () => ++n; })() });
+    const ev = routesEvents({ player, savePlayer() {}, masterRows: () => [], eventIndex: () => ix, storyWeek: () => week,
+      realNow: () => Date.parse('2026-11-03T20:00:00Z'), serverTimeAt: String, clock: { weekEnd: (x) => x, dayEnd: (x) => x }, stageState: () => ({}), grantItem() {}, grantObjective() {},
+      webBase: '', log() {}, markBoardsSent: (kept) => av.markKept(player, week, kept) });
+    assert.deepStrictEqual(ev.keepBoard(29940).body, { ok: true });
+    const add = av.check(player, { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }, week, ev.boardKept()).add;
+    assert.deepStrictEqual(add.filter((id) => coins.includes(id)), [], 'no kept board announced');
+    assert.deepStrictEqual(av.list(player, week, ev.boardKept()).filter((id) => coins.includes(id)), coins, 'listed in Avatar Boards');
+    for (const id of coins) assert.ok(player.avatarSphere[id], 'their progress exists');
+    assert.ok(player.avatarBoardsSent.includes(5000003), 'the boards sent before stay');
+  },
+  // Task 5b: the keep messages name Avatar Boards (Task 6 bench: «Leave and re-enter Events» on a board), the page has no «restored»
+  board_catalog_wording() {
+    const ix = BOARD_INDEX();
+    const raw = pages.boardCatalogPage(ix, ctx({ current: new Set(['B-1']) }));
+    assert.ok(/Leave and re-enter Avatar Boards/.test(raw) && !/re-enter Events/.test(raw), 'the post-keep message names Avatar Boards');
+    assert.ok(raw.includes('Keep in Avatar Boards') && !raw.includes('Keep in Events'));
+    assert.ok(/<h1>Avatar Board Catalog<\/h1>/.test(raw));
+    assert.ok(/addition of this server/.test(raw), 'the keep of past boards is declared');
+    const text = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '');
+    assert.ok(!/restored/i.test(text(pages.expandCatalog(raw))) && !/restored/i.test(raw), 'no «restored»');
+    for (const id of [29920, 29929]) assert.ok(!/restored/i.test(pages.boardDetailPage(ix, id, ctx())));
+    const d = pages.boardDetailPage(ix, 29920, ctx());
+    assert.ok(/Leave and re-enter Avatar Boards/.test(d) && !/re-enter Events/.test(d));
+    // the Event Catalog keeps its own words
+    assert.ok(/Leave and re-enter Events/.test(pages.catalogPage(ix, ctx())));
+    // the entry block on the Special Catalog page (the Special section), as the Medal Gallery block of the Banner Catalog
+    const sp = require('./special-pages').catalogPage({ entries: [] }, { avatarBoardCatalog: true });
+    assert.ok(sp.includes('href="/web/avatar/catalog?from=special"') && /Avatar Board Catalog/.test(sp), 'reached from the Special Catalog');
+    assert.ok(!require('./special-pages').catalogPage({ entries: [] }, {}).includes('/web/avatar/catalog'), 'only when the server has boards');
+  },
+  // the SHOW filter of the Avatar Board Catalog still selects the «Not built yet» rows; the page script writes the board pills
+  // after a keep (Task 5 fix round 1)
   no_restored_wording() {
     const ix = BOARD_INDEX();
-    const raw = pages.catalogPage(ix, ctx({ current: new Set(['E-1', 'B-1']) })), html = pages.expandCatalog(raw);
+    const raw = pages.catalogPage(ix, ctx({ current: new Set(['E-1']) })), html = pages.expandCatalog(raw);
     const text = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '');
     assert.ok(!/restored/i.test(text(html)), 'no «restored» in the page text');
-    for (const id of [29909, 29929]) assert.ok(rowOf(html, id).includes('Not built yet'));
-    const shown = fakePage(raw);
+    assert.ok(rowOf(html, 29909).includes('Not built yet'));
+    const braw = pages.boardCatalogPage(ix, ctx({ current: new Set(['B-1']) }));
+    const shown = fakePage(braw);
     shown.tab('all');
     shown.apply({ show: 'removed' });
-    assert.deepStrictEqual(shown.shown().sort(), [29909, 29929], `SHOW «Not built yet» keeps working: ${shown.shown()}`);
-    assert.ok(!/restored/i.test(text(pages.detailPage(ix, 29929, ctx()))));
+    assert.deepStrictEqual(shown.shown().sort(), [29929], `SHOW «Not built yet» keeps working: ${shown.shown()}`);
+    const pill = JSON.parse(braw.slice(braw.indexOf('var PILL=') + 9, braw.indexOf(';\nfunction attr(el,a)')));
+    assert.ok(/Avatar Boards/.test(pill.kept[1]) && /boards/.test(pill.can[1]), 'board pills after a keep');
+    assert.ok(braw.includes("'/web/avatar/board/'"), 'a row opens its Avatar Board page');
   },
   // Fix round 1: a BOARD entry whose dates span the story week while none of its served boards is on sale in it («other»): board
-  // wording, never the short-event text; and the pills the page script writes after a keep are the board ones on a BOARD row
+  // wording, never the short-event text
   board_entry_other_and_pills() {
     const ix = BOARD_INDEX();
     // B-2: its span covers the week, its only served board is on sale from 04-22
     ix.entries.push({ ...ix.entries.find((e) => e.censusId === 'B-0'), censusId: 'B-2', evStageId: 29923, start: '2019-04-01', end: '2019-04-30',
       boards: [{ key: 'B-2/outfit', group: 'outfit', type: 2, window: ['2019-04-22', '2019-04-30'], donorId: 9011, name: 'Late Coat', sphereBoardId: 5000011, price: 1500, served: true, why: null }] });
-    const st = pages.statusOf(ix.entries.find((e) => e.censusId === 'B-2'), ctx());
+    const st = pages.boardStatusOf(ix.entries.find((e) => e.censusId === 'B-2'), ctx());
     assert.strictEqual(st.show, 'other');
     assert.ok(/board/i.test(st.why) && !/short event/i.test(st.why) && /board/i.test(st.pill), st.pill);
-    const raw = pages.catalogPage(ix, ctx());
-    const html = pages.expandCatalog(raw);
-    assert.ok(rowOf(html, 29920).includes('data-b="1"') && !rowOf(html, 29900).includes('data-b='), 'BOARD rows marked for the page script');
-    const pill = JSON.parse(raw.slice(raw.indexOf('var PILL=') + 9, raw.indexOf(';\nfunction attr(el,a)')));
-    assert.ok(/Avatar Boards/.test(pill.bkept[1]) && /boards/.test(pill.bcan[1]) && /event list/.test(pill.kept[1]), 'board pills beside the event ones');
-    assert.ok(raw.includes("PILL[(attr(el,'data-b')"), 'setRow picks the board pill on a BOARD row');
   },
   // fix round 2: the catalogue status comes from the listing's own decision (avatar-boards.js listState): a chained board whose
   // previous board is not complete is not listed, so its entry is not «On sale this week» but «Unlocks after the previous board»;
@@ -562,49 +706,18 @@ const tests = {
     const ev = routesEvents({ player, savePlayer() {}, masterRows: () => [], eventIndex: () => ix, storyWeek: () => week,
       realNow: () => Date.parse('2026-11-03T20:00:00Z'), serverTimeAt: String, clock: { weekEnd: (x) => x, dayEnd: (x) => x }, stageState: () => ({}), grantItem() {}, grantObjective() {},
       webBase: '', log() {}, avatarBoardState: (id) => av.listState(player, id, week, null) });
-    const c1 = ev.catalogCtx();
+    const c1 = ev.boardCatalogCtx();
     assert.ok(!c1.current.has('B-7'), 'not «now»: the listing does not list it');
-    const st1 = pages.statusOf(ix.entries.find((e) => e.censusId === 'B-7'), c1);
+    const st1 = pages.boardStatusOf(ix.entries.find((e) => e.censusId === 'B-7'), c1);
     assert.strictEqual(st1.show, 'other');
     assert.ok(/Unlocks after the previous board/.test(st1.pill) && !/On sale/.test(st1.pill), st1.pill);
-    assert.ok(rowOf(catalog(ix, c1), 29932).includes('Unlocks after the previous board'));
+    assert.ok(rowOf(boardCatalog(ix, c1), 29932).includes('Unlocks after the previous board'));
     // Set 1 complete: the listing lists Set 2, and the catalogue says so
     player.avatarSphere = { 5000031: { id: 1, unlock: [1, 2], getDatetime: 0 } };
     assert.strictEqual(av.listState(player, 5000032, week, null), 'week');
-    const c2 = ev.catalogCtx();
+    const c2 = ev.boardCatalogCtx();
     assert.ok(c2.current.has('B-7'));
-    assert.ok(/On sale this week/.test(pages.statusOf(ix.entries.find((e) => e.censusId === 'B-7'), c2).pill));
-  },
-  // the BOARD entry is kept as an event is (one kept event at a time, shared): the kept value is its census id, or the entry key of
-  // a board dated only by khuxwiki; the kept boards are listed for sale at the price of that window (avatar-boards.js)
-  board_entry_keepable() {
-    const ix = BOARD_INDEX();
-    const player = {};
-    const ev = routesEvents({ player, savePlayer() {}, masterRows: () => [], eventIndex: () => ix, storyWeek: () => ({ shopFrom: '2019-04-08', shopTo: '2019-04-14' }),
-      realNow: () => Date.parse('2026-11-03T20:00:00Z'), serverTimeAt: String, clock: { weekEnd: (x) => x, dayEnd: (x) => x }, stageState: () => ({}), grantItem() {}, grantObjective() {},
-      webBase: '', log() {} });
-    assert.ok(ev.catalogCtx().current.has('B-1'), 'a BOARD entry in the story week is «now»');
-    assert.deepStrictEqual(ev.keep(29921).body, { ok: false, why: 'now' });
-    assert.deepStrictEqual(ev.keep(29929).body, { ok: false, why: 'removed' });
-    assert.deepStrictEqual(ev.keep(29920).body, { ok: true });
-    assert.strictEqual(player.events.kept, 'B-0');
-    assert.strictEqual(ev.keep(29900).body.ok, true, 'an event replaces the kept BOARD entry');
-    assert.strictEqual(player.events.kept, 'E-0');
-    assert.deepStrictEqual(ev.events().map((e) => e.eventStageId), [29900, 29901], 'the Events tab is unchanged');
-    assert.strictEqual(ev.keep(29922).body.ok, true);
-    assert.strictEqual(player.events.kept, 'khuxwiki@2019-02-01/outfit', 'a khuxwiki-dated entry is kept by its key');
-    assert.deepStrictEqual(ev.events().map((e) => e.eventStageId), [29901], 'no Events tab card for a board-only entry');
-    // the kept boards are on sale at their window's price
-    const av = avatarBoards.avatarBoardRoutes({ index: AVATAR_DOC().index, master: (t) => (t === 'sphere' ? [5000001, 5000003, 5000005].map((id) => ({ sphereBoardId: id, type: 2 })) : []),
-      nextUserSphereId: () => 1 });
-    const week = { shopFrom: '2019-04-08', shopTo: '2019-04-14' };
-    assert.deepStrictEqual(av.listedIds(player, week, player.events.kept), [5000003, 5000005]);
-    assert.strictEqual(av.priceNow(5000005, week, player.events.kept), 2000);
-    assert.strictEqual(ev.keep(29920).body.ok, true);
-    assert.deepStrictEqual(av.listedIds(player, week, player.events.kept), [5000001, 5000003]);
-    assert.strictEqual(av.priceNow(5000001, week, player.events.kept), 3000, 'the original price of the kept window');
-    assert.strictEqual(av.isBuy(player, 5000001), 0, 'for sale, not given');
-    assert.deepStrictEqual(av.listedIds(player, week, null), [5000003], 'not kept: only the week');
+    assert.ok(/On sale this week/.test(pages.boardStatusOf(ix.entries.find((e) => e.censusId === 'B-7'), c2).pill));
   },
 };
 
@@ -672,12 +785,31 @@ function wiring() {
     assert.deepStrictEqual([k.code, JSON.parse(k.body)], [200, { ok: true }]);
     assert.strictEqual(web(t.respondEventPost, '/web/event/keep/29903').code, 409);
     assert.deepStrictEqual(JSON.parse(web(t.respondEventPost, '/web/event/unkeep').body), { ok: true });
-    // the BOARD entry (Part 7 Task 5): listed with its board, kept by its census id through the same keep
-    const boardRow = pages.expandCatalog(web(t.respondEventWeb, '/web/event/catalog').body);
-    assert.ok(boardRow.includes('id="q29930"') && boardRow.includes('data-pin="/web/event/keep/29930"'), 'the BOARD entry is in the catalogue, keepable');
-    assert.ok(web(t.respondEventWeb, '/web/event/event/29930').body.includes('Red Coat'));
-    assert.deepStrictEqual(JSON.parse(web(t.respondEventPost, '/web/event/keep/29930').body), { ok: true });
-    assert.strictEqual(t.player.events.kept, 'B-W');
+    // the BOARD entry (Part 7 Task 5, Task 5b): not in the Event Catalog; in the Avatar Board Catalog, kept by its census id with
+    // its own keep, beside the kept event
+    const evRows = pages.expandCatalog(web(t.respondEventWeb, '/web/event/catalog').body);
+    assert.ok(!evRows.includes('id="q29930"'), 'the BOARD entry is not in the Event Catalog');
+    assert.strictEqual(web(t.respondEventWeb, '/web/event/event/29930').code, 404);
+    assert.strictEqual(t.route('/web/avatar/catalog'), 'avatarweb');
+    const bc = web(t.respondAvatarWeb, '/web/avatar/catalog?from=special');
+    assert.strictEqual(bc.code, 200);
+    const boardRow = pages.expandCatalog(bc.body);
+    assert.ok(boardRow.includes('id="q29930"') && boardRow.includes('data-pin="/web/avatar/keep/29930"'), 'the BOARD entry is in the Avatar Board Catalog, keepable');
+    assert.ok(bc.body.includes('/web/special/catalog'), 'BACK to the Special Catalog');
+    assert.ok(web(t.respondAvatarWeb, '/web/avatar/board/29930?from=catalog').body.includes('Red Coat'));
+    assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/board/29900').code, 404, 'an event without boards');
+    assert.deepStrictEqual(JSON.parse(web(t.respondEventPost, '/web/event/keep/29900').body), { ok: true });
+    assert.strictEqual(web(t.respondEventPost, '/web/event/keep/29930').code, 409, 'not through the event keep');
+    assert.deepStrictEqual(JSON.parse(web(t.respondAvatarPost, '/web/avatar/keep/29930').body), { ok: true });
+    assert.deepStrictEqual([t.player.events.kept, t.player.avatarBoards.kept], ['E-0', 'B-W'], 'both kept');
+    // the Special Catalog page carries the entry block
+    assert.ok(web(t.respondSpecialWeb, '/web/special/catalog').body.includes('/web/avatar/catalog?from=special'));
+    assert.deepStrictEqual(JSON.parse(web(t.respondAvatarPost, '/web/avatar/unkeep').body), { ok: true });
+    assert.deepStrictEqual([t.player.events.kept, t.player.avatarBoards.kept], ['E-0', null]);
+    // an old save with the BOARD entry in the shared keep: moved at login (migrateKept), the event keep cleared
+    t.player.events.kept = 'B-W';
+    quiet(() => t.migrateAvatarKeep());
+    assert.deepStrictEqual([t.player.events.kept, t.player.avatarBoards.kept], [null, 'B-W']);
     console.log('ok wiring_pages');
   } finally {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp */ }

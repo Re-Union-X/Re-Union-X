@@ -457,18 +457,24 @@ if (haveMaster) {
         { key: 'EV-7/outfit', censusId: 'EV-7', window: ['2015-02-02', '2015-02-08'], price: 1500, labels: [] }];
       fs.writeFileSync(process.env.KHUX_AVATAR_INDEX, JSON.stringify(doc));
       fs.utimesSync(process.env.KHUX_AVATAR_INDEX, new Date(), new Date(Date.now() + 5000));
-      const ev = p.events;
+      // Task 5b: the board keep is player.avatarBoards.kept (Avatar Board Catalog), apart from the kept event
+      const ev = p.events, avb = p.avatarBoards;
       try {
         const body = () => t.masterBody('sphere').toString('utf8');
         const shown = () => quiet(() => t.servedMasterRows('sphere', t.realNow())).find((r) => r.sphereBoardId === SA).price;
         p.events = { kept: null, cleared: {} };
+        p.avatarBoards = { kept: null };
         const before = quiet(body);
         assert.strictEqual(shown(), 3000);
         assert.strictEqual(quiet(body), before, 'same state: the cached body');
         p.events = { kept: 'EV-7', cleared: {} };
+        assert.strictEqual(shown(), 3000, 'the kept event does not keep boards');
+        assert.strictEqual(quiet(body), before, 'the event keep is not in the key');
+        p.events = { kept: null, cleared: {} };
+        p.avatarBoards = { kept: 'EV-7' };
         assert.strictEqual(shown(), 1500, 'kept: the price of the kept window');
-        assert.notStrictEqual(quiet(body), before, 'kept changed: the body is made again');
-      } finally { p.events = ev; }
+        assert.notStrictEqual(quiet(body), before, 'board keep changed: the body is made again');
+      } finally { p.events = ev; p.avatarBoards = avb; }
     },
   });
 } else console.log('test-avatar-boards: server part skipped (no master_data)');

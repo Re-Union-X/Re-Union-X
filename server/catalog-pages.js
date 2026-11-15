@@ -14,18 +14,20 @@ const pill = (c, k, text) => `<span class="s s-${c}">${k ? icon(k) : ''}${text}<
 const backBar = (href) => `<div class="bar"><a class="back" href="${href}">BACK<span></span></a></div>`;
 
 // Keep / Remove of a catalogue (one kept item at a time, in the Events tab). base: the route prefix (/web/raid, /web/event): POST
-// <base>/keep/<id> and <base>/unkeep; noun: the item in the error line («This raid cannot be kept.»).
-const KEEP_LABEL = `${icon('pin')}Keep in Events`, REMOVE_LABEL = 'Remove from Events';
-const keepButton = (base, id, on, extra = '', cls = '') => `<a href="#" class="pk${cls}" data-id="${id}" data-on="${on}" data-pin="${on === 1 ? `${base}/keep/${id}` : `${base}/unkeep`}"${extra}>${on === 1 ? KEEP_LABEL : REMOVE_LABEL}</a>`;
+// <base>/keep/<id> and <base>/unkeep; noun: the item in the error line («This raid cannot be kept.»). where: the screen the kept
+// item is listed in (Events; the Avatar Board Catalog, Events Part 7 Task 5b: «Avatar Boards»), in the button and the messages.
+const keepLabel = (where = 'Events') => `${icon('pin')}Keep in ${where}`, removeLabel = (where = 'Events') => `Remove from ${where}`;
+const KEEP_LABEL = keepLabel(), REMOVE_LABEL = removeLabel();
+const keepButton = (base, id, on, extra = '', cls = '', where = 'Events') => `<a href="#" class="pk${cls}" data-id="${id}" data-on="${on}" data-pin="${on === 1 ? `${base}/keep/${id}` : `${base}/unkeep`}"${extra}>${on === 1 ? keepLabel(where) : removeLabel(where)}</a>`;
 
 // keep / remove (XHR POST, as the Special catalogue): the element carries data-pin (URL) and data-on (1 keep, 0 remove)
-const keepJs = (base, noun) => `var KX_KEEP=${JSON.stringify(KEEP_LABEL)},KX_REMOVE=${JSON.stringify(REMOVE_LABEL)};`
+const keepJs = (base, noun, where = 'Events') => `var KX_KEEP=${JSON.stringify(keepLabel(where))},KX_REMOVE=${JSON.stringify(removeLabel(where))};`
   + `function kxSet(el,id,kept){el.setAttribute("data-pin",kept?"${base}/unkeep":"${base}/keep/"+id);`
   + 'el.setAttribute("data-on",kept?"0":"1");el.innerHTML=kept?KX_REMOVE:KX_KEEP;}'
   + 'function kxSay(box,cls,head,sub){box.className=cls;box.innerHTML="";var b=document.createElement("div"),s=document.createElement("small");b.textContent=head;s.textContent=sub;box.appendChild(b);box.appendChild(s);box.style.display="block";if(box.scrollIntoView)box.scrollIntoView(false);}'
   + 'function kxKeep(el,onOk){var on=el.getAttribute("data-on")==="1",box=document.getElementById("pinmsg"),x=new XMLHttpRequest();x.open("POST",el.getAttribute("data-pin"));'
-  + 'x.onload=function(){if(x.status===200){if(on)kxSay(box,"pinmsg","Kept!","Leave and re-enter Events to see it.");else kxSay(box,"pinmsg off","Removed.","Leave and re-enter Events.");if(onOk)onOk(on);}'
-  + `else kxSay(box,"pinmsg err","Could not change Events","This ${noun} cannot be kept.");};`
+  + `x.onload=function(){if(x.status===200){if(on)kxSay(box,"pinmsg","Kept!","Leave and re-enter ${where} to see it.");else kxSay(box,"pinmsg off","Removed.","Leave and re-enter ${where}.");if(onOk)onOk(on);}`
+  + `else kxSay(box,"pinmsg err","Could not change ${where}","This ${noun} cannot be kept.");};`
   + 'x.onerror=function(){kxSay(box,"pinmsg err","Could not reach the server","Try again.");};x.send("");return false;}';
 
 // The Filters of a catalogue (Raid Catalog 03-11, Event Catalog 13-11: «filters like the Raid Catalog»): the «⚙ Filters» button of

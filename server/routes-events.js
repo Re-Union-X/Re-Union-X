@@ -24,6 +24,10 @@
 // only the player's own Union version counts) and a quest of another Union (index quest `union`) is not listed for the player.
 //   events (list), catalogEvents (the Event Catalog banner), onStageClear (rewards), isEventStage, keep / unkeep / catalogCtx /
 //   pruneKept (Event Catalog, Task 5), payBonuses.
+// Avatar Board Catalog (Events Part 7 Task 5b, user 15-11: boards are not playable events): its own keep, one entry with avatar
+// boards at a time, independent of the kept event: player.avatarBoards = {kept: censusId | entry key | null} (absent in older
+// saves). boardCatalogCtx / keepBoard / unkeepBoard / boardKept / pruneBoardKept; migrateKept moves a BOARD entry an older save
+// kept through the shared Task 5 keep (player.events.kept) to the board keep (server.js: at login).
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -41,7 +45,7 @@ const STAGE_FIRST = CONFIG.stageBase, STAGE_LAST = CONFIG.stageMax; // stage ids
 const COIN_TYPE = 15; // Event Coins: into the entry's board set (addEventCoins)
 
 const BOOSTER_TYPE = 34; // a Booster reward (master emblem; Events Part 6, boosters.js)
-function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, realNow, serverTimeAt, clock, stageState, grantItem, grantObjective, addEventCoins = null, canPay = null, addPresent = null, grantBooster = null, avatarBoardState = null, webBase, log = console.log }) {
+function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, realNow, serverTimeAt, clock, stageState, grantItem, grantObjective, addEventCoins = null, canPay = null, addPresent = null, grantBooster = null, avatarBoardState = null, markBoardsSent = null, webBase, log = console.log }) {
   // read-only view of player.events (an older save has none: nothing kept, nothing cleared); state() creates it to write
   const view = () => player.events || { kept: null, cleared: {} };
   const state = () => {
@@ -178,20 +182,50 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   // while it is a past event of the Story (rowState 'kept'), with all its served quests: a short-window one on the real weekday of
   // its days, as the raids kept from the catalogue open on their real days
   const entryOf = (censusId) => entries().find((e) => e.censusId === censusId);
-  // kept: null when the index no longer has that census id (a record dropped): inert here, cleared by pruneKept
-  // Part 7 Task 5: a BOARD entry (avatar boards, joined by avatar-boards.js catalogIndex: entry.boards) is «now» while one of its
-  // served boards has a window in the story week (on sale or handed out there), and is kept once past as an event is (one kept at
-  // a time): the kept value is its census id, or its entry key when khuxwiki alone dates it (the id make-events.js gives it)
-  // the listing's own decision (avatarBoardState(sphereBoardId) = avatar-boards.js listState for this player, wired in server.js;
-  // without it, the window test alone): a board of this entry's window in the story week is 'week' when it is listed, 'chain' when
-  // the board before it is not complete (catalogue «Unlocks after the previous board»), so «On sale this week» matches GET /user/sphere
+  // kept: null when the index no longer has that census id (a record dropped): inert here, cleared by pruneKept; a BOARD entry an
+  // older save kept here (Task 5 shared keep) is the board keep (boardKept), never the kept event
+  // Avatar boards (Part 7 Task 5, Task 5b): an entry with boards (avatar-boards.js catalogIndex: entry.boards) is «now» in the Avatar
+  // Board Catalog while one of its served boards has a window in the story week (on sale or handed out there), and is kept there
+  // once past (one at a time, its own keep): the kept value is its census id, or its entry key when khuxwiki alone dates it (the id
+  // make-events.js gives it). The listing's own decision (avatarBoardState(sphereBoardId) = avatar-boards.js listState for this
+  // player, wired in server.js; without it, the window test alone): a board of this entry's window in the story week is 'week' when
+  // it is listed, 'chain' when the board before it is not complete («Unlocks after the previous board»), so «On sale this week»
+  // matches GET /user/sphere
+  const hasBoards = (e) => !!e && ((e.boards || []).length > 0 || (e.avatarBoards || []).length > 0);
+  const boardOnly = (e) => hasBoards(e) && !(e.quests || []).length;
   const boardStates = (e, week) => (e && e.available ? (e.boards || []) : []).filter((b) => b.served && windowInWeek(b.window, week))
     .map((b) => (avatarBoardState ? avatarBoardState(b.sphereBoardId) : 'week'));
   const boardKeepable = (e) => !!(e && e.available && (e.boards || []).some((b) => b.served));
+  // the event keep, without a BOARD entry an older save holds there
+  const eventKept = () => { const k = view().kept || null, e = k && entryOf(k); return e && !boardOnly(e) ? k : null; };
   function catalogCtx(realMs = realNow()) {
-    const { shopFrom, shopTo } = storyWeek(), kept = view().kept || null;
+    const { shopFrom, shopTo } = storyWeek(), kept = eventKept();
     const current = new Set(currentEntries(realMs).map((e) => e.censusId));
-    const boardLocked = new Set();
+    return { shopFrom, shopTo, current, kept };
+  }
+  // the board keep (read only): player.avatarBoards.kept, else a BOARD entry an older save kept through the shared keep (moved by
+  // migrateKept); null when neither
+  function boardKept() {
+    const own = (player.avatarBoards || {}).kept;
+    if (own) return own;
+    const old = view().kept, e = old && entryOf(old);
+    return e && boardOnly(e) ? old : null;
+  }
+  // an older save's BOARD entry in player.events.kept: moved to the board keep (kept there unless the board keep already holds
+  // one), the event keep cleared, saved; -> true when moved
+  function migrateKept() {
+    const old = (player.events || {}).kept, e = old && entryOf(old);
+    if (!e || !boardOnly(e)) return false;
+    const ab = player.avatarBoards ||= {};
+    if (!ab.kept) ab.kept = old;
+    player.events.kept = null;
+    savePlayer();
+    log(`[event] kept ${old} is an avatar board entry: moved to the Avatar Board Catalog keep`);
+    return true;
+  }
+  function boardCatalogCtx(realMs = realNow()) {
+    const { shopFrom, shopTo } = storyWeek(), kept = boardKept();
+    const current = new Set(), boardLocked = new Set();
     for (const e of entries()) {
       if (!e.boards) continue;
       const states = boardStates(e, { shopFrom, shopTo });
@@ -200,9 +234,43 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
     }
     return { shopFrom, shopTo, current, boardLocked, kept: kept && entryOf(kept) ? kept : null };
   }
+  // POST /web/avatar/keep/<evStageId>: only a past entry with a served board (why: now, other, later, removed); keeping one replaces
+  // the kept board entry, never the kept event. The boards it lists join avatarBoardsSent silently (markBoardsSent, server.js:
+  // avatar-boards.js markKept): the Task 6 bench saw one «Unlocked an Avatar Board!» popup per kept board (21 in a row)
+  function keepBoard(evStageId) {
+    const id = Number(evStageId), e = entryById(id);
+    if (!e || !hasBoards(e)) return { code: 404, body: { ok: false, why: 'unknown entry' } };
+    const st = boardKeepable(e) ? rowState(e, { ...boardCatalogCtx(), kept: null }) : 'removed';
+    if (st !== 'can') return { code: 409, body: { ok: false, why: st } };
+    migrateKept();
+    (player.avatarBoards ||= {}).kept = e.censusId;
+    if (markBoardsSent) markBoardsSent(e.censusId);
+    savePlayer();
+    log(`[event] Avatar Board Catalog: ${e.censusId} kept`);
+    return { code: 200, body: { ok: true } };
+  }
+  function unkeepBoard() {
+    migrateKept();
+    (player.avatarBoards ||= {}).kept = null;
+    savePlayer();
+    return { code: 200, body: { ok: true } };
+  }
+  // GET /web/avatar/catalog: the older keep moved, a kept entry the index no longer has cleared (saved)
+  function pruneBoardKept() {
+    let changed = migrateKept();
+    const kept = (player.avatarBoards || {}).kept;
+    if (kept && !entryOf(kept)) {
+      player.avatarBoards.kept = null;
+      savePlayer();
+      log(`[event] Avatar Board Catalog: kept ${kept} is not in the index any more, cleared`);
+      changed = true;
+    }
+    return changed;
+  }
   // GET /web/event/catalog: a kept census id the index no longer has is cleared (saved), so the save holds no dead id; listing the
   // Events tab never writes the save
   function pruneKept() {
+    if (migrateKept()) return true;
     const kept = view().kept;
     if (!kept || entryOf(kept)) return false;
     state().kept = null;
@@ -227,18 +295,22 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   // an entry by its id or by the id of one of its rows (the Details and Keep buttons of a row card)
   const entryById = (id) => entries().find((x) => x.evStageId === id || (x.rows || []).some((r) => r.evStageId === id));
   // POST /web/event/keep/<evStageId> and /web/event/unkeep (Task 5 buttons): {code, body {ok, why?}}. Only a past event with a
-  // served quest (or a served avatar board, Part 7) can be kept (else why: now, other, later, removed); keeping one replaces the previous.
+  // served quest can be kept (else why: now, other, later, removed; a BOARD entry: avatarBoards, kept from the Avatar Board Catalog,
+  // Task 5b); keeping one replaces the previous kept event, never the kept board entry.
   function keep(evStageId) {
     const id = Number(evStageId), e = entryById(id);
     if (!e) return { code: 404, body: { ok: false, why: 'unknown event' } };
-    const st = calendar.listable(e) || boardKeepable(e) ? rowState(e, { ...catalogCtx(), kept: null }) : 'removed';
+    if (boardOnly(e)) return { code: 409, body: { ok: false, why: 'avatarBoards' } };
+    const st = calendar.listable(e) ? rowState(e, { ...catalogCtx(), kept: null }) : 'removed';
     if (st !== 'can') return { code: 409, body: { ok: false, why: st } };
+    migrateKept();
     state().kept = e.censusId;
     savePlayer();
     log(`[event] Event Catalog: ${e.censusId} kept`);
     return { code: 200, body: { ok: true } };
   }
   function unkeep() {
+    migrateKept();
     state().kept = null;
     savePlayer();
     return { code: 200, body: { ok: true } };
@@ -290,7 +362,8 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
       endTime: serverTimeAt(clock.weekEnd(realNow())), newStageId: 0, isLock: 0, complete: 0 }];
   }
 
-  return { events, catalogEvents, onStageClear, isEventStage, keep, unkeep, catalogCtx, pruneKept, keptEntry, entryOfStage, boardSetOf, currentEntries, pendingBoosters, payPending, payBonuses };
+  return { events, catalogEvents, onStageClear, isEventStage, keep, unkeep, catalogCtx, pruneKept, keptEntry, entryOfStage, boardSetOf, currentEntries, pendingBoosters, payPending, payBonuses,
+    boardCatalogCtx, keepBoard, unkeepBoard, boardKept, migrateKept, pruneBoardKept };
 }
 
 module.exports = routesEvents;
