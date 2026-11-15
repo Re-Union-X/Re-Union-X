@@ -486,7 +486,8 @@ function srvBox(e, st, index, o) {
 }
 const EVENT_DETAIL_CSS = '.tt{table-layout:auto}.tt td:nth-child(2),.tt td:nth-child(3){white-space:nowrap}.tt td.r{color:#ffcd4a}.tt small{display:block;color:#b9cfdc;font-size:13px}'
   + '.tt.bt td:nth-child(2){white-space:normal}.bt td.cd{color:#8fe3a0}.bt td.r{white-space:normal}.ecoin{margin:6px 0 12px;font-size:15px}.ecoin b{color:#ffcd4a;font-size:18px}'
-  + BOARD_CARD_CSS;
+  // the Avatar Boards table (class ab, Task 5c fix round 1): card | Board | Dates | Price | Status; Board and Dates wrap, Price on one line
+  + '.tt.ab td:nth-child(3){white-space:normal}.tt.ab td:nth-child(4){white-space:nowrap}' + BOARD_CARD_CSS;
 // Event Boards of an entry's set (Part 3 Task 6, as the Raid Catalog lists the boards of a raid, with the cells): the coin line (one
 // balance per set, never expires), then each board of the set in order with its cells. ctx.eventBoard(boardId) -> {name, cells:
 // [{n, cost, reward, done}], finish, done} | null; ctx.eventCoins(setKey) -> n. '' without a set or without a board served.
@@ -558,7 +559,7 @@ function avatarBoardsSection(e, ctx, onEventPage = false) {
   const rows = boards.map((b) => `<tr>${card(b)}<td>${esc(b.name)}</td><td>${b.window ? esc(`${niceDay(b.window[0])} – ${niceDay(b.window[1])}`) : '—'}</td><td>${esc(boardPrice(b))}</td>${status(b)}</tr>`).join('');
   const codes = [...new Set((e.avatarBoards || []).flatMap((w) => w.labels || []))];
   const notes = codes.length ? `<ul class="pl">${codes.map((c) => `<li>${esc(BOARD_LABEL_TEXT[c] || c)}</li>`).join('')}</ul>` : '';
-  return `<script>${BOARD_NC_JS}</script><h2>Avatar Boards</h2><table class="tt bt"><tr><th></th><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
+  return `<script>${BOARD_NC_JS}</script><h2>Avatar Boards</h2><table class="tt bt ab"><tr><th></th><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
     + '<p class="n">A board on sale is bought once with Jewels and stays yours; its nodes are opened with Avatar Coins. In the original game these boards were sold '
     + `only in their dates: on this server a past entry can be kept in the ${onEventPage ? `<a href="${esc(boardLink)}">Avatar Board Catalog ›</a>` : 'Avatar Board Catalog'}, `
     + 'and its boards are listed in Avatar Boards again at their original price (an addition of this server, not original). Keeping it never changes your kept event.</p>';

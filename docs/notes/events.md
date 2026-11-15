@@ -1330,7 +1330,8 @@ User 15-11: the rows showed «No card in the original» because a BOARD entry ha
   - It only resizes, to at most 160 px. It takes only the boards of `avatar_boards.json` and writes `cards.json` {version, ids}.
   - It is re-runnable: run it again after the loc cards change (corner cleaning). Stale cards are removed and the version changes with the pictures. The server reads `cards.json` at request time: no restart, no master regen, no resources build.
   - Real data: 445 cards (~44 KB each). The 8 Skill Enhancement runs have the plain card and show a neutral box.
-- **Route:** `GET /web/avatar/img/v<version>/<sphereBoardId>.png` (`server.js respondAvatarCard`). Only numeric ids are accepted, other names and paths give 404.
+- **Route:** `GET /web/avatar/img/v<version>/<sphereBoardId>.png` (`server.js respondAvatarCard`). Only numeric ids are accepted, other names and paths give 404. It sends `Cache-Control: public, max-age=3600`, as the other image routes do.
+- **Board table:** the Avatar Boards table has the class `ab` (card | Board | Dates | Price | Status). Board and Dates wrap; Price stays on one line. Page budget test: 120 KB packed (`board_catalog_size_budget`).
 - **Catalogue row:** up to 3 served boards' cards side by side at the row height (70 px), «+N» for the others. An entry with no served board shows a «No card» box, never «in the original».
   - The card ids, the «+N» number and the row marks are packed apart (`catalog-pages.js packCatalog` `fields.c` / `cm` / `a`), so the rows still share their templates.
   - `kxImgs` loads every card of a shown row (`data-src`, `loading="lazy"`). The page is about 104-110 KB packed on the real data (was 84 KB).

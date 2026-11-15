@@ -767,6 +767,41 @@ const tests = {
     // the page script loads every card of a shown row
     assert.ok(/querySelectorAll\("img\[data-src\]"\)/.test(raw));
   },
+  // Task 5c fix round 1: the column rules of the Avatar Boards table follow its header (card column first): Board and Dates wrap,
+  // Price stays on one line; on the Avatar Board page and on the event page of an event that sold boards
+  board_table_columns() {
+    const ix = BOARD_INDEX();
+    ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
+    for (const page of [pages.boardDetailPage(ix, 29920, ctx()), pages.detailPage(ix, 29900, ctx())]) {
+      const head = /<table class="tt bt ab"><tr>((?:<th>[^<]*<\/th>)+)<\/tr>/.exec(page);
+      assert.ok(head, 'the Avatar Boards table has its own class');
+      const cols = [...head[1].matchAll(/<th>([^<]*)<\/th>/g)].map((m) => m[1]);
+      const n = (name) => cols.indexOf(name) + 1;
+      assert.deepStrictEqual(cols, ['', 'Board', 'Dates', 'Price', 'Status']);
+      const css = page.slice(0, page.indexOf('</style>'));
+      for (const c of ['Board', 'Dates']) assert.ok(css.includes(`.tt.ab td:nth-child(${n(c)}){white-space:normal}`) || (c === 'Board' && css.includes(`.tt.bt td:nth-child(${n(c)}){white-space:normal}`)), `${c} wraps`);
+      assert.ok(css.includes(`.tt.ab td:nth-child(${n('Price')}){white-space:nowrap}`), 'Price on one line');
+    }
+  },
+  // Task 5c fix round 1: a page-size budget for the Avatar Board Catalog (packed): 120 KB on the real index when present, else on
+  // a fixture of 270 entries with several boards each
+  board_catalog_size_budget() {
+    let ix = null;
+    try { ix = avatarBoards.catalogIndex(require('./game_data/events.json'), require('./game_data/avatar_boards.json')); } catch { ix = null; }
+    if (!ix) {
+      ix = BOARD_INDEX();
+      const base = ix.entries.find((e) => e.censusId === 'B-0');
+      for (let i = 0; i < 270; i++) {
+        const nb = 1 + (i % 7);
+        ix.entries.push({ ...base, censusId: `B-F${i}`, evStageId: 30000 + i, name: `Avatar Boards: Fixture ${i}`, start: `2017-${String(1 + (i % 12)).padStart(2, '0')}-05`, end: `2017-${String(1 + (i % 12)).padStart(2, '0')}-11`,
+          boards: Array.from({ length: nb }, (_, k) => ({ key: `B-F${i}/outfit`, group: 'outfit', type: 2, window: ['2017-01-05', '2017-01-11'], donorId: 20000 + i * 10 + k,
+            name: `Fixture Coat ${i}-${k}`, sphereBoardId: 5100000 + i * 10 + k, price: 2000, served: true, why: null })) });
+      }
+    }
+    const raw = pages.boardCatalogPage(ix, ctx({ boardImgVersion: 159770767, boardOwned: (id) => id % 3 === 0, boardProgress: (id) => ['none', 'part', 'done'][id % 3] }));
+    const kb = Buffer.byteLength(raw, 'utf8') / 1024;
+    assert.ok(kb < 120, `Avatar Board Catalog ${kb.toFixed(1)} KB packed (budget 120 KB)`);
+  },
   // each board line of the Avatar Board page carries its card (a held board or a plain card: the neutral box)
   board_page_cards() {
     const ix = BOARD_INDEX();
@@ -965,6 +1000,11 @@ function wiring() {
     fs.writeFileSync(path.join(process.env.KHUX_AVATAR_IMG, 'cards.json'), JSON.stringify({ version: 4242, ids: [5000001] }));
     const card = web(t.respondAvatarWeb, '/web/avatar/img/v4242/5000001.png');
     assert.deepStrictEqual([card.code, card.body], [200, 'png1']);
+    // fix round 1: cached as the other image routes (the URL carries the version)
+    let hdr = null;
+    quiet(() => t.respondAvatarWeb({ writeHead(c, h) { hdr = h; }, end() {} }, '/web/avatar/img/v4242/5000001.png'));
+    assert.strictEqual(hdr['Cache-Control'], 'public, max-age=3600');
+    assert.strictEqual(hdr['Content-Type'], 'image/png');
     assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/img/v1/5000001.png').code, 200, 'any version');
     assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/img/v1/5009999.png').code, 404, 'unknown id');
     for (const bad of ['/web/avatar/img/v1/../secret.png', '/web/avatar/img/v1/..%2Fsecret.png', '/web/avatar/img/v1/secret.png', '/web/avatar/img/v1/5000001.png.png',

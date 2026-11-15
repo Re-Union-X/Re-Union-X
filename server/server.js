@@ -5160,7 +5160,8 @@ function respondAvatarCard(res, p) {
   const file = m ? path.join(AVATAR_IMG, `${Number(m[1])}.png`) : null;
   if (!file || !fs.existsSync(file)) { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); }
   const b = fs.readFileSync(file);
-  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
+  // cached as the other image routes (the URL carries the cards.json version)
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length, 'Cache-Control': 'public, max-age=3600' });
   return res.end(b);
 }
 function respondAvatarWeb(res, url) {
