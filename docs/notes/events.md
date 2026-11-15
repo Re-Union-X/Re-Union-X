@@ -1246,6 +1246,29 @@ Booster was not measured (automated taps did not trigger a special attack): the 
   paragraph without the «later update»; raid notice no longer lists the Final Form Sora Boosters among the JP-only rewards left
   off; Event Catalog `boardsLater` text neutral.
 
+## Part 7 summary (avatar boards, 16 November 2026)
+
+- **Served** (master revision 331, resources 130): 461 avatar boards from the private records (297 entries): 343 on sale for
+  Jewels (outfit 227, gem 56, skill 46, medal 11, Jewel Booster 3), 118 free (Avatar Coin 34, Avatar Coin Booster 76, level 8).
+  Windows on the story calendar; a week board counts down to the end of the story week (not original, user 15-11). Bought =
+  kept for good. 29 boards held (24 Enhancement Set+ sets 3-6, 5 Draw Ticket: no dated notice); Medal Fusion Set 1 unmapped
+  (no WW source). Start-Up Boost Board permanent, 100 Jewels (khuxwiki: on sale for good from 2.3.1, date unknown).
+- **Skills:** 6 skills imported from the donor (1265-1270) keep an empty description (no text in any source).
+- **Cards:** section 56 (445): 225 WW, 139 JP 4.3.1, 34 khuxwiki Avatar Coin cards, 4 Bad Guy Breaker; 42 cropped from
+  screenshots (corners cleaned, light sharpening); 8 Skill Enhancement runs keep the plain card. KEPT twin cards = section 57.
+- **Avatar Board Catalog** (Special tab, gold banner evStage 22929): boards left the Event Catalog (user 15-11); own keep,
+  one entry, independent of the event keep; Bought / Not bought, node PROGRESS, board cards in rows and pages.
+- **KEPT twins** (453, 5500000+n, `event_ids.json avatarTwins`): KEPT BOARD tab, no countdown, purchase and progress shared
+  with the original; delivered with «Unlocked an Avatar Board!» on re-entering Avatar Boards (user 15-11); after an unkeep a
+  bought board stays as its twin until the next login.
+- **Notice (Task 7):** «Events» (11/16) sections «Avatar boards» and «Avatar Board Catalog» (`routes-info-album.js
+  avatarNoticeFacts` / `avatarBoardLines`, counts from `avatar_boards.json` and `avatar_img/cards.json`); the Gem Boards
+  sentence points to them; the Booster sources count the Avatar Board cells (79) apart from the raid cells; the BOARD entries
+  are no longer counted as events in the «events in the data» figure (439). Player text no longer says «restored»: raid
+  pages and notices «Not built yet», Special Catalog «Not built» (quests left out for good), Spirit deal page reworded.
+  Only a server restart is needed (no regen, no resources).
+- **Not benched:** a bought board in its own later week after an unkeep (needs a week change; covered by tests).
+
 ## Event Board card pictures (14 November 2026)
 
 User 14-11: the Event Board cards were the plain lilac frame since Part 3 (no `img/sphere_incentive/<id>.png` for the event board
