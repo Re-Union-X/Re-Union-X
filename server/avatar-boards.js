@@ -304,25 +304,37 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     for (const id of ids) stateOf(player, id);
     if (setSent === true || setSent === 'merge') {
       const keep = (player.avatarBoardsSent || []).map(Number).filter((id) => setSent === 'merge' || ids.includes(id));
-      player.avatarBoardsSent = [...new Set([...keep, ...ids.filter((id) => onSale(player, id))])].sort((a, b) => a - b);
+      // a kept board waiting for the list check (markKept) is delivered by this list: the client holds it now
+      const pending = (player.avatarBoardsKeptPending || []).map(Number).filter((id) => ids.includes(id));
+      player.avatarBoardsSent = [...new Set([...keep, ...ids.filter((id) => onSale(player, id)), ...pending])].sort((a, b) => a - b);
+      delete player.avatarBoardsKeptPending;
     }
     return ids;
   }
 
   // POST /user/sphere/check: {add, close}. checkTypes with 3 closes the boards sent that are no longer listed; otherwise the boards
   // handed out or bought that the client does not hold yet, once each, when boardTypes (if given) has their type. A board on sale
-  // is never added: every new entry pops «Unlocked an Avatar Board!»
+  // is never added by the home check: every new entry pops «Unlocked an Avatar Board!». The boards of a kept catalogue entry
+  // (markKept: player.avatarBoardsKeptPending) skip the home check and go with the check of the Avatar Boards list (boardTypes
+  // without 3, sent when the player enters the list), on sale or not: the client asks GET /user/sphere only at login (Task 6b bench)
   function check(player, body = {}, ctx = {}, kept = null) {
     const types = (body.checkTypes || []).map(Number), boards = Array.isArray(body.boardTypes) ? body.boardTypes.map(Number) : null;
     const ids = listedIds(player, ctx, kept), sent = new Set((player.avatarBoardsSent || []).map(Number));
+    const pending = new Set((player.avatarBoardsKeptPending || []).map(Number).filter((id) => ids.includes(id) && !sent.has(id)));
     if (types.includes(3)) {
       const close = [...sent].filter((id) => !ids.includes(id)).sort((a, b) => a - b);
       player.avatarBoardsSent = [...sent].filter((id) => ids.includes(id));
       return { add: [], close };
     }
-    const add = ids.filter((id) => !sent.has(id) && !onSale(player, id) && (!boards || boards.includes(info(id).type)));
+    const listCheck = !!boards && !boards.includes(3);
+    const typeOk = (id) => !boards || boards.includes(info(id).type);
+    const add = ids.filter((id) => !sent.has(id) && typeOk(id) && (pending.has(id) ? listCheck : !onSale(player, id)));
     for (const id of add) stateOf(player, id);
     player.avatarBoardsSent = [...sent, ...add];
+    if (player.avatarBoardsKeptPending) {
+      const left = [...pending].filter((id) => !add.includes(id));
+      if (left.length) player.avatarBoardsKeptPending = left; else delete player.avatarBoardsKeptPending;
+    }
     return { add, close: [] };
   }
 
@@ -364,13 +376,16 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     return { ok: true, nodes: todo, cost };
   }
 
-  // Avatar Board Catalog keep (Task 5b, routes-events.js keepBoard): the boards listed only because of the kept entry ('kept') join
-  // avatarBoardsSent silently, with their progress, so the next check announces none of them (the Task 6 bench saw one «Unlocked an
-  // Avatar Board!» popup per kept board, 21 in a row); GET /user/sphere lists them, so they are in Avatar Boards. -> the ids marked
+  // Avatar Board Catalog keep (Task 5b, routes-events.js keepBoard): the boards listed only because of the kept entry ('kept'), with
+  // their progress, wait in player.avatarBoardsKeptPending: the home check announces none of them (the Task 6 bench saw one
+  // «Unlocked an Avatar Board!» popup per kept board, 21 in a row) and the check of the Avatar Boards list delivers them (Task 6b
+  // bench: GET /user/sphere, which lists them too, comes only at login). -> the ids pending
   function markKept(player, ctx = {}, kept = null) {
-    const ids = listedIds(player, ctx, kept).filter((id) => listState(player, id, ctx, kept) === 'kept');
+    const sent = new Set((player.avatarBoardsSent || []).map(Number));
+    const ids = listedIds(player, ctx, kept).filter((id) => listState(player, id, ctx, kept) === 'kept' && !sent.has(id));
     for (const id of ids) stateOf(player, id);
-    player.avatarBoardsSent = [...new Set([...(player.avatarBoardsSent || []).map(Number), ...ids])].sort((a, b) => a - b);
+    const all = [...new Set([...(player.avatarBoardsKeptPending || []).map(Number), ...ids])].sort((a, b) => a - b);
+    if (all.length) player.avatarBoardsKeptPending = all;
     return ids;
   }
 

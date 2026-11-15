@@ -238,6 +238,31 @@ const tests = {
     assert.strictEqual(w.r.servedRow(row, { ...WEEK1, weekEnd: end }, 'EV-1').endDatetime, end, 'in the week and kept: the week end');
     assert.strictEqual(w.r.servedRow(row, { ...WEEK_RET, weekEnd: end }, 'EV-1').endDatetime, end, 'in the week (another window) and kept: the week end');
   },
+  // Task 6b bench: the client asks GET /user/sphere only at login, so a board kept in the Avatar Board Catalog reaches it through
+  // the check of the Avatar Boards list (boardTypes [1,2,6,8,10,11]) when the player re-enters the list; the home check (all
+  // types) never announces it (no popup flood), once each, on sale or handed out
+  kept_boards_delivered_by_list_check() {
+    const HOME_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
+    const LIST_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] };
+    for (const [kept, donor] of [['EV-1', A], ['EV-3', C]]) {
+      const w = world(), id = idOf(w.out, donor);
+      w.player.avatarBoardsSent = [];
+      assert.deepStrictEqual(w.r.markKept(w.player, WEEK_LATE, kept), [id], `${kept}: the kept board`);
+      assert.ok(!w.r.check(w.player, HOME_CHECK, WEEK_LATE, kept).add.includes(id), `${kept}: the home check does not announce it`);
+      assert.ok(w.r.check(w.player, LIST_CHECK, WEEK_LATE, kept).add.includes(id), `${kept}: the list check delivers it`);
+      assert.ok(!w.r.check(w.player, LIST_CHECK, WEEK_LATE, kept).add.includes(id), `${kept}: once`);
+      assert.ok(w.player.avatarBoardsSent.includes(id), `${kept}: the client holds it`);
+      // unkept: the close check of the list removes it
+      assert.ok(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, null).close.includes(id), `${kept}: closed after the unkeep`);
+      // a login (GET /user/sphere) before the list check delivers it: the list check does not send it again
+      const w2 = world(), id2 = idOf(w2.out, donor);
+      w2.player.avatarBoardsSent = [];
+      w2.r.markKept(w2.player, WEEK_LATE, kept);
+      assert.ok(w2.r.list(w2.player, WEEK_LATE, kept, { setSent: true }).includes(id2));
+      assert.ok(w2.player.avatarBoardsSent.includes(id2) && !w2.player.avatarBoardsKeptPending, `${kept}: the login list delivered it`);
+      assert.ok(!w2.r.check(w2.player, LIST_CHECK, WEEK_LATE, kept).add.includes(id2), `${kept}: not again`);
+    }
+  },
   type2_node_unlock_accepted() {
     const w = world(), a = idOf(w.out, A), c = idOf(w.out, C);
     w.player.spherePoint = 100;

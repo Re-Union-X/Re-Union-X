@@ -250,8 +250,9 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
     return { shopFrom, shopTo, current, boardLocked, kept: kept && entryOf(kept) ? kept : null };
   }
   // POST /web/avatar/keep/<evStageId>: only a past entry with a served board (why: now, other, later, removed); keeping one replaces
-  // the kept board entry, never the kept event. The boards it lists join avatarBoardsSent silently (markBoardsSent, server.js:
-  // avatar-boards.js markKept): the Task 6 bench saw one «Unlocked an Avatar Board!» popup per kept board (21 in a row)
+  // the kept board entry, never the kept event. The boards it lists wait for the check of the Avatar Boards list (markBoardsSent,
+  // server.js: avatar-boards.js markKept): the home check never announces them (the Task 6 bench saw 21 popups in a row there); the
+  // list check delivers them when the player re-enters Avatar Boards, one «Unlocked an Avatar Board!» each (Task 6b bench)
   function keepBoard(evStageId) {
     const id = Number(evStageId), e = entryById(id);
     if (!e || !hasBoards(e)) return { code: 404, body: { ok: false, why: 'unknown entry' } };
