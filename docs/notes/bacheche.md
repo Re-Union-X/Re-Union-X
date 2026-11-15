@@ -214,8 +214,12 @@ with `openId` 2 and an `openParam` above the player's level, and three type-2 ro
   the list: the client hides nothing, the server must drop it). A blue «Details» button appears only when `detailUrl` is not
   empty; it opens `detailUrl` as given in the web view (a path without host became a `file://` address: an absolute URL is
   needed).
-- **Buying.** Tapping a type-2 card with `isBuy` 0 opens the purchase popup `SphereBoard_Account_ver120`, a layout our
-  resources do not have yet: the client crashed natively there and sent no request. The popup looks up a copy of the card
+- **Buying.** Tapping a type-2 card with `isBuy` 0 opens the purchase popup `SphereBoard_Account_ver120`. Without that
+  layout the client crashed natively and sent no request; it is now imported from the JP 4.3.1 client (`jp_coco_layouts.txt`,
+  resources 125; its only JP text, the Cancel label, resolves to the English text id 100100002, one new texture
+  `Win20.png`). Bench: the popup opens without a crash and shows the card, «Spend N Jewels to purchase this Avatar Board?»,
+  «Held» with the Jewels owned, Cancel and OK. OK sent `POST /user/sphere/buy {"sphereBoardId":2990004}` and, with no route,
+  the client showed «A server error has occurred. (200 ERROR :73)». The popup looks up a copy of the card
   (`Select_Base`, `Select_Board`, `Select_Kind`), `Txt_Wording`, `Txt_CrownPossessed` and `Txt_CrownPossessed_Label` (the
   Jewels held), `Button_OK`, `Button_Close` and `Txt_Cancel`. Its OK sends `POST /user/sphere/buy {"sphereBoardId": N}`;
   the answer must carry `userSphere` as one UserSphereData object, not an array (see the protocol notes). The server has no
