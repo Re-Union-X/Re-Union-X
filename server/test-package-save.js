@@ -34,8 +34,11 @@ check(p.party === undefined, `party kept: ${JSON.stringify(p.party)}`);
 // no login bonus state of the bench (its days can be in the future after -RealNow runs): a new player starts at day 1
 check(p.loginBonus === undefined, `login bonus kept: ${JSON.stringify(p.loginBonus)}`);
 // no Catalog choice of the bench: nothing kept in the Shop, the Events tab or Special
-check(!p.gacha?.pinned && !p.gacha?.pinnedPet && !p.raid?.kept && !p.events?.kept && !p.special?.pinned,
-  `kept choices left: ${JSON.stringify({ g: p.gacha?.pinned, pet: p.gacha?.pinnedPet, raid: p.raid?.kept, ev: p.events?.kept, sp: p.special?.pinned })}`);
+check(!p.gacha?.pinned && !p.gacha?.pinnedPet && !p.raid?.kept && !p.events?.kept && !p.special?.pinned && !p.avatarBoards?.kept,
+  `kept choices left: ${JSON.stringify({ g: p.gacha?.pinned, pet: p.gacha?.pinnedPet, raid: p.raid?.kept, ev: p.events?.kept, sp: p.special?.pinned, av: p.avatarBoards?.kept })}`);
+// the Avatar Board Catalog keep (Events Part 7 Task 5b) of the bench stays on the bench too
+const kept = merge({ ...JSON.parse(before[0]), avatarBoards: { kept: 'EV-1234' }, events: { kept: 'EV-0741', cleared: {} } }, JSON.parse(before[1]));
+check(kept.avatarBoards && kept.avatarBoards.kept === null && kept.events.kept === null, `bench board keep shipped: ${JSON.stringify(kept.avatarBoards)}`);
 check(bytes(MAX).equals(before[0]) && bytes(PROUD).equals(before[1]), 'a source save was modified');
 
 // the server loads it, Proud Mode is open and finished up to 979

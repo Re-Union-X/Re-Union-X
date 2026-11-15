@@ -1623,6 +1623,45 @@ const tests = {
     assert.strictEqual(none.ids.rows['EV-B1'], out.ids.rows['EV-B1'], 'no records: the numbers stay');
     assert.ok(!entry(none, 'EV-B1') && !entry(none, 'E-1').avatarBoards, 'no records: no BOARD entry');
   },
+  // Task 5b, user 15-11: the Avatar Board Catalog banner in the Special tab (eventCategory 1), as the Special / Event / Raid Catalog
+  // banners: an evStage holding the Training Grounds (970000), eventType 0, Details -> /web/avatar/catalog; its number a `rows`
+  // number of event_ids.json under config.avatarCatalogKey (append-only, never a record's); only with BOARD entries and the
+  // Training Grounds row; the picture is /web/event/img/v<N>/<id>.png (an original banner, make_avatar_catalog_banner.py)
+  avatar_catalog_banner() {
+    const ab = () => ({ entries: [{ censusId: 'EV-B1', key: 'EV-B1/outfit', group: 'outfit', type: 2, window: ['2017-04-03', '2017-04-16'], price: 3000, labels: [],
+      boards: [{ donorId: 9001, name: 'Outfit M' }] }], held: [], unmapped: [] });
+    const m = master();
+    m.stage.push({ ...storyRow(0, 1), stageId: 970000, id: 970000, stageKind: 2, useAp: 0 });
+    const out = me.buildEvents(records(), CONFIG, m, undefined, undefined, null, null, { avatarBoards: ab() });
+    assert.strictEqual(CONFIG.avatarCatalogKey, '@avatarBoardCatalog');
+    const n = out.ids.rows[CONFIG.avatarCatalogKey], id = CONFIG.evStageBase + n, row = out.avatarCatalogEvStage;
+    assert.ok(Number.isInteger(n) && n > out.ids.rows['EV-B1'], 'numbered after the records');
+    assert.deepStrictEqual([row.eventStageId, row.eventCategory, row.eventType, row.stageId, row.detailUrl], [id, 1, 0, [970000], '/web/avatar/catalog']);
+    assert.strictEqual(row.bannerUrl, `/web/event/img/v${CONFIG.imgVersion}/${id}.png`);
+    assert.deepStrictEqual(out.index.avatarCatalog, { evStageId: id, stageIds: [970000], useAp: [0] });
+    assert.ok(!out.evStage.some((r) => r.eventStageId === id) && !out.index.entries.some((e) => e.evStageId === id), 'apart from the event rows and entries');
+    const again = me.buildEvents(records(), CONFIG, m, out.ids, out.anchors, null, null, { avatarBoards: ab() });
+    assert.strictEqual(again.avatarCatalogEvStage.eventStageId, id, 'the number is frozen');
+    const none = me.buildEvents(records(), CONFIG, m, out.ids, out.anchors, null, null, {});
+    assert.ok(!none.avatarCatalogEvStage && !none.index.avatarCatalog, 'no board records: no banner');
+    assert.strictEqual(none.ids.rows[CONFIG.avatarCatalogKey], n, 'its number stays');
+    const noTraining = me.buildEvents(records(), CONFIG, master(), out.ids, out.anchors, null, null, { avatarBoards: ab() });
+    assert.ok(!noTraining.avatarCatalogEvStage, 'no Training Grounds row: no banner');
+    // the patch writes it among our own evStage rows and in events.json (avatarCatalog)
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-events-avc-'));
+    const md = path.join(dir, 'master'), gd = path.join(dir, 'game_data');
+    fs.mkdirSync(md);
+    for (const [t, rows] of Object.entries(m)) fs.writeFileSync(path.join(md, `${t}.json`), JSON.stringify(rows));
+    const opts = { records: records(), config: CONFIG, gameDataDir: gd, idsFile: path.join(dir, 'event_ids.json'), avatarBoards: ab() };
+    me.patch(md, opts);
+    me.patch(md, opts);
+    const ev = JSON.parse(fs.readFileSync(path.join(md, 'evStage.json'), 'utf8')).filter((r) => r.eventCategory === 1 && r.eventStageId >= CONFIG.evStageBase);
+    const idx = JSON.parse(fs.readFileSync(path.join(gd, 'events.json'), 'utf8'));
+    assert.strictEqual(ev.length, 1, 'written once, replaced by the next run');
+    assert.deepStrictEqual(idx.avatarCatalog, { evStageId: ev[0].eventStageId, stageIds: [970000], useAp: [0] });
+    assert.ok(idx.own.evStage.includes(ev[0].eventStageId));
+    fs.rmSync(dir, { recursive: true, force: true });
+  },
   // fix round 1: a record that is only an informative notice (noQuests 'board' / 'notice', hidden by the catalogue) does not swallow
   // the boards of its census id: its entry becomes the BOARD entry (same number), shown and keepable
   board_entry_over_informative_notice() {

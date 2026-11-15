@@ -799,6 +799,19 @@ function avatarCatalog(out, records, ids, config, textOf) {
     if (own) { own.avatarBoards = windows; continue; }
     made.push(board);
   }
+  // the Avatar Board Catalog banner (Task 5b, user 15-11): in the Special tab, next to the Special Catalog banner, as the Event
+  // Catalog banner above (the Training Grounds of the Special Catalog, eventType 0, Details -> the catalogue); its number is a
+  // `rows` number under config.avatarCatalogKey (append-only, after the records seen so far); only when there are board entries
+  // and the Training Grounds row (out.index.catalog). Its picture: an original banner (make_avatar_catalog_banner.py)
+  if (config.avatarCatalogKey && byId.size && out.index.catalog) {
+    if (!(config.avatarCatalogKey in ids.rows)) ids.rows[config.avatarCatalogKey] = next++;
+    const id = config.evStageBase + ids.rows[config.avatarCatalogKey], cat = out.index.catalog;
+    const row = evStageRow(id, [...cat.stageIds], { eventType: 0, detailUrl: config.avatarCatalogUrl });
+    row.eventCategory = Number(config.avatarCatalogCategory) || 1;
+    row.bannerUrl = `/web/event/img/v${config.imgVersion}/${id}.png`;
+    out.avatarCatalogEvStage = row;
+    out.index.avatarCatalog = { evStageId: id, stageIds: [...cat.stageIds], useAp: [...cat.useAp] };
+  }
   checkRoom({ ...ids.rows, ...(ids.subRows || {}) }, 'evStage', config.evStageBase, config.evStageMax);
   checkNumbers({ ...ids.rows, ...(ids.subRows || {}) }, 'row', config.evStageMax - config.evStageBase);
   out.index.entries.push(...made.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.evStageId - b.evStageId)));
@@ -1424,6 +1437,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     out.catalogEvStage = row;
     out.index.catalog = { evStageId: config.catalogEvStage, stageIds: [config.catalogStage], useAp: [Number(training.useAp) || 0] };
   }
+  out.avatarCatalogEvStage = null;
   if (opts.avatarBoards) avatarCatalog(out, opts.avatarBoards, allIds, config, textOf);
   for (const e of out.index.entries) for (const r of [e.reason, ...e.quests.map((x) => x.reason)]) if (r && !REASONS.includes(r)) throw new Error(`events: unknown reason ${r}`);
   for (const l of [...used].sort()) {
@@ -1552,7 +1566,7 @@ function patch(masterDir, opts = {}) {
   if (avatarBoards === undefined) avatarBoards = process.env.KHUX_AVATAR_BOARDS ? readJson(process.env.KHUX_AVATAR_BOARDS) : null;
   if (!avatarBoards && !opts.records) console.warn('events: KHUX_AVATAR_BOARDS not set (the private avatar board records): no BOARD entry in the Event Catalog');
   const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters, avatarBoards });
-  const added = { stage: out.stage, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...out.evStage], reward: out.reward,
+  const added = { stage: out.stage, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...(out.avatarCatalogEvStage ? [out.avatarCatalogEvStage] : []), ...out.evStage], reward: out.reward,
     sphere: out.sphere, sphereArray: out.sphereArray, sphereMasu: out.sphereMasu };
   const clashR = out.reward.find((r) => master.reward.some((m) => m.rewardId === r.rewardId));
   if (clashR) throw new Error(`events: reward row ${clashR.rewardId} is in the master already`);
@@ -1570,6 +1584,7 @@ function patch(masterDir, opts = {}) {
   }
   own.poi = Object.keys(out.poi).sort((a, b) => a - b);
   fs.writeFileSync(path.join(gameData, 'events.json'), JSON.stringify({ entries: out.index.entries, reasons: out.index.reasons, ...(out.index.catalog ? { catalog: out.index.catalog } : {}),
+    ...(out.index.avatarCatalog ? { avatarCatalog: out.index.avatarCatalog } : {}),
     boardSets: out.index.boardSets, ...(out.index.avatarHeld ? { avatarHeld: out.index.avatarHeld } : {}), own }, null, 1));
   fs.writeFileSync(path.join(gameData, 'event_maps.json'), JSON.stringify(out.maps, null, 1));
   // Event Board card pictures (event-boards.js artLines), imported by tools/ldplayer/session/build-resources.ps1

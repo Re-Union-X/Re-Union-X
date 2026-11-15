@@ -608,6 +608,26 @@ const tests = {
     const p3 = { events: { kept: 'B-0', cleared: {} } }, ev3 = make(p3, { n: 0 });
     assert.strictEqual(ev3.keep(29900).body.ok, true);
     assert.deepStrictEqual([p3.events.kept, p3.avatarBoards.kept], ['E-0', 'B-0']);
+    // review 5: an old save that kept an EVENT with served boards (EV-0741 kind, Task 5 listed its boards): the event stays kept and
+    // its key is copied to the board keep, once; a board keep the player removes later is not copied back
+    ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
+    const p4 = { events: { kept: 'E-0', cleared: {} } }, s4 = { n: 0 }, ev4 = make(p4, s4);
+    assert.strictEqual(ev4.boardKept(), 'E-0', 'read: its boards are kept before the migration writes');
+    assert.strictEqual(ev4.migrateKept(), true);
+    assert.deepStrictEqual([p4.events.kept, p4.avatarBoards.kept], ['E-0', 'E-0']);
+    assert.strictEqual(ev4.migrateKept(), false, 'once');
+    ev4.unkeepBoard();
+    assert.strictEqual(ev4.migrateKept(), false);
+    assert.deepStrictEqual([p4.events.kept, p4.avatarBoards.kept, ev4.boardKept()], ['E-0', null, null], 'a removed board keep stays removed');
+    // a board keep already there is never replaced
+    const p5 = { events: { kept: 'E-0', cleared: {} }, avatarBoards: { kept: 'B-0' } }, ev5 = make(p5, { n: 0 });
+    ev5.migrateKept();
+    assert.deepStrictEqual([p5.events.kept, p5.avatarBoards.kept], ['E-0', 'B-0']);
+    // a new save that keeps the event now (no older keep): the event keep does not keep its boards
+    const p6 = {}, ev6 = make(p6, { n: 0 });
+    assert.strictEqual(ev6.keep(29900).body.ok, true);
+    ev6.migrateKept();
+    assert.deepStrictEqual([p6.events.kept, ev6.boardKept()], ['E-0', null]);
   },
   // Task 6 bench: keeping a BOARD entry popped «Unlocked an Avatar Board!» once per board (21 in a row). The kept boards join
   // avatarBoardsSent silently when the keep is stored: the next check announces none of them, GET /user/sphere still lists them
@@ -670,6 +690,54 @@ const tests = {
     const pill = JSON.parse(braw.slice(braw.indexOf('var PILL=') + 9, braw.indexOf(';\nfunction attr(el,a)')));
     assert.ok(/Avatar Boards/.test(pill.kept[1]) && /boards/.test(pill.can[1]), 'board pills after a keep');
     assert.ok(braw.includes("'/web/avatar/board/'"), 'a row opens its Avatar Board page');
+  },
+  // Task 5b fix round 1 (review 1): the board catalogue's page script counts «entries», never «entrys»; the Event Catalog «events»
+  board_noun_entries() {
+    const ix = BOARD_INDEX();
+    const fp = fakePage(pages.boardCatalogPage(ix, ctx({ current: new Set(['B-1']) })));
+    fp.tab('all');
+    assert.ok(/>\d+ entries</.test(fp.byId.sum.innerHTML) && !/entrys/.test(fp.byId.sum.innerHTML), fp.byId.sum.innerHTML);
+    fp.apply({ type: 'gem', show: 'kept' });
+    assert.ok(/No entries match your filters/.test(fp.byId.none.textContent), fp.byId.none.textContent);
+    fp.apply({ show: 'removed' });
+    assert.ok(/>1 entry</.test(fp.byId.sum.innerHTML), fp.byId.sum.innerHTML);
+    const ev = fakePage(pages.catalogPage(ix, ctx()));
+    ev.tab('all');
+    assert.ok(/>\d+ events</.test(ev.byId.sum.innerHTML), ev.byId.sum.innerHTML);
+  },
+  // review 3: BACK always returns where the player came from: Special Catalog › Avatar Board Catalog › entry and back; Event
+  // Catalog › event page › its Avatar Board page and back
+  board_back_chain() {
+    const ix = BOARD_INDEX();
+    ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
+    const back = (h) => (/<a class="back" href="([^"]*)"/.exec(h) || [])[1] || null;
+    for (const from of ['special', 'event']) {
+      const raw = pages.boardCatalogPage(ix, ctx({ from }));
+      assert.strictEqual(back(raw), from === 'special' ? '/web/special/catalog' : '/web/event/catalog');
+      const row = rowOf(pages.expandCatalog(raw), 29920);
+      assert.ok(row.includes(`href="/web/avatar/board/29920?from=catalog&amp;cat=${from}"`), `the row keeps the origin: ${row.slice(0, 600)}`);
+      assert.ok(raw.includes(`'?from=catalog&cat=${from}'`), 'the row script too');
+      const d = pages.boardDetailPage(ix, 29920, ctx({ fromCatalog: true, cat: from }));
+      assert.strictEqual(back(d), `/web/avatar/catalog?from=${from}#q29920`);
+    }
+    assert.strictEqual(back(pages.boardCatalogPage(ix, ctx())), null, 'opened from its banner: no BACK bar');
+    assert.strictEqual(back(pages.boardDetailPage(ix, 29920, ctx({ fromCatalog: true }))), '/web/avatar/catalog#q29920');
+    // the event page links to its Avatar Board page with its own origin, and that page leads back to it
+    const ep = pages.detailPage(ix, 29900, ctx({ fromCatalog: true }));
+    assert.ok(ep.includes('href="/web/avatar/board/29900?from=event&amp;cat=catalog"'), 'the event page passes its origin');
+    assert.strictEqual(back(pages.boardDetailPage(ix, 29900, ctx({ from: 'event', cat: 'catalog' }))), '/web/event/event/29900?from=catalog');
+    assert.strictEqual(back(pages.boardDetailPage(ix, 29900, ctx({ from: 'event' }))), '/web/event/event/29900');
+    assert.ok(pages.detailPage(ix, 29900, ctx()).includes('href="/web/avatar/board/29900?from=event"'));
+  },
+  // review 4: an event whose boards are all held is not «Past boards — can be kept» (keepBoard would answer 409): «Not built yet»
+  board_all_held_not_keepable() {
+    const ix = BOARD_INDEX();
+    ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9013, name: 'Held Coat', sphereBoardId: null, price: 1000, served: false, why: 'priceUnknown' }];
+    const st = pages.boardStatusOf(ix.entries[0], ctx());
+    assert.strictEqual(st.show, 'removed');
+    assert.strictEqual(st.button, null);
+    assert.ok(/Not built yet/.test(st.pill));
+    assert.ok(!rowOf(boardCatalog(ix, ctx()), 29900).includes('class="pk'), 'no Keep button');
   },
   // Fix round 1: a BOARD entry whose dates span the story week while none of its served boards is on sale in it («other»): board
   // wording, never the short-event text
@@ -758,6 +826,7 @@ function wiring() {
   process.env.KHUX_AVATAR_INDEX = path.join(dir, 'avatar_boards.json');
   fs.writeFileSync(process.env.KHUX_AVATAR_INDEX, JSON.stringify({ index: { 5000001: { ...AVATAR_DOC().index[5000001],
     windows: [{ key: 'B-W/outfit', censusId: 'B-W', window: ['2015-02-02', '2015-02-08'], price: 3000, labels: [] }] } }, report: { held: [] } }));
+  ix.avatarCatalog = { evStageId: 20704, stageIds: [970000], useAp: [0] }; // the Avatar Board Catalog banner (Task 5b fix round 1)
   fs.writeFileSync(process.env.KHUX_EVENT_INDEX, JSON.stringify(ix));
   const log = console.log, warn = console.warn;
   const quiet = (fn) => { console.log = () => {}; console.warn = () => {}; try { return fn(); } finally { console.log = log; console.warn = warn; } };
@@ -797,11 +866,16 @@ function wiring() {
     assert.ok(boardRow.includes('id="q29930"') && boardRow.includes('data-pin="/web/avatar/keep/29930"'), 'the BOARD entry is in the Avatar Board Catalog, keepable');
     assert.ok(bc.body.includes('/web/special/catalog'), 'BACK to the Special Catalog');
     assert.ok(web(t.respondAvatarWeb, '/web/avatar/board/29930?from=catalog').body.includes('Red Coat'));
+    assert.ok(web(t.respondAvatarWeb, '/web/avatar/board/29930?from=catalog&cat=special').body.includes('href="/web/avatar/catalog?from=special#q29930"'), 'BACK keeps the origin');
     assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/board/29900').code, 404, 'an event without boards');
     assert.deepStrictEqual(JSON.parse(web(t.respondEventPost, '/web/event/keep/29900').body), { ok: true });
     assert.strictEqual(web(t.respondEventPost, '/web/event/keep/29930').code, 409, 'not through the event keep');
     assert.deepStrictEqual(JSON.parse(web(t.respondAvatarPost, '/web/avatar/keep/29930').body), { ok: true });
     assert.deepStrictEqual([t.player.events.kept, t.player.avatarBoards.kept], ['E-0', 'B-W'], 'both kept');
+    // the Avatar Board Catalog banner in the Special tab, after the Special Catalog banner; its picture from /web/event/img
+    const sp = t.eventRoutes().withAvatarCatalog([{ eventStageId: 7000 }, { eventStageId: 7101 }]);
+    assert.deepStrictEqual(sp.map((e) => e.eventStageId), [7000, 20704, 7101]);
+    assert.ok(sp[1].bannerUrl.endsWith('/web/event/img/v' + routesEvents.EVENT_IMG_VERSION + '/20704.png'), sp[1].bannerUrl);
     // the Special Catalog page carries the entry block
     assert.ok(web(t.respondSpecialWeb, '/web/special/catalog').body.includes('/web/avatar/catalog?from=special'));
     assert.deepStrictEqual(JSON.parse(web(t.respondAvatarPost, '/web/avatar/unkeep').body), { ok: true });

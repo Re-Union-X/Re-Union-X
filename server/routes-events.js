@@ -205,22 +205,37 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   }
   // the board keep (read only): player.avatarBoards.kept, else a BOARD entry an older save kept through the shared keep (moved by
   // migrateKept); null when neither
+  // an older save (no player.avatarBoards yet) that kept an event with served boards: Task 5 listed its boards with the event
+  const servedBoards = (e) => !!e && (e.boards || []).some((b) => b.served);
   function boardKept() {
-    const own = (player.avatarBoards || {}).kept;
-    if (own) return own;
+    const ab = player.avatarBoards;
+    if (ab && ab.kept) return ab.kept;
     const old = view().kept, e = old && entryOf(old);
-    return e && boardOnly(e) ? old : null;
+    if (e && boardOnly(e)) return old;
+    return !ab && e && servedBoards(e) ? old : null;
   }
-  // an older save's BOARD entry in player.events.kept: moved to the board keep (kept there unless the board keep already holds
-  // one), the event keep cleared, saved; -> true when moved
+  // Once per save (player.avatarBoards is created by the first run, so it never runs twice): an older save's BOARD entry in
+  // player.events.kept is moved to the board keep (kept there unless the board keep already holds one) and the event keep
+  // cleared; a kept EVENT with served boards (EV-0741 kind, fix round 1) stays kept and its key is copied to the board keep, so
+  // the save keeps both. Saved when a keep is moved or copied; -> true then
   function migrateKept() {
     const old = (player.events || {}).kept, e = old && entryOf(old);
-    if (!e || !boardOnly(e)) return false;
-    const ab = player.avatarBoards ||= {};
-    if (!ab.kept) ab.kept = old;
-    player.events.kept = null;
+    if (e && boardOnly(e)) {
+      const ab = player.avatarBoards ||= {};
+      if (!ab.kept) ab.kept = old;
+      player.events.kept = null;
+      savePlayer();
+      log(`[event] kept ${old} is an avatar board entry: moved to the Avatar Board Catalog keep`);
+      return true;
+    }
+    if (player.avatarBoards) return false;
+    const copy = servedBoards(e) ? old : null;
+    // the marker alone is saved with the next write (the login save, or the keep that follows): a run that copies nothing is redone
+    // identically until then
+    player.avatarBoards = { kept: copy };
+    if (!copy) return false;
     savePlayer();
-    log(`[event] kept ${old} is an avatar board entry: moved to the Avatar Board Catalog keep`);
+    log(`[event] kept event ${old} sells avatar boards: its boards are kept in the Avatar Board Catalog too`);
     return true;
   }
   function boardCatalogCtx(realMs = realNow()) {
@@ -362,7 +377,21 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
       endTime: serverTimeAt(clock.weekEnd(realNow())), newStageId: 0, isLock: 0, complete: 0 }];
   }
 
-  return { events, catalogEvents, onStageClear, isEventStage, keep, unkeep, catalogCtx, pruneKept, keptEntry, entryOfStage, boardSetOf, currentEntries, pendingBoosters, payPending, payBonuses,
+  // The Avatar Board Catalog banner (Task 5b, index.avatarCatalog of make-events.js: eventType 0, Details -> /web/avatar/catalog, a
+  // tap opens the Training Grounds): in the Special tab, right after the Special Catalog banner (special.js lists it first), until
+  // the end of the day as that banner. None without index.avatarCatalog.
+  const avatarCatalogId = () => ((eventIndex() || {}).avatarCatalog || {}).evStageId || null;
+  function avatarCatalogEvents() {
+    const cat = (eventIndex() || {}).avatarCatalog;
+    if (!cat || !cat.evStageId || !(cat.stageIds || []).length) return [];
+    const stages = cat.stageIds.map((id, i) => { const st = stageState(id); return { stageId: id, useAp: Number((cat.useAp || [])[i]) || 0, score: st.score, playStatus: st.playStatus, clearMissionIds: [] }; });
+    return [{ stages, eventStageId: cat.evStageId, showIcon: 1, bannerUrl: `${webBase}/web/event/img/v${EVENT_IMG_VERSION}/${cat.evStageId}.png`, eventType: 0, status: 1,
+      endTime: serverTimeAt(clock.dayEnd(realNow())), newStageId: 0, isLock: 0, complete: 0 }];
+  }
+  // the Special tab's list with the banner after its first card (the Special Catalog banner); an empty list (tab locked) stays empty
+  const withAvatarCatalog = (list) => (list.length ? [list[0], ...avatarCatalogEvents(), ...list.slice(1)] : list);
+
+  return { events, catalogEvents, avatarCatalogEvents, avatarCatalogId, withAvatarCatalog, onStageClear, isEventStage, keep, unkeep, catalogCtx, pruneKept, keptEntry, entryOfStage, boardSetOf, currentEntries, pendingBoosters, payPending, payBonuses,
     boardCatalogCtx, keepBoard, unkeepBoard, boardKept, migrateKept, pruneBoardKept };
 }
 

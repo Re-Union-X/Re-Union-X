@@ -34,11 +34,12 @@ delete max.party;
 }
 
 // The bench's own Catalog choices stay on the bench: no banner or Spirit deal kept in the Shop, no raid or event kept in
-// the Events tab, no quest kept in Special (the player keeps their own from the Catalogs)
+// the Events tab, no board entry kept in Avatar Boards, no quest kept in Special (the player keeps their own from the Catalogs)
 function clearKept(p) {
   if (p.gacha) { delete p.gacha.pinned; delete p.gacha.pinnedPet; }
   if (p.raid) p.raid.kept = null;
   if (p.events) p.events.kept = null;
+  if (p.avatarBoards) p.avatarBoards.kept = null; // the Avatar Board Catalog keep (Events Part 7 Task 5b)
   // the bench's login bonus state (its days may be in the future after -RealNow runs): a new player starts at day 1
   delete p.loginBonus;
   if (p.special) delete p.special.pinned;

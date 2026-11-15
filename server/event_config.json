@@ -3,6 +3,16 @@
  "catalogEvStage": 20000,
  "catalogStage": 970000,
  "catalogUrl": "/web/event/catalog",
+ "avatarCatalogNote": "Avatar Board Catalog banner (Events Part 7 Task 5b, user 15-11): an evStage in the Special tab (avatarCatalogCategory 1) holding catalogStage, Details -> avatarCatalogUrl; its number is the event_ids.json rows number of avatarCatalogKey (append-only, made by make-events.js when the avatar board records are read). Picture: an ORIGINAL banner, never drawn: avatarCatalogBanner (path under D:/Progetto_Restauro_KH_UX, the user's pick among avatarCatalogBannerCandidates), written by recon/tools/make_avatar_catalog_banner.py to server/game_data/event_img/<id>.png; after a change bump imgVersion.",
+ "avatarCatalogKey": "@avatarBoardCatalog",
+ "avatarCatalogCategory": 1,
+ "avatarCatalogUrl": "/web/avatar/catalog",
+ "avatarCatalogBanner": "reference/event_banners_ww/row_9MmANrVOo.png",
+ "avatarCatalogBannerCandidates": [
+  "reference/event_banners_ww/row_9MmANrVOo.png",
+  "reference/event_banners_ww/row_946vNokuw.png",
+  "reference/event_banners_ww/row_94KDNzGYe.png"
+ ],
  "evStageBase": 20000,
  "evStageMax": 29999,
  "stageBase": 4000000,

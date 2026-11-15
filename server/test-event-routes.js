@@ -179,6 +179,22 @@ const tests = {
     assert.deepStrictEqual(world().ev.catalogEvents(), [], 'no catalog in the index: no banner');
     assert.ok(!w.ev.events().some((e) => e.eventStageId === 20000), 'not among the event cards');
   },
+  // Task 5b: the Avatar Board Catalog banner (index.avatarCatalog of make-events.js) in the Special tab, right after the Special
+  // Catalog banner (the first card special.js lists); none while the Special tab lists nothing or without it in the index
+  avatar_catalog_banner() {
+    const ix = INDEX();
+    ix.avatarCatalog = { evStageId: 20704, stageIds: [970000], useAp: [0] };
+    const w = world({ index: ix });
+    const [b] = w.ev.avatarCatalogEvents();
+    assert.deepStrictEqual([b.eventStageId, b.eventType, b.isLock, b.complete, b.stages.map((s) => s.stageId)], [20704, 0, 0, 0, [970000]]);
+    assert.strictEqual(b.bannerUrl, `http://x/web/event/img/v${EVENT_IMG_VERSION}/20704.png`);
+    assert.strictEqual(b.endTime, fmt(TUE + 1000), 'to the end of the day, as the Special Catalog banner');
+    const sp = [{ eventStageId: 7000 }, { eventStageId: 7101 }];
+    assert.deepStrictEqual(w.ev.withAvatarCatalog(sp).map((e) => e.eventStageId), [7000, 20704, 7101]);
+    assert.deepStrictEqual(w.ev.withAvatarCatalog([]), [], 'Special tab locked: nothing');
+    assert.deepStrictEqual(world().ev.withAvatarCatalog(sp).map((e) => e.eventStageId), [7000, 7101], 'no banner in the index');
+    assert.strictEqual(w.ev.avatarCatalogId(), 20704);
+  },
   // keep a past event (Task 5's catalogue buttons): listed first with the KEPT banner; only a past one; unkeep
   keep_unkeep() {
     const w = world();

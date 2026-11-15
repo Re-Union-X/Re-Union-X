@@ -2383,7 +2383,8 @@ function homeBannersNow(realMs = realNow()) {
     const list = homeBanners.homeBanners({
       shop: shopIds.map((id) => ({ drawMedalTypeId: id, limitDate: end.get(id) || weekEnd })),
       events: eventsTabOrder(raid().events(realMs), eventRoutes().catalogEvents(), eventRoutes().events(realMs)),
-      special: specialEventsNow(realMs), specialCatalogId: specialIndex().catalog?.evStageId,
+      // the Avatar Board Catalog banner is not a home plate (as the Special Catalog banner)
+      special: specialEventsNow(realMs).filter((e) => e.eventStageId !== avatarCatalogBannerId()), specialCatalogId: specialIndex().catalog?.evStageId,
       evStageRows, drawMedalTypeRows: drawRows, fallbackDate: weekEnd,
     });
     console.log(`  [mypage] openBanners ${list.map((b) => `${b.type}:${b.id}`).join(' ')}`);
@@ -4749,13 +4750,17 @@ function specialCtx(realMs = realNow()) {
 function specialEventsNow(realMs = realNow()) {
   const index = specialIndex();
   if (!index.catalog || !specialUnlocked()) return [];
-  return special.specialEvents(index, specialCtx(realMs));
+  const list = special.specialEvents(index, specialCtx(realMs));
+  // the Avatar Board Catalog banner (Events Part 7 Task 5b) right after the Special Catalog banner; a failure never breaks the tab
+  try { return eventRoutes().withAvatarCatalog(list); } catch (e) { console.log(`[event] avatar catalog banner: ${e.message}`); return list; }
 }
+const avatarCatalogBannerId = () => { try { return eventRoutes().avatarCatalogId(); } catch { return null; } };
 // «Progress» della scheda Special (I-037): obiettivi compiuti / 3 x stage delle quest aperte adesso (isLock 0 o 2,
 // compresa la fissata), senza la quest di allenamento del catalogo; nessuna quest = 0/1 come prima
 function specialAchievement(realMs = realNow()) {
   const catalogId = specialIndex().catalog?.evStageId;
-  const ids = new Set(specialEventsNow(realMs).filter((e) => e.isLock !== 1 && e.eventStageId !== catalogId)
+  const avatarId = avatarCatalogBannerId(); // the Avatar Board Catalog banner shares the Training Grounds: not counted either
+  const ids = new Set(specialEventsNow(realMs).filter((e) => e.isLock !== 1 && e.eventStageId !== catalogId && e.eventStageId !== avatarId)
     .flatMap((e) => e.stages.map((s) => s.stageId)));
   if (!ids.size) return ACHIEVEMENT_EMPTY;
   const done = player.clearMissions || {};
@@ -5118,7 +5123,7 @@ function respondEventWeb(res, url) {
 // Avatar Board Catalog (Events Part 7 Task 5b, event-pages.js boardCatalogPage / boardDetailPage): the entries with avatar boards of
 // the event index, the board catalogue's context (routes-events.js boardCatalogCtx: its own keep) plus the page lookups.
 // GET /web/avatar/catalog[?from=special|event] (BACK to that catalogue; an older keep moved and a lost one cleared first),
-// /web/avatar/board/<evStageId> (?from=catalog: BACK); the cards are those of /web/event/img. POST /web/avatar/keep/<evStageId> and
+// /web/avatar/board/<evStageId> (?from=catalog&cat=<origin of the catalogue> or ?from=event[&cat=catalog]: BACK); the cards are those of /web/event/img. POST /web/avatar/keep/<evStageId> and
 // /web/avatar/unkeep: routes-events.js keepBoard / unkeepBoard, JSON {ok, why?}.
 function hasAvatarBoardCatalog() {
   try { return (eventIndex().entries || []).some((e) => e && (e.boards || []).length > 0); } catch { return false; }
@@ -5134,7 +5139,7 @@ function respondAvatarWeb(res, url) {
     return page(eventPages.boardCatalogPage(eventIndex(), avatarPageCtx({ from })));
   }
   const det = /^\/web\/avatar\/board\/(\d+)$/i.exec(p);
-  const html = det && eventPages.boardDetailPage(eventIndex(), Number(det[1]), avatarPageCtx({ fromCatalog: from === 'catalog' }));
+  const html = det && eventPages.boardDetailPage(eventIndex(), Number(det[1]), avatarPageCtx({ fromCatalog: from === 'catalog', from, cat: new URLSearchParams(url.split('?')[1] || '').get('cat') }));
   return html ? page(html) : page('not found', 404);
 }
 function respondAvatarPost(res, url) {
