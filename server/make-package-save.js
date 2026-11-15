@@ -39,6 +39,8 @@ function clearKept(p) {
   if (p.gacha) { delete p.gacha.pinned; delete p.gacha.pinnedPet; }
   if (p.raid) p.raid.kept = null;
   if (p.events) p.events.kept = null;
+  // the bench's login bonus state (its days may be in the future after -RealNow runs): a new player starts at day 1
+  delete p.loginBonus;
   if (p.special) delete p.special.pinned;
   return p;
 }

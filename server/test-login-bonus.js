@@ -18,6 +18,9 @@ check(r.state.total === 1 && r.state.lastDay === 100, `giorno 1: ${JSON.stringif
 check(JSON.stringify(r.rewards.map((x) => [x.type, x.num, x.comment])) === JSON.stringify([[2, 100, lb.DAILY_COMMENT], [2, 300, lb.TOTAL_COMMENT]]), `premi del giorno 1: ${JSON.stringify(r.rewards)}`);
 check(JSON.stringify(r.response) === JSON.stringify({ continue: { loginBonusId: 100, dayCount: 1 }, total: { loginBonusId: 200, dayCount: 1 }, specials: [] }), `risposta del giorno 1: ${JSON.stringify(r.response)}`);
 check(!lb.acquirable(r.state, 100), 'stesso giorno: non riscuotibile');
+// a lastDay in the future (bench save after -RealNow, phone with a wrong date): today is claimable (tester report 15-11)
+check(lb.acquirable({ lastDay: 3264, total: 6 }, 3240), 'lastDay in the future: claimable');
+check(lb.claim({ lastDay: 3264, total: 6 }, 3240, []).state.lastDay === 3240, 'claim with a future lastDay resets it to today');
 const again = lb.claim(r.state, 100, ROWS);
 check(again.rewards.length === 0 && JSON.stringify(again.response) === JSON.stringify(r.response) && again.state.total === 1, 'stesso giorno due volte: stessa risposta, niente premi');
 // giorno saltato: il ciclo continua (101 -> giorno 2, poi 105 -> giorno 3)

@@ -15,7 +15,9 @@ const cycleDay = (total) => ((Math.max(1, total) - 1) % 5) + 1;
 // stato nel salvataggio: player.loginBonus = { lastDay (indice del giorno dell'ultimo login bonus), total }
 const fresh = () => ({ lastDay: null, total: 0 });
 
-const acquirable = (state, day) => !state || state.lastDay === null || state.lastDay === undefined || day > state.lastDay;
+// a lastDay later than today means the clock went back (a save from a bench run with -RealNow in the future, or a phone
+// whose date was wrong): today counts as a new day, otherwise the bonus would hide for weeks (tester report 15-11)
+const acquirable = (state, day) => !state || state.lastDay === null || state.lastDay === undefined || day !== state.lastDay;
 
 // Riscossione del giorno `day`: { state, rewards: [{type, id, num, comment}], response } (response = loginBonus del
 // client). Lo stesso giorno una seconda volta (rete, riavvio) da' la stessa risposta senza premi.

@@ -31,6 +31,8 @@ check(p.freeStone === 100000, `jewels ${p.freeStone}, expected 100000`);
 check(p.name === 'Player', `player name ${p.name}, expected the neutral Player`);
 // no party: the bench saves carry the author's party; the player creates their own (party chat: I-210)
 check(p.party === undefined, `party kept: ${JSON.stringify(p.party)}`);
+// no login bonus state of the bench (its days can be in the future after -RealNow runs): a new player starts at day 1
+check(p.loginBonus === undefined, `login bonus kept: ${JSON.stringify(p.loginBonus)}`);
 // no Catalog choice of the bench: nothing kept in the Shop, the Events tab or Special
 check(!p.gacha?.pinned && !p.gacha?.pinnedPet && !p.raid?.kept && !p.events?.kept && !p.special?.pinned,
   `kept choices left: ${JSON.stringify({ g: p.gacha?.pinned, pet: p.gacha?.pinnedPet, raid: p.raid?.kept, ev: p.events?.kept, sp: p.special?.pinned })}`);
