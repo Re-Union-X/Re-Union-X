@@ -254,6 +254,6 @@ Task 2 decisions (user, 14 November 2026): (a) group Boosters: the served medal 
 - Modify: `README.md`, `README.it.md` (parts 1-6), `docs/ISSUES.md` (I-166 and I-227 closed or narrowed to what is held; I-245 Part 6; new rows for the out-of-scope Booster sources), `HANDOFF.md` (new «read first» block), `docs/notes/events.md` (Part 6 summary).
 - Create: `docs/superpowers/plans/<date>-events-part7-avatar-boards.md` (writing-plans; spec part 7, the Jewel and Avatar Coin Booster Boards included).
 
-- [ ] **Step 1:** Write the notice lines and their test. Never the word «restored». Run `node server/test-notices.js` and `node server/export-notices.js --check`. Expected: OK, up to date.
-- [ ] **Step 2:** Update the docs. Commit and push.
-- [ ] **Step 3:** Write the Part 7 plan.
+- [x] **Step 1:** Write the notice lines and their test. Never the word «restored». Run `node server/test-notices.js` and `node server/export-notices.js --check`. Expected: OK, up to date.
+- [x] **Step 2:** Update the docs. Commit and push.
+- [x] **Step 3:** Write the Part 7 plan.
