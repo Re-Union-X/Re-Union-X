@@ -739,6 +739,93 @@ const tests = {
     assert.ok(/Not built yet/.test(st.pill));
     assert.ok(!rowOf(boardCatalog(ix, ctx()), 29900).includes('class="pk'), 'no Keep button');
   },
+  // Task 5c (user 15-11): the Avatar Board Catalog rows show the original board cards (/web/avatar/img/v<n>/<sphereBoardId>.png),
+  // up to 3 side by side, «+N» for more; a plain-card board a neutral box; an entry with no served board the «No card» box
+  board_row_cards() {
+    const ix = BOARD_INDEX();
+    const five = [11, 12, 13, 14, 15].map((k) => ({ key: 'B-5/outfit', group: 'outfit', type: 2, window: ['2019-03-04', '2019-03-10'], donorId: 9100 + k,
+      name: `Coat ${k}`, sphereBoardId: 5000000 + k, price: 1000, served: true, why: null }));
+    ix.entries.push({ ...ix.entries.find((e) => e.censusId === 'B-0'), censusId: 'B-5', evStageId: 29925, start: '2019-03-04', end: '2019-03-10', boards: five });
+    const c = ctx({ boardImgVersion: 7, boardCard: (id) => id !== 5000003 });
+    const raw = pages.boardCatalogPage(ix, c), html = pages.expandCatalog(raw);
+    const imgs = (row) => [...row.matchAll(/<img [^>]*data-src="([^"]*)"/g)].map((m) => m[1]);
+    assert.deepStrictEqual(imgs(rowOf(html, 29925)), [11, 12, 13].map((k) => `/web/avatar/img/v7/50000${k}.png`), 'the first 3 cards');
+    assert.ok(/<span class="more">\+2<\/span>/.test(rowOf(html, 29925)), '«+N» for the other boards');
+    assert.deepStrictEqual(imgs(rowOf(html, 29920)), ['/web/avatar/img/v7/5000001.png'], 'only the served boards');
+    assert.ok(!/\+\d/.test(rowOf(html, 29920).replace(/data-search="[^"]*"/, '')), 'no badge with up to 3 boards');
+    assert.ok(/loading="lazy"/.test(rowOf(html, 29925)));
+    // the plain card (a Skill Enhancement run): a neutral box, no picture
+    assert.deepStrictEqual(imgs(rowOf(html, 29921)), []);
+    assert.ok(/<span class="nb"><\/span>/.test(rowOf(html, 29921)), 'the plain card: a neutral box');
+    // no served board: the «No card» box, never «in the original» (these boards had cards)
+    assert.ok(/>No card</.test(rowOf(html, 29929)) && imgs(rowOf(html, 29929)).length === 0);
+    assert.ok(!/No card in the original/.test(raw), 'no «in the original» on the Avatar Board Catalog');
+    assert.ok(!raw.includes('/web/event/img/'), 'no event card on the board rows');
+    // the rows still share their templates (the card ids are packed values): the page stays light
+    const d = JSON.parse(/<script id="kxrows" type="application\/json">([\s\S]*?)<\/script>/.exec(raw)[1].replace(/<\\\//g, '</'));
+    assert.ok(d.t.every((t) => !/50000\d\d/.test(t)), 'no card id inside a template');
+    // the page script loads every card of a shown row
+    assert.ok(/querySelectorAll\("img\[data-src\]"\)/.test(raw));
+  },
+  // each board line of the Avatar Board page carries its card (a held board or a plain card: the neutral box)
+  board_page_cards() {
+    const ix = BOARD_INDEX();
+    const d = pages.boardDetailPage(ix, 29920, ctx({ boardImgVersion: 3 }));
+    assert.ok(/<tr><td class="bc"><img [^>]*src="\/web\/avatar\/img\/v3\/5000001\.png"[^>]*loading="lazy"[^>]*><\/td><td>Red Coat/.test(d), 'Red Coat with its card');
+    assert.ok(/<tr><td class="bc"><span class="nb"><\/span><\/td><td>Blue Coat/.test(d), 'a held board: the neutral box');
+    assert.ok(/<th><\/th><th>Board<\/th>/.test(d));
+    assert.ok(!/No card in the original/.test(d) && !d.includes('/web/event/img/'), 'a BOARD entry has no event card');
+    const plain = pages.boardDetailPage(ix, 29921, ctx({ boardCard: () => false }));
+    assert.ok(/<td class="bc"><span class="nb"><\/span><\/td><td>Gem Board/.test(plain), 'the plain card: no picture');
+    // an event that also sold boards keeps its event card on top, with the «No card» fallback
+    ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
+    const ev = pages.boardDetailPage(ix, 29900, ctx());
+    assert.ok(ev.includes('/web/event/img/v1/29900.png') && !/No card in the original/.test(ev));
+    assert.ok(/src="\/web\/avatar\/img\/v1\/5000012\.png"/.test(ev));
+  },
+  // Task 5c filters: SHOW Bought / Not bought (ctx.boardOwned), PROGRESS on the boards' nodes (ctx.boardProgress), TYPE by board
+  // group, FIND without event wording
+  board_filters() {
+    const ix = BOARD_INDEX();
+    const owned = new Set([5000001]), prog = { 5000001: 'done', 5000003: 'part' };
+    const raw = pages.boardCatalogPage(ix, ctx({ current: new Set(['B-1']), boardOwned: (id) => owned.has(id), boardProgress: (id) => prog[id] || 'none' }));
+    const fp = fakePage(raw);
+    fp.tab('all');
+    const sel = (f) => { fp.apply(f); return fp.shown().sort(); };
+    assert.deepStrictEqual(sel({ show: 'bought' }), [29920]);
+    assert.deepStrictEqual(sel({ show: 'notbought' }), [29921, 29922]);
+    assert.deepStrictEqual(sel({ prog: 'done' }), [29920]);
+    assert.deepStrictEqual(sel({ prog: 'part' }), [29921]);
+    assert.deepStrictEqual(sel({ prog: 'none' }), [29922]);
+    assert.deepStrictEqual(sel({ type: 'gem' }), [29921]);
+    assert.deepStrictEqual(sel({ show: 'removed' }), [29929]);
+    assert.deepStrictEqual(sel({ show: 'can' }), [29920, 29922]);
+    assert.deepStrictEqual(sel({ show: 'now' }), [29921]);
+    assert.deepStrictEqual(sel({ q: 'Wiki' }), [29922]);
+    // a partly bought entry is under both (it still has a board to buy)
+    const two = [5000001, 5000002].map((id) => ({ key: 'B-7/outfit', group: 'outfit', type: 2, window: ['2019-03-04', '2019-03-10'], donorId: id, name: `C${id}`, sphereBoardId: id, price: 1000, served: true, why: null }));
+    const ix2 = BOARD_INDEX();
+    ix2.entries.push({ ...ix2.entries.find((e) => e.censusId === 'B-0'), censusId: 'B-7', evStageId: 29927, start: '2019-03-04', end: '2019-03-10', boards: two });
+    const fp2 = fakePage(pages.boardCatalogPage(ix2, ctx({ boardOwned: (id) => owned.has(id), boardProgress: () => 'none' })));
+    fp2.tab('all');
+    fp2.apply({ show: 'bought' });
+    assert.ok(fp2.shown().includes(29927));
+    fp2.apply({ show: 'notbought' });
+    assert.ok(fp2.shown().includes(29927));
+    const sheet = raw.slice(raw.indexOf('<div class="sheet"'));
+    assert.ok(/data-v="bought"[^>]*>.*Bought</.test(sheet) && /data-v="notbought"[^>]*>.*Not bought</.test(sheet));
+    assert.ok(/Completed/.test(sheet) && /In progress/.test(sheet) && /Not started/.test(sheet) && !/Incomplete/.test(sheet), 'PROGRESS on the nodes');
+    assert.ok(/handed out/i.test(sheet) && /node/i.test(sheet), 'the Bought rule in plain words');
+    assert.ok(sheet.includes('placeholder="Board, character or outfit name"'));
+    const panel = sheet.slice(0, sheet.indexOf('<h4>TYPE</h4>')).replace(/<script[\s\S]*$/, '');
+    assert.ok(!/\bevents?\b/i.test(panel), `no event wording in the panel: ${panel.slice(0, 400)}`);
+    // completed entry: its crown
+    const crown = require('./special-pages').CROWN;
+    assert.ok(rowOf(pages.expandCatalog(raw), 29920).includes(crown) && !rowOf(pages.expandCatalog(raw), 29921).includes(crown));
+    // the Event Catalog keeps its own filters
+    const ev = pages.catalogPage(ix, ctx());
+    assert.ok(!/data-v="bought"/.test(ev) && /Incomplete/.test(ev));
+  },
   // Fix round 1: a BOARD entry whose dates span the story week while none of its served boards is on sale in it («other»): board
   // wording, never the short-event text
   board_entry_other_and_pills() {
@@ -816,6 +903,7 @@ function wiring() {
   process.env.KHUX_EVENT_INDEX = path.join(dir, 'events.json');
   process.env.KHUX_EVENT_NOTICES = path.join(dir, 'event_notices.json');
   process.env.KHUX_EVENT_IMG = path.join(dir, 'event_img');
+  process.env.KHUX_AVATAR_IMG = path.join(dir, 'avatar_img');
   fs.writeFileSync(process.env.KHUX_RAID_INDEX, JSON.stringify({ entries: [], reasons: {} }));
   // dates far from the Story of a new save: E-0 past (2015), E-3 later (2099)
   const ix = INDEX();
@@ -868,6 +956,25 @@ function wiring() {
     assert.ok(web(t.respondAvatarWeb, '/web/avatar/board/29930?from=catalog').body.includes('Red Coat'));
     assert.ok(web(t.respondAvatarWeb, '/web/avatar/board/29930?from=catalog&cat=special').body.includes('href="/web/avatar/catalog?from=special#q29930"'), 'BACK keeps the origin');
     assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/board/29900').code, 404, 'an event without boards');
+    // board_card_route (Task 5c): /web/avatar/img/v<n>/<sphereBoardId>.png from game_data/avatar_img (make_avatar_card_web.py);
+    // numeric ids only, no path out of the folder; the version and the cards present from its cards.json
+    assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/img/v1/5000001.png').code, 404, 'no folder yet');
+    fs.mkdirSync(process.env.KHUX_AVATAR_IMG);
+    fs.writeFileSync(path.join(process.env.KHUX_AVATAR_IMG, '5000001.png'), 'png1');
+    fs.writeFileSync(path.join(dir, 'secret.png'), 'nope');
+    fs.writeFileSync(path.join(process.env.KHUX_AVATAR_IMG, 'cards.json'), JSON.stringify({ version: 4242, ids: [5000001] }));
+    const card = web(t.respondAvatarWeb, '/web/avatar/img/v4242/5000001.png');
+    assert.deepStrictEqual([card.code, card.body], [200, 'png1']);
+    assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/img/v1/5000001.png').code, 200, 'any version');
+    assert.strictEqual(web(t.respondAvatarWeb, '/web/avatar/img/v1/5009999.png').code, 404, 'unknown id');
+    for (const bad of ['/web/avatar/img/v1/../secret.png', '/web/avatar/img/v1/..%2Fsecret.png', '/web/avatar/img/v1/secret.png', '/web/avatar/img/v1/5000001.png.png',
+      '/web/avatar/img/v1/-1.png', '/web/avatar/img/../../secret.png', '/web/avatar/img/v1/cards.json']) assert.strictEqual(web(t.respondAvatarWeb, bad).code, 404, bad);
+    const withCards = pages.expandCatalog(web(t.respondAvatarWeb, '/web/avatar/catalog').body);
+    assert.ok(rowOf(withCards, 29930).includes('data-src="/web/avatar/img/v4242/5000001.png"'), 'the version of cards.json');
+    fs.writeFileSync(path.join(process.env.KHUX_AVATAR_IMG, 'cards.json'), JSON.stringify({ version: 4243, ids: [] }));
+    fs.utimesSync(path.join(process.env.KHUX_AVATAR_IMG, 'cards.json'), new Date(), new Date(Date.now() + 5000));
+    const plainRow = rowOf(pages.expandCatalog(web(t.respondAvatarWeb, '/web/avatar/catalog').body), 29930);
+    assert.ok(!plainRow.includes('data-src="/web/avatar/img/') && plainRow.includes('class="nb"'), 'a board without a card file: the neutral box, seen without a restart');
     assert.deepStrictEqual(JSON.parse(web(t.respondEventPost, '/web/event/keep/29900').body), { ok: true });
     assert.strictEqual(web(t.respondEventPost, '/web/event/keep/29930').code, 409, 'not through the event keep');
     assert.deepStrictEqual(JSON.parse(web(t.respondAvatarPost, '/web/avatar/keep/29930').body), { ok: true });

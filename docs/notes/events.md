@@ -1322,6 +1322,26 @@ User decision 15-11: avatar boards are not playable events, so they leave the Ev
 - **Own keep:** `player.avatarBoards.kept` (routes-events.js `keepBoard` / `unkeepBoard`, POST `/web/avatar/keep/<id>` and `/web/avatar/unkeep`). One entry at a time, independent of `player.events.kept`. `avatarKept()` and the sphere body cache key read it. An older save whose `events.kept` holds a BOARD entry is read as the board keep and moved at login (`migrateKept`); one that kept an event with served boards (EV-0741) keeps the event and gets the same key as board keep (once: `player.avatarBoards` marks the save as migrated). An entry whose boards are all held is «Not built yet», never keepable.
 - **Bench fixes:** the keep messages say «Leave and re-enter Avatar Boards»; a kept entry's boards join `avatarBoardsSent` silently (`avatar-boards.js markKept`), so the next check pops no «Unlocked an Avatar Board!».
 
+## Avatar Board Catalog cards and filters (Events Part 7, Task 5c, 15 November 2026)
+
+User 15-11: the rows showed «No card in the original» because a BOARD entry has no event card.
+- **Cards:** `recon/tools/make_avatar_card_web.py` copies the board cards the client shows in Avatar Boards (`img/sphere_incentive/<id>.png`) into `server/game_data/avatar_img/<sphereBoardId>.png` (git-ignored).
+  - It reads the section 56 rows of `originals.tsv` with the reader of `import_originals.py`, so the sources and the resolution are the same as in the resources build.
+  - It only resizes, to at most 160 px. It takes only the boards of `avatar_boards.json` and writes `cards.json` {version, ids}.
+  - It is re-runnable: run it again after the loc cards change (corner cleaning). Stale cards are removed and the version changes with the pictures. The server reads `cards.json` at request time: no restart, no master regen, no resources build.
+  - Real data: 445 cards (~44 KB each). The 8 Skill Enhancement runs have the plain card and show a neutral box.
+- **Route:** `GET /web/avatar/img/v<version>/<sphereBoardId>.png` (`server.js respondAvatarCard`). Only numeric ids are accepted, other names and paths give 404.
+- **Catalogue row:** up to 3 served boards' cards side by side at the row height (70 px), «+N» for the others. An entry with no served board shows a «No card» box, never «in the original».
+  - The card ids, the «+N» number and the row marks are packed apart (`catalog-pages.js packCatalog` `fields.c` / `cm` / `a`), so the rows still share their templates.
+  - `kxImgs` loads every card of a shown row (`data-src`, `loading="lazy"`). The page is about 104-110 KB packed on the real data (was 84 KB).
+- **Board page:** each board line has its card (64 px) before the name, price and status. A held board or a plain card shows the neutral box. A BOARD entry has no event banner; an event that also sold boards keeps its card, with the «No card» fallback.
+- **Filters:**
+  - SHOW «Bought» / «Not bought» (`avatar-boards.js owned`). A board on sale counts once it is in `avatarBoardsBought`. A free board (type 1) counts once it is in `avatarBoardsSent` or has a node unlocked.
+    - Bought = at least one board of the entry owned. Not bought = at least one served board not owned yet, so a partly bought entry is under both. The rule is in the sheet's help text.
+  - The state options stay, because each one selects board entries: In Avatar Boards now, Can be kept now, Kept, Later in the Story, Not built yet. None was dropped.
+  - PROGRESS is counted on the nodes (`avatar-boards.js progress`): Completed (every served board complete, crown on the row), In progress (a node unlocked), Not started.
+  - FIND «Board, character or outfit name», matching the entry name, the board group and the board names. No event wording is left in the panel.
+
 ## Start-Up Boost Board, catalogue banner and keep delivery (Events Part 7, Task 6b, 15 November 2026)
 
 Master revision **330**, resources **129** (incremental on 128: 43 records = the 42 new cards of section 56 and the

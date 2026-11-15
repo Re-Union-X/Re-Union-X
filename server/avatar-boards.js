@@ -396,7 +396,23 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   }
 
   const isAvatarBoard = (id) => !!info(id);
-  return { listedIds, listed, listState, list, check, buy, update, markKept, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete };
+  // Avatar Board Catalog filters (Task 5c, user 15-11). owned: a board on sale (type 2) once bought (avatarBoardsBought); a board
+  // handed out (type 1) once the client was given it (avatarBoardsSent) or once one of its nodes is unlocked
+  function owned(player, id) {
+    const e = info(id);
+    if (!e) return false;
+    if (e.type === SALE) return bought(player).has(Number(id));
+    const s = (player.avatarSphere || {})[Number(id)];
+    return (player.avatarBoardsSent || []).map(Number).includes(Number(id)) || !!(s && (s.unlock || []).length);
+  }
+  // the board's nodes: 'done' (every node unlocked), 'part' (some), 'none'
+  function progress(player, id) {
+    if (!info(id)) return 'none';
+    const s = (player.avatarSphere || {})[Number(id)];
+    if (!s || !(s.unlock || []).length) return 'none';
+    return complete(player, Number(id)) ? 'done' : 'part';
+  }
+  return { listedIds, listed, listState, list, check, buy, update, markKept, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete, owned, progress };
 }
 
 // ------------------------------------------------------------------------------------------------- Event Catalog ---

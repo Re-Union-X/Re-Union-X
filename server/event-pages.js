@@ -42,12 +42,28 @@ const dateLine = (e) => (!e.end || e.end === e.start ? niceDay(e.start) : dateRa
 const imgOf = (ctx, id) => `${BASE}/img/v${ctx.imgVersion || 1}/${id}.png`;
 // a record whose original notice had no banner has no card file (Gem Boards 20014/20017/20040, user 08-11): the broken-image
 // icon is replaced by a plain box of the same size
-const NO_CARD = (w, h) => ` onerror="this.outerHTML='<span style=&quot;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;`
-  + `width:${w}px;max-width:100%;height:${h}px;border:1px solid #2f6f93;border-radius:6px;background:#06283e;color:#b9cfdc;font-size:13px&quot;>No card in the original</span>'"`;
+const NO_CARD = (w, h, text = 'No card in the original') => ` onerror="this.outerHTML='<span style=&quot;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;`
+  + `width:${w}px;max-width:100%;height:${h}px;border:1px solid #2f6f93;border-radius:6px;background:#06283e;color:#b9cfdc;font-size:13px&quot;>${text}</span>'"`;
 // the same box on the catalogue rows, from one function (written before the rows: an image can fail while the page loads)
 const NO_CARD_JS = `function kxNc(im){var s=document.createElement('span');s.className='nc';s.textContent='No card in the original';im.parentNode.replaceChild(s,im);}`;
 const NO_CARD_CSS = '.nc{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:320px;max-width:100%;height:70px;border:1px solid #2f6f93;'
   + 'border-radius:6px;background:#06283e;color:#b9cfdc;font-size:13px}';
+// Board cards (Task 5c, user 15-11): the original board cards the client shows in Avatar Boards (img/sphere_incentive/<id>.png),
+// served at /web/avatar/img/v<n>/<sphereBoardId>.png from game_data/avatar_img (recon/tools/make_avatar_card_web.py, at most
+// 160 px). ctx.boardImgVersion (cards.json of that folder: cache busting), ctx.boardCard(id) -> true when the folder has its card
+// (absent: every served board is shown, a missing file falls back to the box). A board with the plain card (the 8 Skill
+// Enhancement runs), a held board or a card that fails to load: a neutral box with no picture (.nb). These boards had cards:
+// the empty-row box says «No card», never «in the original».
+const boardImg = (ctx, id) => `${BOARD_BASE}/img/v${ctx.boardImgVersion || 1}/${id}.png`;
+const hasCard = (ctx, id) => !!id && (!ctx.boardCard || !!ctx.boardCard(id));
+const NB = '<span class="nb"></span>';
+const BOARD_NC_JS = "function kxNb(im){var s=document.createElement('span');s.className='nb';im.parentNode.replaceChild(s,im);}";
+const BOARD_ROW_CSS = '.im.bc{display:flex;align-items:center;gap:6px;height:70px}.im.bc img,.im.bc .nb{width:70px;height:70px;flex:0 0 70px;border-radius:6px}'
+  + '.nb{display:inline-block;box-sizing:border-box;border:1px solid #2f6f93;border-radius:6px;background:#06283e}'
+  + '.more{display:inline-block;padding:2px 8px;border-radius:11px;background:#06283e;border:1px solid #2f6f93;color:#ffcd4a;font-size:14px;font-weight:bold}'
+  + '.o.st-bought.on{background:#b8860b;border-color:#ffe08a}.o.st-notbought.on{background:#1a6fa8;border-color:#62a7ff}'
+  + '.o.pr-part.on{background:#1a6fa8;border-color:#62a7ff}.o.pr-none.on{background:#5a6470;border-color:#9aa4ae}.sheet .hint.sh{margin-top:6px}';
+const BOARD_CARD_CSS = 'td.bc{width:64px;padding-right:0}td.bc img,td.bc .nb{display:block;width:64px;height:64px;border-radius:6px}';
 const detailHref = (id) => `${BASE}/event/${id}?from=catalog`;
 // cat: where the Avatar Board Catalog was opened from (special, event; none from its banner), carried to the entry page so its BACK
 // returns to the catalogue with its own BACK bar (fix round 1)
@@ -83,6 +99,34 @@ function whyPlain(why, reason) {
 // with boards and no quest of its own (make-events.js avatarCatalog)
 const boardsOf = (e) => (Array.isArray(e.boards) ? e.boards : []);
 const boardOnly = (e) => boardsOf(e).length > 0 && !(e.quests || []).length;
+// the served boards of an entry, each board once (a board of several windows of the entry counts once)
+const servedBoards = (e) => { const seen = new Set(); return boardsOf(e).filter((b) => b.served && b.sphereBoardId && !seen.has(b.sphereBoardId) && seen.add(b.sphereBoardId)); };
+// the cards of a catalogue row (Task 5c): up to 3 served boards side by side at the row's card height, «+N» for the others;
+// -> {html, ids, more} (the card ids and the «+N» number, packed apart: catalog-pages.js packCatalog fields.c / cm; the size
+// of a card is in BOARD_ROW_CSS)
+const ROW_CARDS = 3;
+function rowCards(e, ctx) {
+  const bs = servedBoards(e);
+  if (!bs.length) return { html: '<span class="nc">No card</span>', ids: [], more: 0 };
+  const shown = bs.slice(0, ROW_CARDS), ids = shown.filter((b) => hasCard(ctx, b.sphereBoardId)).map((b) => b.sphereBoardId);
+  const more = Math.max(0, bs.length - ROW_CARDS);
+  const html = shown.map((b) => (hasCard(ctx, b.sphereBoardId) ? `<img data-src="${boardImg(ctx, b.sphereBoardId)}" loading="lazy" alt="" onerror="kxNb(this)">` : NB)).join('')
+    + (more ? `<span class="more">+${more}</span>` : '');
+  return { html, ids, more };
+}
+// owned (Task 5c, user 15-11): a board on sale once bought; a board handed out once it was given to the player or a node of it
+// is unlocked (avatar-boards.js owned, ctx.boardOwned(id, type)); without that lookup: ctx.boardBought
+const ownedOf = (ctx, b) => (ctx.boardOwned ? !!ctx.boardOwned(b.sphereBoardId, b.type) : !!(ctx.boardBought && ctx.boardBought(b.sphereBoardId)));
+// the marks of a row for SHOW Bought / Not bought and PROGRESS (on the boards' nodes, ctx.boardProgress(id) -> done | part | none):
+// own (a board owned), buy (a board not owned yet), prog: done (every board complete), part (a node unlocked), none; an entry
+// with no served board: none of them ('' progress)
+function boardMarks(e, ctx) {
+  const bs = servedBoards(e);
+  if (!bs.length) return { own: 0, buy: 0, prog: '' };
+  const own = bs.map((b) => ownedOf(ctx, b)), pg = bs.map((b) => (ctx.boardProgress ? ctx.boardProgress(b.sphereBoardId) || 'none' : 'none'));
+  const prog = pg.every((p) => p === 'done') ? 'done' : pg.some((p) => p !== 'none') ? 'part' : 'none';
+  return { own: own.some(Boolean) ? 1 : 0, buy: own.some((x) => !x) ? 1 : 0, prog };
+}
 // Status of an event: show (state), cls (side bar), pill (status line), button (1 Keep, 0 Remove, null none), why (details page)
 function statusOf(e, ctx) {
   if (boardOnly(e)) return boardStatusOf(e, ctx);
@@ -230,7 +274,7 @@ function attr(el,a){return el&&el.getAttribute?el.getAttribute(a):null;}
 var tabs=$('tabs');if(!tabs)return;
 var kids=[].slice.call($('rows').children),rows=[],i;
 for(i=0;i<kids.length;i++)if(/(^| )row( |$)/.test(kids[i].className))rows.push({el:kids[i],p:attr(kids[i],'data-p'),t:attr(kids[i],'data-type'),dn:attr(kids[i],'data-done')==='1',
-ns:(attr(kids[i],'data-search')||'').split(' | '),mt:kids[i].querySelector?kids[i].querySelector('.mt'):null});
+own:attr(kids[i],'data-own')==='1',buy:attr(kids[i],'data-buy')==='1',pg:attr(kids[i],'data-prog'),ns:(attr(kids[i],'data-search')||'').split(' | '),mt:kids[i].querySelector?kids[i].querySelector('.mt'):null});
 function blank(p){return {p:p,type:'all',show:'all',prog:'all',q:''};}
 var cur=blank(attr(tabs,'data-def')||'all'),dr=null;
 function copy(s){return {p:s.p,type:s.type,show:s.show,prog:s.prog,q:s.q};}
@@ -238,8 +282,9 @@ function hits(r,qq,max){var o=[],i;for(i=0;i<r.ns.length&&o.length<max;i++)if(kh
 function match(r,s,anyPeriod){
 if(!anyPeriod&&s.p!=='all'&&r.p!==s.p)return false;
 if(s.type!=='all'&&r.t!==s.type)return false;
-if(s.show!=='all'&&(SHOWSET[s.show]||[s.show]).indexOf(attr(r.el,'data-show'))<0)return false;
-if(s.prog!=='all'&&r.dn!==(s.prog==='done'))return false;
+if(s.show==='bought'){if(!r.own)return false;}else if(s.show==='notbought'){if(!r.buy)return false;}
+else if(s.show!=='all'&&(SHOWSET[s.show]||[s.show]).indexOf(attr(r.el,'data-show'))<0)return false;
+if(s.prog!=='all'&&(r.pg!==null?r.pg!==s.prog:r.dn!==(s.prog==='done')))return false;
 return !s.q||hits(r,s.q,1).length>0;}
 function count(s){var n=0;for(var i=0;i<rows.length;i++)if(match(rows[i],s))n++;return n;}
 function nf(s){return (s.type!=='all'?1:0)+(s.show!=='all'?1:0)+(s.prog!=='all'?1:0)+(s.q?1:0);}
@@ -289,23 +334,38 @@ render();if(h&&h.scrollIntoView)h.scrollIntoView();})();`;
 const BOARD_TYPE_OPTS = [['all', 'All'], ['outfit', 'Outfit Boards', 'avatar'], ['gem', 'Gem Boards', 'jewel'], ['skill', 'Skill Boards', 'skill'],
   ['medal', 'Medal Boards', 'medal'], ['avatarCoin', 'Avatar Coin Boards', 'camp'], ['avatarCoinBooster', 'Avatar Coin Booster Boards', 'camp'], ['jewelBooster', 'Jewel Booster Boards', 'jewel']];
 const boardTypeOf = (e) => String(((e.avatarBoards || [])[0] || boardsOf(e)[0] || {}).group || 'BOARD');
-const BOARD_SHOW_OPTS = [['all', 'All entries'], ['now', 'In Avatar Boards now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'],
-  ['later', 'Later in the Story', 'later'], ['removed', 'Not built yet', 'removed']];
+// SHOW (Task 5c, user 15-11): Bought / Not bought (boardMarks, a partly bought entry is under both) beside the states, each of
+// which a board entry can have (boardStatusOf: now, kept, can, later, removed; «other» only under All entries)
+const BOARD_SHOW_OPTS = [['all', 'All entries'], ['bought', 'Bought', 'jewel'], ['notbought', 'Not bought', 'lock'], ['now', 'In Avatar Boards now', 'now'],
+  ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later'], ['removed', 'Not built yet', 'removed']];
+const BOARD_SHOW_HINT = 'Bought: you own at least one of its boards. A board on sale is yours once you bought it with Jewels; a free board once it was '
+  + 'handed out to you in Avatar Boards or once you unlocked one of its nodes. Not bought: at least one of its boards is not yours yet.';
+// PROGRESS on the boards' nodes (not the quests' crowns): Completed = every board of the entry complete
+const BOARD_PROG_OPTS = [['all', 'All'], ['done', 'Completed', 'done'], ['part', 'In progress', 'unlocked'], ['none', 'Not started', 'todo']];
+const BOARD_PROG_HINT = 'Counted on the nodes of its boards: Completed when every board is complete, In progress when a node is unlocked.';
+// FIND of a board entry: its names, its board group and its boards' names
+const boardSearchOf = (e) => {
+  const type = BOARD_TYPE_OPTS.find((o) => o[0] === boardTypeOf(e)), seen = new Set();
+  return [catName(e), e.name, type ? type[1] : '', ...boardsOf(e).map((b) => b.name)].map((x) => String(x || '').replace(/\s+/g, ' ').replace(/ \| /g, ' / ').trim())
+    .filter((x) => x && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase())).join(' | ');
+};
 const boardCount = (e) => {
   const nb = boardsOf(e).length, nbs = boardsOf(e).filter((b) => b.served).length;
   return nbs === nb ? plural(nb, 'avatar board') : `${nbs} of ${plural(nb, 'avatar board')} served`;
 };
 const MODES = {
   event: { base: BASE, title: 'Event Catalog', noun: 'event', entries: eventEntriesOf, status: statusOf, pills: PILLS, keepJs: KEEP_JS, href: detailHref, button: keepButton,
-    typeOf, typeOpts: TYPE_OPTS, showOpts: SHOW_OPTS, placeholder: 'Event, quest or reward name',
+    typeOf, typeOpts: TYPE_OPTS, showOpts: SHOW_OPTS, placeholder: 'Event, quest or reward name', progOpts: PROG_OPTS, css: NO_CARD_CSS, ncJs: NO_CARD_JS,
     hint: 'Matches the start of words in event and quest names and in the rewards of the quests and Event Boards (e.g. Halloween, Marluxia, Dewey).',
     count: (e) => { const served = servedOf(e).length, all = (e.quests || []).length; return served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`; },
     intro: () => '<p class="n">Every event of the game, by date. Tap an event for its quests. A past event can be kept in the Events tab, one at a time. The Event Catalog is an addition of this server.</p>'
       + `<p class="n">Avatar boards on sale are in the <a href="${BOARD_BASE}/catalog?from=event">Avatar Board Catalog ›</a>, also reached from the Special Catalog.</p>`,
     end: () => '' },
   board: { base: BOARD_BASE, title: 'Avatar Board Catalog', noun: 'entry', entries: boardEntriesOf, status: boardStatusOf, pills: BOARD_PILLS, keepJs: BOARD_KEEP_JS,
-    href: boardDetailHref, button: boardKeepButton, typeOf: boardTypeOf, typeOpts: BOARD_TYPE_OPTS, showOpts: BOARD_SHOW_OPTS, placeholder: 'Board or event name',
-    hint: 'Matches the start of words in board and event names (e.g. Nick Wilde, Gem, Booster).',
+    href: boardDetailHref, button: boardKeepButton, typeOf: boardTypeOf, typeOpts: BOARD_TYPE_OPTS, showOpts: BOARD_SHOW_OPTS, placeholder: 'Board, character or outfit name',
+    hint: 'Matches the start of words in board names and entry names (e.g. Nick Wilde, Gem, Booster).',
+    progOpts: BOARD_PROG_OPTS, showHint: BOARD_SHOW_HINT, progHint: BOARD_PROG_HINT, search: boardSearchOf, cards: rowCards, marks: boardMarks,
+    css: NO_CARD_CSS + BOARD_ROW_CSS, ncJs: BOARD_NC_JS,
     count: boardCount,
     intro: () => '<p class="n">Every limited avatar board of the game, by the dates it was on sale or handed out. Tap an entry for its boards and prices. '
       + 'Boards of the week are in Avatar Boards, as in the original game. A past entry can be kept, one at a time: its boards are listed in Avatar Boards again at their '
@@ -328,14 +388,20 @@ function catalogOf(index, ctx, m) {
     const label = mo !== lastM ? `<div class="ml" data-m="${mo}">${monthYear(`${mo}-01`)}</div>` : '';
     lastM = mo;
     const line = `${dateLine(e)} · ${m.count(e)}`, name = esc(catName(e)), y = e.start.slice(0, 4);
-    const done = m === MODES.event && doneOf(e, ctx), search = esc(searchOf(e, ctx, index, boards)), t = m.typeOf(e);
+    // board mode (Task 5c): the board cards, the Bought / Not bought marks and the node progress (Completed: the crown)
+    const mk = m.marks ? m.marks(e, ctx) : null, cards = m.cards ? m.cards(e, ctx) : null;
+    const done = mk ? mk.prog === 'done' : doneOf(e, ctx), search = esc(m.search ? m.search(e) : searchOf(e, ctx, index, boards)), t = m.typeOf(e);
+    const card = cards ? `<span class="im bc">${cards.html}</span>` : `<span class="im"><img width="320" height="70" data-src="${imgOf(ctx, e.evStageId)}" alt="" onerror="kxNc(this)"></span>`;
+    const marks = mk ? ` data-own="${mk.own}" data-buy="${mk.buy}" data-prog="${mk.prog}"` : '';
     // one minimal row (Part 4 Task 4, catalog_size_budget: about 340 events): the row opens its page (ROWS_JS, from data-eid), the
     // name is the link, the missing card box and the Keep handler are functions of the page; the rows are sent packed, as the
     // Raid Catalog's (catalog-pages.js packCatalog), and the cards load from data-src once the rows are built (kxImgs). The
     // filters read data-p (game year), data-show, data-type, data-done and data-search (FIND names); «Matches:» goes in .mt
-    packed.push({ label, fields: { s: search, d: line, n: name, e: String(e.evStageId), y, t }, html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}" data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
-      + ` data-type="${t}" data-done="${done ? 1 : 0}" data-search="${search}">`
-      + `<span class="im"><img width="320" height="70" data-src="${imgOf(ctx, e.evStageId)}" alt="" onerror="kxNc(this)"></span>`
+    packed.push({ label, fields: { s: search, d: line, n: name, e: String(e.evStageId), y, t, ...(cards && cards.ids.length ? { c: cards.ids } : {}), ...(cards && cards.more ? { cm: cards.more } : {}),
+        ...(mk ? { a: [['data-own', String(mk.own)], ['data-buy', String(mk.buy)], ['data-prog', mk.prog]] } : {}) },
+      html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}" data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
+      + ` data-type="${t}" data-done="${done ? 1 : 0}"${marks} data-search="${search}">`
+      + card
       + `<div class="info"><a class="nm" href="${href}">${name}${done ? CROWN : ''}</a><div class="d">${line}</div>${st.pill}`
       + `${replacesLine(st, kept)}${st.button === null ? '' : `<div>${m.button(e.evStageId, st.button, ' onclick="return kxK(this)"')}</div>`}`
       + '<div class="mt"></div></div><span class="go">›</span></div>\n' });
@@ -351,15 +417,15 @@ function catalogOf(index, ctx, m) {
   const typeOpts = [...m.typeOpts.filter((o, i) => !i || kinds.has(o[0])), ...[...kinds].filter((k) => !m.typeOpts.some((o) => o[0] === k)).sort().map((k) => [k, k])];
   const n0 = def === 'all' ? entries.length : perYear[Number(def)];
   const js = FILTER_JS.replace('__PN__', JSON.stringify(Object.fromEntries(GAME_YEARS.map((g, i) => [i, g.name])))).replace('__TYPE__', optLabels(typeOpts))
-    .replace('__SHOW__', optLabels(m.showOpts)).replace('__PROG__', optLabels(PROG_OPTS)).replace('__SHOWSET__', JSON.stringify(SHOW_SETS)).replace('__MATCH__', () => MATCH_JS)
+    .replace('__SHOW__', optLabels(m.showOpts)).replace('__PROG__', optLabels(m.progOpts)).replace('__SHOWSET__', JSON.stringify(SHOW_SETS)).replace('__MATCH__', () => MATCH_JS)
     .split('__NOUNS__').join(NOUN_JS[m.noun][1]).split('__NOUN__').join(NOUN_JS[m.noun][0]);
   const sheet = filterSheet({ placeholder: m.placeholder, n: n0, hint: m.hint,
-    groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(m.showOpts, (v) => (v === 'all' ? '' : ` st-${v}`))}</div>`],
-      ['PROGRESS', `<div class="opts" data-g="prog">${filterOpts(PROG_OPTS, progCls)}</div>`],
+    groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(m.showOpts, (v) => (v === 'all' ? '' : ` st-${v}`))}</div>${m.showHint ? `<div class="hint sh">${esc(m.showHint)}</div>` : ''}`],
+      ['PROGRESS', `<div class="opts" data-g="prog">${filterOpts(m.progOpts, progCls)}</div>${m.progHint ? `<div class="hint sh">${esc(m.progHint)}</div>` : ''}`],
       ['TYPE', `<div class="opts" data-g="type">${filterOpts(typeOpts)}</div>`]] });
   const backTo = { special: '/web/special/catalog', event: `${BASE}/catalog` }[ctx.from];
   const back = m === MODES.board && backTo ? backBar(backTo) : '';
-  return PAGE_HEAD(m.title, CSS + NO_CARD_CSS) + `<body${back ? ' class="hb"' : ''}><script>${NO_CARD_JS}</script>`
+  return PAGE_HEAD(m.title, CSS + m.css) + `<body${back ? ' class="hb"' : ''}><script>${m.ncJs}</script>`
     + `<div class="hdr"><h1>${m.title}</h1>${packed.length ? FILTER_BUTTON : ''}</div>`
     + m.intro()
     + tabsHtml
@@ -419,7 +485,8 @@ function srvBox(e, st, index, o) {
   return srvFrame(st, { ...o, body: rebuilt(e, (index && index.reasons) || {}) + notServedLine(e) }, 'camp');
 }
 const EVENT_DETAIL_CSS = '.tt{table-layout:auto}.tt td:nth-child(2),.tt td:nth-child(3){white-space:nowrap}.tt td.r{color:#ffcd4a}.tt small{display:block;color:#b9cfdc;font-size:13px}'
-  + '.tt.bt td:nth-child(2){white-space:normal}.bt td.cd{color:#8fe3a0}.bt td.r{white-space:normal}.ecoin{margin:6px 0 12px;font-size:15px}.ecoin b{color:#ffcd4a;font-size:18px}';
+  + '.tt.bt td:nth-child(2){white-space:normal}.bt td.cd{color:#8fe3a0}.bt td.r{white-space:normal}.ecoin{margin:6px 0 12px;font-size:15px}.ecoin b{color:#ffcd4a;font-size:18px}'
+  + BOARD_CARD_CSS;
 // Event Boards of an entry's set (Part 3 Task 6, as the Raid Catalog lists the boards of a raid, with the cells): the coin line (one
 // balance per set, never expires), then each board of the set in order with its cells. ctx.eventBoard(boardId) -> {name, cells:
 // [{n, cost, reward, done}], finish, done} | null; ctx.eventCoins(setKey) -> n. '' without a set or without a board served.
@@ -482,12 +549,16 @@ function avatarBoardsSection(e, ctx, onEventPage = false) {
   if (!boards.length) return '';
   const status = (b) => {
     if (!b.served) return `<td class="r">Not served yet<small>${esc(boardWhyPlain(b.why))}</small></td>`;
-    return ctx.boardBought && ctx.boardBought(b.sphereBoardId) ? `<td class="cd">Bought${CROWN}</td>` : `<td>${b.type === 1 ? 'Served' : 'Served, for sale'}</td>`;
+    if (!ownedOf(ctx, b)) return `<td>${b.type === 1 ? 'Served' : 'Served, for sale'}</td>`;
+    return `<td class="cd">${b.type === 1 ? 'Handed out to you' : 'Bought'}${CROWN}</td>`;
   };
-  const rows = boards.map((b) => `<tr><td>${esc(b.name)}</td><td>${b.window ? esc(`${niceDay(b.window[0])} – ${niceDay(b.window[1])}`) : '—'}</td><td>${esc(boardPrice(b))}</td>${status(b)}</tr>`).join('');
+  // its card (Task 5c): the picture of a served board with a card, else the neutral box
+  const card = (b) => `<td class="bc">${b.served && hasCard(ctx, b.sphereBoardId)
+    ? `<img width="64" height="64" src="${boardImg(ctx, b.sphereBoardId)}" loading="lazy" alt="" onerror="kxNb(this)">` : NB}</td>`;
+  const rows = boards.map((b) => `<tr>${card(b)}<td>${esc(b.name)}</td><td>${b.window ? esc(`${niceDay(b.window[0])} – ${niceDay(b.window[1])}`) : '—'}</td><td>${esc(boardPrice(b))}</td>${status(b)}</tr>`).join('');
   const codes = [...new Set((e.avatarBoards || []).flatMap((w) => w.labels || []))];
   const notes = codes.length ? `<ul class="pl">${codes.map((c) => `<li>${esc(BOARD_LABEL_TEXT[c] || c)}</li>`).join('')}</ul>` : '';
-  return `<h2>Avatar Boards</h2><table class="tt bt"><tr><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
+  return `<script>${BOARD_NC_JS}</script><h2>Avatar Boards</h2><table class="tt bt"><tr><th></th><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
     + '<p class="n">A board on sale is bought once with Jewels and stays yours; its nodes are opened with Avatar Coins. In the original game these boards were sold '
     + `only in their dates: on this server a past entry can be kept in the ${onEventPage ? `<a href="${esc(boardLink)}">Avatar Board Catalog ›</a>` : 'Avatar Board Catalog'}, `
     + 'and its boards are listed in Avatar Boards again at their original price (an addition of this server, not original). Keeping it never changes your kept event.</p>';
@@ -605,7 +676,8 @@ function boardDetailPage(index, evStageId, ctx = {}) {
     intro: `This server follows your Story, not the calendar: these boards of the original game (${esc(dateRange(e))}) are listed in Avatar Boards when your Story reaches their dates.`,
     links }, 'avatar');
   return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
-    + `<h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140)}>${box}`
+    // an event that also sold boards keeps its event card; a BOARD entry has none (its boards' cards are in the table, Task 5c)
+    + `<h1>${esc(title)}</h1>${boardOnly(e) ? '' : `<img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140, 'No card')}>`}${box}`
     + `<h2>Entry</h2><table class="kv">${kv}</table>${avatarBoardsSection(e, ctx)}`
     + `<p class="n">The Avatar Board Catalog is an addition of this server: in the original game a board was sold only in its own dates.</p>${back}<script>${BOARD_KEEP_JS}</script></body></html>`;
 }

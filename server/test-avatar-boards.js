@@ -124,6 +124,30 @@ const tests = {
     assert.strictEqual(w.player.freeStone, 2000);
     assert.strictEqual(w.r.isBuy(w.player, a), 1);
   },
+  // Task 5c (Avatar Board Catalog filters): owned = a type-2 board bought; a type-1 board sent / handed out or with a node
+  // unlocked. progress on the nodes: 'none', 'part' (some node unlocked), 'done' (every node)
+  owned_and_progress() {
+    const w = world(), a = idOf(w.out, A), c = idOf(w.out, C);
+    w.player.freeStone = 5000; w.player.spherePoint = 100000;
+    assert.deepStrictEqual([w.r.owned(w.player, a), w.r.owned(w.player, c), w.r.progress(w.player, a)], [false, false, 'none']);
+    w.player.avatarBoardsSent = [a];
+    assert.strictEqual(w.r.owned(w.player, a), false, 'a board on sale sent to the client is not bought');
+    assert.strictEqual(w.r.buy(w.player, a, WEEK1).ok, true);
+    assert.strictEqual(w.r.owned(w.player, a), true, 'bought');
+    assert.strictEqual(w.r.progress(w.player, a), 'none', 'bought, no node yet');
+    assert.strictEqual(w.r.update(w.player, a, 1, false, WEEK1).ok, true);
+    assert.strictEqual(w.r.progress(w.player, a), 'part');
+    assert.strictEqual(w.r.update(w.player, a, 0, true, WEEK1).ok, true);
+    assert.strictEqual(w.r.progress(w.player, a), 'done');
+    w.player.avatarBoardsSent = [c];
+    assert.strictEqual(w.r.owned(w.player, c), true, 'type 1: handed out (sent)');
+    w.player.avatarBoardsSent = [];
+    w.player.avatarSphere[c] = { id: 1, unlock: [], getDatetime: 0 };
+    assert.strictEqual(w.r.owned(w.player, c), false, 'type 1: listed once, no node');
+    w.player.avatarSphere[c].unlock = [1];
+    assert.strictEqual(w.r.owned(w.player, c), true, 'type 1: a node unlocked');
+    assert.deepStrictEqual([w.r.owned(w.player, 1), w.r.progress(w.player, 1)], [false, 'none'], 'unknown id');
+  },
   buy_charges_once() {
     const w = world(), a = idOf(w.out, A);
     w.player.freeStone = 5000;

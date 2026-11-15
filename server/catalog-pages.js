@@ -265,22 +265,34 @@ function noticeBlocks(lines) {
 // dozen templates; the search names go through one dictionary. Replacing a value and putting the same value back is
 // lossless whatever else the text holds. Card pictures: data-src, loaded only for the rows shown (kxImgs after every render):
 // the old WebView ignores loading="lazy" and fetched all the cards at once. The details of a raid stay on its own page.
+// fields.c (Avatar Board Catalog, Events Part 7 Task 5c): the board ids of the row's card pictures (.../<id>.png), replaced by
+// marker \u0002<i> so the rows with the same number of cards share a template; the ids (and fields.cm) travel in r[8].
 const PACK_KEYS = ['s', 'd', 'n', 'e', 'y'];
 function packCatalog(packed) {
   const tpl = [], tplIx = new Map(), dict = [], dictIx = new Map();
   const word = (w) => { if (!dictIx.has(w)) { dictIx.set(w, dict.length); dict.push(w); } return dictIx.get(w); };
   const rows = packed.map(({ label, fields, html }) => {
     let h = html;
+    const cards = Array.isArray(fields.c) ? [...fields.c] : [];
+    cards.forEach((id, i) => { h = h.split(`/${id}.png`).join(`/\u0002${i}.png`); });
+    // fields.cm: the number of the row's «+N» badge (<span class="more">+N</span>), packed after the ids
+    if (fields.cm) { h = h.split(`<span class="more">+${fields.cm}<`).join(`<span class="more">+\u0002${cards.length}<`); cards.push(fields.cm); }
+    // fields.a: [[attribute, value]] of the row's own marks (Bought / Not bought, node progress), packed after them
+    for (const [k, v] of fields.a || []) { h = h.split(` ${k}="${v}"`).join(` ${k}="\u0002${cards.length}"`); cards.push(v); }
+    if (cards.length > 10) throw new Error('packCatalog: at most 10 packed card values per row');
     PACK_KEYS.forEach((k) => { if (fields[k]) h = h.split(fields[k]).join(`\u0001${k}`); });
     // the TYPE of the row (06-11: one per JP family) only inside its attribute, so the rows of all types share their templates
     if (fields.t) h = h.split(`data-type="${fields.t}"`).join('data-type="\u0001t"');
     if (!tplIx.has(h)) { tplIx.set(h, tpl.length); tpl.push(h); }
-    return [tplIx.get(h), fields.s ? fields.s.split(' | ').map(word) : [], fields.d, fields.n, fields.e, fields.y, label, fields.t];
+    const row = [tplIx.get(h), fields.s ? fields.s.split(' | ').map(word) : [], fields.d, fields.n, fields.e, fields.y, label, fields.t];
+    if (cards.length) row.push(cards);
+    return row;
   });
   // «</» never closes the script element: written <\/ inside the JSON
   return JSON.stringify({ t: tpl, w: dict, r: rows }).replace(/<\//g, '<\\/');
 }
-const unpackRow = (d, r) => r[6] + d.t[r[0]].replace(/\u0001([sdneyt])/g, (x, k) => ({ s: r[1].map((i) => d.w[i]).join(' | '), d: r[2], n: r[3], e: r[4], y: r[5], t: r[7] })[k]);
+const unpackRow = (d, r) => r[6] + d.t[r[0]].replace(/\u0001([sdneyt])/g, (x, k) => ({ s: r[1].map((i) => d.w[i]).join(' | '), d: r[2], n: r[3], e: r[4], y: r[5], t: r[7] })[k])
+  .replace(/\u0002(\d)/g, (x, k) => r[8][k]);
 // the same expansion as UNPACK_JS, for the tests: the catalogue page with its rows written out
 function expandCatalog(page) {
   const m = /<script id="kxrows" type="application\/json">([\s\S]*?)<\/script><script>[\s\S]*?<\/script>/.exec(page);
@@ -289,9 +301,10 @@ function expandCatalog(page) {
   const html = d.r.map((r) => unpackRow(d, r)).join('');
   return page.replace(m[0], '').replace(/(<div id="rows"[^>]*>)/, (x) => x + html);
 }
-const UNPACK_JS = 'function kxImgs(){var a=document.querySelectorAll("#rows .row"),i,im;for(i=0;i<a.length;i++){if(/ hide/.test(a[i].className))continue;im=a[i].querySelector("img[data-src]");if(im&&!im.getAttribute("src"))im.setAttribute("src",im.getAttribute("data-src"));}}'
+const UNPACK_JS = 'function kxImgs(){var a=document.querySelectorAll("#rows .row"),i,j,im;for(i=0;i<a.length;i++){if(/ hide/.test(a[i].className))continue;im=a[i].querySelectorAll("img[data-src]");'
+  + 'for(j=0;j<im.length;j++)if(!im[j].getAttribute("src"))im[j].setAttribute("src",im[j].getAttribute("data-src"));}}'
   + '(function(){var d=JSON.parse(document.getElementById("kxrows").textContent),o=[],i,r;for(i=0;i<d.r.length;i++){r=d.r[i];'
-  + 'o.push(r[6]+d.t[r[0]].replace(/\u0001([sdneyt])/g,function(x,k){if(k==="s"){var s=[],j;for(j=0;j<r[1].length;j++)s.push(d.w[r[1][j]]);return s.join(" | ");}return k==="d"?r[2]:k==="n"?r[3]:k==="e"?r[4]:k==="t"?r[7]:r[5];}));}'
+  + 'o.push(r[6]+d.t[r[0]].replace(/\u0001([sdneyt])/g,function(x,k){if(k==="s"){var s=[],j;for(j=0;j<r[1].length;j++)s.push(d.w[r[1][j]]);return s.join(" | ");}return k==="d"?r[2]:k==="n"?r[3]:k==="e"?r[4]:k==="t"?r[7]:r[5];}).replace(/\u0002(\\d)/g,function(x,k){return r[8][k];}));}'
   + 'document.getElementById("rows").innerHTML=o.join("");})();';
 module.exports = { PAGE_HEAD, pill, backBar, KEEP_LABEL, REMOVE_LABEL, keepButton, keepJs, RULE_CSS, SRV_CSS, FOLD_CSS, ONC_CSS, NOTICE_CSS, rebuiltValues, srvFrame,
   noticeCard, parseNotice, noticeBlocks, packCatalog, expandCatalog, UNPACK_JS, FILTER_BUTTON, optLabel, filterOpts, optLabels, filterSheet };

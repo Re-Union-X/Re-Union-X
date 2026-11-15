@@ -5088,7 +5088,7 @@ const eventPageCtx = (fromCatalog = false) => ({ ...eventRoutes().catalogCtx(), 
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   stageDone: (id) => catalogStageDone(id), hasNotice: (censusId) => !!eventNotices()?.rows?.[censusId],
   eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup(),
-  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)) });
+  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...boardCardCtx() });
 // GET /web/event/catalog (Details of the Event Catalog banner; a kept event the index lost is cleared first), /web/event/event/
 // <evStageId> (details page; ?from=catalog: BACK), /web/event/notice/<evStageId> (Details of an event card: its original
 // notice, ?from=event: BACK; always a page, «not available» without it), /web/event/img/v<N>/<evStageId>[-kept].png (the card;
@@ -5130,10 +5130,43 @@ function hasAvatarBoardCatalog() {
 }
 const avatarPageCtx = (extra = {}) => ({ ...eventRoutes().boardCatalogCtx(), imgVersion: routesEvents.EVENT_IMG_VERSION,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
-  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...extra });
+  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...boardCardCtx(), ...extra });
+// Board cards and marks of the Avatar Board pages (Task 5c): game_data/avatar_img written by recon/tools/make_avatar_card_web.py
+// (git-ignored): <sphereBoardId>.png at most 160 px and cards.json {version, ids}, read at request time (a new run is seen without
+// a restart; the version busts the WebView cache). No cards.json: no card, every board shows the neutral box.
+const AVATAR_IMG = process.env.KHUX_AVATAR_IMG || path.join(__dirname, 'game_data', 'avatar_img');
+let avatarCardsMemo = { mtime: -1, version: 1, ids: new Set() };
+function avatarCards() {
+  const f = path.join(AVATAR_IMG, 'cards.json');
+  try {
+    const mtime = fs.statSync(f).mtimeMs;
+    if (mtime !== avatarCardsMemo.mtime) {
+      const doc = JSON.parse(fs.readFileSync(f, 'utf8'));
+      avatarCardsMemo = { mtime, version: Number(doc.version) || 1, ids: new Set((doc.ids || []).map(Number)) };
+    }
+  } catch { avatarCardsMemo = { mtime: -1, version: 1, ids: new Set() }; }
+  return avatarCardsMemo;
+}
+function boardCardCtx() {
+  const cards = avatarCards();
+  return { boardImgVersion: cards.version, boardCard: (id) => cards.ids.has(Number(id)),
+    // owned (bought, or a free board handed out / a node unlocked) and node progress: avatar-boards.js owned / progress
+    boardOwned: (id) => { try { return avatarBoards().owned(player, id); } catch { return false; } },
+    boardProgress: (id) => { try { return avatarBoards().progress(player, id); } catch { return 'none'; } } };
+}
+// GET /web/avatar/img/v<n>/<sphereBoardId>.png: a card of game_data/avatar_img; numeric ids only (no other name, no path), else 404
+function respondAvatarCard(res, p) {
+  const m = /^\/web\/avatar\/img\/v\d+\/(\d{1,9})\.png$/i.exec(p);
+  const file = m ? path.join(AVATAR_IMG, `${Number(m[1])}.png`) : null;
+  if (!file || !fs.existsSync(file)) { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); }
+  const b = fs.readFileSync(file);
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
+  return res.end(b);
+}
 function respondAvatarWeb(res, url) {
   const p = url.split('?')[0], from = new URLSearchParams(url.split('?')[1] || '').get('from');
   const page = (html, code = 200) => { const b = Buffer.from(html, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  if (/^\/web\/avatar\/img\//i.test(p)) return respondAvatarCard(res, p);
   if (/^\/web\/avatar\/catalog$/i.test(p)) {
     eventRoutes().pruneBoardKept();
     return page(eventPages.boardCatalogPage(eventIndex(), avatarPageCtx({ from })));
