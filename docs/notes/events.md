@@ -1260,3 +1260,45 @@ ids; Roboloid has none of them; the worldwide resources we hold do not carry the
   pictures of those boards are the versions with the Cid / Huey-Dewey-Louie medals (other runs): the screenshot rules.
 - `event_config.json` `boardArt` (donor board id -> jp / loc), `event-boards.js` art, `make-events.js` writes
   `game_data/event_board_art.tsv`, imported by `build-resources.ps1` like the raid board cards.
+
+## Avatar boards served (Events Part 7, Task 6, 15 November 2026)
+
+Master revision 329, resources 128 (`build-resources.ps1 -Append`, 408 records: the 402 avatar board cards and the 6 Moogle Shop
+tab / Traits row pictures of 905c5caf).
+
+- **Regen.** make-game-tables (imports the 6 donor skills as 1265-1270), the private records rebuilt
+  (`tmp\events\avatar_boards\build_avatar_boards.py`: 296 entries, 907 board windows), make-game-tables again with
+  `KHUX_AVATAR_BOARDS`: **460 boards served** (342 on sale, 118 handed out, 8 of them the level boards), 0 held by the build,
+  0 cells unmatched. The records hold 29 boards back (24 Enhancement Set+ sets 3-6: no notice dates the monthly sets after
+  May 2019; 5 Draw Ticket boards: no notice dates them) and 2 unmapped (Medal Fusion Set 1: no source; Start-Up Boost Board:
+  no dated source). Event Catalog: 264 BOARD entries (703 entries in all), `event_ids.json` +264 `rows`, +87 `avatarBoards`
+  (append-only).
+- **Skill texts.** The 6 imported skills keep an empty description: khuxwiki has no text for any of them (its only skill
+  list, the «Medal» page, lacks these six names). To be declared in the notice.
+- **Card pictures** (`recon/tools/originals.tsv` section 56, 402 lines; never drawn): 225 worldwide cards of the same board
+  id (image archive, copied to `--loc` `img/sphere_incentive_av/`), 139 JP 4.3.1 cards with the same picture as the khuxwiki
+  card of that board or run (Skill Enhancement runs by date section, Enhancement Set+, medal boards, Monstropolis, Jewel
+  Boosters, the Avatar Coin Booster boards = the cards of the December 2019 Event Boards), 34 Avatar Coin Boards with the
+  khuxwiki card (the JP card carries a Japanese date banner), 4 Bad Guy Breaker Booster boards with the card cut in Part 6.
+  50 boards keep the plain card: the 39 Premium Gem boards of 2017-18 and the Moon Gem Board (khuxwiki shows them only on the
+  gold board background, no JP card has the picture), Sun Gem Board and Prime - Halloween Sora (no picture found), 8 Skill
+  Enhancement runs khuxwiki has no section for (2020-02-21, 2020-04-20, 2020-10-12, 2020-11-02). Review sheets:
+  `screenshots\av_cards_found_1.png`, `av_cards_found_2.png`, `av_cards_missing.png`.
+
+Bench (saves `avb19` = events2 with 30,000 test Jewels, story week of 18 April 2019; `avb20` = hol20g with 100 Jewels, week
+of 17 December 2020; both bench only):
+
+| Check | Result | Screenshots |
+|---|---|---|
+| Outfit / skill / gem boards on sale listed with price and countdown | «Offer ends in 13 hours», 2000 / 3500 / 2500 Jewels | t6_av1, t6_av3 |
+| «Offer ends in» vs Moogle Shop countdown | same: 13 hours (Shop rows «13 hours left»); a month later 4 days on both | t6_ms_traits, t6_m6, t6_m5 |
+| Buy (Skill Enhancement Board A) | popup «Spend 2000 Jewels», «Purchased Avatar Board!», Jewels 30,000 → 28,000 on screen at once | t6_buy1-3 |
+| Open, unlock a skill cell | «You got a Skill Medal!» (Attack Boost VIII Max, skill level 20 = maxLv) | t6_open1, t6_node1-2 |
+| Gem Board (Enhancement Set+ 1: Magic Gems) | bought (28,000 → 24,500), Unlock All, «Unlocked Magic Gem!» | t6_gem5-7 |
+| Level boards (285-300) | announced at login («Unlocked an Avatar Board!» Pastry Cook ... Chip Snuggly) | t6_home2, t6_pop6 |
+| `-RealNow` a month later | bought boards still listed; ended boards gone (KH II Cloud / Tifa, the 1 May 2019 Set+ runs; count 154 → 151); the chained Set+ 2 stays hidden behind Set+ 1 | t6_m6-9, t6_scan_names2 |
+| Avatar Coin Booster Board (M Booster, Dec. 2020) | 200 Avatar Coins, «Unlocked M Booster +30%!», completion 6★ Chip | t6_d3, t6_b1-5 |
+| Refused purchase (100 Jewels, 1500 board) | the client refuses by itself («You don't have enough Jewels. Would you like to buy some?»), no request, no «200 ERROR :73» | t6_r1 |
+| Kept BOARD entry (Nov. 2020 Avatar Coin / Booster boards) | Event Catalog FIND «Treasure», «Keep in Events» → «Kept: its boards are in Avatar Boards»; 21 boards announced on the home, count 172 → 193 | t6_k6-12, t6_kpop3 |
+| Event Catalog load (165 KB) | page drawn 2.7-3.8 s after the tap | t6_cl1-6 |
+| Moogle Shop JP art (905c5caf) | Traits rows gold and blue drawn with rounded corners and a small gap under the frame; tabs JP art, on and off; no crash | t6_ms_traits, t6_ms_items |
