@@ -2923,17 +2923,18 @@ function sphereNodes(board) {
 // Only type 1 boards open with the level: Raid Boards (type 5) are handed out by the raid they belong to.
 function sphereBoards() {
   player.sphere = player.sphere || {};
-  const level = luxRankFor(player.lux), avatarIds = avatarBoardIndex();
+  const level = luxRankFor(player.lux), ab = avatarBoards();
   for (const b of masterRows('sphere')) {
-    // the limited and level avatar boards (avatar-boards.js) are listed by their own rules
-    if (b.type !== 1 || b.price || b.openParam > level || player.sphere[b.sphereBoardId] || avatarIds[b.sphereBoardId]) continue;
+    // the limited and level avatar boards (avatar-boards.js) and their KEPT twins (Task 6c) are listed by their own rules
+    if (b.type !== 1 || b.price || b.openParam > level || player.sphere[b.sphereBoardId] || ab.isAvatarBoard(b.sphereBoardId)) continue;
     player.sphere[b.sphereBoardId] = { id: nextUserSphereId(), unlock: [], getDatetime: realNow() };
   }
   return player.sphere;
 }
 // userSphereBoardId: one sequence for the standard, Raid (type 5) and Event Boards (type 4)
+// (an avatar board's state also holds the userSphereBoardId of its KEPT twin, twinId: Task 6c)
 const nextUserSphereId = () => Math.max(0, ...[...Object.values(player.sphere || {}), ...Object.values(player.raidSphere || {}),
-  ...Object.values(player.eventSphere || {}), ...Object.values(player.avatarSphere || {})].map((s) => s.id)) + 1;
+  ...Object.values(player.eventSphere || {}), ...Object.values(player.avatarSphere || {})].map((s) => Math.max(s.id, s.twinId || 0))) + 1;
 
 // Raid Boards (type 5, master rows of make-raid.js / raid-boards.js; client path docs/notes/bacheche.md «Raid Boards»).
 // player.raidSphere[sphereBoardId] = {id, unlock[], getDatetime}, made when the board is first handed out and kept for good,
@@ -2948,8 +2949,9 @@ function raidSphereBoards() {
   for (const id of active) if (!player.raidSphere[id]) player.raidSphere[id] = { id: nextUserSphereId(), unlock: [], getDatetime: realNow() };
   return { active, all: new Set([...ids.all, ...Object.keys(player.raidSphere).map(Number)]) };
 }
+// an avatar board's KEPT twin answers with the original's progress under its own userSphereBoardId (avatar-boards.js sphereOf)
 const sphereState = (sphereBoardId) => sphereBoards()[sphereBoardId] || (player.raidSphere || {})[sphereBoardId] || (player.eventSphere || {})[sphereBoardId]
-  || (player.avatarSphere || {})[sphereBoardId];
+  || avatarBoards().sphereOf(player, sphereBoardId);
 
 function userSphereData(sphereBoardId) {
   const s = sphereState(sphereBoardId);
@@ -3049,7 +3051,7 @@ function respondSphereUpdate(res, req) {
   if (board && avatarBoards().isAvatarBoard(boardId)) {
     const r = avatarBoards().update(player, boardId, req?.releaseMasuId, !!req?.allOpen, avatarCtx(), avatarKept());
     console.log(r.ok ? `[sphere] avatar board ${boardId}: nodes ${r.nodes.join(',')} (-${r.cost} Avatar Coin)` : `[sphere] unlock refused: avatar board ${boardId} (${r.why})`);
-    const as = (player.avatarSphere || {})[boardId];
+    const as = avatarBoards().sphereOf(player, boardId);
     savePlayer();
     return send(res, 200, {
       ret: ret(),

@@ -161,6 +161,9 @@ def vip_tab_end(im):
 KEPT_STYLES = {
     'raid': ((214, 34, 30), (92, 6, 12), (40, 2, 6, 140)),
     'event': ((82, 214, 210), (36, 154, 104), (6, 60, 56, 140)),
+    # Avatar Board Catalog (Events Part 7 Task 6c, user 15-11, variant A of screenshots/av_kept_tab_preview.png): the brown /
+    # amber of the catalogue banner, on the KEPT twin board cards (avatar_kept_tab)
+    'avatar': ((150, 78, 18), (70, 30, 6), (30, 12, 2, 140)),
 }
 CATALOG_FRAME_GOLD = (236, 196, 84, 255)
 TITLE_GOLD = ((255, 250, 200), (232, 150, 20))           # gold_text of the catalogue titles
@@ -185,11 +188,13 @@ def kept_tab(im, text=KEPT_TEXT, side='left', style=None):
     return _tab(im, text, kept.GOLD_HI, kept.GOLD_LO, kept.GOLD_DK, solid, side=side)
 
 
-def _tab(im, text, hi, lo, dk, solid, size=18, side='left', catalog=False):
+def _tab(im, text, hi, lo, dk, solid, size=18, side='left', catalog=False, canvas=(640, 140), band=(TAB_Y0, TAB_Y1), fade=TAB_FADE,
+         text_x=9):
     """the top-left tab band of the originals (KEPT QUEST gold, VIP Quest red) over an RGBA 640x140 banner (side 'right':
-    mirrored, text aligned right); catalog: gold frame lines at the top and bottom, gold lettering (KEPT_STYLES)"""
-    W, H = 640 * S, 140 * S
-    y0, y1, xs, xf = TAB_Y0 * S, TAB_Y1 * S, solid * S, (solid + TAB_FADE) * S
+    mirrored, text aligned right); catalog: gold frame lines at the top and bottom, gold lettering (KEPT_STYLES). canvas, band
+    (rows y0..y1), fade, text_x: the geometry of another picture (the 306x306 avatar board card, avatar_kept_tab)"""
+    W, H = canvas[0] * S, canvas[1] * S
+    y0, y1, xs, xf = band[0] * S, band[1] * S, int(solid * S), int((solid + fade) * S)
     alpha = Image.new('L', (W, H), 0)
     d = ImageDraw.Draw(alpha)
     d.rectangle([0, y0, xs, y1 - 1], fill=255)
@@ -214,7 +219,7 @@ def _tab(im, text, hi, lo, dk, solid, size=18, side='left', catalog=False):
     right = side == 'right'
     if right:
         L, alpha = L.transpose(Image.FLIP_LEFT_RIGHT), alpha.transpose(Image.FLIP_LEFT_RIGHT)
-    xy, anchor, f = (W - 9 * S if right else 9 * S, (y0 + y1) / 2 + S * .5), 'rm' if right else 'lm', make_shop_art.font(size * S)
+    xy, anchor, f = (W - text_x * S if right else text_x * S, (y0 + y1) / 2 + S * .5), 'rm' if right else 'lm', make_shop_art.font(size * S)
     if catalog:   # the catalogue titles' gold: light yellow -> orange over a brown outline
         ImageDraw.Draw(L).text(xy, text, font=f, anchor=anchor, fill=BROWN, stroke_width=int(2.6 * S), stroke_fill=BROWN)
         m = Image.new('L', (W, H), 0)
@@ -230,7 +235,26 @@ def _tab(im, text, hi, lo, dk, solid, size=18, side='left', catalog=False):
     out = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     out.paste(sh, (0, 2 * S))
     L = Image.alpha_composite(out, L)
-    return Image.alpha_composite(im, L.resize((640, 140), Image.LANCZOS))
+    return Image.alpha_composite(im, L.resize(canvas, Image.LANCZOS))
+
+
+AVATAR_KEPT_TEXT = 'KEPT BOARD'
+AVATAR_CARD = 306                      # img/sphere_incentive/<id>.png
+AVATAR_BAND = (14, 44)                 # band rows on the card (user 15-11, variant A)
+
+
+def avatar_kept_tab(im, text=AVATAR_KEPT_TEXT):
+    """copy of an avatar board card (RGBA, brought to 306x306) with the «KEPT BOARD» tab of the KEPT twin boards (Events
+    Part 7 Task 6c, user 15-11): band at the top left, y 14..44, solid to 26 px after the text then fading out over 44 px, the
+    'avatar' KEPT_STYLES colours, catalogue frame gold lines, catalogue-title gold lettering on a brown outline, font 19.
+    Only the tab is added to the card"""
+    im = im.convert('RGBA')
+    if im.size != (AVATAR_CARD, AVATAR_CARD):
+        im = im.resize((AVATAR_CARD, AVATAR_CARD), Image.LANCZOS)
+    tw = ImageDraw.Draw(im).textlength(text, font=make_shop_art.font(19))
+    hi, lo, dk = KEPT_STYLES['avatar']
+    return _tab(im, text, hi, lo, dk, tw + 26, size=19, catalog=True, canvas=(AVATAR_CARD, AVATAR_CARD), band=AVATAR_BAND,
+                fade=44, text_x=12)
 
 
 # ---- catalogue banner ----

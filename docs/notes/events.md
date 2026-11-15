@@ -1380,3 +1380,39 @@ Start-Up Boost Board card). Regen: the r328 HANDOFF line (`KHUX_WORLDTOUR=0`) pl
 | Event keep vs board keep | event keep EV-1095 leaves the board keep EV-0591; board keep EV-0311 leaves the event keep | t6b_evkeep, t6b_keep3 |
 | Cards | Start-Up, Sun Gem, Moon Gem (gold), Prime - Halloween Sora, Power / Magic Gem gold (2017), Speed Gem (cropped) | t6b_startup1, t6b_kept_vs_week, t6b_pop1-3 |
 | Start-Up Boost Board | listed with no countdown, 100 Jewels, bought (100 -> 0), «Keyblade cost capacity increased by 5!», Unlock All 19/19, completion «You got a Cost Medal!» (Cid 10); Equipment Cost 80/461 -> 80/501 (+40) | t6b_cost1, t6b_buy1, t6b_buy2, t6b_open1, t6b_node1, t6b_all1, t6b_equip0, t6b_equip1 |
+
+## KEPT twin boards (Events Part 7, Task 6c, 15 November 2026)
+
+User design 15-11: a board listed in Avatar Boards **only because of the Avatar Board Catalog keep** shows its own card with a
+«KEPT BOARD» tab and no countdown; its progress is the original's, so nothing can be earned twice.
+- **Twin rows** (`avatar-boards.js buildAvatarBoards`): every served board except the 8 level boards (never listed through the
+  keep) gets a twin with its own `sphere` / `sphereArray` / `sphereMasu` rows, same layout and rewards: sphereBoardId = arryId =
+  masuId = **5500000 + n**, `event_ids.json avatarTwins {"<donorId>": n}` (append-only; a new twin takes the number of its
+  original, so twin = original + 500000; a taken number gives the next free one). The originals are now capped at 5499999. The
+  index keeps the twin in `index[original].twin` (twins are not index keys: the Event Catalog joins by donor id). A chained twin
+  opens after the twin of the board before it. Regen log: «+461 boards (...) and 453 KEPT twins».
+- **Which one is listed** (per player, per call; `listState` / `listedIds`): 'week' (a window in the story week) = the ORIGINAL
+  with the week countdown; listed only through the keep ('kept') = the TWIN, far end (no «Offer ends» plate), price of the kept
+  window; both = the original only; bought, outside its weeks, not kept = the original (far end, no tab); bought, outside its
+  weeks and kept = the twin ('kept', no longer 'bought'). Original and twin are never listed together. Hand-out (type 1) boards
+  follow the same rule.
+- **Shared state**: buy / update / complete / owned / progress resolve a twin to its original. A purchase through the twin is
+  stored on the original (`avatarBoardsBought`), charged once at the kept window's price; progress lives in
+  `avatarSphere[original]` (the twin's own userSphereBoardId is `avatarSphere[original].twinId`, so the client never sees two
+  entries with one id); the rewards are paid from the original's `sphereMasu` row (one Booster / skill key per cell), each node
+  and the completion once across the pair. A buy or unlock is accepted on either id while the pair is listed (the client may
+  still hold the other one until the close check). `GET /user/sphere` answers the twin with the original's progress under the
+  twin id (`server.js sphereState` -> `sphereOf`); the Lux level path never opens a twin as a standard board.
+- **Delivery and close (ruling, Task 6b decision kept):** the brief said «a kept twin is marked sent silently»; the 6b user
+  decision (15-11) supersedes it: `markKept` puts the TWIN ids in `avatarBoardsKeptPending` and the Avatar Boards list check
+  announces them with one «Unlocked an Avatar Board!» each. When the keep turns a held original into its twin, the list close
+  check (checkTypes 3) closes the original; an unkeep closes the twin and never an original still in its week.
+- **Cards**: `recon/tools/make_avatar_kept_cards.py` (re-runnable: run it again whenever a section 56 card changes) draws the
+  section 56 card with `make_special_banners.avatar_kept_tab` (KEPT_STYLES 'avatar': band y 14..44 brown / amber (150,78,18) ->
+  (70,30,6), catalogue frame gold lines, catalogue-title gold «KEPT BOARD» on a brown outline, font 19; the banner tabs are
+  pixel-identical after the `_tab` geometry options) into the private `raid_loc\img\sphere_incentive_kept\<twinId>.png`, and
+  `--write-tsv` makes **originals.tsv section 57** again (445 loc rows). The 8 Skill Enhancement Boards without an original card
+  keep the plain card on both. Review sheet: `screenshots\av_kept_twins.png` (12 boards, original | twin).
+- **Serve** (controller, after the card cleaning): `python -I recon/tools/make_avatar_kept_cards.py --write-tsv` again on the
+  cleaned cards, master regen (the r328 HANDOFF line plus `KHUX_AVATAR_BOARDS`, revision +1), `build-resources.ps1 -Append`,
+  update-resources, relogin. Bench: still to do (see the Task 6c report).

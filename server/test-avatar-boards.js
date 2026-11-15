@@ -52,6 +52,8 @@ function world(opts = {}) {
   return w;
 }
 const idOf = (out, donorId) => Number(Object.keys(out.index).find((k) => out.index[k].donorId === donorId));
+// the KEPT twin of a served board (Task 6c): index[id].twin
+const twinOf = (out, donorId) => Number((out.index[idOf(out, donorId)] || {}).twin);
 const WEEK1 = { shopFrom: '2017-04-03', shopTo: '2017-04-09', level: 1 };
 const WEEK2 = { shopFrom: '2017-04-10', shopTo: '2017-04-16', level: 300 };
 const WEEK_RET = { shopFrom: '2018-03-19', shopTo: '2018-03-25', level: 1 };
@@ -179,7 +181,7 @@ const tests = {
   },
   returning_board_one_id() {
     const w = world(), out = w.out, a = idOf(out, A);
-    assert.strictEqual(out.sphereRows.filter((r) => r.boardName === 'Test Outfit').length, 1, 'one row');
+    assert.strictEqual(out.sphereRows.filter((r) => r.boardName === 'Test Outfit' && r.sphereBoardId < ab.TWIN_BASE).length, 1, 'one row (besides its KEPT twin)');
     assert.deepStrictEqual(out.index[a].windows.map((x) => [x.key, x.price]), [['EV-1/outfit', 3000], ['EV-4/outfit', 1500]]);
     assert.ok(w.r.listedIds(w.player, WEEK1).includes(a) && w.r.listedIds(w.player, WEEK_RET).includes(a), 'listed in both windows');
     const row = out.sphereRows.find((r) => r.sphereBoardId === a);
@@ -270,8 +272,9 @@ const tests = {
   kept_boards_announced_by_list_check_even_on_sale_user_15_11() {
     const HOME_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
     const LIST_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] };
+    // Task 6c: a board listed only by the keep is its KEPT twin: the twin is delivered and announced
     for (const [kept, donor] of [['EV-1', A], ['EV-3', C]]) {
-      const w = world(), id = idOf(w.out, donor);
+      const w = world(), id = twinOf(w.out, donor);
       w.player.avatarBoardsSent = [];
       assert.deepStrictEqual(w.r.markKept(w.player, WEEK_LATE, kept), [id], `${kept}: the kept board`);
       assert.ok(!w.r.check(w.player, HOME_CHECK, WEEK_LATE, kept).add.includes(id), `${kept}: the home check does not announce it`);
@@ -281,7 +284,7 @@ const tests = {
       // unkept: the close check of the list removes it
       assert.ok(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, null).close.includes(id), `${kept}: closed after the unkeep`);
       // a login (GET /user/sphere) before the list check delivers it: the list check does not send it again
-      const w2 = world(), id2 = idOf(w2.out, donor);
+      const w2 = world(), id2 = twinOf(w2.out, donor);
       w2.player.avatarBoardsSent = [];
       w2.r.markKept(w2.player, WEEK_LATE, kept);
       assert.ok(w2.r.list(w2.player, WEEK_LATE, kept, { setSent: true }).includes(id2));
@@ -308,7 +311,7 @@ const tests = {
     for (const body of [HOME_CHECK, LIST_CHECK]) assert.ok(!w.r.check(w.player, body, WEEK1, null).add.includes(a), 'stale pending: not announced in its week');
     // keep A, then keep B: A's leftovers are not delivered, not even when A is on sale in a later week
     w = world(); a = idOf(w.out, A);
-    const b = idOf(w.out, W), keyB = 'khuxwiki@2017-05-01/outfit';
+    const b = twinOf(w.out, W), keyB = 'khuxwiki@2017-05-01/outfit';
     w.player.avatarBoardsSent = [];
     w.r.markKept(w.player, WEEK_LATE, 'EV-1');
     assert.deepStrictEqual(w.r.markKept(w.player, WEEK_LATE, keyB), [b]);
@@ -414,7 +417,7 @@ const tests = {
     assert.deepStrictEqual([e.windows[0].censusId, e.key, e.price], [null, 'khuxwiki@2017-05-01/outfit', 2000]);
     assert.ok(e.windows[0].labels.includes('windowFromWiki'));
     assert.ok(w.r.listedIds(w.player, { shopFrom: '2017-05-01', shopTo: '2017-05-07' }).includes(id));
-    assert.ok(w.r.listedIds(w.player, WEEK_LATE, 'khuxwiki@2017-05-01/outfit').includes(id), 'kept by its entry key');
+    assert.ok(w.r.listedIds(w.player, WEEK_LATE, 'khuxwiki@2017-05-01/outfit').includes(e.twin), 'kept by its entry key (its KEPT twin)');
     assert.ok(!w.r.listedIds(w.player, WEEK_LATE, null).includes(id));
   },
   held_board_not_built() {
@@ -455,6 +458,184 @@ const tests = {
     w.r.list(w.player, WEEK1, null);
     assert.deepStrictEqual(w.player.avatarBoardsSent, [a, g1].sort((x, y) => x - y), 'no setSent: unchanged');
   },
+
+  // ---- Task 6c: KEPT twin boards (user 15-11). Every served board but the level ones has a twin (own sphere / sphereArray /
+  // sphereMasu rows, same layout and rewards, card with a KEPT BOARD tab), listed instead of the original when the board is
+  // listed only by the catalogue keep; the state (purchase, progress) is the original's ----
+  twin_ids_append_only() {
+    const out = build();
+    const served = out.sphereRows.filter((r) => r.sphereBoardId < ab.TWIN_BASE);
+    for (const r of served) {
+      const e = out.index[r.sphereBoardId];
+      if (e.group === 'level') { assert.strictEqual(e.twin, undefined, 'a level board has no twin'); continue; }
+      const n = out.ids.avatarTwins[String(e.donorId)];
+      assert.strictEqual(e.twin, ab.TWIN_BASE + n, `twin of ${r.sphereBoardId}`);
+      assert.strictEqual(n, out.ids.avatarBoards[String(e.donorId)], 'a new twin takes the number of its original');
+      const t = out.sphereRows.find((x) => x.sphereBoardId === e.twin);
+      assert.ok(t, `twin row ${e.twin}`);
+      assert.deepStrictEqual([t.arryId, t.masuId], [e.twin, e.twin]);
+      assert.deepStrictEqual({ ...t, sphereBoardId: 0, arryId: 0, masuId: 0, openParam: 0 }, { ...r, sphereBoardId: 0, arryId: 0, masuId: 0, openParam: 0 }, 'same row');
+      const ga = out.arrayRows.find((x) => x.arryId === e.twin), oa = out.arrayRows.find((x) => x.arryId === r.sphereBoardId);
+      assert.deepStrictEqual({ ...ga, arryId: 0 }, { ...oa, arryId: 0 }, 'same layout');
+      const gm = out.masuRows.find((x) => x.masuId === e.twin), om = out.masuRows.find((x) => x.masuId === r.sphereBoardId);
+      assert.deepStrictEqual({ ...gm, masuId: 0, sphereBoardId: 0 }, { ...om, masuId: 0, sphereBoardId: 0 }, 'same rewards');
+      assert.strictEqual(gm.sphereBoardId, e.twin);
+    }
+    assert.ok(!out.index[L].twin);
+    // a chained twin opens after the twin of the board before it
+    const g2 = out.index[idOf(out, G2)];
+    assert.strictEqual(out.sphereRows.find((x) => x.sphereBoardId === g2.twin).openParam, twinOf(out, G1));
+    // twins are not index keys (the Event Catalog joins the index by donor id)
+    const twins = Object.values(out.index).map((e) => e.twin).filter(Boolean);
+    assert.ok(twins.length === 5 && twins.every((t) => !(t in out.index)), 'twins outside the index keys');
+    // never colliding: the twin range 5500000+ is apart from the originals and the level ids
+    const originals = Object.keys(out.index).map(Number);
+    assert.ok(twins.every((t) => t > ab.TWIN_BASE && t <= ab.ID_MAX && !originals.includes(t)));
+    assert.ok(originals.every((id) => id < ab.TWIN_BASE));
+    // stable and append-only: a second run changes nothing; a frozen twin number is kept even when it differs from the original's
+    assert.deepStrictEqual(build(out.ids).ids, out.ids, 'a second run changes nothing');
+    const frozen = build({ avatarBoards: { [A]: 5 }, avatarTwins: { [A]: 77, 424242: 6 } });
+    assert.strictEqual(twinOf(frozen, A), ab.TWIN_BASE + 77, 'a frozen twin number never changes');
+    assert.strictEqual(frozen.ids.avatarTwins['424242'], 6, 'a twin key that disappears keeps its number');
+    assert.ok(!Object.entries(frozen.ids.avatarTwins).some(([k, v]) => k !== '424242' && v === 6), 'a taken number is never given again');
+    assert.throws(() => build({ avatarTwins: { 1: 3, 2: 3 } }), /repeats/);
+    assert.throws(() => build({ avatarBoards: { 1: 500000 } }), /outside/, 'an original number may not reach the twin range');
+    assert.throws(() => ab.checkRanges({ sphere: [{ sphereBoardId: 5500003 }] }), /not ours/);
+  },
+  twin_listing_rules() {
+    const w = world(), o = w.out, a = idOf(o, A), ta = twinOf(o, A), c = idOf(o, C), tc = twinOf(o, C);
+    const row = (id) => o.sphereRows.find((r) => r.sphereBoardId === id);
+    const end = '2019-01-14 08:00:00';
+    // 1. week (on sale this story week): the original, with the week countdown
+    assert.ok(w.r.listedIds(w.player, WEEK1).includes(a) && !w.r.listedIds(w.player, WEEK1).includes(ta));
+    assert.strictEqual(w.r.listState(w.player, ta, WEEK1, null), 'none');
+    // 2. listed only through the keep: the twin, no countdown, the price of the kept window
+    const ids = w.r.listedIds(w.player, WEEK_LATE, 'EV-1');
+    assert.ok(ids.includes(ta) && !ids.includes(a), 'kept only: the twin, never the original');
+    assert.deepStrictEqual([w.r.listState(w.player, ta, WEEK_LATE, 'EV-1'), w.r.listed(w.player, a, WEEK_LATE, 'EV-1')], ['kept', false]);
+    const st = w.r.servedRow(row(ta), { ...WEEK_LATE, weekEnd: end }, 'EV-1');
+    assert.deepStrictEqual([st.endDatetime, st.price], [rb.END, 3000], 'twin: far end, kept price');
+    assert.strictEqual(w.r.servedRow(row(ta), { ...WEEK1, weekEnd: end }, 'EV-1').endDatetime, rb.END, 'a twin row never counts down');
+    // 3. both (in the week and kept): the original only
+    const both = w.r.listedIds(w.player, WEEK1, 'EV-1');
+    assert.ok(both.includes(a) && !both.includes(ta));
+    assert.strictEqual(w.r.servedRow(row(a), { ...WEEK1, weekEnd: end }, 'EV-1').endDatetime, end);
+    // type 1 handed out: the same rule
+    assert.ok(w.r.listedIds(w.player, WEEK_LATE, 'EV-3').includes(tc) && !w.r.listedIds(w.player, WEEK_LATE, 'EV-3').includes(c));
+    assert.ok(w.r.listedIds(w.player, WEEK2, 'EV-3').includes(c) && !w.r.listedIds(w.player, WEEK2, 'EV-3').includes(tc));
+    // 4. bought, outside the week, not kept: the original (far end, no KEPT tab)
+    w.player.freeStone = 3000;
+    assert.ok(w.r.buy(w.player, a, WEEK1).ok);
+    const late = w.r.listedIds(w.player, WEEK_LATE, null);
+    assert.ok(late.includes(a) && !late.includes(ta));
+    assert.strictEqual(w.r.listState(w.player, a, WEEK_LATE, null), 'bought');
+    assert.strictEqual(w.r.servedRow(row(a), { ...WEEK_LATE, weekEnd: end }, null).endDatetime, rb.END);
+    // bought and kept outside the week: listed only through the keep, the twin
+    const keptBought = w.r.listedIds(w.player, WEEK_LATE, 'EV-1');
+    assert.ok(keptBought.includes(ta) && !keptBought.includes(a), 'bought and kept outside the week: the twin');
+    // never together, in any week / keep
+    for (const ctx of [WEEK1, WEEK2, WEEK_RET, WEEK_LATE]) for (const k of [null, 'EV-1', 'EV-3', 'EV-4']) {
+      const l = w.r.listedIds(w.player, ctx, k);
+      for (const d of [A, G1, G2, C, W]) assert.ok(!(l.includes(idOf(o, d)) && l.includes(twinOf(o, d))), `${d} ${ctx.shopFrom} ${k}`);
+    }
+    // a level board is never listed through the keep: no twin
+    assert.ok(!w.r.listedIds(w.player, WEEK_LATE, 'level/285').some((id) => id > ab.TWIN_BASE));
+  },
+  twin_shares_progress() {
+    const w = world(), o = w.out, a = idOf(o, A), ta = twinOf(o, A);
+    w.player.freeStone = 5000; w.player.spherePoint = 1000;
+    assert.ok(w.r.buy(w.player, ta, WEEK_LATE, 'EV-1').ok);
+    // unlock on the twin: the original shows it
+    assert.ok(w.r.update(w.player, ta, 1, false, WEEK_LATE, 'EV-1').ok);
+    assert.deepStrictEqual(Object.keys(w.player.avatarSphere).map(Number), [a], 'the progress is stored on the original only');
+    assert.deepStrictEqual(w.r.sphereOf(w.player, a).unlock, [1]);
+    // the reverse: unlock on the original in its week, the twin shows it
+    assert.ok(w.r.update(w.player, a, 2, false, WEEK1).ok);
+    assert.deepStrictEqual(w.r.sphereOf(w.player, ta).unlock, [1, 2]);
+    assert.strictEqual(w.r.update(w.player, ta, 2, false, WEEK_LATE, 'EV-1').why, 'node', 'a node open on the original is open on the twin');
+    assert.strictEqual(w.r.progress(w.player, ta), 'part');
+    // the twin has its own userSphereBoardId (one client entry per id), the same nodes and date
+    const so = w.r.sphereOf(w.player, a), st = w.r.sphereOf(w.player, ta);
+    assert.ok(so.id !== st.id && st.id > 0);
+    assert.strictEqual(w.r.sphereOf(w.player, ta).id, st.id, 'the twin id is kept');
+    assert.strictEqual(st.getDatetime, so.getDatetime);
+    // unkeep and re-keep: progress kept
+    w.r.markKept(w.player, WEEK_LATE, null);
+    w.r.markKept(w.player, WEEK_LATE, 'EV-1');
+    assert.deepStrictEqual(w.r.sphereOf(w.player, ta).unlock, [1, 2]);
+    assert.strictEqual(w.r.sphereOf(w.player, 5000999), undefined);
+  },
+  twin_buy_once() {
+    // through the twin, then the original
+    let w = world(), a = idOf(w.out, A), ta = twinOf(w.out, A);
+    w.player.freeStone = 5000;
+    assert.strictEqual(w.r.isBuy(w.player, ta), 0, 'the twin is on sale');
+    assert.deepStrictEqual(w.r.buy(w.player, ta, WEEK_LATE, 'EV-1'), { ok: true, price: 3000 }, 'the price of the kept window');
+    assert.deepStrictEqual(w.player.avatarBoardsBought, [a], 'stored on the original');
+    assert.ok(w.player.avatarBoardsSent.includes(ta), 'the client holds the twin');
+    assert.deepStrictEqual([w.r.isBuy(w.player, a), w.r.isBuy(w.player, ta), w.r.owned(w.player, a)], [1, 1, true]);
+    assert.strictEqual(w.r.buy(w.player, a, WEEK1).why, 'bought', 'the original in its week: bought');
+    assert.strictEqual(w.r.buy(w.player, ta, WEEK_LATE, 'EV-1').why, 'bought');
+    assert.strictEqual(w.player.freeStone, 2000, 'charged once');
+    // the reverse: the original, then the twin
+    w = world(); a = idOf(w.out, A); ta = twinOf(w.out, A);
+    w.player.freeStone = 5000;
+    assert.ok(w.r.buy(w.player, a, WEEK1).ok);
+    assert.strictEqual(w.r.buy(w.player, ta, WEEK_LATE, 'EV-1').why, 'bought');
+    assert.strictEqual(w.player.freeStone, 2000);
+    // a twin not listed is not sold (no keep), a hand-out twin is never sold
+    w = world();
+    w.player.freeStone = 5000;
+    assert.strictEqual(w.r.buy(w.player, twinOf(w.out, A), WEEK_LATE, null).why, 'window');
+    assert.strictEqual(w.r.buy(w.player, twinOf(w.out, C), WEEK_LATE, 'EV-3').why, 'unknown');
+    assert.strictEqual(w.player.freeStone, 5000);
+  },
+  twin_reward_once() {
+    const w = world(), a = idOf(w.out, A), ta = twinOf(w.out, A);
+    w.player.freeStone = 5000; w.player.spherePoint = 1000;
+    assert.ok(w.r.buy(w.player, ta, WEEK_LATE, 'EV-1').ok);
+    assert.ok(w.r.update(w.player, ta, 1, false, WEEK_LATE, 'EV-1').ok);
+    const all = w.r.update(w.player, ta, 0, true, WEEK_LATE, 'EV-1');
+    assert.deepStrictEqual(all.nodes, [2, 3, 4]);
+    assert.deepStrictEqual(w.grants.map((g) => g[1]), [0, 1, 2, 3, 22], 'each cell once, the completion once');
+    assert.ok(w.grants.every((g) => g[0] === a), 'the rewards of the original rows (one Booster / skill key per cell)');
+    assert.deepStrictEqual([w.r.complete(w.player, a), w.r.complete(w.player, ta)], [true, true]);
+    // the original afterwards: nothing more
+    assert.strictEqual(w.r.update(w.player, a, 0, true, WEEK1).why, 'node');
+    assert.strictEqual(w.r.update(w.player, a, 3, false, WEEK1).why, 'node');
+    assert.strictEqual(w.grants.length, 5, 'no second grant through the pair');
+    // the chain follows the original's completion: Gem 2 kept after Gem 1 completed through its twin
+    const v = world(), g1 = idOf(v.out, G1), tg2 = twinOf(v.out, G2);
+    v.player.freeStone = 5000; v.player.spherePoint = 1000;
+    assert.ok(!v.r.listedIds(v.player, WEEK_LATE, 'EV-2').includes(tg2), 'Gem 2 twin: not before Gem 1 is complete');
+    assert.ok(v.r.buy(v.player, twinOf(v.out, G1), WEEK_LATE, 'EV-2').ok);
+    v.r.update(v.player, twinOf(v.out, G1), 0, true, WEEK_LATE, 'EV-2');
+    assert.ok(v.r.complete(v.player, g1));
+    assert.ok(v.r.listedIds(v.player, WEEK_LATE, 'EV-2').includes(tg2));
+  },
+  twin_close_on_unkeep() {
+    const LIST_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] };
+    // the return week of the outfit (EV-4) with the coin board EV-3 kept: the outfit listed as itself, the coin board as its twin
+    const w = world(), a = idOf(w.out, A), tc = twinOf(w.out, C);
+    w.player.avatarBoardsSent = [];
+    w.r.list(w.player, WEEK_RET, null, { setSent: true });
+    assert.deepStrictEqual(w.player.avatarBoardsSent, [a]);
+    assert.deepStrictEqual(w.r.markKept(w.player, WEEK_RET, 'EV-3'), [tc], 'the twin waits for the list check');
+    assert.deepStrictEqual(w.r.check(w.player, LIST_CHECK, WEEK_RET, 'EV-3').add, [tc], 'announced: the twin id (6b popup)');
+    assert.ok(!w.r.check(w.player, LIST_CHECK, WEEK_RET, 'EV-3').add.length, 'once');
+    // unkeep: the close check of the list closes the twin, not the original in its week
+    w.r.markKept(w.player, WEEK_RET, null);
+    const r = w.r.check(w.player, LIST_CLOSE, WEEK_RET, null);
+    assert.deepStrictEqual(r.close, [tc]);
+    assert.deepStrictEqual(w.player.avatarBoardsSent, [a]);
+    // an original the client held is closed when the keep makes it a twin (bought, its week over, then kept)
+    const v = world(), va = idOf(v.out, A), vta = twinOf(v.out, A);
+    v.player.freeStone = 3000;
+    assert.ok(v.r.buy(v.player, va, WEEK1).ok);
+    v.r.markKept(v.player, WEEK_LATE, 'EV-1');
+    assert.deepStrictEqual(v.r.check(v.player, LIST_CHECK, WEEK_LATE, 'EV-1').add, [vta]);
+    assert.deepStrictEqual(v.r.check(v.player, LIST_CLOSE, WEEK_LATE, 'EV-1').close, [va], 'the original closed, the twin stays');
+  },
 };
 
 // ---- server.js: two fixture boards on the local master (an outfit on sale with a skill medal, a coin board) ----
@@ -463,7 +644,7 @@ const haveMaster = fs.existsSync(path.join(MASTER_DIR, 'sphere.json')) && fs.exi
 const serverTests = {};
 let cleanup = () => {};
 if (haveMaster) {
-  const SA = 5999901, SC = 5999902;
+  const SA = 5999901, SC = 5999902, SAT = 5999903, SCT = 5999904; // SAT / SCT: their KEPT twins (Task 6c)
   const readFile = fs.readFileSync;
   const medal = JSON.parse(readFile(path.join(MASTER_DIR, 'medal.json'), 'utf8'))[0];
   const skill = JSON.parse(readFile(path.join(MASTER_DIR, 'skill.json'), 'utf8'))[0];
@@ -480,9 +661,10 @@ if (haveMaster) {
   const row = (id, name, type, price) => ({ sphereBoardId: id, boardName: name, kindId: 1, boardId: type === 2 ? 2 : 12, arryId: id, masuId: id, type, openId: 3, openParam: 0,
     price, detailUrl: '', startDatetime: '2015-01-01 08:00:00', endDatetime: rb.END });
   const EXTRA = {
-    'sphere.json': [row(SA, 'Fixture Outfit', 2, 3000), row(SC, 'Fixture Coins', 1, 0)],
-    'sphereArray.json': [rb.gridRow(SA, 2), rb.gridRow(SC, 1)],
-    'sphereMasu.json': [masu(SA, [[5, 3, medal.medalId, 1, skill.skillId], [5, 2, 0, 10]], [2, 0, 50]), masu(SC, [[3, 2, 0, 1]], [2, 0, 5])],
+    'sphere.json': [row(SA, 'Fixture Outfit', 2, 3000), row(SC, 'Fixture Coins', 1, 0), row(SAT, 'Fixture Outfit', 2, 3000), row(SCT, 'Fixture Coins', 1, 0)],
+    'sphereArray.json': [rb.gridRow(SA, 2), rb.gridRow(SC, 1), rb.gridRow(SAT, 2), rb.gridRow(SCT, 1)],
+    'sphereMasu.json': [masu(SA, [[5, 3, medal.medalId, 1, skill.skillId], [5, 2, 0, 10]], [2, 0, 50]), masu(SC, [[3, 2, 0, 1]], [2, 0, 5]),
+      masu(SAT, [[5, 3, medal.medalId, 1, skill.skillId], [5, 2, 0, 10]], [2, 0, 50]), masu(SCT, [[3, 2, 0, 1]], [2, 0, 5])],
   };
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-avatar-boards-'));
   process.env.KHUX_SAVE = path.join(dir, 'save.json');
@@ -504,8 +686,8 @@ if (haveMaster) {
   const ctx = quiet(() => t.avatarCtx());
   const win = [ctx.shopFrom, ctx.shopTo];
   fs.writeFileSync(process.env.KHUX_AVATAR_INDEX, JSON.stringify({ index: {
-    [SA]: { key: 'EV-9/outfit', group: 'outfit', type: 2, window: win, price: 3000, windows: [{ key: 'EV-9/outfit', censusId: 'EV-9', window: win, price: 3000, labels: [] }] },
-    [SC]: { key: 'EV-8/avatarCoin', group: 'avatarCoin', type: 1, window: win, price: 0, windows: [{ key: 'EV-8/avatarCoin', censusId: 'EV-8', window: win, price: 0, labels: [] }] } } }));
+    [SA]: { key: 'EV-9/outfit', group: 'outfit', type: 2, window: win, price: 3000, windows: [{ key: 'EV-9/outfit', censusId: 'EV-9', window: win, price: 3000, labels: [] }], twin: SAT },
+    [SC]: { key: 'EV-8/avatarCoin', group: 'avatarCoin', type: 1, window: win, price: 0, windows: [{ key: 'EV-8/avatarCoin', censusId: 'EV-8', window: win, price: 0, labels: [] }], twin: SCT } } }));
   const list = () => quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas;
   const byId = (datas, id) => datas.find((d) => d.sphereBoardId === id);
   cleanup = () => { fs.readFileSync = readFile; try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp */ } };
@@ -593,6 +775,38 @@ if (haveMaster) {
         assert.strictEqual(shown(), 1500, 'kept: the price of the kept window');
         assert.notStrictEqual(quiet(body), before, 'board keep changed: the body is made again');
       } finally { p.events = ev; p.avatarBoards = avb; }
+    },
+    // Task 6c: the coin board listed only by the keep is its KEPT twin: the original's progress under the twin id, its own
+    // userSphereBoardId, never opened by the Lux level path, a node unlocked on the twin is the original's
+    server_kept_twin() {
+      const doc = JSON.parse(readFile(process.env.KHUX_AVATAR_INDEX, 'utf8'));
+      doc.index[SC].windows = [{ key: 'EV-8/avatarCoin', censusId: 'EV-8', window: ['2015-03-02', '2015-03-08'], price: 0, labels: [] }];
+      fs.writeFileSync(process.env.KHUX_AVATAR_INDEX, JSON.stringify(doc));
+      fs.utimesSync(process.env.KHUX_AVATAR_INDEX, new Date(), new Date(Date.now() + 10000));
+      const avb = p.avatarBoards;
+      try {
+        p.avatarBoards = { kept: 'EV-8' };
+        const datas = list();
+        assert.ok(byId(datas, SCT) && !byId(datas, SC), 'kept only: the twin, not the original');
+        assert.ok(!(SCT in (p.sphere || {})) && !(SAT in (p.sphere || {})), 'a twin is not a standard board of the Lux level path');
+        assert.ok(!(SCT in p.avatarSphere), 'the progress stays on the original');
+        const td = byId(datas, SCT);
+        assert.notStrictEqual(td.userSphereBoardId, p.avatarSphere[SC].id, 'the twin has its own userSphereBoardId');
+        const ids = datas.map((d) => d.userSphereBoardId);
+        assert.strictEqual(new Set(ids).size, ids.length, 'one userSphereBoardId sequence');
+        assert.deepStrictEqual(td.unlockMasuIds, p.avatarSphere[SC].unlock);
+        p.spherePoint = 10;
+        const u = call(t.respondSphereUpdate, { sphereBoardId: SCT, releaseMasuId: 1 });
+        assert.deepStrictEqual(u.userSphere.userSphereDatas.map((d) => [d.sphereBoardId, d.unlockMasuIds]), [[SCT, [1]]]);
+        assert.deepStrictEqual(p.avatarSphere[SC].unlock, [1], 'unlocked on the original');
+        assert.strictEqual(p.spherePoint, 7);
+        // the list check hands the twin out (a hand-out board is announced once), then the unkeep: the list check with 3 closes it
+        const add = call(t.respondSphereCheck, { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] });
+        assert.ok(add.userSphere.userSphereDatas.some((d) => d.sphereBoardId === SCT), 'the twin handed out');
+        p.avatarBoards = { kept: null };
+        const c = call(t.respondSphereCheck, { checkTypes: [3], boardTypes: [1] });
+        assert.ok(c.closeEventSphereBoardIds.includes(SCT), 'unkeep: the twin closed');
+      } finally { p.avatarBoards = avb; }
     },
   });
 } else console.log('test-avatar-boards: server part skipped (no master_data)');

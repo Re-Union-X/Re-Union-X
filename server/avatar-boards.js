@@ -21,7 +21,15 @@
 //   not bought is never announced by a check (the client pops «Unlocked an Avatar Board!» per new entry): it reaches the client
 //   only through GET /user/sphere. Its served `endDatetime` is the end of the story week in fake time, the moment the Shop
 //   rotates (the «Offer ends in» countdown); its served `price` that of the window it is listed in.
-// Save: player.avatarSphere {[id]: {id, unlock[], getDatetime}} (progress, kept for good), player.avatarBoardsBought [id],
+// - KEPT twins (Task 6c, user 15-11): every served board but the level ones has a twin, sphereBoardId = arryId = masuId =
+//   TWIN_BASE + n (event_ids.json `avatarTwins` {"<donorId>": n}, append-only; a new twin takes the number of its original, so
+//   twin = original + 500000 unless that number is taken), own rows with the same layout and rewards, own card
+//   img/sphere_incentive/<twinId>.png (the original card with a KEPT BOARD tab, recon/tools/make_avatar_kept_cards.py). The
+//   twin is listed INSTEAD of the original when the board is listed only by the catalogue keep (listState 'kept'), with no
+//   countdown; original and twin are never listed together. A twin is an alias: purchase, progress, rewards and chain all live on
+//   the original id (index[original].twin; twins are not index keys).
+// Save: player.avatarSphere {[id]: {id, unlock[], getDatetime, twinId?}} (progress, kept for good, on the ORIGINAL id; twinId =
+// the userSphereBoardId of its twin), player.avatarBoardsBought [id] (original ids),
 // player.avatarBoardsSent [id] (the boards the client holds as far as the server knows, for closeEventSphereBoardIds).
 'use strict';
 const fs = require('fs');
@@ -30,6 +38,7 @@ const rb = require('./raid-boards');
 const eventBoards = require('./event-boards');
 
 const ID_BASE = 5000000, ID_MAX = 5999999;
+const TWIN_BASE = 5500000; // KEPT twins: 5500001+, the originals 5000001-5499999
 const SALE = 2, HANDOUT = 1;
 const LEVEL_IDS = [2100119, 2100126]; // the level avatar boards keep their original ids (CENSUS.md, Task 1)
 const START = '2015-01-01 08:00:00';
@@ -58,13 +67,29 @@ function checkNumbers(map, what, max) {
 // event_ids.json `avatarBoards`: one number per donor board (not level), in record order; existing numbers never change
 function allocate(entries, ids) {
   const boards = { ...((ids || {}).avatarBoards || {}) };
-  checkNumbers(boards, 'avatar board', ID_MAX - ID_BASE);
+  checkNumbers(boards, 'avatar board', TWIN_BASE - ID_BASE - 1);
   let next = Math.max(0, ...Object.values(boards)) + 1;
   for (const e of entries) {
     if (e.group === 'level') continue;
     for (const b of e.boards || []) { const k = String(b.donorId); if (!(k in boards)) boards[k] = next++; }
   }
   return boards;
+}
+
+// event_ids.json `avatarTwins` (Task 6c): one number per donor board of `avatarBoards`; frozen numbers never change, a new one takes
+// the number of its original (twin = original + 500000), the next free number when that one is taken
+function allocateTwins(boards, ids) {
+  const twins = { ...((ids || {}).avatarTwins || {}) };
+  checkNumbers(twins, 'avatar twin', ID_MAX - TWIN_BASE);
+  const used = new Set(Object.values(twins));
+  let next = Math.max(0, ...Object.values(boards), ...used) + 1;
+  for (const [k, n] of Object.entries(boards)) {
+    if (k in twins) continue;
+    twins[k] = used.has(n) ? next++ : n;
+    used.add(twins[k]);
+  }
+  checkNumbers(twins, 'avatar twin', ID_MAX - TWIN_BASE);
+  return twins;
 }
 
 // A sphere / sphereArray / sphereMasu row of the master in our ranges that is not ours stops the run (rows of a previous run are
@@ -97,11 +122,12 @@ function matchCell(ix, c) {
 function buildAvatarBoards({ records, master, ids, boosters = null }) {
   const entries = (records && records.entries) || [];
   const numbers = allocate(entries, ids);
+  const twinNumbers = allocateTwins(numbers, ids);
   const idx = rb.itemIndex(master);
   const ix = { idx, material: new Set((master.material || []).map((r) => r.materialId)), title: new Set((master.title || []).map((r) => r.titleId)),
     avatar: new Set((master.avatarParts || []).map((r) => r.avatarPartsId)), pet: new Set((master.petParts || []).map((r) => r.petPartsId)),
     boosters: boosters ? new Set([...boosters].map(Number)) : null, skill: new Set((master.skill || []).map((r) => r.skillId)) };
-  const out = { sphereRows: [], arrayRows: [], masuRows: [], art: [], index: {}, ids: { avatarBoards: numbers }, report: { unmatched: [], held: [] } };
+  const out = { sphereRows: [], arrayRows: [], masuRows: [], art: [], index: {}, ids: { avatarBoards: numbers, avatarTwins: twinNumbers }, report: { unmatched: [], held: [] } };
 
   // one board per donor id, with every entry (window) it belongs to
   const boards = new Map();
@@ -123,6 +149,8 @@ function buildAvatarBoards({ records, master, ids, boosters = null }) {
     }
     return ID_BASE + numbers[String(donorId)];
   };
+  const twinIdOf = (donorId) => TWIN_BASE + twinNumbers[String(donorId)];
+  const twinRows = { sphere: [], array: [], masu: [] };
 
   const state = new Map(); // donorId -> {cells, done, unpriced?} | {skip, keys?}
   const priced = (e) => Number(e.price) > 0;
@@ -189,7 +217,21 @@ function buildAvatarBoards({ records, master, ids, boosters = null }) {
     out.index[id] = { key: first.key, group: first.group, type, window: first.window || null, price: windows[0].price, windows,
       ...(first.group === 'level' ? { level: Number(first.level) } : {}), ...(chained ? { chain: idOf(b.openParam) } : {}),
       ...(es.every((e) => e.permanent === true) ? { permanent: true } : {}), donorId, name: b.name };
+    // the KEPT twin (Task 6c): the same rows under its own id; a chained twin opens after the twin of the board before it
+    if (first.group !== 'level') {
+      const t = twinIdOf(donorId), row = out.sphereRows[out.sphereRows.length - 1];
+      twinRows.sphere.push({ ...row, sphereBoardId: t, arryId: t, masuId: t, ...(chained ? { openParam: twinIdOf(b.openParam) } : {}) });
+      twinRows.array.push({ ...out.arrayRows[out.arrayRows.length - 1], arryId: t });
+      const tm = { masuId: t, sphereBoardId: t };
+      for (const key of rb.MASU_KEYS) tm[key] = [...masu[key]];
+      twinRows.masu.push(tm);
+      out.index[id].twin = t;
+    }
   }
+  // the twins after every original (the originals keep their order in the tables)
+  out.sphereRows.push(...twinRows.sphere);
+  out.arrayRows.push(...twinRows.array);
+  out.masuRows.push(...twinRows.masu);
   return out;
 }
 
@@ -237,16 +279,34 @@ const cellSkill = (masu, i) => (masu && masu.rewardSelect[i] === 3 && (masu.rewa
 // boardKept; never the kept event) or null
 function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = Date.now, nextUserSphereId, log = () => {} }) {
   const ix = () => (typeof index === 'function' ? index() : index) || {};
-  const info = (id) => ix()[Number(id)];
+  // KEPT twins (Task 6c): twin -> original and original -> twin, made again when the index object changes
+  let pairs = null, pairsFor = null;
+  function pairMaps() {
+    const x = ix();
+    if (pairsFor !== x) {
+      pairsFor = x;
+      pairs = { twin: new Map(), orig: new Map() };
+      for (const [k, e] of Object.entries(x)) if (e && e.twin) { pairs.twin.set(Number(k), Number(e.twin)); pairs.orig.set(Number(e.twin), Number(k)); }
+    }
+    return pairs;
+  }
+  const origOf = (id) => pairMaps().orig.get(Number(id)) ?? Number(id);
+  const isTwin = (id) => pairMaps().orig.has(Number(id));
+  const twinOf = (id) => pairMaps().twin.get(Number(id)) || null;
+  // the index entry of a board or of its twin (the original's)
+  const info = (id) => ix()[origOf(id)];
   const bought = (player) => new Set((player.avatarBoardsBought || []).map(Number));
   const rowOf = (t, key, id) => master(t).find((r) => r[key] === Number(id));
+  // the twin of a board when its rows are in the master, else null
+  const twinServed = (id) => { const t = twinOf(id); return t && rowOf('sphere', 'sphereBoardId', t) ? t : null; };
   function nodesOf(id) {
     const board = rowOf('sphere', 'sphereBoardId', id), arr = board && rowOf('sphereArray', 'arryId', board.arryId);
     const nodes = new Set();
     for (const k of GRID_KEYS) for (const v of (arr && arr[k]) || []) if (v >= 1 && v <= CELLS) nodes.add(v);
     return [...nodes].sort((a, b) => a - b);
   }
-  const complete = (player, id) => { const s = (player.avatarSphere || {})[id], n = nodesOf(id); return !!(s && n.length && n.every((x) => s.unlock.includes(x))); };
+  // on the original (a twin's progress is its original's)
+  const complete = (player, id) => { const o = origOf(id), s = (player.avatarSphere || {})[o], n = nodesOf(o); return !!(s && n.length && n.every((x) => s.unlock.includes(x))); };
 
   // the window an id is listed in now: the story week's, else the kept one's; null when neither
   function windowNow(id, ctx, kept) {
@@ -256,33 +316,69 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   }
   // why a board is listed for this player now, or why not: 'week' (a window in the story week), 'bought' (outside its windows),
   // 'kept', 'level', or not listed: 'chain' (a window in the week, but the board before it is not complete), 'none'. The one
-  // decision of the listing; the Event Catalog reads it too (routes-events.js avatarBoardState, Task 5 fix round 2)
+  // decision of the listing; the Event Catalog reads it too (routes-events.js avatarBoardState, Task 5 fix round 2).
+  // Task 6c: a board 'kept' with a served twin is listed AS ITS TWIN (listedIds), and so is a board bought, outside its week and
+  // kept ('kept', not 'bought': it is listed only through the keep); a twin is 'kept' exactly then, else 'none'
   function listState(player, id, ctx = {}, kept = null) {
+    if (isTwin(id)) {
+      if (!rowOf('sphere', 'sphereBoardId', id)) return 'none';
+      return listState(player, origOf(id), ctx, kept) === 'kept' ? 'kept' : 'none';
+    }
     const e = info(id);
     if (!e || !rowOf('sphere', 'sphereBoardId', id)) return 'none';
     const week = (e.windows || []).some((w) => inWeek(w.window, ctx));
-    if (e.type === SALE && bought(player).has(Number(id))) return week ? 'week' : 'bought';
+    if (e.type === SALE && bought(player).has(Number(id))) {
+      if (week) return 'week';
+      return twinServed(id) && (e.windows || []).some((w) => isKept(w, kept)) ? 'kept' : 'bought';
+    }
     if (e.chain && !complete(player, e.chain)) return week ? 'chain' : 'none';
     if (e.group === 'level') return Number(ctx.level) >= e.level ? 'level' : 'none';
     if (week) return 'week';
     return windowNow(id, ctx, kept) ? 'kept' : 'none';
   }
-  // in the master (a served row) and listed for this player now
-  const listed = (player, id, ctx = {}, kept = null) => !['none', 'chain'].includes(listState(player, id, ctx, kept));
+  // in the master (a served row) and listed for this player now: a board 'kept' with a served twin is listed as the twin only
+  function listed(player, id, ctx = {}, kept = null) {
+    const st = listState(player, id, ctx, kept);
+    if (st === 'none' || st === 'chain') return false;
+    return isTwin(id) || !(st === 'kept' && twinServed(id));
+  }
+  // the board or its twin listed now (the client may still hold the other one until the close check)
+  function pairListed(player, id, ctx, kept) {
+    const o = origOf(id), t = twinServed(o);
+    return listed(player, o, ctx, kept) || (!!t && listed(player, t, ctx, kept));
+  }
   function listedIds(player, ctx = {}, kept = null) {
-    return Object.keys(ix()).map(Number).filter((id) => listed(player, id, ctx, kept)).sort((a, b) => a - b);
+    const out = [];
+    for (const id of Object.keys(ix()).map(Number)) {
+      const st = listState(player, id, ctx, kept);
+      if (st === 'none' || st === 'chain') continue;
+      out.push(st === 'kept' && twinServed(id) ? twinOf(id) : id);
+    }
+    return out.sort((a, b) => a - b);
   }
-  // the board's progress, made the first time it is listed and kept for good
+  // the board's progress, made the first time it is listed and kept for good, on the original id; a twin also gets its own
+  // userSphereBoardId (twinId: one client entry per id)
   function stateOf(player, id) {
+    const o = origOf(id);
     player.avatarSphere ||= {};
-    if (!player.avatarSphere[id]) player.avatarSphere[id] = { id: nextUserSphereId(), unlock: [], getDatetime: now() };
-    return player.avatarSphere[id];
+    if (!player.avatarSphere[o]) player.avatarSphere[o] = { id: nextUserSphereId(), unlock: [], getDatetime: now() };
+    const s = player.avatarSphere[o];
+    if (o !== Number(id) && !s.twinId) s.twinId = nextUserSphereId();
+    return s;
   }
-  const isBuy = (player, id) => (info(id) && info(id).type === SALE && !bought(player).has(Number(id)) ? 0 : 1);
+  // the progress as the client sees it under this id (server.js userSphereData): the original's state, under the twin's own
+  // userSphereBoardId for a twin; undefined when the board has none
+  function sphereOf(player, id) {
+    const o = origOf(id), s = (player.avatarSphere || {})[o];
+    if (!s || o === Number(id)) return s;
+    if (!s.twinId) s.twinId = nextUserSphereId();
+    return { id: s.twinId, unlock: s.unlock, getDatetime: s.getDatetime };
+  }
+  const isBuy = (player, id) => (info(id) && info(id).type === SALE && !bought(player).has(origOf(id)) ? 0 : 1);
   const onSale = (player, id) => isBuy(player, id) === 0;
 
   // the price served and charged: the window it is listed in (a returning board was often cheaper), else the row's
-  function priceNow(id, ctx, kept) { const w = windowNow(id, ctx, kept), e = info(id); return w ? w.price : e ? e.price : 0; }
+  function priceNow(id, ctx, kept) { const w = windowNow(origOf(id), ctx, kept), e = info(id); return w ? w.price : e ? e.price : 0; }
 
   // the master row as served: a type-2 row with a window in the story week counts down to the end of that week and shows the price
   // of its window now. A permanent one (Start-Up Boost Board, Task 6b: listed in every week) and one listed only through the kept
@@ -290,6 +386,8 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   function servedRow(row, ctx = {}, kept = null) {
     const e = info(row.sphereBoardId);
     if (!e || e.type !== SALE) return row;
+    // a KEPT twin is listed only through the keep: never a weekly countdown (Task 6c)
+    if (isTwin(row.sphereBoardId)) return { ...row, price: priceNow(row.sphereBoardId, ctx, kept) || row.price };
     const week = !e.permanent && (e.windows || []).some((w) => inWeek(w.window, ctx));
     return { ...row, ...(ctx.weekEnd && week ? { endDatetime: ctx.weekEnd } : {}), price: priceNow(row.sphereBoardId, ctx, kept) || row.price };
   }
@@ -345,31 +443,33 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
 
   // POST /user/sphere/buy {sphereBoardId}: {ok, price} | {ok: false, why: 'unknown' | 'bought' | 'window' | 'jewels'}. Jewels are
   // the free ones (player.freeStone, the Shop's wallet); nothing changes on a refusal
+  // Task 6c: buying a twin buys its original (stored on the original id, the price of the kept window); the pair is bought once
   function buy(player, sphereBoardId, ctx = {}, kept = null) {
-    const id = Number(sphereBoardId), e = info(id);
-    if (!e || e.type !== SALE || !rowOf('sphere', 'sphereBoardId', id)) return { ok: false, why: 'unknown' };
+    const asked = Number(sphereBoardId), id = origOf(asked), e = info(asked);
+    if (!e || e.type !== SALE || !rowOf('sphere', 'sphereBoardId', asked)) return { ok: false, why: 'unknown' };
     if (bought(player).has(id)) return { ok: false, why: 'bought' };
-    if (!listed(player, id, ctx, kept)) return { ok: false, why: 'window' };
+    if (!pairListed(player, asked, ctx, kept)) return { ok: false, why: 'window' };
     const price = priceNow(id, ctx, kept);
     if (!(price > 0)) return { ok: false, why: 'unknown' };
     if ((player.freeStone || 0) < price) return { ok: false, why: 'jewels', price };
     player.freeStone -= price;
     player.avatarBoardsBought = [...bought(player), id].sort((a, b) => a - b);
-    stateOf(player, id);
+    stateOf(player, asked);
     // the client merges the board from this answer: it holds it now, so a later check must not announce it
-    player.avatarBoardsSent = [...new Set([...(player.avatarBoardsSent || []).map(Number), id])];
-    log(`[avatar boards] ${id} bought for ${price} Jewels`);
+    player.avatarBoardsSent = [...new Set([...(player.avatarBoardsSent || []).map(Number), asked])];
+    log(`[avatar boards] ${id}${asked !== id ? ` (KEPT twin ${asked})` : ''} bought for ${price} Jewels`);
     return { ok: true, price };
   }
 
   // POST /user/sphere/update on one of these boards: {ok, why?, nodes, cost}. Refused when not listed, on sale (not bought), the
   // node is not on the board or already open, or the Avatar Coins are short. The completion reward (index 22) once
+  // Task 6c: a twin unlocks the nodes of its original (one state, the original's rows: every reward once across the pair)
   function update(player, boardId, releaseMasuId, allOpen = false, ctx = {}, kept = null) {
-    const id = Number(boardId);
-    if (!info(id)) return { ok: false, why: 'not an avatar board', nodes: [], cost: 0 };
-    if (!listed(player, id, ctx, kept)) return { ok: false, why: 'not listed', nodes: [], cost: 0 };
+    const asked = Number(boardId), id = origOf(asked);
+    if (!info(asked)) return { ok: false, why: 'not an avatar board', nodes: [], cost: 0 };
+    if (!pairListed(player, asked, ctx, kept)) return { ok: false, why: 'not listed', nodes: [], cost: 0 };
     if (onSale(player, id)) return { ok: false, why: 'not bought', nodes: [], cost: 0 };
-    const s = stateOf(player, id), masu = rowOf('sphereMasu', 'masuId', id), nodes = nodesOf(id);
+    const s = stateOf(player, asked), masu = rowOf('sphereMasu', 'masuId', id), nodes = nodesOf(id);
     const todo = allOpen ? nodes.filter((n) => !s.unlock.includes(n)) : [Number(releaseMasuId)].filter((n) => nodes.includes(n) && !s.unlock.includes(n));
     const cost = todo.reduce((t, n) => t + ((masu && masu.spherePoint[n - 1]) || 0), 0);
     if (!masu || !todo.length) return { ok: false, why: 'node', nodes: todo, cost };
@@ -398,21 +498,23 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   const isAvatarBoard = (id) => !!info(id);
   // Avatar Board Catalog filters (Task 5c, user 15-11). owned: a board on sale (type 2) once bought (avatarBoardsBought); a board
   // handed out (type 1) once the client was given it (avatarBoardsSent) or once one of its nodes is unlocked
-  function owned(player, id) {
-    const e = info(id);
+  function owned(player, asked) {
+    const e = info(asked), id = origOf(asked);
     if (!e) return false;
     if (e.type === SALE) return bought(player).has(Number(id));
     const s = (player.avatarSphere || {})[Number(id)];
     return (player.avatarBoardsSent || []).map(Number).includes(Number(id)) || !!(s && (s.unlock || []).length);
   }
   // the board's nodes: 'done' (every node unlocked), 'part' (some), 'none'
-  function progress(player, id) {
-    if (!info(id)) return 'none';
+  function progress(player, asked) {
+    if (!info(asked)) return 'none';
+    const id = origOf(asked);
     const s = (player.avatarSphere || {})[Number(id)];
     if (!s || !(s.unlock || []).length) return 'none';
     return complete(player, Number(id)) ? 'done' : 'part';
   }
-  return { listedIds, listed, listState, list, check, buy, update, markKept, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete, owned, progress };
+  return { listedIds, listed, listState, list, check, buy, update, markKept, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, sphereOf, complete, owned, progress,
+    origOf, twinOf, isTwin };
 }
 
 // ------------------------------------------------------------------------------------------------- Event Catalog ---
@@ -483,7 +585,7 @@ function patch(masterDir, opts = {}) {
   if (!records) console.warn('avatar boards: KHUX_AVATAR_BOARDS not set or not readable (the private board records): no avatar board');
   const boosters = opts.boosters || Object.keys(readJson(path.join(gameData, 'boosters.json'), { byId: {} }).byId || {}).map(Number);
   const out = records ? buildAvatarBoards({ records, master, ids, boosters })
-    : { sphereRows: [], arrayRows: [], masuRows: [], art: [], index: {}, ids: { avatarBoards: ids.avatarBoards || {} }, report: { unmatched: [], held: [] } };
+    : { sphereRows: [], arrayRows: [], masuRows: [], art: [], index: {}, ids: { avatarBoards: ids.avatarBoards || {}, ...(ids.avatarTwins ? { avatarTwins: ids.avatarTwins } : {}) }, report: { unmatched: [], held: [] } };
   fs.writeFileSync(file('sphere'), JSON.stringify([...master.sphere, ...out.sphereRows]));
   fs.writeFileSync(file('sphereArray'), JSON.stringify([...master.sphereArray, ...out.arrayRows]));
   fs.writeFileSync(file('sphereMasu'), JSON.stringify([...master.sphereMasu, ...out.masuRows]));
@@ -493,21 +595,23 @@ function patch(masterDir, opts = {}) {
   fs.writeFileSync(outFile, JSON.stringify({ index: out.index, art: out.art, report: { ...out.report, records: records ? { held: records.held || [], unmapped: records.unmapped || [] } : null,
     skillsFromDonor: Object.fromEntries(Object.entries(imported.ids).map(([d, v]) => [d, { ...v, label: 'skillFromDonor' }])) }, own }, null, 1));
   // the numbers, append-only, into the shared ids file (make-events.js keeps the keys it does not know)
-  const next = { ...readJson(idsFile, {}), avatarBoards: out.ids.avatarBoards, avatarSkills: imported.ids };
+  const next = { ...readJson(idsFile, {}), avatarBoards: out.ids.avatarBoards, avatarSkills: imported.ids, ...(out.ids.avatarTwins ? { avatarTwins: out.ids.avatarTwins } : {}) };
   const text = JSON.stringify(next, null, 1) + '\n';
   let old = null;
   try { old = fs.readFileSync(idsFile, 'utf8').replace(/\r\n/g, '\n'); } catch { /* first run */ }
   if (old !== text) fs.writeFileSync(idsFile, text);
-  const byType = out.sphereRows.reduce((m, r) => ((m[r.type] = (m[r.type] || 0) + 1), m), {});
+  const isTwinRow = (r) => r.sphereBoardId > TWIN_BASE && r.sphereBoardId <= ID_MAX;
+  const twins = out.sphereRows.filter(isTwinRow).length;
+  const byType = out.sphereRows.filter((r) => !isTwinRow(r)).reduce((m, r) => ((m[r.type] = (m[r.type] || 0) + 1), m), {});
   // a board held in some windows only (priceUnknown, its priced windows served) is in the index too
   const servedDonors = new Set(Object.values(out.index).map((e) => e.donorId));
   const partly = out.report.held.filter((h) => servedDonors.has(h.donorId)).length, whole = out.report.held.length - partly;
-  console.log(`avatar boards: +${out.sphereRows.length} boards (type 2: ${byType[2] || 0}, type 1: ${byType[1] || 0}), ${whole} held, ${partly} held in some windows only, `
+  console.log(`avatar boards: +${out.sphereRows.length - twins} boards (type 2: ${byType[2] || 0}, type 1: ${byType[1] || 0}) and ${twins} KEPT twins, ${whole} held, ${partly} held in some windows only, `
     + `${out.report.unmatched.length} cells unmatched; +${imported.rows.length} skills from the donated master`);
   return out;
 }
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { buildAvatarBoards, importDonorSkills, avatarBoardRoutes, catalogIndex, windowInWeek: inWeek, allocate, checkRanges, matchCell, cellSkill, weekEndFake, patch,
-  ID_BASE, ID_MAX, LEVEL_IDS, DONOR_SKILLS, SALE, HANDOUT };
+module.exports = { buildAvatarBoards, importDonorSkills, avatarBoardRoutes, catalogIndex, windowInWeek: inWeek, allocate, allocateTwins, checkRanges, matchCell, cellSkill, weekEndFake, patch,
+  ID_BASE, ID_MAX, TWIN_BASE, LEVEL_IDS, DONOR_SKILLS, SALE, HANDOUT };
