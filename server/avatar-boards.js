@@ -304,8 +304,9 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     for (const id of ids) stateOf(player, id);
     if (setSent === true || setSent === 'merge') {
       const keep = (player.avatarBoardsSent || []).map(Number).filter((id) => setSent === 'merge' || ids.includes(id));
-      // a kept board waiting for the list check (markKept) is delivered by this list: the client holds it now
-      const pending = (player.avatarBoardsKeptPending || []).map(Number).filter((id) => ids.includes(id));
+      // a kept board waiting for the list check (markKept) is delivered by this list: the client holds it now (only while its
+      // listState is 'kept'; a stale pending id is dropped)
+      const pending = (player.avatarBoardsKeptPending || []).map(Number).filter((id) => ids.includes(id) && listState(player, id, ctx, kept) === 'kept');
       player.avatarBoardsSent = [...new Set([...keep, ...ids.filter((id) => onSale(player, id)), ...pending])].sort((a, b) => a - b);
       delete player.avatarBoardsKeptPending;
     }
@@ -314,16 +315,20 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
 
   // POST /user/sphere/check: {add, close}. checkTypes with 3 closes the boards sent that are no longer listed; otherwise the boards
   // handed out or bought that the client does not hold yet, once each, when boardTypes (if given) has their type. A board on sale
-  // is never added by the home check: every new entry pops «Unlocked an Avatar Board!». The boards of a kept catalogue entry
-  // (markKept: player.avatarBoardsKeptPending) skip the home check and go with the check of the Avatar Boards list (boardTypes
-  // without 3, sent when the player enters the list), on sale or not: the client asks GET /user/sphere only at login (Task 6b bench)
+  // is never added: every new entry pops «Unlocked an Avatar Board!». The one exception, by USER DECISION 15-11: the boards of a
+  // kept catalogue entry (markKept: player.avatarBoardsKeptPending) whose CURRENT listState is 'kept' are announced by the check
+  // of the Avatar Boards list (boardTypes without 3, sent when the player enters the list) even when on sale, never by the home
+  // check: the client asks GET /user/sphere only at login (Task 6b bench). A pending id no longer 'kept' (unkept, keep changed,
+  // listed for its own week) is dropped and follows the normal rule
   function check(player, body = {}, ctx = {}, kept = null) {
     const types = (body.checkTypes || []).map(Number), boards = Array.isArray(body.boardTypes) ? body.boardTypes.map(Number) : null;
     const ids = listedIds(player, ctx, kept), sent = new Set((player.avatarBoardsSent || []).map(Number));
-    const pending = new Set((player.avatarBoardsKeptPending || []).map(Number).filter((id) => ids.includes(id) && !sent.has(id)));
+    const pending = new Set((player.avatarBoardsKeptPending || []).map(Number)
+      .filter((id) => ids.includes(id) && !sent.has(id) && listState(player, id, ctx, kept) === 'kept'));
     if (types.includes(3)) {
       const close = [...sent].filter((id) => !ids.includes(id)).sort((a, b) => a - b);
       player.avatarBoardsSent = [...sent].filter((id) => ids.includes(id));
+      if (player.avatarBoardsKeptPending) { if (pending.size) player.avatarBoardsKeptPending = [...pending]; else delete player.avatarBoardsKeptPending; }
       return { add: [], close };
     }
     const listCheck = !!boards && !boards.includes(3);
@@ -379,13 +384,14 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   // Avatar Board Catalog keep (Task 5b, routes-events.js keepBoard): the boards listed only because of the kept entry ('kept'), with
   // their progress, wait in player.avatarBoardsKeptPending: the home check announces none of them (the Task 6 bench saw one
   // «Unlocked an Avatar Board!» popup per kept board, 21 in a row) and the check of the Avatar Boards list delivers them (Task 6b
-  // bench: GET /user/sphere, which lists them too, comes only at login). -> the ids pending
+  // bench: GET /user/sphere, which lists them too, comes only at login; announced even on sale, user decision 15-11). Called on
+  // every keep, keep change and unkeep (kept null): the pending list is REPLACED, so the boards of an older keep never stay
+  // pending. -> the ids pending
   function markKept(player, ctx = {}, kept = null) {
     const sent = new Set((player.avatarBoardsSent || []).map(Number));
-    const ids = listedIds(player, ctx, kept).filter((id) => listState(player, id, ctx, kept) === 'kept' && !sent.has(id));
+    const ids = kept ? listedIds(player, ctx, kept).filter((id) => listState(player, id, ctx, kept) === 'kept' && !sent.has(id)) : [];
     for (const id of ids) stateOf(player, id);
-    const all = [...new Set([...(player.avatarBoardsKeptPending || []).map(Number), ...ids])].sort((a, b) => a - b);
-    if (all.length) player.avatarBoardsKeptPending = all;
+    if (ids.length) player.avatarBoardsKeptPending = [...ids].sort((a, b) => a - b); else delete player.avatarBoardsKeptPending;
     return ids;
   }
 

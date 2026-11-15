@@ -268,6 +268,7 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   function unkeepBoard() {
     migrateKept();
     (player.avatarBoards ||= {}).kept = null;
+    if (markBoardsSent) markBoardsSent(null); // the kept boards not delivered yet stop waiting (Task 6b fix round 1)
     savePlayer();
     return { code: 200, body: { ok: true } };
   }

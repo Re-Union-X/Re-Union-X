@@ -240,8 +240,10 @@ const tests = {
   },
   // Task 6b bench: the client asks GET /user/sphere only at login, so a board kept in the Avatar Board Catalog reaches it through
   // the check of the Avatar Boards list (boardTypes [1,2,6,8,10,11]) when the player re-enters the list; the home check (all
-  // types) never announces it (no popup flood), once each, on sale or handed out
-  kept_boards_delivered_by_list_check() {
+  // types) never announces it (no popup flood), once each. USER DECISION 15-11: a kept board is announced («Unlocked an Avatar
+  // Board!») even when it is on sale (type 2, not bought): the only exception to «a board on sale is never announced», and only
+  // for a board whose listState is 'kept'
+  kept_boards_announced_by_list_check_even_on_sale_user_15_11() {
     const HOME_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
     const LIST_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] };
     for (const [kept, donor] of [['EV-1', A], ['EV-3', C]]) {
@@ -262,6 +264,34 @@ const tests = {
       assert.ok(w2.player.avatarBoardsSent.includes(id2) && !w2.player.avatarBoardsKeptPending, `${kept}: the login list delivered it`);
       assert.ok(!w2.r.check(w2.player, LIST_CHECK, WEEK_LATE, kept).add.includes(id2), `${kept}: not again`);
     }
+  },
+  // Task 6b fix round 1: a pending kept board is delivered only while its listState is 'kept'; unkeep and keep-change drop it, so a
+  // board later on sale in its own week is never announced through a stale pending id
+  kept_pending_never_stale() {
+    const HOME_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
+    const LIST_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] };
+    // unkeep (routes-events unkeepBoard -> markKept with no keep), then the board on sale in its week (EV-1, WEEK1)
+    let w = world(), a = idOf(w.out, A);
+    w.player.avatarBoardsSent = [];
+    w.r.markKept(w.player, WEEK_LATE, 'EV-1');
+    w.r.markKept(w.player, WEEK_LATE, null);
+    assert.ok(!w.player.avatarBoardsKeptPending, 'the unkeep drops the pending boards');
+    for (const body of [HOME_CHECK, LIST_CHECK]) assert.ok(!w.r.check(w.player, body, WEEK1, null).add.includes(a), 'on sale in its week: not announced');
+    // a stale pending id (the keep removed without markKept) is still never delivered once the board is listed for its week
+    w = world(); a = idOf(w.out, A);
+    w.player.avatarBoardsSent = [];
+    w.r.markKept(w.player, WEEK_LATE, 'EV-1');
+    for (const body of [HOME_CHECK, LIST_CHECK]) assert.ok(!w.r.check(w.player, body, WEEK1, null).add.includes(a), 'stale pending: not announced in its week');
+    // keep A, then keep B: A's leftovers are not delivered, not even when A is on sale in a later week
+    w = world(); a = idOf(w.out, A);
+    const b = idOf(w.out, W), keyB = 'khuxwiki@2017-05-01/outfit';
+    w.player.avatarBoardsSent = [];
+    w.r.markKept(w.player, WEEK_LATE, 'EV-1');
+    assert.deepStrictEqual(w.r.markKept(w.player, WEEK_LATE, keyB), [b]);
+    assert.deepStrictEqual(w.player.avatarBoardsKeptPending, [b], 'the keep change replaces the pending boards');
+    const add = w.r.check(w.player, LIST_CHECK, WEEK_RET, keyB).add;
+    assert.ok(!add.includes(a), 'A on sale in its return week: not announced');
+    assert.ok(add.includes(b), 'B (kept) delivered');
   },
   type2_node_unlock_accepted() {
     const w = world(), a = idOf(w.out, A), c = idOf(w.out, C);
