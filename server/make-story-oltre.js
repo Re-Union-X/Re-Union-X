@@ -341,6 +341,9 @@ function buildRows(stageRows, sources) {
       if (n === 555) Object.assign(row, { stageId: Q555_STAGE, branchType: 1 });
       if (q) row.useAp = q.ap === 'zero' ? 0 : num(q.ap);
       row.worldId = roomWorld(mis && mis.stage.rooms[0]) || r.worldId;
+      // music from the per-quest file when it lists the quest (15-11-2026: 541-551 take the donated 2021 master's Daybreak
+      // Town tracks, tester report on Quest 544; the 1.1.3 rows of 2016 had other tracks there)
+      if (bgm[n]) Object.assign(row, { bgmField: bgm[n].bgmField, bgmBattle: bgm[n].bgmBattle, bgmBoss: bgm[n].bgmBoss });
       row.chapterId = Math.floor(row.stageId / 1000);
       // «Defeat X» su un nemico assente dallo stage JP -> obiettivi della wiki (ruling, intestazione)
       if (stagePoi) {
