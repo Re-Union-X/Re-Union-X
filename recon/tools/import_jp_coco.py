@@ -61,6 +61,19 @@ REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 JPCHR = re.compile(r'[\u3040-\u30ff\u3400-\u9fff\uff00-\uffef]')
 CUS = re.compile(r'^Txt_.*_Cus$')
 
+
+# ---- patch=: what the WW client needs next to a JP layout and that the JP data does not hold -------------------------
+# recipe -> {'img': {served path: JP texture copied there}}. The JP 4.3.1 extraction dropped the files identical to another
+# one, so a texture the client loads by path (img/ui/...) may survive only under cocostudio/publish/ (see the stub note
+# below); a missing one on a 9-slice ImageView is the crash 0x2c of I-049.
+# moogle_item (MoogleShop_Item_Panel, Items rows, I-102): the client turns the JP ImageView But_Buy into its own
+# «Exchange» button and loads into it img/ui/But30_Off/_On/_Disable.png (9-slice). None is in the WW resources: the
+# plain import of 13-10 crashed with 0x2c on opening the shop. It also creates ImageButton_Buy1 and ImageButton_LockMask
+# itself (an existing one is removed first) and does not look up Row_Base/Name_Plate: the JP widgets stay as they are.
+PATCHES = {
+    'moogle_item': {'img': {'img/ui/But30_%s.png' % s: 'But30_%s.png' % s for s in ('Off', 'On', 'Disable')}},
+}
+
 ap = argparse.ArgumentParser()
 ap.add_argument('--list', default=os.path.join(HERE, 'jp_coco_layouts.txt'))
 ap.add_argument('--texts', default=os.path.join(HERE, 'jp_coco_texts.tsv'))
@@ -183,6 +196,11 @@ for ln, line in enumerate(open(args.list, encoding='utf-8'), 1):
                 opts.setdefault('graftww', []).append((m.group(1), m.group(2), int(m.group(3)), int(m.group(4))))
         elif p.startswith('restyle='):          # restyle=W1,W2: texture dei widget dalla revisione JP (layout WW servito)
             opts.setdefault('restyle', []).extend(x for x in p[8:].split(',') if x)
+        elif p.startswith('patch='):            # patch=recipe[,...]: files the WW client needs next to the JP layout
+            for c in p[6:].split(','):
+                if c not in PATCHES:
+                    sys.exit('%s:%d: unknown patch= recipe %r (PATCHES in import_jp_coco.py)' % (args.list, ln, c))
+                opts.setdefault('patch', []).append(c)
         elif p.startswith('set='):              # set=Widget.opzione=valore[,...]: ritocco del layout JP
             for c in p[4:].split(','):
                 m = re.match(r'^([^.=]+)\.([^.=]+)=(.+)$', c)
@@ -640,6 +658,16 @@ for root, opts in roots:
                         r['block'].append('%s: clone %s>%s: %s' % (name, c[0], c[1], err))
                     else:
                         r['warn'].append('widget %s aggiunto (copia di %s)' % (c[1], c[0]))
+                for rc in opts.get('patch', []):
+                    for dst, t in sorted(PATCHES[rc].get('img', {}).items()):
+                        if os.path.exists(os.path.join(args.served_files, *dst.split('/'))):
+                            continue                       # served WW file: it wins
+                        j = jp_tex(t)
+                        if j is None:
+                            r['block'].append('%s: patch %s: %s absent in JP' % (name, rc, t))
+                        else:
+                            plan[dst] = ('jp', j, None)
+                            r['warn'].append('patch %s: %s <- JP %s' % (rc, dst, t))
                 for wname, key, val in opts.get('set', []):
                     found = [w for w in walk_widgets(data.get('widgetTree', {}))
                              if w.get('options', {}).get('name') == wname]

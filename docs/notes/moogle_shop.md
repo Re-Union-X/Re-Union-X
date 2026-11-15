@@ -47,6 +47,21 @@ References: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Taps i
   `import_jp_coco.py` overwrites it with the JP `IncentiveIcon_02` (munny) for the JP layouts that
   use it. Now the generated layouts use `IncentiveIcon_01.png` and the 02 copy is gone.
 
+<a id="righe-items"></a>
+## Items rows (I-102)
+
+- Since 15-11 the row is the JP 4.3.1 original `MoogleShop_Item_Panel` (resources 127): blue `Win13` panel (gold `Win29`
+  for `frameType` != 1), dark name bar `MogShop_Bar`, jewel plate `Result_Clear_Km_Panel1` with `Ico_jewel`, red
+  `But30` «Exchange», black icon square (`Mogshop_plate1`, 112x112: medals fill it). Bench: same look as
+  `reference\moogle_shop\moogle_shop_01.png` (`screenshots\ms_20_montage_ref_vs_bench.png`), Exchange popup ok.
+- The client turns the ImageView `But_Buy` into its own button and loads `img/ui/But30_Off/_On/_Disable.png` into it
+  (9-slice); absent from the WW resources, which was the crash 0x2c of the plain import (13-10). `jp_coco_layouts.txt`
+  `patch=moogle_item` copies them from the JP `But30` art. `ImageButton_Buy1` and `ImageButton_LockMask` are created by
+  the client (an existing one is removed), `Row_Base`/`Name_Plate` are not looked up: the generated row in
+  `make_layouts.py` is only a fallback.
+- Lock: `LockMask` (over the Exchange button, `Lock_icon` = `img/ui/ShopBut_Lock(_Disable).png`) is shown by the
+  client for a row whose exchanges are used up; our Items rows have no limit (`count` 0), so it never shows today.
+
 <a id="trait"></a>
 ## Trait exchange
 

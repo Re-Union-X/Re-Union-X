@@ -211,7 +211,7 @@ read-only, never in the repository).
 
 **Tool** `recon/tools/import_jp_coco.py` (Pillow: without `-I`), launched by `build-resources.ps1`
 after `make_layouts`/`make_textures`/texts and before `btf_fix`. It reads the versioned list
-`recon/tools/jp_coco_layouts.txt` (one root per line; options `rev=N`, `need=a,b`, `+absent-ok`, `clone=`, `set=`, `graft=`;
+`recon/tools/jp_coco_layouts.txt` (one root per line; options `rev=N`, `need=a,b`, `+absent-ok`, `clone=`, `set=`, `graft=`, `patch=`;
 `? Nome # motivo` = to be decided) and for every root takes the closure (sub-layouts of the scenes,
 armatures, textures) and writes it into `stage_gen\files\cocostudio\publish\` over the generated one.
 - Revision: highest entry id, unless `rev=`. **Warning**: the extractor sometimes gives a
@@ -232,6 +232,10 @@ armatures, textures) and writes it into `stage_gen\files\cocostudio\publish\` ov
   (`rev=`), under the parent with the same name and in the same position; new tag if already used; already
   present = nothing. Used for `BaseBuff_Avt_Null1/2` of `ActionMap_PlayerStatusField_new` (rev. 00360289,
   I-155, [battaglia](battaglia.md#basebuff)): the rest of the layout stays WW.
+  `patch=r` (JP roots): writes next to the layout the files of recipe `r` (`PATCHES` in `import_jp_coco.py`)
+  that the WW client loads by path and no resource serves, copied from the JP art (the JP extraction kept a file
+  identical to another only once, e.g. only under `cocostudio/publish/`). Used for `MoogleShop_Item_Panel` (recipe
+  `moogle_item`: `img/ui/But30_Off/_On/_Disable.png`, I-102, [moogle_shop](moogle_shop.md#righe-items)).
 - Our sub-layouts not in the list stay ours; textures drawn by us replaced
   by the JP original (same canvas or no other generated layout uses them; never the armature
   atlases). Textures of `publish/` that the extractor removed as duplicates: they are taken with the

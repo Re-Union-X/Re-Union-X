@@ -12,6 +12,7 @@
 #                stesso genitore, il resto resta WW (eccezione alla regola dei nomi serviti)
 #   graftww=L.json/W@x:y,...  solo per un layout WW servito: innesta il widget W di un altro layout WW
 #                servito L sotto lo stesso genitore, alla posizione x, y
+#   patch=r      files the WW client needs next to the JP layout (recipe r of PATCHES in import_jp_coco.py)
 #   restyle=a,b  solo per un layout WW servito: le texture dei widget a, b dalla revisione JP, testi e
 #                posizioni restano WW (la revisione WW servita e' piu' vecchia di quella vista nel Global)
 # «? Nome  # motivo» = da decidere: non si importa, compare solo nel rapporto.
@@ -63,7 +64,9 @@ DeckEdit_SubSlot_MedalInfo_ver260.json
 # --- Moogle Shop e Sell Materials (I-021, I-102, I-103) ---
 MoogleShopScene_ver410.json
 MoogleShop_Traits_Panel_ver410.json     need=Count,Count_Rare,SkillPanel,SkillPanel_Rare,Panel,Panel_Rare
-? MoogleShop_Item_Panel.json  # l'unica revisione JP non ha i widget del client WW (ImageButton_Buy1, ImageButton_LockMask, Row_Base, Name_Plate): crash 0x2c all'apertura del Moogle Shop (banco 13-10, r34)
+# Items rows (I-102): the client loads img/ui/But30_Off/_On/_Disable into the JP But_Buy (9-slice); absent from the WW
+# resources (crash 0x2c on opening the shop, bench 13-10): patch=moogle_item copies them from the JP But30 art
+MoogleShop_Item_Panel.json              rev=0 patch=moogle_item need=Item,Panel,Panel_Rare,Panel_Item,Txt_Material_Name,Txt_Material_Text,But_Buy,Txt_buy,Count,Plate_Count,Plate_Count_Rare,Jewel,Txt_Jewel,Caution,Icon_New,Txt_Limit,LockMask,Lock_icon
 MoogleShop_IconPanel.json               need=LuxBoard,AVT,Incentive,Medal,KB,Stamp
 MoogleShop_Traits_MedalSelect_Pop_ver410.json
 MoogleShop_Traits_AddCheck.json

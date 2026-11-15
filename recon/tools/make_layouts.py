@@ -408,6 +408,8 @@ LAYOUTS = {
     # da Panel/Panel_Rare (la ricerca prende il primo trovato, anche se nascosto). Aspetto da
     # reference\moogle_shop\moogle_shop_01.png: riga blu, icona a sinistra, nome su targa,
     # prezzo in jewel e «Exchange» rosso a destra.
+    # Since 15-11 (I-102) only a fallback: import_jp_coco.py writes the JP original over it, with the img/ui/But30_*
+    # textures the client loads into But_Buy (patch=moogle_item in jp_coco_layouts.txt); it comes back if that line goes.
     'MoogleShop_Item_Panel.json': ('build', P('Item_Root', 0, 0, 721, 184, [P('Item', 0, 0, 721, 184, [
         P('Panel', 0, 0, 721, 184, [
             # Win04 e' alta 322 e il 9-slice non scende sotto: altezza 322 scalata a 176 (senza,
