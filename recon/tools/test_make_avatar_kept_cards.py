@@ -59,16 +59,26 @@ try:
     with open(tsv, 'w', encoding='utf8', newline='\n') as f:
         f.write(head + '\n# 57. KEPT twin board cards (old block)\n'
                 'img/sphere_incentive/5500777.png\tloc\t=img/sphere_incentive_kept/5500777.png\n')
-    # the twin numbers: the index of a regen (twin), else event_ids.json avatarTwins, else original + 500000
+    # the twin numbers: event_ids.json avatarTwins only (written by the master regen; fix round 1: no +500000 guess)
     index = os.path.join(tmp, 'avatar_boards.json')
     with open(index, 'w', encoding='utf8') as f:
-        json.dump({'index': {'5000001': {'donorId': 9001, 'twin': 5500001}, '5000163': {'donorId': 9163},
+        json.dump({'index': {'5000001': {'donorId': 9001, 'twin': 5599999}, '5000163': {'donorId': 9163},
                              '5000164': {'donorId': 9164}}}, f)
     ids = os.path.join(tmp, 'event_ids.json')
     with open(ids, 'w', encoding='utf8') as f:
-        json.dump({'avatarBoards': {'9001': 1, '9163': 163, '9164': 164}, 'avatarTwins': {'9163': 170}}, f)
+        json.dump({'avatarBoards': {'9001': 1, '9163': 163, '9164': 164}, 'avatarTwins': {'9001': 1, '9163': 170, '9164': 164}}, f)
     tw = mk.twin_ids(index, ids)
     assert tw == {5000001: 5500001, 5000163: 5500170, 5000164: 5500164}, tw
+    # a board with no avatarTwins number: a clear error (run the master regen first), never a guessed id
+    nots = os.path.join(tmp, 'event_ids_old.json')
+    with open(nots, 'w', encoding='utf8') as f:
+        json.dump({'avatarBoards': {'9001': 1, '9163': 163, '9164': 164}, 'avatarTwins': {'9001': 1}}, f)
+    try:
+        mk.twin_ids(index, nots)
+        raise AssertionError('a missing twin number must stop the run')
+    except mk.TwinIdsMissing as e:
+        assert '5000163' in str(e) and 'regen' in str(e), str(e)
+    assert mk.main(['--ids', nots, '--index', index, '--tsv', tsv, '--loc', loc, '--out', os.path.join(tmp, 'o2')]) == 1
 
     roots = mk.mac.roots(jp=jp, loc=loc)
     rep = mk.build(tsv, roots, out, index_file=index, ids_file=ids)

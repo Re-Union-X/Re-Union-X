@@ -636,6 +636,37 @@ const tests = {
     assert.deepStrictEqual(v.r.check(v.player, LIST_CHECK, WEEK_LATE, 'EV-1').add, [vta]);
     assert.deepStrictEqual(v.r.check(v.player, LIST_CLOSE, WEEK_LATE, 'EV-1').close, [va], 'the original closed, the twin stays');
   },
+  // fix round 1 (review finding 1): unkeeping a bought board gives the original back SILENTLY (no «Unlocked an Avatar Board!»
+  // for a board the player owns), as on every keep / unkeep cycle and when its own week comes back
+  twin_unkeep_bought_no_popup() {
+    const HOME_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
+    const LIST_CHECK = { checkTypes: [1, 2], boardTypes: [1, 2, 6, 8, 10, 11] };
+    const w = world(), a = idOf(w.out, A), ta = twinOf(w.out, A);
+    w.player.freeStone = 3000;
+    assert.ok(w.r.buy(w.player, a, WEEK1).ok);
+    for (let cycle = 0; cycle < 2; cycle++) {
+      w.r.markKept(w.player, WEEK_LATE, 'EV-1');
+      assert.deepStrictEqual(w.r.check(w.player, LIST_CHECK, WEEK_LATE, 'EV-1').add, [ta]);
+      assert.deepStrictEqual(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, 'EV-1').close, [a]);
+      // unkeep
+      w.r.markKept(w.player, WEEK_LATE, null);
+      assert.deepStrictEqual(w.r.check(w.player, LIST_CLOSE, WEEK_LATE, null).close, [ta], 'the twin closed');
+      for (const body of [LIST_CHECK, HOME_CHECK]) assert.ok(!w.r.check(w.player, body, WEEK_LATE, null).add.includes(a), `cycle ${cycle}: no popup for the bought original`);
+      assert.ok(w.player.avatarBoardsSent.includes(a), 'the original is held again (sent silently)');
+      assert.ok(w.r.list(w.player, WEEK_LATE, null).includes(a));
+    }
+    // its own week returns: still no popup
+    assert.ok(!w.r.check(w.player, HOME_CHECK, WEEK_RET, null).add.includes(a));
+    // a hand-out board never handed out as itself is still announced once after an unkeep (only owned boards come back silently)
+    const v = world(), c = idOf(v.out, C);
+    assert.deepStrictEqual(v.r.check(v.player, HOME_CHECK, WEEK2, null).add.filter((id) => id !== L), [c]);
+  },
+  // fix round 1 (review finding 2): a hand-out board delivered only as its twin is owned
+  twin_owned_through_twin() {
+    const w = world(), c = idOf(w.out, C), tc = twinOf(w.out, C);
+    w.player.avatarBoardsSent = [tc];
+    assert.deepStrictEqual([w.r.owned(w.player, c), w.r.owned(w.player, tc)], [true, true]);
+  },
 };
 
 // ---- server.js: two fixture boards on the local master (an outfit on sale with a skill medal, a coin board) ----

@@ -1413,6 +1413,10 @@ User design 15-11: a board listed in Avatar Boards **only because of the Avatar 
   pixel-identical after the `_tab` geometry options) into the private `raid_loc\img\sphere_incentive_kept\<twinId>.png`, and
   `--write-tsv` makes **originals.tsv section 57** again (445 loc rows). The 8 Skill Enhancement Boards without an original card
   keep the plain card on both. Review sheet: `screenshots\av_kept_twins.png` (12 boards, original | twin).
-- **Serve** (controller, after the card cleaning): `python -I recon/tools/make_avatar_kept_cards.py --write-tsv` again on the
-  cleaned cards, master regen (the r328 HANDOFF line plus `KHUX_AVATAR_BOARDS`, revision +1), `build-resources.ps1 -Append`,
-  update-resources, relogin. Bench: still to do (see the Task 6c report).
+- **Serve** (controller, after the card cleaning): master regen first (the r328 HANDOFF line plus `KHUX_AVATAR_BOARDS`,
+  revision +1: it writes `event_ids.json avatarTwins`), then `python -I recon/tools/make_avatar_kept_cards.py --write-tsv` on the
+  cleaned cards (it takes the twin ids from `avatarTwins` only and stops with an error before the regen), `build-resources.ps1
+  -Append`, update-resources, relogin. Bench: still to do (see the Task 6c report).
+- **Fix round 1:** unkeeping a bought board gives its original back silently (marked sent by the check, no «Unlocked an Avatar
+  Board!» for a board the player owns); a hand-out board delivered as its twin counts as owned (catalogue filter); the twin
+  rows are left out of the Booster-cell count of the Events notice.

@@ -136,7 +136,8 @@ function boosterFacts(file, eventBoardIds = new Set(), paidIds = [], masuFile = 
   try {
     for (const m of JSON.parse(fs.readFileSync(masuFile, 'utf8'))) {
       (m.rewardSelect || []).forEach((v, i) => {
-        if (v !== 34) return;
+        // the KEPT twin rows of the avatar boards (5500001-5999999, Part 7 Task 6c) are copies of their originals: not counted
+        if (v !== 34 || (m.sphereBoardId > 5500000 && m.sphereBoardId <= 5999999)) return;
         paid.add(Number((m.rewardId || [])[i]));
         if (eventBoardIds.has(m.sphereBoardId)) eventCells += 1; else raidCells += 1;
       });
@@ -939,4 +940,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventOrgxiiiLines };
+module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventOrgxiiiLines };

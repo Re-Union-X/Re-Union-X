@@ -11,8 +11,9 @@ board with the «KEPT BOARD» tab of make_special_banners.avatar_kept_tab at the
 Sources: the card rows of recon/tools/originals.tsv section 56 (read as make_avatar_card_web.py reads them: the first source of a
 row that has the file wins; jp = the JP 4.3.1 data, highest revision; loc = the private files of --loc), original ids
 5000001-5499999 only (the level boards 2100119-2100126 are never listed through the keep: no twin). Only the boards of
-server/game_data/avatar_boards.json are taken when it has an index. The twin id of a board: index[id].twin (after a master
-regen), else event_ids.json avatarTwins of its donor id, else the original id + 500000 (the rule of a new twin).
+server/game_data/avatar_boards.json are taken when it has an index. The twin id of a board: TWIN_BASE + event_ids.json
+avatarTwins of its donor id, ONLY (fix round 1: the numbers are the master regen's, never guessed); a board without one stops
+the run with an error: run the master regen (with KHUX_AVATAR_BOARDS) first, then this tool again.
 
 Re-runnable: run it again whenever the original cards change (corner cleaning, a better source): every twin card is written
 again and a twin card of an earlier run that is no longer listed is removed. --write-tsv makes the section 57 block of
@@ -59,23 +60,32 @@ def _read(f, default=None):
         return default
 
 
+class TwinIdsMissing(ValueError):
+    """a board with no event_ids.json avatarTwins number (the master regen has not run since the board was added)"""
+
+
 def twin_ids(index_file=INDEX, ids_file=IDS):
-    """{original id: twin id} of the boards of the index (all the numbered boards of event_ids.json when there is no index)"""
+    """{original id: twin id} of the boards of the index (all the numbered boards of event_ids.json when there is no index),
+    from event_ids.json avatarTwins only; TwinIdsMissing when a board has no number there"""
     index = (_read(index_file, {}) or {}).get('index') or {}
     ids = _read(ids_file, {}) or {}
     boards = ids.get('avatarBoards') or {}
     twins = ids.get('avatarTwins') or {}
     donor_of = {ID_BASE + int(n): k for k, n in boards.items()}
-    out = {}
+    out, missing = {}, []
     for i in sorted(set(map(int, index)) | (set() if index else set(donor_of))):
         if not ID_BASE < i < TWIN_BASE:
             continue
         e = index.get(str(i)) or {}
-        if e.get('twin'):
-            out[i] = int(e['twin'])
-            continue
         donor = str(e['donorId']) if 'donorId' in e else donor_of.get(i)
-        out[i] = TWIN_BASE + int(twins[donor]) if donor in twins else i + (TWIN_BASE - ID_BASE)
+        if donor in twins:
+            out[i] = TWIN_BASE + int(twins[donor])
+        else:
+            missing.append(i)
+    if missing:
+        raise TwinIdsMissing('%d boards have no avatarTwins number in %s (%s%s): run the master regen with KHUX_AVATAR_BOARDS '
+                             'first, then this tool again' % (len(missing), ids_file, ', '.join(map(str, missing[:10])),
+                                                               '...' if len(missing) > 10 else ''))
     return out
 
 
@@ -200,7 +210,11 @@ def main(argv=None):
         return 1
     out = a.out or os.path.join(a.loc, *KEPT_DIR.split('/'))
     rts = mac.roots(jp=jp, loc=a.loc, b16=b16)
-    rep = build(a.tsv, rts, out, a.index, a.ids)
+    try:
+        rep = build(a.tsv, rts, out, a.index, a.ids)
+    except TwinIdsMissing as e:
+        print('ERROR: %s' % e)
+        return 1
     print('KEPT twin cards: %d written to %s, %d removed, %d without a twin (level boards / not in the index)'
           % (len(rep['written']), out, len(rep['removed']), len(rep['skipped'])))
     if rep['missing']:

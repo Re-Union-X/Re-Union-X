@@ -431,9 +431,12 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     }
     const listCheck = !!boards && !boards.includes(3);
     const typeOk = (id) => !boards || boards.includes(info(id).type);
-    const add = ids.filter((id) => !sent.has(id) && typeOk(id) && (pending.has(id) ? listCheck : !onSale(player, id)));
+    // a bought original listed again without being held (its KEPT twin was closed on an unkeep, Task 6c fix round 1) takes the
+    // twin's place SILENTLY: the player owns it, no «Unlocked an Avatar Board!» (the same as a board bought: never announced)
+    const silent = ids.filter((id) => !sent.has(id) && !isTwin(id) && !pending.has(id) && info(id).type === SALE && bought(player).has(id));
+    const add = ids.filter((id) => !sent.has(id) && !silent.includes(id) && typeOk(id) && (pending.has(id) ? listCheck : !onSale(player, id)));
     for (const id of add) stateOf(player, id);
-    player.avatarBoardsSent = [...sent, ...add];
+    player.avatarBoardsSent = [...sent, ...silent, ...add];
     if (player.avatarBoardsKeptPending) {
       const left = [...pending].filter((id) => !add.includes(id));
       if (left.length) player.avatarBoardsKeptPending = left; else delete player.avatarBoardsKeptPending;
@@ -503,7 +506,9 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     if (!e) return false;
     if (e.type === SALE) return bought(player).has(Number(id));
     const s = (player.avatarSphere || {})[Number(id)];
-    return (player.avatarBoardsSent || []).map(Number).includes(Number(id)) || !!(s && (s.unlock || []).length);
+    // handed out as itself or as its KEPT twin (Task 6c fix round 1)
+    const sent = (player.avatarBoardsSent || []).map(Number), t = twinOf(id);
+    return sent.includes(Number(id)) || (!!t && sent.includes(t)) || !!(s && (s.unlock || []).length);
   }
   // the board's nodes: 'done' (every node unlocked), 'part' (some), 'none'
   function progress(player, asked) {

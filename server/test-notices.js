@@ -410,5 +410,19 @@ for (const web of [false, true]) {
     try { new Function(m[1]); } catch (e) { errors.push(`script della pagina Notices (web=${web}) non compila: ${e.message}`); }
   }
 }
+// Part 7 Task 6c fix round 1: the KEPT twin rows of the avatar boards (5500001-5999999) are copies of their originals, so their
+// Booster cells are not counted again
+{
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-boostercells-'));
+  try {
+    const bf = path.join(dir, 'boosters.json'), mf = path.join(dir, 'sphereMasu.json');
+    fs.writeFileSync(bf, JSON.stringify({ byId: { 77: { spanDays: 7 } } }));
+    const cell = (id) => ({ sphereBoardId: id, rewardSelect: [34, 0], rewardId: [77, 0] });
+    fs.writeFileSync(mf, JSON.stringify([cell(4000001), cell(3100001), cell(5000001), cell(5500001)]));
+    const f = n.boosterFacts(bf, new Set([4000001]), [], mf);
+    check(f && f.eventCells === 1 && f.raidCells === 2, `twin Booster cells not counted: ${JSON.stringify(f)}`);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');
