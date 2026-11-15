@@ -348,6 +348,9 @@ const DIFFERENCES_BODY = [
   'The banner you keep in the Shop with **Keep in the Shop** did not exist in the original game.',
   'Limited Missions that give Platinum Tickets or Draw Tickets appear only after a banner that uses them is unlocked.',
   'Draw Points from selling Medals start only when the Story reaches the first Draw Points Deal, and they never expire (see the Draw Points notice).',
+  // home banner carousel (user 15-11): server/home-banners.js, openBanners of /mypage
+  '## Home banners',
+  'The banners on the **Home** screen show the current **Shop** deals and the events, raids and Special Quests of your **Story week**, with the time left. Tap one to open it in the Shop or in Quests. The original lists of these banners did not survive, so which banners appear and in what order is chosen by this server (**not original**).',
   '## Purchases',
   'There are no purchases: Jewels and items come from quests, missions and presents.',
   'Spirit Training slots that were bought in the original game open in other ways (**not original**):',

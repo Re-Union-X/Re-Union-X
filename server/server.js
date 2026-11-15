@@ -48,6 +48,7 @@ const gachaData = require('./gacha-data');
 const gacha = require('./gacha');
 const shopNoticePages = require('./shop-notice-pages'); // original notices of the Shop banners (Details)
 const homePlaza = require('./home-plaza');
+const homeBanners = require('./home-banners'); // home banner carousel, openBanners of /mypage (user 15-11)
 const boostersMod = require('./boosters'); // Boosters the player owns (Events Part 6, boosters.js)
 const makeEmblems = require('./make-emblems');
 // game_data/boosters.json (make-emblems.js): the built Boosters {byId, byName}, read again when the file changes
@@ -2325,13 +2326,38 @@ function homePlazaId() {
   console.log(`  [mypage] backgroundId ${served}${served !== id ? ` (no master row for ${id})` : ''}`);
   return served;
 }
+// openBanners (server/home-banners.js, user 15-11): the current Shop deals (the Tutorial draw first while open, then the Shop
+// list order; limitDate = the Shop plate countdown of the served drawMedalType row, else the end of the week, when the rotation
+// changes), the Events tab cards and the open Special quests (their endTime). Never empty, never more than 7; a failure sends the
+// evergreen plate only (an empty list hides the area and leaves two grey arrows).
+function homeBannersNow(realMs = realNow()) {
+  const weekEnd = serverTimeAt(clock.weekEnd(realMs));
+  const evStageRows = servedMasterRows('evStage', realMs);
+  try {
+    const ctx = storyCtx();
+    const drawRows = servedMasterRows('drawMedalType', realMs);
+    const end = new Map(drawRows.filter((r) => r.displayTimeLeft && r.endDate).map((r) => [r.drawMedalTypeId, r.endDate]));
+    const shopIds = [...(gacha.tutorialOpen(player, ctx.storyQuest) ? [gacha.TUTORIAL_BANNER] : []), ...gachaShopList(ctx)].map((b) => b.drawMedalTypeId);
+    const list = homeBanners.homeBanners({
+      shop: shopIds.map((id) => ({ drawMedalTypeId: id, limitDate: end.get(id) || weekEnd })),
+      events: eventsTabOrder(raid().events(realMs), eventRoutes().catalogEvents(), eventRoutes().events(realMs)),
+      special: specialEventsNow(realMs), specialCatalogId: specialIndex().catalog?.evStageId,
+      evStageRows, drawMedalTypeRows: drawRows, fallbackDate: weekEnd,
+    });
+    console.log(`  [mypage] openBanners ${list.map((b) => `${b.type}:${b.id}`).join(' ')}`);
+    return list;
+  } catch (e) {
+    console.log(`  [mypage] openBanners: ${e.message}; evergreen plate only`);
+    return homeBanners.homeBanners({ evStageRows, fallbackDate: weekEnd });
+  }
+}
 function respondMyPage(res) {
   checkCampaignGifts(); // before the badge count
   const body = schemaResponse('/mypage') || { ret: ret() };
   Object.assign(body, {
     adminMypageTexts: process.env.KHUX_MYPAGE_TICKER === '1'
       ? [{ type: Number(process.env.KHUX_MYPAGE_TICKER_TYPE || 1), priority: 1, text: MYPAGE_TICKER }] : [],
-    openBanners: [],
+    openBanners: homeBannersNow(), // home banner carousel (user 15-11)
     userPresentCount: livePresents().length, // badge «!» del pulsante Presents
     isChangeCoordinate: 0,
     backgroundId: homePlazaId(), // seasonal plaza by the real date (I-233)
@@ -5766,6 +5792,8 @@ module.exports._test = {
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js
   respondUserCreate, respondStageClear, grantDeckSkillExp,
+  // server/test-home-banners.js (home banner carousel)
+  respondMyPage, homeBannersNow,
   // server/test-objective-skill.js (VIP! Skill, round 18)
   grantObjectiveReward, giveSkill,
   // server/test-skill-migration.js

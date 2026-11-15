@@ -120,6 +120,8 @@ check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV i
   check(diff.some((s) => /fixed dates of the real calendar/.test(s) && /most recent unlocked edition/.test(s)), 'differenze: stagionali');
   check(diff.some((s) => /Keep in the Shop/.test(s) && /did not exist in the original/.test(s)), 'differenze: banner fissato');
   check(diff.some((s) => /Platinum Tickets or Draw Tickets/.test(s) && /only after a banner that uses them/.test(s)), 'differenze: Limited coi biglietti');
+  // home banner carousel (user 15-11): Shop deals and events of the Story week, chosen by the server, not original
+  check(diff.includes('## Home banners') && diff.some((s) => /\*\*Home\*\* screen/.test(s) && /Story week/.test(s) && /did not survive/.test(s) && /\(\*\*not original\*\*\)/.test(s) && !/restored/i.test(s)), 'differenze: banner della Home');
 }
 // Special Quests (Special tab, 30-10)
 {
