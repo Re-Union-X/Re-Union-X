@@ -270,6 +270,13 @@ const tests = {
       console.log = () => {};
       try { ab.patch(dir, opts); } finally { console.log = log; }
       assert.deepStrictEqual(['sphere', 'sphereArray', 'sphereMasu', 'skill'].map((t) => fs.readFileSync(path.join(dir, `${t}.json`), 'utf8')), first, 'idempotent');
+      // fix round 1: the log counts the boards held whole and the ones held in some windows only (priceUnknown) apart
+      const recs = RECORDS();
+      recs.entries.push({ censusId: 'EV-7', key: 'EV-7/outfit', group: 'outfit', type: 2, window: ['2019-02-04', '2019-02-10'], price: null, labels: [], boards: [board(A, 'Test Outfit')] });
+      const lines = [];
+      console.log = (l) => lines.push(String(l));
+      try { ab.patch(dir, { ...opts, records: recs }); } finally { console.log = log; }
+      assert.ok(lines.some((l) => /, 3 held, 1 held in some windows only, /.test(l)), lines.join('\n'));
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   },
   chained_open_param_remapped() {

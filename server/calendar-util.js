@@ -29,7 +29,7 @@ function weekDateAt({ shopFrom, shopTo } = {}, nowMs) {
 }
 
 // State of a catalogue row for the player: ctx {shopFrom, shopTo, current (census ids of the week: Set or array), kept}.
-// removed: no available tier («Not restored yet», whatever the date); now: listed this Shop week; kept: the kept one;
+// removed: no available tier («Not built yet» in the Event Catalog, whatever the date); now: listed this Shop week; kept: the kept one;
 // can: a week before the Shop week, which can be kept; other: dates inside the Shop week but not listed now (a row that lost
 // the week to another, the Weekend-only and Daily rows of Task 10 off their day): reached by the Story, so never «later»;
 // later: starts after the Shop week (also every row before the Story has a Shop week). A kept row counts as kept only while

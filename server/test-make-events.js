@@ -1623,6 +1623,27 @@ const tests = {
     assert.strictEqual(none.ids.rows['EV-B1'], out.ids.rows['EV-B1'], 'no records: the numbers stay');
     assert.ok(!entry(none, 'EV-B1') && !entry(none, 'E-1').avatarBoards, 'no records: no BOARD entry');
   },
+  // fix round 1: a record that is only an informative notice (noQuests 'board' / 'notice', hidden by the catalogue) does not swallow
+  // the boards of its census id: its entry becomes the BOARD entry (same number), shown and keepable
+  board_entry_over_informative_notice() {
+    const recs = [...records(), record('EV-N1', [], { noQuests: 'board', evStage: [], name: 'Gem Boards notice' }), record('EV-N2', [], { noQuests: 'notice', evStage: [] })];
+    const ab = { entries: [
+      { censusId: 'EV-N1', key: 'EV-N1/gem', group: 'gem', type: 2, window: ['2017-06-22', '2017-06-27'], price: 2000, labels: [], boards: [{ donorId: 9101, name: 'Gem A' }] },
+      { censusId: 'EV-N2', key: 'EV-N2/outfit', group: 'outfit', type: 2, window: ['2017-07-03', '2017-07-09'], price: 1500, labels: [], boards: [{ donorId: 9102, name: 'Coat' }] },
+    ], held: [], unmapped: [] };
+    const plain = me.buildEvents(recs, CONFIG, master(), undefined, undefined, null, null, {});
+    const out = me.buildEvents(recs, CONFIG, master(), undefined, undefined, null, null, { avatarBoards: ab });
+    for (const [cid, donor] of [['EV-N1', 9101], ['EV-N2', 9102]]) {
+      const all = out.index.entries.filter((e) => e.censusId === cid);
+      assert.strictEqual(all.length, 1, `${cid}: one entry`);
+      const e = all[0];
+      assert.deepStrictEqual([e.type, e.noQuests, e.reason, e.start, e.end], ['BOARD', 'avatarBoards', 'avatarBoards', ab.entries.find((x) => x.censusId === cid).window[0],
+        ab.entries.find((x) => x.censusId === cid).window[1]], cid);
+      assert.strictEqual(e.evStageId, entry(plain, cid).evStageId, `${cid}: its number stays`);
+      assert.deepStrictEqual(e.avatarBoards[0].boards.map((b) => b.donorId), [donor]);
+      assert.ok(require('./event-pages').entriesOf(out.index).some((x) => x.censusId === cid), `${cid}: listed in the catalogue`);
+    }
+  },
   // the id ranges: a run that needs more numbers than the range holds stops with the range and the count
   id_range_overflow() {
     const cfg = { ...CONFIG, stageMax: CONFIG.stageBase + 2 };

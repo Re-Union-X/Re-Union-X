@@ -13,7 +13,7 @@
 // Avatar boards (Events Part 7 Task 5): an entry with boards (index joined by avatar-boards.js catalogIndex) lists them with their
 // price and status; a BOARD entry (boards, no quest) has its own status lines and is kept as an event is (one at a time).
 // States (calendar-util.js rowState): now (listed this Shop week), kept, can (past: can be kept), other (dates inside the week,
-// not open now: a short-window event off its day), later, removed (no quest served yet: «Not restored yet», never hidden).
+// not open now: a short-window event off its day), later, removed (no quest served yet: «Not built yet», never hidden).
 'use strict';
 const special = require('./special-pages');
 const { rowState } = require('./calendar-util');
@@ -27,7 +27,9 @@ const BASE = '/web/event';
 const keepButton = (id, on, extra = '') => parts.keepButton(BASE, id, on, extra);
 const KEEP_JS = parts.keepJs(BASE, 'event');
 // the pills the page script writes after a keep / remove: [row class, html]
-const PILLS = { kept: ['pinned', `${icon('pin')}Kept in the event list`], can: ['can', `${icon('pin')}Past event — can be kept`] };
+// a BOARD row (data-b, Part 7 Task 5 fix round 1) takes the b-pills: its boards, not the Events tab
+const PILLS = { kept: ['pinned', `${icon('pin')}Kept in the event list`], can: ['can', `${icon('pin')}Past event — can be kept`],
+  bkept: ['pinned', `${icon('pin')}Kept: its boards are in Avatar Boards`], bcan: ['can', `${icon('pin')}Past boards — can be kept`] };
 const dateRange = (e) => `${niceDay(e.start)} – ${niceDay(e.end || e.start)}`;
 // the catalogue's date line: one day once (Part 4: about 340 short events, catalog_size_budget)
 const dateLine = (e) => (!e.end || e.end === e.start ? niceDay(e.start) : dateRange(e));
@@ -72,10 +74,10 @@ const boardOnly = (e) => boardsOf(e).length > 0 && !(e.quests || []).length;
 // Status of an event: show (state), cls (side bar), pill (status line), button (1 Keep, 0 Remove, null none), why (details page)
 function statusOf(e, ctx) {
   const st = rowState(e, ctx);
-  if (boardOnly(e) && ['removed', 'now', 'kept', 'can'].includes(st)) return boardStatus(e, st);
+  if (boardOnly(e) && ['removed', 'now', 'kept', 'can', 'other'].includes(st)) return boardStatus(e, st);
   if (st === 'removed') {
     const raidish = /raid or Special/.test(e.why || '');
-    return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not restored yet'), button: null,
+    return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not built yet'), button: null,
       why: raidish ? 'Its quests are raid or Special quests: they are served by the Raid Catalog or the Special tab.'
         : 'None of its quests can be served yet: the reasons are listed with the quests below. It comes back when they are recovered.' };
   }
@@ -101,7 +103,7 @@ function statusOf(e, ctx) {
 function boardStatus(e, st) {
   const sale = boardsOf(e).some((b) => b.served && b.type === 2);
   if (st === 'removed') {
-    return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not restored yet'), button: null,
+    return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not built yet'), button: null,
       why: 'None of its boards can be served yet: the reasons are listed with the boards below. They come back when they are recovered.' };
   }
   if (st === 'now') {
@@ -109,10 +111,14 @@ function boardStatus(e, st) {
       why: `Its boards are in Avatar Boards this week${sale ? ', at the price of these dates' : ''}, as in the original game.` };
   }
   if (st === 'kept') {
-    return { show: st, cls: 'pinned', pill: pill(PILLS.kept[0], '', `${icon('pin')}Kept: its boards are in Avatar Boards`), button: 0,
+    return { show: st, cls: 'pinned', pill: pill(PILLS.bkept[0], '', PILLS.bkept[1]), button: 0,
       why: 'You keep these boards in Avatar Boards, beside the ones of the week, at their original price. A board you buy stays yours when you keep another event.' };
   }
-  return { show: st, cls: 'can', pill: pill(PILLS.can[0], '', `${icon('pin')}Past boards — can be kept`), button: 1,
+  if (st === 'other') {
+    return { show: st, cls: 'other', pill: pill('other', '', 'This week, no board on sale'), button: null,
+      why: 'Your Story week is inside its dates, but none of its boards served here is on sale or handed out this week (each board has its own dates). It cannot be kept while its dates are current.' };
+  }
+  return { show: st, cls: 'can', pill: pill(PILLS.bcan[0], '', PILLS.bcan[1]), button: 1,
     why: 'Its dates are over: you can keep it, one event at a time, and its boards are listed in Avatar Boards again at their original price.' };
 }
 const keptOf = (entries, ctx) => entries.find((e) => rowState(e, ctx) === 'kept');
@@ -141,7 +147,7 @@ var rows=[].slice.call(document.querySelectorAll('.row'));
 function href(el){return '/web/event/event/'+attr(el,'data-eid')+'?from=catalog';}
 function nameOf(el){var n=el.querySelector('.nm');return n?n.textContent:'';}
 window.kxK=function(b){return kxKeep(b,function(on){kxRow(b.getAttribute('data-id'),on);});};
-function setRow(el,st){var pc=PILL[st];el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');var s=el.querySelector('.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
+function setRow(el,st){var pc=PILL[(attr(el,'data-b')?'b':'')+st]||PILL[st];el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');var s=el.querySelector('.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
 var b=el.querySelector('.pk');if(b)kxSet(b,attr(el,'data-eid'),st==='kept');}
 window.kxRow=function(id,on){var name='',i,el;for(i=0;i<rows.length;i++){el=rows[i];if(attr(el,'data-show')==='kept')setRow(el,'can');if(attr(el,'data-eid')===id){setRow(el,on?'kept':'can');if(on)name=nameOf(el);}}
 for(i=0;i<rows.length;i++){var x=rows[i].querySelector('.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';x.style.display=name&&attr(rows[i],'data-show')==='can'?'':'none';}}if(window.kxRender)kxRender();};
@@ -155,7 +161,7 @@ const TYPE_OPTS = [['all', 'All'], ['EQ', 'Event Quests', 'camp'], ['STORY', 'St
   ['KEY', 'Keyblade Challenges', 'skill'], ['QUIZ', 'Quizzes', 'daily'], ['CELEB', 'Celebrations', 'lux'], ['BOARD', 'Avatar Boards', 'avatar']];
 const typeOf = (e) => String(e.type || 'EQ');
 const SHOW_OPTS = [['all', 'All events'], ['now', 'In Events now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later'],
-  ['removed', 'Not restored yet', 'removed']];
+  ['removed', 'Not built yet', 'removed']];
 // «In Events now» shows the kept event too (the Raid Catalog's rule); «other» (this week, not open now) only under All events
 const SHOW_SETS = { now: ['now', 'kept'] };
 // item names of an event for FIND («Matches:»): its names, quest names, type, Event Board names and rewards, the objective
@@ -252,7 +258,7 @@ var h=location.hash?$(location.hash.slice(1)):null;if(h&&cur.p!=='all'&&attr(h,'
 render();if(h&&h.scrollIntoView)h.scrollIntoView();})();`;
 
 // GET /web/event/catalog: every event of the index by date, one month label per month, one minimal row per event (card, name,
-// date line, ONE status line, at most ONE Keep button, «›»). A record with no quest served yet is listed as «Not restored yet».
+// date line, ONE status line, at most ONE Keep button, «›»). A record with no quest served yet is listed as «Not built yet».
 function catalogPage(index, ctx = {}) {
   const entries = entriesOf(index), kept = keptOf(entries, ctx);
   let lastM = '';
@@ -270,7 +276,7 @@ function catalogPage(index, ctx = {}) {
     // name is the link, the missing card box and the Keep handler are functions of the page; the rows are sent packed, as the
     // Raid Catalog's (catalog-pages.js packCatalog), and the cards load from data-src once the rows are built (kxImgs). The
     // filters read data-p (game year), data-show, data-type, data-done and data-search (FIND names); «Matches:» goes in .mt
-    packed.push({ label, fields: { s: search, d: line, n: name, e: String(e.evStageId), y, t }, html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}" data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
+    packed.push({ label, fields: { s: search, d: line, n: name, e: String(e.evStageId), y, t }, html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}"${boardOnly(e) ? ' data-b="1"' : ''} data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
       + ` data-type="${t}" data-done="${done ? 1 : 0}" data-search="${search}">`
       + `<span class="im"><img width="320" height="70" data-src="${imgOf(ctx, e.evStageId)}" alt="" onerror="kxNc(this)"></span>`
       + `<div class="info"><a class="nm" href="${href}">${name}${done ? CROWN : ''}</a><div class="d">${line}</div>${st.pill}`

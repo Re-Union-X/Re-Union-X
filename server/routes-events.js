@@ -28,8 +28,9 @@
 const fs = require('fs');
 const path = require('path');
 const calendar = require('./event-calendar');
-const { rowState, ptWeekday, weekdayOf, weekTo } = require('./calendar-util');
+const { rowState, ptWeekday, weekdayOf } = require('./calendar-util');
 const special = require('./special');
+const { windowInWeek } = require('./avatar-boards');
 
 const CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, 'event_config.json'), 'utf8'));
 // Version segment of the event card URL (/web/event/img/v<N>/<evStageId>.png): the client caches banner images by URL. The same
@@ -181,8 +182,9 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   // Part 7 Task 5: a BOARD entry (avatar boards, joined by avatar-boards.js catalogIndex: entry.boards) is «now» while one of its
   // served boards has a window in the story week (on sale or handed out there), and is kept once past as an event is (one kept at
   // a time): the kept value is its census id, or its entry key when khuxwiki alone dates it (the id make-events.js gives it)
-  const boardWeek = (e, week) => !!(e && e.available && week.shopFrom
-    && (e.boards || []).some((b) => b.served && b.window && b.window[0] <= weekTo(week) && b.window[1] >= week.shopFrom));
+  // the week test of the listing (avatar-boards.js windowInWeek); both read the story week of storyCtx() in server.js (storyWeek
+  // here, avatarCtx there), so «On sale this week» matches what GET /user/sphere lists
+  const boardWeek = (e, week) => !!(e && e.available && (e.boards || []).some((b) => b.served && windowInWeek(b.window, week)));
   const boardKeepable = (e) => !!(e && e.available && (e.boards || []).some((b) => b.served));
   function catalogCtx(realMs = realNow()) {
     const { shopFrom, shopTo } = storyWeek(), kept = view().kept || null;

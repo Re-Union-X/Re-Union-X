@@ -765,6 +765,8 @@ function boardEntryName(windows) {
     return `${t}: ${names.length > 4 ? `${names.slice(0, 4).join(', ')} and ${names.length - 4} more` : names.join(', ')}`;
   }).join(' & ');
 }
+// the rule of event-pages.js informative(): a notice of the records with no quest and no card, not listed in the catalogue
+const informativeEntry = (e) => (['board', 'notice'].includes(e.noQuests) || !!e.scheduleLineOf) && !(e.quests || []).length && !(e.rows || []).some((r) => r.available);
 const heldWindow = (why) => { const m = /\(windows: (\d{4}-\d\d-\d\d)\.\.(\d{4}-\d\d-\d\d)\)/.exec(String(why || '')); return m ? [m[1], m[2]] : null; };
 function avatarCatalog(out, records, ids, config, textOf) {
   const dated = ((records && records.entries) || []).filter((e) => e.group !== 'level' && Array.isArray(e.window) && e.window.length === 2);
@@ -780,13 +782,22 @@ function avatarCatalog(out, records, ids, config, textOf) {
   const made = [];
   for (const [cid, windows] of byId) {
     const own = out.index.entries.find((x) => x.censusId === cid);
-    if (own) { own.avatarBoards = windows; continue; }
     if (!(cid in ids.rows)) ids.rows[cid] = next++;
     const evStageId = config.evStageBase + ids.rows[cid];
     const start = windows.map((w) => w.window[0]).sort()[0], end = windows.map((w) => w.window[1]).sort().slice(-1)[0];
-    made.push({ censusId: cid, evStageId, name: boardEntryName(windows), type: 'BOARD', start, end, stageIds: [], useAp: null, label: 'original', labels: [], noticeIds: [],
+    const board = { censusId: cid, evStageId, name: boardEntryName(windows), type: 'BOARD', start, end, stageIds: [], useAp: null, label: 'original', labels: [], noticeIds: [],
       banner: `/web/event/img/v${config.imgVersion}/${evStageId}.png`, boardSet: null, available: false, reason: 'avatarBoards', noQuests: 'avatarBoards', why: textOf('avatarBoards'),
-      quests: [], avatarBoards: windows });
+      quests: [], avatarBoards: windows };
+    // an event of the records lists the boards on its own entry; a record that is only an informative notice (noQuests 'board' /
+    // 'notice', a scheduleLineOf line: event-pages.js hides it) becomes the BOARD entry itself, same number, so its boards are shown
+    if (own && informativeEntry(own)) {
+      const was = { noQuests: own.noQuests || null, ...(own.scheduleLineOf ? { scheduleLineOf: own.scheduleLineOf } : {}) }, notices = own.noticeIds || [];
+      for (const k of Object.keys(own)) delete own[k];
+      Object.assign(own, board, { noticeIds: notices, fromNotice: was });
+      continue;
+    }
+    if (own) { own.avatarBoards = windows; continue; }
+    made.push(board);
   }
   checkRoom({ ...ids.rows, ...(ids.subRows || {}) }, 'evStage', config.evStageBase, config.evStageMax);
   checkNumbers({ ...ids.rows, ...(ids.subRows || {}) }, 'row', config.evStageMax - config.evStageBase);

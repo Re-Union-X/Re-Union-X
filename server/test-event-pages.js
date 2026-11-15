@@ -123,7 +123,7 @@ const tests = {
     for (const e of INDEX().entries) assert.strictEqual(show(e.evStageId), rowState(e, ctx()), e.censusId);
     assert.deepStrictEqual([29900, 29901, 29903, 29909].map(show), ['can', 'now', 'later', 'removed']);
     assert.ok(rowOf(html, 29903).includes('Unlocks at Story Quest 612'));
-    assert.ok(rowOf(html, 29909).includes('Not restored yet'), 'a record with no served quest is listed, never hidden');
+    assert.ok(rowOf(html, 29909).includes('Not built yet'), 'a record with no served quest is listed, never hidden');
     const kept = catalog(INDEX(), ctx({ kept: 'E-0' }));
     assert.strictEqual((/data-show="(\w+)"/.exec(rowOf(kept, 29900)) || [])[1], 'kept');
     assert.ok(rowOf(kept, 29900).includes('Remove from Events'));
@@ -199,7 +199,7 @@ const tests = {
     assert.strictEqual(pages.detailPage(INDEX(), 12345, ctx()), null, 'unknown id');
     // a record with nothing served: listed with its quests and why
     const lost = pages.detailPage(INDEX(), 29909, ctx());
-    assert.ok(lost.includes('Not restored yet') && lost.includes('Not served yet'));
+    assert.ok(lost.includes('Not built yet') && lost.includes('Not served yet'));
   },
   // the shared parts are one module: the raid pages use it (no copy of the box, bands or notice card CSS)
   // one card per original evStage row (Part 2 Task 5): the catalogue keeps one entry per record, its details page lists the rows
@@ -258,7 +258,7 @@ const tests = {
     ix.boardSets = { S1: { boardIds: [7001], chains: {}, censusIds: ['E-0', 'E-579'] } };
     const html = catalog(ix, ctx());
     assert.ok(!html.includes('id="q29979"') && !html.includes('New Coins Notice'), 'the informative notice is not listed');
-    assert.ok(rowOf(html, 29909).includes('Not restored yet'), 'an unserved playable event stays');
+    assert.ok(rowOf(html, 29909).includes('Not built yet'), 'an unserved playable event stays');
     assert.ok(rowOf(html, 29942), 'a coin event with its card stays');
     assert.ok(/data-p="all"><b>All years<\/b><small>[^<]*<\/small><span class="c">5<\/span>/.test(html), 'not counted');
     assert.strictEqual(pages.detailPage(ix, 29979, ctx({ eventBoard: () => ({ id: 7001, name: 'B', done: false, finish: '', cells: [] }) })), null, 'no page');
@@ -369,7 +369,7 @@ const tests = {
     assert.deepStrictEqual([...sheet.matchAll(/<h4>([^<]+)<\/h4>/g)].map((m) => m[1]), ['FIND', 'SHOW', 'PROGRESS', 'TYPE']);
     assert.ok(sheet.includes('placeholder="Event, quest or reward name"') && /<div class="hint">Matches the start of words/.test(sheet));
     const group = (g) => [...((new RegExp(`<div class="opts" data-g="${g}">([\\s\\S]*?)</div>`).exec(sheet) || [])[1] || '').matchAll(/data-v="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)</g)].map((m) => [m[1], m[2]]);
-    assert.deepStrictEqual(group('show'), [['all', 'All events'], ['now', 'In Events now'], ['can', 'Can be kept now'], ['kept', 'Kept'], ['later', 'Later in the Story'], ['removed', 'Not restored yet']]);
+    assert.deepStrictEqual(group('show'), [['all', 'All events'], ['now', 'In Events now'], ['can', 'Can be kept now'], ['kept', 'Kept'], ['later', 'Later in the Story'], ['removed', 'Not built yet']]);
     assert.deepStrictEqual(group('prog'), [['all', 'All'], ['done', 'Completed'], ['todo', 'Incomplete']]);
     // only the kinds in the index (E-0 and E-9 have no type: Event Quests), in the order of the list
     assert.deepStrictEqual(group('type'), [['all', 'All'], ['EQ', 'Event Quests'], ['GEM', 'Gem Quests'], ['QUIZ', 'Quizzes']]);
@@ -494,7 +494,7 @@ const tests = {
     assert.ok(rowOf(html, 29920).includes('data-pin="/web/event/keep/29920"'), 'a past BOARD entry can be kept');
     assert.ok(/data-search="[^"]*Red Coat/.test(rowOf(html, 29920)), 'FIND knows its boards');
     assert.ok(rowOf(html, 29921).includes('On sale this week'));
-    assert.ok(rowOf(html, 29929).includes('Not restored yet') && !rowOf(html, 29929).includes('class="pk'));
+    assert.ok(rowOf(html, 29929).includes('Not built yet') && !rowOf(html, 29929).includes('class="pk'));
     assert.ok(html.includes('Avatar Boards'), 'TYPE chip of the BOARD entries');
     // the held boards with no window in the records: listed with the reason
     assert.ok(html.includes('Draw Ticket Board 1') && html.includes(pages.boardWhyPlain('windowUnknown: no dated notice')));
@@ -507,6 +507,36 @@ const tests = {
     assert.ok(/khuxwiki/i.test(d), 'its labels in plain words');
     const k = pages.detailPage(ix, 29920, ctx({ kept: 'B-0', boardBought: (id) => id === 5000001 }));
     assert.ok(/Red Coat.{0,200}Bought/.test(k), 'a bought board says so');
+  },
+  // Fix round 1: no player-facing «restored» in the catalogue (plan rule), the SHOW filter still selects those rows
+  no_restored_wording() {
+    const ix = BOARD_INDEX();
+    const raw = pages.catalogPage(ix, ctx({ current: new Set(['E-1', 'B-1']) })), html = pages.expandCatalog(raw);
+    const text = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '');
+    assert.ok(!/restored/i.test(text(html)), 'no «restored» in the page text');
+    for (const id of [29909, 29929]) assert.ok(rowOf(html, id).includes('Not built yet'));
+    const shown = fakePage(raw);
+    shown.tab('all');
+    shown.apply({ show: 'removed' });
+    assert.deepStrictEqual(shown.shown().sort(), [29909, 29929], `SHOW «Not built yet» keeps working: ${shown.shown()}`);
+    assert.ok(!/restored/i.test(text(pages.detailPage(ix, 29929, ctx()))));
+  },
+  // Fix round 1: a BOARD entry whose dates span the story week while none of its served boards is on sale in it («other»): board
+  // wording, never the short-event text; and the pills the page script writes after a keep are the board ones on a BOARD row
+  board_entry_other_and_pills() {
+    const ix = BOARD_INDEX();
+    // B-2: its span covers the week, its only served board is on sale from 04-22
+    ix.entries.push({ ...ix.entries.find((e) => e.censusId === 'B-0'), censusId: 'B-2', evStageId: 29923, start: '2019-04-01', end: '2019-04-30',
+      boards: [{ key: 'B-2/outfit', group: 'outfit', type: 2, window: ['2019-04-22', '2019-04-30'], donorId: 9011, name: 'Late Coat', sphereBoardId: 5000011, price: 1500, served: true, why: null }] });
+    const st = pages.statusOf(ix.entries.find((e) => e.censusId === 'B-2'), ctx());
+    assert.strictEqual(st.show, 'other');
+    assert.ok(/board/i.test(st.why) && !/short event/i.test(st.why) && /board/i.test(st.pill), st.pill);
+    const raw = pages.catalogPage(ix, ctx());
+    const html = pages.expandCatalog(raw);
+    assert.ok(rowOf(html, 29920).includes('data-b="1"') && !rowOf(html, 29900).includes('data-b='), 'BOARD rows marked for the page script');
+    const pill = JSON.parse(raw.slice(raw.indexOf('var PILL=') + 9, raw.indexOf(';\nfunction attr(el,a)')));
+    assert.ok(/Avatar Boards/.test(pill.bkept[1]) && /boards/.test(pill.bcan[1]) && /event list/.test(pill.kept[1]), 'board pills beside the event ones');
+    assert.ok(raw.includes("PILL[(attr(el,'data-b')"), 'setRow picks the board pill on a BOARD row');
   },
   // the BOARD entry is kept as an event is (one kept event at a time, shared): the kept value is its census id, or the entry key of
   // a board dated only by khuxwiki; the kept boards are listed for sale at the price of that window (avatar-boards.js)

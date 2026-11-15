@@ -219,7 +219,8 @@ function importDonorSkills(skills, donorRows, ids, wanted = DONOR_SKILLS) {
 
 // -------------------------------------------------------------------------------------------------------- runtime ---
 
-// day overlap of a window [from, to] (ISO dates) with the story week {shopFrom, shopTo}
+// day overlap of a window [from, to] (ISO dates) with the story week {shopFrom, shopTo}; exported as windowInWeek: the Event Catalog
+// (routes-events.js) says «On sale this week» with the same test the listing uses
 const weekTo = (ctx) => (ctx.shopTo && ctx.shopTo >= ctx.shopFrom ? ctx.shopTo : ctx.shopFrom);
 const inWeek = (w, ctx) => !!(w && ctx && ctx.shopFrom && w[0] <= weekTo(ctx) && w[1] >= ctx.shopFrom);
 const isKept = (w, kept) => !!kept && (w.censusId === kept || w.key === kept);
@@ -440,12 +441,15 @@ function patch(masterDir, opts = {}) {
   try { old = fs.readFileSync(idsFile, 'utf8').replace(/\r\n/g, '\n'); } catch { /* first run */ }
   if (old !== text) fs.writeFileSync(idsFile, text);
   const byType = out.sphereRows.reduce((m, r) => ((m[r.type] = (m[r.type] || 0) + 1), m), {});
-  console.log(`avatar boards: +${out.sphereRows.length} boards (type 2: ${byType[2] || 0}, type 1: ${byType[1] || 0}), ${out.report.held.length} held, `
+  // a board held in some windows only (priceUnknown, its priced windows served) is in the index too
+  const servedDonors = new Set(Object.values(out.index).map((e) => e.donorId));
+  const partly = out.report.held.filter((h) => servedDonors.has(h.donorId)).length, whole = out.report.held.length - partly;
+  console.log(`avatar boards: +${out.sphereRows.length} boards (type 2: ${byType[2] || 0}, type 1: ${byType[1] || 0}), ${whole} held, ${partly} held in some windows only, `
     + `${out.report.unmatched.length} cells unmatched; +${imported.rows.length} skills from the donated master`);
   return out;
 }
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { buildAvatarBoards, importDonorSkills, avatarBoardRoutes, catalogIndex, allocate, checkRanges, matchCell, cellSkill, weekEndFake, patch,
+module.exports = { buildAvatarBoards, importDonorSkills, avatarBoardRoutes, catalogIndex, windowInWeek: inWeek, allocate, checkRanges, matchCell, cellSkill, weekEndFake, patch,
   ID_BASE, ID_MAX, LEVEL_IDS, DONOR_SKILLS, SALE, HANDOUT };
