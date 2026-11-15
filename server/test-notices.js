@@ -240,9 +240,15 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
     const c = f.coins;
     check(c && c.sets > 0 && t.includes(`**${c.boards} Event Boards** in **${c.sets} board sets**`) && t.includes(`${c.withBoards} events`), `Events: conteggi delle board (${JSON.stringify(c)})`);
     check(/## Event coins and boards/.test(t) && /never expire/.test(t) && /lost them when the event ended/.test(t) && /last event quest you started/.test(t)
-      && /kept event/.test(t) && /Booster/.test(t) && /not shown until/.test(t) && /\*\*Raid Coins\*\* are unchanged/.test(t) && /\*\*once\*\*/.test(t)
+      && /kept event/.test(t) && /Booster/.test(t) && /\*\*Raid Coins\*\* are unchanged/.test(t) && /\*\*once\*\*/.test(t)
       && /New Event Coins Available in October!/.test(t) && /Riku & Moogle/.test(t) && /500 Jewels/.test(t) && /Sparkler/.test(t), 'Events: monete e board');
-    if (c && c.heldEvents) check(t.includes(`(${c.heldEvents} events)`) && c.heldMonths.length && c.heldMonths.every((m) => t.includes(m)), `Events: set trattenuti ${JSON.stringify(c)}`);
+    // Events Part 6 Task 8: the Boosters section, counts from boosters.json and master sphereMasu; nothing «later» left for them
+    const b = f.boosters;
+    check(b && b.count > 0 && t.includes('## Boosters') && t.includes(`**${b.count} Boosters**`) && t.includes(`${b.eventCells} Event Board cells`)
+      && t.includes(`**${b.minDays} to ${b.maxDays} days**`) && /from the moment you get it/.test(t) && /rebuilt from the Booster's original description/.test(t)
+      && /\*\*not original\*\*: in the original a Booster obtained late/.test(t) && /\*\*once\*\*, ever/.test(t) && /first login after this update/.test(t)
+      && !/Boosters (do not exist|come in a later update)/.test(t) && !/with the Boosters in a later update/.test(t), `Events: Boosters ${JSON.stringify(b)}`);
+    if (c && c.heldEvents) check(/not shown until/.test(t) && t.includes(`(${c.heldEvents} events)`) && c.heldMonths.length && c.heldMonths.every((m) => t.includes(m)), `Events: set trattenuti ${JSON.stringify(c)}`);
   }
   const fake = n.eventNoticeFacts('nope.json');
   check(fake === null, 'Events: senza events.json niente conteggi');

@@ -1229,6 +1229,23 @@ Noted: the 2019-12 Event Board cards have no picture (blank cards; board art of 
 1/10 objectives (all together, 5 chests in 5 rooms) were not completed by bench automation; the special-attack damage with a Medal
 Booster was not measured (automated taps did not trigger a special attack): the client study and the plates cover it.
 
+## Part 6 summary (15 November 2026)
+
+- 274 Boosters paid by served sources: 4 event quests (EV-0556, EV-0624 x3), 267 Event Board cells (completion rewards included),
+  3 Raid Board cells (HD Vanitas (EX+) +5%). The private records hold 320: also the 15 Boosters of EV-1217 (held for its map,
+  `mapUnusable`) and 30 P/S/M +3% of quests held for other reasons; they are paid when their quests are served.
+- 15-11 fix: `build_boosters.py` scoped only cell rewards, so the two **completion** Boosters of 2019-02 ([Sora & Peter Pan] +18%
+  1902117 and +34% 1902133) were unbuilt and the whole set stayed held (`boardsLater`, 5 served events without boards). Now board
+  completions are in scope, and every event quest record is read (a held quest no longer drops its Boosters from the records).
+  Master 323 (only emblem, evStage, sphere, sphereArray, sphereMasu changed; 2,843 quests as before): 12 sets handed out,
+  0 boards skipped; cards 4000007 / 4000008 = JP 2300181 / 2300182 (resources 124).
+- Expiry under the Story calendar (user question 15-11): a Booster from a board or event reached later (kept event, older set)
+  lasts its full span from when it is obtained (`boosters.js` until = now + spanDays, real clock), so it still works; each
+  source pays once ever.
+- Notice: «Events» section «Boosters» (counts from boosters.json + master sphereMasu + served `boosterRewards`), Event coins
+  paragraph without the «later update»; raid notice no longer lists the Final Form Sora Boosters among the JP-only rewards left
+  off; Event Catalog `boardsLater` text neutral.
+
 ## Event Board card pictures (14 November 2026)
 
 User 14-11: the Event Board cards were the plain lilac frame since Part 3 (no `img/sphere_incentive/<id>.png` for the event board

@@ -286,7 +286,7 @@ const EVENT_SHORT = {
   wikiAp: ['values', 'AP', 'From the khuxwiki page of this run', 'replaced'],
   mapIncomplete: ['values', 'Map', 'Incomplete in our data: the gaps are reported', 'removed'],
   eventCoins: ['rewards', 'Event Coins', 'Paid into the boards of this event; they never expire', 'camp'],
-  boardsLater: ['rewards', 'Event boards', 'Not served yet: they come back whole with the Boosters (a later update); your coins are kept', 'later'],
+  boardsLater: ['rewards', 'Event boards', 'Not served yet: a reward of these boards cannot be paid here yet; your coins are kept', 'later'],
   noCoinSource: ['rewards', 'Event boards', 'Not handed out yet: no quest pays their Event Coins', 'later'],
   boosterLater: ['rewards', 'Boosters', 'A Booster reward comes with the Boosters (a later update); the other rewards are paid', 'later'],
   noBoardSet: ['rewards', 'Event Coins', 'No board set named for them: logged, not paid', 'removed'],

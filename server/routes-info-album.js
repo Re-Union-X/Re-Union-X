@@ -115,9 +115,48 @@ function eventNoticeFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dir
       labels: [...new Set(sv.flatMap((x) => x.labels || []))] };
   };
   const orgxiii = Object.keys(groups).length ? Object.fromEntries(Object.keys(groups).map((k) => [k, groupOf(k)])) : null;
+  // Events Part 6 Task 8: the Boosters served (game_data/boosters.json next to events.json), the served quests that pay one
+  // (boosterRewards) and the Booster cells of the served Event Boards and of the other (raid) boards in master sphereMasu
+  challenge.boosters += servedQ.filter((q) => Array.isArray(q.boosterRewards) && q.boosterRewards.length).length;
+  const boosters = boosterFacts(path.join(path.dirname(file), 'boosters.json'), new Set(Object.values(sets).flatMap((s) => s.boardIds || [])),
+    servedQ.flatMap((q) => (Array.isArray(q.boosterRewards) ? q.boosterRewards.map((r) => r.emblemId) : [])));
   return { records: all.length, events: on.length, served: quests.filter((q) => q.served).length, quests: quests.length,
-    first: starts[0] || null, last: starts[starts.length - 1] || null, coins, challenge, orgxiii,
+    first: starts[0] || null, last: starts[starts.length - 1] || null, coins, challenge, orgxiii, boosters,
     labels: [...used].filter((l) => why[l]).map((l) => ({ id: l, text: why[l] })) };
+}
+// Events Part 6 Task 8: Boosters served (boosters.json byId), spans, expiry sources; Booster cells (rewardSelect 34) of the
+// served Event Boards (eventBoardIds) and of the other boards (the raid boards) in master sphereMasu. null without boosters.json
+// paidIds: the emblem ids the served quests pay; only the Boosters something served pays are counted (the records also hold the
+// Boosters of quests still waiting for a map)
+function boosterFacts(file, eventBoardIds = new Set(), paidIds = [], masuFile = path.join(__dirname, 'master_data', 'sphereMasu.json')) {
+  let b;
+  try { b = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+  const paid = new Set(paidIds.map(Number));
+  let eventCells = 0, raidCells = 0;
+  try {
+    for (const m of JSON.parse(fs.readFileSync(masuFile, 'utf8'))) {
+      (m.rewardSelect || []).forEach((v, i) => {
+        if (v !== 34) return;
+        paid.add(Number((m.rewardId || [])[i]));
+        if (eventBoardIds.has(m.sphereBoardId)) eventCells += 1; else raidCells += 1;
+      });
+    }
+  } catch { /* no master */ }
+  const rows = [...paid].map((id) => (b.byId || {})[id]).filter(Boolean);
+  const spans = rows.map((r) => Number(r.spanDays) || 0).filter(Boolean).sort((x, y) => x - y);
+  return { count: rows.length, minDays: spans[0] || 0, maxDays: spans[spans.length - 1] || 0,
+    window: rows.filter((r) => r.expiry && r.expiry.source === 'window').length, eventCells, raidCells };
+}
+function eventBoosterLines(f) {
+  const b = f && f.boosters, q = f && f.challenge ? f.challenge.boosters : 0;
+  if (!b || !b.count) return [];
+  const src = [q ? `${q} event quest${q === 1 ? '' : 's'}` : '', b.eventCells ? `${b.eventCells} Event Board cells` : '', b.raidCells ? `${b.raidCells} Raid Board cell${b.raidCells === 1 ? '' : 's'}` : ''].filter(Boolean);
+  return ['## Boosters',
+    `The **Boosters** are back: **${b.count} Boosters**, paid by ${nameList(src)}. As in the original game, a Booster raises the damage of the Medals it names, or the slot multipliers of the Keyblade it names, until it expires: you see it in your profile (**Boosters**, with its expiry), as the light-blue **+N%** plate on the Medal Details screen, and in battle. Different Boosters add up.`,
+    'No original Booster record with its effect values survives: each effect is **rebuilt from the Booster\'s original description** (the attribute, Upright or Reversed, the group of Medals or the Keyblade it names, and its value). The Medals of a group are the ones the original game data assigns to that Booster.',
+    `In the original every Booster expired on a fixed date. Here a Booster lasts, **from the moment you get it**, as many days as it lasted in the original from the start of its event to its expiry (**${b.minDays} to ${b.maxDays} days**) (**not original**: in the original a Booster obtained late in its event lasted less). So a Booster from a past event, a kept event or an older board set works for its full time too.${b.window ? ` For ${b.window} Boosters whose expiry notice did not survive, the end of their event or board is used as the expiry.` : ''}`,
+    'Each quest objective and each board cell gives its Booster **once**, ever: a replay does not give it again, not even after it expired. The same Booster from another quest or cell extends the one you have.',
+    'A Booster reward recorded before the Boosters arrived (a quest you cleared earlier) is given at your first login after this update, with its full time.'];
 }
 // Events Part 4 Task 6: the census types of the challenge events, and the quiz board plan (sources of the boards)
 const CHALLENGE_TYPES = ['EQ', 'KEY', 'QUIZ'];
@@ -137,7 +176,7 @@ function eventChallengeLines(f) {
     ...(c && c.bonus && (c.bonus.paid.length || c.bonus.waiting.length) ? [communityBonusLine(c.bonus)] : []),
     `The **quiz** events asked their question on a picture board before the quest, and no original board survives in the game files, so every board is **reconstructed**: ${b.reconstructed} are redrawn in the original style from the question text recorded on the community wiki (obvious typing errors of the wiki corrected), ${b.original_screenshot} come from screenshots of the original boards and ${b.footage_redraw} are redrawn from videos of the original game.`
       + (c && c.quiz ? ` Today **${c.quiz} quiz quests** are served with their board; the others wait, mostly for a map file that is incomplete.` : ''),
-    `${c && c.boosters ? `**${c.boosters}** served quest${c.boosters === 1 ? '' : 's'} paid a **Booster** among ${c.boosters === 1 ? 'its' : 'their'} rewards. ` : 'Some quests paid a **Booster** among their rewards. '}The Boosters do not exist on this server yet: a Booster reward is **recorded** when you complete its objective and given when the Boosters come in a later update; the other rewards are paid as usual. A quest whose only reward was a Booster waits for them.`,
+    ...(c && c.boosters ? [`**${c.boosters}** served quest${c.boosters === 1 ? '' : 's'} ${c.boosters === 1 ? 'pays' : 'pay'} a **Booster** among ${c.boosters === 1 ? 'its' : 'their'} rewards: see **Boosters** below.`] : []),
     'A **Spirit part** reward earned while your Spirit cannot receive it is **kept**, once, and given at a later login.'];
 }
 // the community-goal bonus line of the Events notice: the events and the result of their original result notice
@@ -186,8 +225,8 @@ function eventCoinLines(f) {
     : '**Event Coins** are paid by event quests, but no **Event Board** is served yet.');
   out.push('Each **board set** (the boards of a month, shared by its events) has **one balance**, and Event Coins **never expire** (**not original**: the original game lost them when the event ended, as the board screen still says). Each cell and each finished board gives its reward **once**.',
     'One board set is listed at a time: the set of the **last event quest you started** (only a quest of an event whose Event Boards are available counts), otherwise the newest set of your Story week, otherwise the set of your **kept event**. The Event Coins shown on the boards are that set\'s balance; the other sets keep theirs.',
-    'In the original game every cell of an Event Board paid a reward. A board with a cell that cannot be paid here yet (mostly a **Booster**) is **not served**, nor is a board that opens after it: it comes back whole with the Boosters in a later update.'
-      + (c && c.heldEvents ? ` The sets of **${nameList(c.heldMonths)}** have no board left (${c.heldEvents} events): those events are served **without Event Boards**, and the Event Coins they pay are **kept** in the balance of their set, which is not shown until its boards arrive.` : ''),
+    'In the original game every cell of an Event Board paid a reward, and here every served board pays them all, the **Booster** cells included (see **Boosters** below). A board with a cell that cannot be paid here is **not served**, nor is a board that opens after it.'
+      + (c && c.heldEvents ? ` The ${c.heldMonths.length === 1 ? 'set' : 'sets'} of **${nameList(c.heldMonths)}** ${c.heldMonths.length === 1 ? 'is' : 'are'} not served yet (${c.heldEvents} events): those events are served **without Event Boards**, and the Event Coins they pay are **kept** in the balance of their set, which is not shown until its boards arrive.` : ''),
     '**Raid Coins** are unchanged: raids pay and spend them as before.',
     'Announcement notices with no quest and no banner of their own (for example «New Event Coins Available in October!») are not events: the Event Catalog does not list them, and their boards are on the pages of the events of their set.',
     'The **Riku & Moogle** 6★ Medal, a drop of the August and September 2019 coin events, is back: a Sell Medal with no stats, sold for **500 Jewels**, with its original picture.');
@@ -237,7 +276,7 @@ function raidJpLines(f) {
     '## Japanese raids: what is reconstructed',
     'No quest of these raids survives: each one uses the map, level and AP of a worldwide raid of the same boss (or of the same time) and the standard Raid objectives.',
     'Their **Raid Boards** follow what is known of each raid. **Original**: the Christmas 2015 boards (Santa Sora outfit), the New Year 2016 boards (happi coat), the January 2016 boards (Mickey & Magic Broom) and the November 2016 Jewel Princess boards, whose cells survive in the game data or in screenshots of the time, the November 2015 board (Cid), and the usual **super-hard weekend** board, which has the same cells, rewards and costs as the worldwide **Legendary Raid Reward** board. **Reconstructed** (every other raid): where the Japanese board is known in outline (number of cells, total Raid Coins, main rewards and title, from the Japanese wiki, the original board pictures, screenshots and the KH2.8 boards seen in a video), it is rebuilt on the model of the original Japanese boards of the same time; where only its rewards are known (from the Japanese notice, the banner and the original board pictures: the raid events of 2017-2018, the October 2017 daily rotating raid and the monthly 30-minute raids), its cells, costs and filler Medals are copied from the **worldwide Raid Board of the same kind and time**, with the Japanese rewards in the place of the worldwide ones. The costs of single cells and the filler Medals are ours, and the Japanese titles are the worldwide titles they most probably were. The Savage Spider raid of October 31, 2015 ran before the first Raid Board and has none (it still gives Raid Coins).',
-    '**Shared rewards**: when a worldwide raid board also gives a reward of a Japanese board (an avatar part, a title, a Spirit part or a collection Medal: for example the Sunny Day Earrings, the Mug Cap, the Clarice parts, the Zootopia snugglies or the Trickmaster, Twilight Thorn and Destroyer Behemoth Medals), that reward stays in the worldwide raid, and on the Japanese board the cell gives a 6★ Medal, Jewels or a material of the same cost instead, so no Raid Coins are spent on something you may already own. Each replacement is listed on the raid’s **Details** page. Japanese-only rewards with no worldwide version yet (the Medals Sora Santa Ver. 1★, Minnie VD Ver. 5★, Sora & Riku KH3D Ver. and Necho Cat, the Maidama avatar part, the Final Form Sora Boosters) are left off their boards. Some board cards are the original cards as shown on the Japanese fan wiki, enlarged, because their picture files did not survive; the newer reconstructed boards have no card picture yet.',
+    '**Shared rewards**: when a worldwide raid board also gives a reward of a Japanese board (an avatar part, a title, a Spirit part or a collection Medal: for example the Sunny Day Earrings, the Mug Cap, the Clarice parts, the Zootopia snugglies or the Trickmaster, Twilight Thorn and Destroyer Behemoth Medals), that reward stays in the worldwide raid, and on the Japanese board the cell gives a 6★ Medal, Jewels or a material of the same cost instead, so no Raid Coins are spent on something you may already own. Each replacement is listed on the raid’s **Details** page. Japanese-only rewards with no worldwide version yet (the Medals Sora Santa Ver. 1★, Minnie VD Ver. 5★, Sora & Riku KH3D Ver. and Necho Cat, and the Maidama avatar part) are left off their boards. Some board cards are the original cards as shown on the Japanese fan wiki, enlarged, because their picture files did not survive; the newer reconstructed boards have no card picture yet.',
     'The boss HP is the Japanese one where it is known (the fixed HP of the super-hard weekends, Adventurer and Jewel Princess of 2016), otherwise the 2016 worldwide values of the same boss or the rule of the worldwide raids of the time; attack and defense are deduced like those of the worldwide raids. The super-hard weekend raids keep their Japanese time limit (12 hours, 1 hour from May 2018) and open only on Saturday and Sunday; the monthly 30-minute raids give 30 minutes to defeat the boss and, like every raid here, are open all day (see **Raid AP and Bonus Time** above; the original opened them twice a day). Each raid lists what is reconstructed on its Raid Catalog page.',
     'Their banners have a **Details** page (**not original**: the worldwide game had none for them). It shows the text of the original Japanese banner with our translation, our translation of the Japanese notice where it was recovered (otherwise it says that it was not), and what is known of the raid: bosses by day, HP, time limit, level rewards and Raid Boards.',
     ...raidJpResearchLines(f.jp.ids)];
@@ -487,7 +526,7 @@ const NOTICES = [
       ...raidNoticeLines(raidNoticeFacts())] },
   // Events Part 1 Task 8 (07-11): event quests, Event Catalog, kept event, short windows, coins, no raid spawns (user decision 07-11,
   // notice 49535), counts and labels from events.json (eventNoticeFacts); docs/notes/events.md
-  { date: '11/10', tag: 'IMPORTANT', title: 'Events',
+  { date: '11/15', tag: 'IMPORTANT', title: 'Events',
     body: ['The **Event Quests** are back: the limited-time events of the original game, with their original maps, enemies, objectives and rewards wherever their files survive. They are in **Quests > Events**, after the raids.',
       'Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.',
       ...eventNoticeLines(eventNoticeFacts()),
@@ -521,6 +560,7 @@ const NOTICES = [
       // I-250 (13-11 evening): the 12 missing challenge models built exactly and approved on the rendered review; phone test pending
       'The **12 enemies** the challenge events still lacked are back too, built exactly from the original pictures in the same way and approved on their animations: **Nimble Reaper, Loudmouth Parade, Upright Warlock, Gummi Dragon, Vile Reaper, Mysterious Sir, Weapon Master, Reversed Warlock, Circus Balloon, Jewel Princess, Raccoon Dog Rookie** and **Raccoon Dog Soldier**, and the quests that waited for them are served. Nine of them never move in the original files, so their walking pose is their standing pose (**reconstructed**). Their check in battle is still going on: please report anything that looks wrong.',
       ...eventCoinLines(eventNoticeFacts()),
+      ...eventBoosterLines(eventNoticeFacts()),
       '## SP Chip & Dale',
       'The **SP Chip & Dale** 6★ Medal (+1,000 STR and DEF as Enhancement material), a reward of some event quests, is back. Its data comes from the community wiki; its picture is the community render of the original Medal (**reconstructed**: the original file was not found).',
       ...eventLabelLines(eventNoticeFacts())] },
