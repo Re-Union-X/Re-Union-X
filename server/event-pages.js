@@ -16,7 +16,7 @@
 // not open now: a short-window event off its day), later, removed (no quest served yet: «Not built yet», never hidden).
 'use strict';
 const special = require('./special-pages');
-const { rowState } = require('./calendar-util');
+const { rowState, informative } = require('./calendar-util');
 const parts = require('./catalog-pages');
 
 const { CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, CROWN, gameYearOf, GAME_YEARS, YEAR_SPAN, MATCH_JS, PROG_OPTS, progCls } = special;
@@ -74,7 +74,7 @@ const boardOnly = (e) => boardsOf(e).length > 0 && !(e.quests || []).length;
 // Status of an event: show (state), cls (side bar), pill (status line), button (1 Keep, 0 Remove, null none), why (details page)
 function statusOf(e, ctx) {
   const st = rowState(e, ctx);
-  if (boardOnly(e) && ['removed', 'now', 'kept', 'can', 'other'].includes(st)) return boardStatus(e, st);
+  if (boardOnly(e) && ['removed', 'now', 'kept', 'can', 'other'].includes(st)) return boardStatus(e, st, ctx);
   if (st === 'removed') {
     const raidish = /raid or Special/.test(e.why || '');
     return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not built yet'), button: null,
@@ -100,7 +100,7 @@ function statusOf(e, ctx) {
   return { show: 'later', cls: 'off', pill: pill('off', 'later', text), button: null, why };
 }
 // a BOARD entry: its boards are in Avatar Boards while their window is in the story week, or while it is kept
-function boardStatus(e, st) {
+function boardStatus(e, st, ctx = {}) {
   const sale = boardsOf(e).some((b) => b.served && b.type === 2);
   if (st === 'removed') {
     return { show: st, cls: 'off', pill: pill('off', 'removed', 'Not built yet'), button: null,
@@ -113,6 +113,10 @@ function boardStatus(e, st) {
   if (st === 'kept') {
     return { show: st, cls: 'pinned', pill: pill(PILLS.bkept[0], '', PILLS.bkept[1]), button: 0,
       why: 'You keep these boards in Avatar Boards, beside the ones of the week, at their original price. A board you buy stays yours when you keep another event.' };
+  }
+  if (st === 'other' && ctx.boardLocked && ctx.boardLocked.has(e.censusId)) {
+    return { show: st, cls: 'other', pill: pill('other', '', 'Unlocks after the previous board'), button: null,
+      why: 'Its boards are in your Story week, but each opens only once the board before it is complete, as in the original game. It cannot be kept while its dates are current.' };
   }
   if (st === 'other') {
     return { show: st, cls: 'other', pill: pill('other', '', 'This week, no board on sale'), button: null,
@@ -127,12 +131,8 @@ const replacesLine = (st, kept) => (st.button === null ? ''
   : `<div class="rp"${st.button === 1 && kept ? '' : ' style="display:none"'}>${st.button === 1 && kept ? `Replaces: ${esc(catName(kept))}` : ''}</div>`);
 // every served quest with its objectives done (ctx.stageDone, the crown rule of the Special and Raid Catalogs)
 const doneOf = (e, ctx) => !!ctx.stageDone && servedOf(e).length > 0 && servedOf(e).every((q) => ctx.stageDone(q.stageId));
-// an informative notice, not a playable event (user 08-11): no quest of its own, no original card (noQuests 'board', the signal
-// that also leaves its card out in make_event_banners.py card_ids) and no evStage row with a card. Not in the catalogue, no page
-// (e.g. EV-0579 «New Event Coins Available in October!»: its boards are reached through the playable events of their set).
-// Part 4 Task 4: noQuests 'notice' too (an information notice of the challenge records, notice_row_not_listed)
-// Part 5 Task 3: a second notice of an event (scheduleLineOf, make-events.js reason scheduleLine) is listed under its event only
-const informative = (e) => (['board', 'notice'].includes(e.noQuests) || !!e.scheduleLineOf) && !(e.quests || []).length && !(e.rows || []).some((r) => r.available);
+// an informative notice, not a playable event (calendar-util.js informative, shared with make-events.js): not in the catalogue,
+// no page (e.g. EV-0579 «New Event Coins Available in October!»: its boards are reached through the playable events of their set)
 // the name of an event in the Event Catalog: catalogName (make-events.js, the original banner names the event otherwise), else its name
 const catName = (e) => e.catalogName || e.name || e.censusId;
 const entriesOf = (index) => ((index && index.entries) || []).filter((e) => e && e.censusId && e.evStageId && e.start && !informative(e))
@@ -521,4 +521,4 @@ function noticePage(index, evStageId, doc, ctx = {}) {
   }
 }
 
-module.exports = { catalogPage, detailPage, noticePage, statusOf, whyPlain, boardWhyPlain, entriesOf, expandCatalog };
+module.exports = { catalogPage, detailPage, noticePage, statusOf, whyPlain, boardWhyPlain, entriesOf, expandCatalog, informative };

@@ -252,15 +252,21 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
     if (!e) return null;
     return (e.windows || []).find((w) => inWeek(w.window, ctx)) || (e.windows || []).find((w) => isKept(w, kept)) || null;
   }
-  // in the master (a served row) and listed for this player now
-  function listed(player, id, ctx = {}, kept = null) {
+  // why a board is listed for this player now, or why not: 'week' (a window in the story week), 'bought' (outside its windows),
+  // 'kept', 'level', or not listed: 'chain' (a window in the week, but the board before it is not complete), 'none'. The one
+  // decision of the listing; the Event Catalog reads it too (routes-events.js avatarBoardState, Task 5 fix round 2)
+  function listState(player, id, ctx = {}, kept = null) {
     const e = info(id);
-    if (!e || !rowOf('sphere', 'sphereBoardId', id)) return false;
-    if (e.type === SALE && bought(player).has(Number(id))) return true;
-    if (e.chain && !complete(player, e.chain)) return false;
-    if (e.group === 'level') return Number(ctx.level) >= e.level;
-    return !!windowNow(id, ctx, kept);
+    if (!e || !rowOf('sphere', 'sphereBoardId', id)) return 'none';
+    const week = (e.windows || []).some((w) => inWeek(w.window, ctx));
+    if (e.type === SALE && bought(player).has(Number(id))) return week ? 'week' : 'bought';
+    if (e.chain && !complete(player, e.chain)) return week ? 'chain' : 'none';
+    if (e.group === 'level') return Number(ctx.level) >= e.level ? 'level' : 'none';
+    if (week) return 'week';
+    return windowNow(id, ctx, kept) ? 'kept' : 'none';
   }
+  // in the master (a served row) and listed for this player now
+  const listed = (player, id, ctx = {}, kept = null) => !['none', 'chain'].includes(listState(player, id, ctx, kept));
   function listedIds(player, ctx = {}, kept = null) {
     return Object.keys(ix()).map(Number).filter((id) => listed(player, id, ctx, kept)).sort((a, b) => a - b);
   }
@@ -354,7 +360,7 @@ function avatarBoardRoutes({ index, master, grantSphereReward = () => {}, now = 
   }
 
   const isAvatarBoard = (id) => !!info(id);
-  return { listedIds, listed, list, check, buy, update, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete };
+  return { listedIds, listed, listState, list, check, buy, update, servedRow, servedEndDatetime, priceNow, isBuy, isAvatarBoard, stateOf, complete };
 }
 
 // ------------------------------------------------------------------------------------------------- Event Catalog ---

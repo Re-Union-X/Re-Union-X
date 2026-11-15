@@ -42,4 +42,10 @@ function rowState(row, { shopFrom, shopTo, current, kept } = {}) {
   return shopFrom && row.start <= weekTo({ shopFrom, shopTo }) ? 'other' : 'later';
 }
 
-module.exports = { ptWeekday, weekdayOf, days, overlap, weekTo, weekDateAt, rowState };
+// An informative notice of the records, not a playable event (user 08-11): no quest of its own, no original card (noQuests 'board',
+// the signal that also leaves its card out in make_event_banners.py card_ids) and no evStage row with a card; Part 4 Task 4:
+// noQuests 'notice' too; Part 5 Task 3: a second notice of an event (scheduleLineOf). Not in the Event Catalog (event-pages.js
+// entriesOf); make-events.js avatarCatalog turns such an entry into the BOARD entry of its census id (Part 7 Task 5). One rule for both.
+const informative = (e) => (['board', 'notice'].includes(e.noQuests) || !!e.scheduleLineOf) && !(e.quests || []).length && !(e.rows || []).some((r) => r.available);
+
+module.exports = { ptWeekday, weekdayOf, days, overlap, weekTo, weekDateAt, rowState, informative };

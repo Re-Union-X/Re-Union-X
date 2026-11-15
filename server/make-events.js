@@ -765,8 +765,8 @@ function boardEntryName(windows) {
     return `${t}: ${names.length > 4 ? `${names.slice(0, 4).join(', ')} and ${names.length - 4} more` : names.join(', ')}`;
   }).join(' & ');
 }
-// the rule of event-pages.js informative(): a notice of the records with no quest and no card, not listed in the catalogue
-const informativeEntry = (e) => (['board', 'notice'].includes(e.noQuests) || !!e.scheduleLineOf) && !(e.quests || []).length && !(e.rows || []).some((r) => r.available);
+// a notice of the records with no quest and no card, not listed in the catalogue: the one rule of calendar-util.js (event-pages.js too)
+const informativeEntry = require('./calendar-util').informative;
 const heldWindow = (why) => { const m = /\(windows: (\d{4}-\d\d-\d\d)\.\.(\d{4}-\d\d-\d\d)\)/.exec(String(why || '')); return m ? [m[1], m[2]] : null; };
 function avatarCatalog(out, records, ids, config, textOf) {
   const dated = ((records && records.entries) || []).filter((e) => e.group !== 'level' && Array.isArray(e.window) && e.window.length === 2);
@@ -1605,5 +1605,5 @@ function patch(masterDir, opts = {}) {
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { buildEvents, questMusic, ordinalName, patch, readRecords, anchorsPathOf, REASONS, allocateIds, allocateRows, labelIds, mapRestoreLabels, daysOf, swapEnemies, dropRows, GENERATED_LABELS, NOT_SERVED,
+module.exports = { buildEvents, informativeEntry, questMusic, ordinalName, patch, readRecords, anchorsPathOf, REASONS, allocateIds, allocateRows, labelIds, mapRestoreLabels, daysOf, swapEnemies, dropRows, GENERATED_LABELS, NOT_SERVED,
   applyDatesOf, aliasRewardTypes, genMapOf, mergeCompletion, loadMaps, UNION_IDS };

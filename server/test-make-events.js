@@ -1644,6 +1644,20 @@ const tests = {
       assert.ok(require('./event-pages').entriesOf(out.index).some((x) => x.censusId === cid), `${cid}: listed in the catalogue`);
     }
   },
+  // fix round 2: one informative rule (calendar-util.js informative), used by make-events.js (avatarCatalog) and event-pages.js
+  // (entriesOf): the entries the catalogue hides are exactly the ones whose boards make-events moves to a BOARD entry
+  informative_rule_shared() {
+    const cu = require('./calendar-util'), pages = require('./event-pages');
+    assert.strictEqual(typeof cu.informative, 'function');
+    assert.strictEqual(me.informativeEntry, cu.informative, 'make-events uses the shared rule');
+    assert.strictEqual(pages.informative, cu.informative, 'event-pages uses the shared rule');
+    const recs = [...records(), record('EV-N1', [], { noQuests: 'board', evStage: [] }), record('EV-N2', [], { noQuests: 'notice', evStage: [] }),
+      record('EV-N3', [], { scheduleLineOf: 'E-1', evStage: [] }), record('EV-N4', [], { noQuests: 'coin', evStage: [] })];
+    const out = me.buildEvents(recs, CONFIG, master(), undefined, undefined, null, null, {});
+    const shown = new Set(pages.entriesOf(out.index).map((e) => e.censusId));
+    for (const e of out.index.entries) assert.strictEqual(shown.has(e.censusId), !me.informativeEntry(e), e.censusId);
+    assert.deepStrictEqual(out.index.entries.filter(me.informativeEntry).map((e) => e.censusId), ['EV-N1', 'EV-N2', 'EV-N3']);
+  },
   // the id ranges: a run that needs more numbers than the range holds stops with the range and the count
   id_range_overflow() {
     const cfg = { ...CONFIG, stageMax: CONFIG.stageBase + 2 };

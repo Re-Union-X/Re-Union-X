@@ -41,7 +41,7 @@ const STAGE_FIRST = CONFIG.stageBase, STAGE_LAST = CONFIG.stageMax; // stage ids
 const COIN_TYPE = 15; // Event Coins: into the entry's board set (addEventCoins)
 
 const BOOSTER_TYPE = 34; // a Booster reward (master emblem; Events Part 6, boosters.js)
-function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, realNow, serverTimeAt, clock, stageState, grantItem, grantObjective, addEventCoins = null, canPay = null, addPresent = null, grantBooster = null, webBase, log = console.log }) {
+function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, realNow, serverTimeAt, clock, stageState, grantItem, grantObjective, addEventCoins = null, canPay = null, addPresent = null, grantBooster = null, avatarBoardState = null, webBase, log = console.log }) {
   // read-only view of player.events (an older save has none: nothing kept, nothing cleared); state() creates it to write
   const view = () => player.events || { kept: null, cleared: {} };
   const state = () => {
@@ -182,15 +182,23 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   // Part 7 Task 5: a BOARD entry (avatar boards, joined by avatar-boards.js catalogIndex: entry.boards) is «now» while one of its
   // served boards has a window in the story week (on sale or handed out there), and is kept once past as an event is (one kept at
   // a time): the kept value is its census id, or its entry key when khuxwiki alone dates it (the id make-events.js gives it)
-  // the week test of the listing (avatar-boards.js windowInWeek); both read the story week of storyCtx() in server.js (storyWeek
-  // here, avatarCtx there), so «On sale this week» matches what GET /user/sphere lists
-  const boardWeek = (e, week) => !!(e && e.available && (e.boards || []).some((b) => b.served && windowInWeek(b.window, week)));
+  // the listing's own decision (avatarBoardState(sphereBoardId) = avatar-boards.js listState for this player, wired in server.js;
+  // without it, the window test alone): a board of this entry's window in the story week is 'week' when it is listed, 'chain' when
+  // the board before it is not complete (catalogue «Unlocks after the previous board»), so «On sale this week» matches GET /user/sphere
+  const boardStates = (e, week) => (e && e.available ? (e.boards || []) : []).filter((b) => b.served && windowInWeek(b.window, week))
+    .map((b) => (avatarBoardState ? avatarBoardState(b.sphereBoardId) : 'week'));
   const boardKeepable = (e) => !!(e && e.available && (e.boards || []).some((b) => b.served));
   function catalogCtx(realMs = realNow()) {
     const { shopFrom, shopTo } = storyWeek(), kept = view().kept || null;
     const current = new Set(currentEntries(realMs).map((e) => e.censusId));
-    for (const e of entries()) if (e.boards && boardWeek(e, { shopFrom, shopTo })) current.add(e.censusId);
-    return { shopFrom, shopTo, current, kept: kept && entryOf(kept) ? kept : null };
+    const boardLocked = new Set();
+    for (const e of entries()) {
+      if (!e.boards) continue;
+      const states = boardStates(e, { shopFrom, shopTo });
+      if (states.includes('week')) current.add(e.censusId);
+      else if (states.includes('chain')) boardLocked.add(e.censusId);
+    }
+    return { shopFrom, shopTo, current, boardLocked, kept: kept && entryOf(kept) ? kept : null };
   }
   // GET /web/event/catalog: a kept census id the index no longer has is cleared (saved), so the save holds no dead id; listing the
   // Events tab never writes the save

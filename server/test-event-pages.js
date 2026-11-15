@@ -538,6 +538,43 @@ const tests = {
     assert.ok(/Avatar Boards/.test(pill.bkept[1]) && /boards/.test(pill.bcan[1]) && /event list/.test(pill.kept[1]), 'board pills beside the event ones');
     assert.ok(raw.includes("PILL[(attr(el,'data-b')"), 'setRow picks the board pill on a BOARD row');
   },
+  // fix round 2: the catalogue status comes from the listing's own decision (avatar-boards.js listState): a chained board whose
+  // previous board is not complete is not listed, so its entry is not «On sale this week» but «Unlocks after the previous board»;
+  // once the previous board is complete it is
+  board_chain_status() {
+    const rb = require('./raid-boards');
+    const week = { shopFrom: '2019-04-08', shopTo: '2019-04-14' }, win = ['2019-04-08', '2019-04-21'];
+    const doc = { index: {
+      5000031: { key: 'B-6/gem', group: 'gem', type: 2, donorId: 9031, name: 'Set 1', price: 3500, windows: [{ key: 'B-6/gem', censusId: 'B-6', window: win, price: 3500, labels: [] }] },
+      5000032: { key: 'B-7/gem', group: 'gem', type: 2, donorId: 9032, name: 'Set 2', price: 3500, chain: 5000031,
+        windows: [{ key: 'B-7/gem', censusId: 'B-7', window: win, price: 3500, labels: [] }] } }, report: { held: [] } };
+    const raw = INDEX();
+    raw.entries.push({ ...boardEntry('B-7', 29932, win[0], win[1], [{ donorId: 9032, name: 'Set 2' }]), avatarBoards: [{ key: 'B-7/gem', group: 'gem', type: 2, window: win, price: 3500, labels: [],
+      boards: [{ donorId: 9032, name: 'Set 2' }] }] });
+    const ix = avatarBoards.catalogIndex(raw, doc);
+    const tables = { sphere: [5000031, 5000032].map((id) => ({ sphereBoardId: id, arryId: id, type: 2 })), sphereArray: [rb.gridRow(5000031, 2), rb.gridRow(5000032, 2)] };
+    const player = { avatarBoardsBought: [5000032] };
+    const av = avatarBoards.avatarBoardRoutes({ index: doc.index, master: (t) => tables[t] || [], nextUserSphereId: () => 1 });
+    assert.strictEqual(av.listState(player, 5000032, week, null), 'week', 'a bought board stays listed even behind its chain (Task 4 rule)');
+    player.avatarBoardsBought = [];
+    assert.strictEqual(av.listState(player, 5000032, week, null), 'chain');
+    assert.strictEqual(av.listed(player, 5000032, week, null), false, 'not listed while Set 1 is incomplete');
+    const ev = routesEvents({ player, savePlayer() {}, masterRows: () => [], eventIndex: () => ix, storyWeek: () => week,
+      realNow: () => Date.parse('2026-11-03T20:00:00Z'), serverTimeAt: String, clock: { weekEnd: (x) => x, dayEnd: (x) => x }, stageState: () => ({}), grantItem() {}, grantObjective() {},
+      webBase: '', log() {}, avatarBoardState: (id) => av.listState(player, id, week, null) });
+    const c1 = ev.catalogCtx();
+    assert.ok(!c1.current.has('B-7'), 'not «now»: the listing does not list it');
+    const st1 = pages.statusOf(ix.entries.find((e) => e.censusId === 'B-7'), c1);
+    assert.strictEqual(st1.show, 'other');
+    assert.ok(/Unlocks after the previous board/.test(st1.pill) && !/On sale/.test(st1.pill), st1.pill);
+    assert.ok(rowOf(catalog(ix, c1), 29932).includes('Unlocks after the previous board'));
+    // Set 1 complete: the listing lists Set 2, and the catalogue says so
+    player.avatarSphere = { 5000031: { id: 1, unlock: [1, 2], getDatetime: 0 } };
+    assert.strictEqual(av.listState(player, 5000032, week, null), 'week');
+    const c2 = ev.catalogCtx();
+    assert.ok(c2.current.has('B-7'));
+    assert.ok(/On sale this week/.test(pages.statusOf(ix.entries.find((e) => e.censusId === 'B-7'), c2).pill));
+  },
   // the BOARD entry is kept as an event is (one kept event at a time, shared): the kept value is its census id, or the entry key of
   // a board dated only by khuxwiki; the kept boards are listed for sale at the price of that window (avatar-boards.js)
   board_entry_keepable() {

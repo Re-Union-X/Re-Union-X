@@ -4894,6 +4894,8 @@ function eventRoutes() {
     addPresent: (type, id, num, comment) => addPresent(type, id, num, comment),
     // a built Booster (type 34, Events Part 6): once per quest objective or first-clear item, ever (boosters.js)
     grantBooster: (emblemId, from) => playerBoosters().grant(emblemId, from),
+    // the avatar board listing's decision for this player (Event Catalog status, Part 7 Task 5 fix round 2)
+    avatarBoardState: (id) => avatarBoards().listState(player, id, avatarCtx(), null),
   });
 }
 // Limited and level avatar boards (avatar-boards.js): game_data/avatar_boards.json, the story week of storyCtx(), the Lux level and
