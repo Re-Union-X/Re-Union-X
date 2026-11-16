@@ -101,7 +101,7 @@ function fakePage(raw, hash = '') {
   const apply = (f) => {
     byId.fbtn.onclick();
     byId.freset.onclick({ preventDefault() {} });
-    for (const g of ['show', 'prog', 'type']) if (f[g]) box(g).onclick({ target: chip(g, f[g]) });
+    for (const g of ['show', 'prog', 'bd', 'type']) if (f[g]) box(g).onclick({ target: chip(g, f[g]) });
     if (f.q) { byId.fq.value = f.q; byId.fq.oninput.call(byId.fq); }
     const fok = byId.fok.textContent;
     byId.fok.onclick();
@@ -368,7 +368,7 @@ const tests = {
     const raw = pages.catalogPage(ix, ctx()), html = pages.expandCatalog(raw);
     assert.ok(raw.includes('<div class="hdr"><h1>Event Catalog</h1><button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button></div>'));
     const sheet = html.slice(html.indexOf('<div class="sheet" id="sheet"'), html.indexOf('<div id="pinmsg"'));
-    assert.deepStrictEqual([...sheet.matchAll(/<h4>([^<]+)<\/h4>/g)].map((m) => m[1]), ['FIND', 'SHOW', 'PROGRESS', 'TYPE']);
+    assert.deepStrictEqual([...sheet.matchAll(/<h4>([^<]+)<\/h4>/g)].map((m) => m[1]), ['FIND', 'SHOW', 'PROGRESS', 'EVENT BOARDS', 'TYPE']);
     assert.ok(sheet.includes('placeholder="Event, quest or reward name"') && /<div class="hint">Matches the start of words/.test(sheet));
     const group = (g) => [...((new RegExp(`<div class="opts" data-g="${g}">([\\s\\S]*?)</div>`).exec(sheet) || [])[1] || '').matchAll(/data-v="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)</g)].map((m) => [m[1], m[2]]);
     assert.deepStrictEqual(group('show'), [['all', 'All events'], ['now', 'In Events now'], ['can', 'Can be kept now'], ['kept', 'Kept'], ['later', 'Later in the Story'], ['removed', 'Not built yet']]);
@@ -379,7 +379,7 @@ const tests = {
     assert.ok(raw.includes('<div class="sum" id="sum">') && raw.includes('<div id="none" class="none" style="display:none"></div>'));
     for (const e of ix.entries) {
       const r = rowOf(html, e.evStageId);
-      assert.ok(new RegExp(`data-type="${e.type || 'EQ'}" data-done="[01]" data-search="[^"]+">`).test(r), `data attributes of ${e.censusId}`);
+      assert.ok(new RegExp(`data-type="${e.type || 'EQ'}" data-done="[01]" data-boards="(done|todo|none)" data-search="[^"]+">`).test(r), `data attributes of ${e.censusId}`);
       assert.ok(r.includes('<div class="mt"></div>'), 'the «Matches:» line');
     }
     // the narrow layout of the shared catalogues applies (NARROW_CSS: full-width button, one chip per row)
@@ -467,6 +467,36 @@ const tests = {
     // BACK from a details page: #q<id> opens the year of that row
     const back = fakePage(raw, '#q29900');
     assert.ok(back.shown().includes(29900));
+  },
+  // EVENT BOARDS (user 16-11, the Raid Catalog's RAID BOARDS): Completed = every served Event Board of the event's set complete,
+  // Not completed = one of them is not, an event without a served board is under neither
+  catalog_event_boards_filter() {
+    const ix = INDEX();
+    ix.entries[0].boardSet = 'S1';
+    ix.entries[1].boardSet = 'S2';
+    ix.entries[2].boardSet = 'S3'; // its boards are not served (eventBoard -> null)
+    ix.entries[2].type = 'QUIZ';
+    ix.boardSets = { S1: { boardIds: [7001, 7002], chains: {}, censusIds: ['E-0'] }, S2: { boardIds: [7003], chains: {}, censusIds: ['E-1'] },
+      S3: { boardIds: [7009], chains: {}, censusIds: ['E-3'] } };
+    const b = (id, done) => ({ id, name: `Board ${id}`, done, finish: '', cells: [] });
+    const boards = { 7001: b(7001, true), 7002: b(7002, true), 7003: b(7003, false) };
+    const raw = pages.catalogPage(ix, ctx({ eventBoard: (id) => boards[id] || null }));
+    const html = pages.expandCatalog(raw), bd = (id) => (/data-boards="(\w+)"/.exec(rowOf(html, id)) || [])[1];
+    assert.deepStrictEqual([29900, 29901, 29903, 29909].map(bd), ['done', 'todo', 'none', 'none']);
+    assert.ok(/<h4>EVENT BOARDS<\/h4><div class="opts" data-g="bd">/.test(raw), 'the EVENT BOARDS group of the sheet');
+    const fp = fakePage(raw);
+    fp.tab('all');
+    fp.apply({ bd: 'done' });
+    assert.deepStrictEqual(fp.shown(), [29900]);
+    assert.ok(/Event Boards: <img class="ic" src="[^"]*bdone\.png" alt="">Completed/.test(fp.byId.sum.innerHTML), 'the summary chip');
+    fp.apply({ bd: 'todo' });
+    assert.deepStrictEqual(fp.shown(), [29901]);
+    fp.apply({ bd: 'done', type: 'QUIZ' });
+    assert.deepStrictEqual([fp.byId.none.textContent], ['No events with completed Event Boards match your filters']);
+    fp.byId.sum.onclick.call(fp.byId.sum, { target: { getAttribute: (a) => (a === 'data-x' ? 'bd' : null) }, preventDefault() {} });
+    assert.ok(fp.shown().length > 0, 'the chip × clears EVENT BOARDS');
+    // the Avatar Board Catalog has no EVENT BOARDS group
+    assert.ok(!pages.boardCatalogPage(ix, ctx()).includes('EVENT BOARDS'));
   },
   // Booster rewards (boosterLater): a served quest with a Booster says it comes with the Boosters; the new reasons in plain words
   booster_and_new_reasons() {
