@@ -465,5 +465,32 @@ for (const web of [false, true]) {
   check(/Gem Boards\*\* [^.]*Avatar Boards/.test(t) && !/come with the Event Boards in a later update/.test(t) && !/No card in the original/.test(t), 'Events: frase delle Gem Boards');
   if (n.avatarNoticeFacts()) check(t.includes('## Avatar boards') && t.includes('## Avatar Board Catalog'), 'Events: sezione Avatar boards');
 }
+{
+  // Events Part 8 Task 8: the «High Score Challenges» section (facts from events.json: hsc entries, labels, reduced thresholds)
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-hscn-'));
+  try {
+    const ef = path.join(dir, 'events.json');
+    const th = (s, e, score, o) => ({ startRank: s, endRank: e, score, label: o ? 'scaled' : 'interpolated', ...(o ? { originalScore: o } : {}) });
+    const hsc = { thresholds: [th(1001, 5000, 100), th(1, 1000, 500, 900)], milestones: [{ score: 50 }] };
+    fs.writeFileSync(ef, JSON.stringify({ entries: [
+      { censusId: 'H1', type: 'HSC', start: '2016-07-08', available: true, labels: ['hscThresholds'], quests: [{ served: true, labels: ['wikiRoom', 'wikiAreas'] }], hsc },
+      { censusId: 'H2', type: 'HSC', start: '2021-03-01', available: true, labels: ['hscThresholds'], quests: [{ served: true, labels: ['hscJpTwin'] }], hsc },
+      { censusId: 'H3', type: 'HSC', start: '2020-01-01', available: false, quests: [{ served: false }], hsc },
+      { censusId: 'E', type: 'EQ', start: '2018-05-01', available: true, quests: [{ served: true }] }], boardSets: {} }));
+    const f = n.eventNoticeFacts(ef);
+    check(f && f.hsc && f.hsc.events === 2 && f.hsc.held === 1 && f.hsc.from === '2016' && f.hsc.to === '2021' && f.hsc.generated === 1
+      && f.hsc.jpMaps === 1 && f.hsc.reduced === 2, `HSC facts: ${JSON.stringify(f && f.hsc)}`);
+    const l = n.eventHscLines(f).join(' ');
+    check(/## High Score Challenges/.test(l) && /\*\*2 High Score Challenges\*\*/.test(l) && /2016 to 2021/.test(l) && /score threshold/.test(l)
+      && /\*\*once\*\*/.test(l) && /difference/.test(l) && /rank 1,000/.test(l) && /Original:/.test(l) && /Score Ranking Results/.test(l)
+      && /Supernova/.test(l) && /SCORE BONUS MEDAL/.test(l) && /1 of them/.test(l) && /Japanese/.test(l) && /waits/.test(l)
+      && (l.match(/\*\*not original\*\*/g) || []).length >= 3, `HSC lines: ${l.slice(0, 1200)}`);
+    check(n.eventHscLines(null).length === 0 && n.eventHscLines({ hsc: { events: 0 } }).length === 0, 'HSC: no section without HSC');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
+  const live = n.eventNoticeFacts();
+  if (live && live.hsc && live.hsc.events) check(t.includes('## High Score Challenges') && t.includes(`**${live.hsc.events} High Score Challenges**`), 'Events: HSC section live');
+}
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');

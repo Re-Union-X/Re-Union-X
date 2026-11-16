@@ -121,8 +121,15 @@ function eventNoticeFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dir
   challenge.boosters += servedQ.filter((q) => Array.isArray(q.boosterRewards) && q.boosterRewards.length).length;
   const boosters = boosterFacts(path.join(path.dirname(file), 'boosters.json'), new Set(Object.values(sets).flatMap((s) => s.boardIds || [])),
     servedQ.flatMap((q) => (Array.isArray(q.boosterRewards) ? q.boosterRewards.map((r) => r.emblemId) : [])));
+  // Events Part 8 Task 8: the High Score Challenges (entries with hsc): served, held, years, generated / Japanese maps, reduced thresholds
+  const hAll = all.filter((e) => e.hsc), hOn = hAll.filter((e) => e.available), hQ = hOn.flatMap((e) => e.quests || []).filter((q) => q.served);
+  const hYears = hOn.map((e) => String(e.start || '').slice(0, 4)).filter(Boolean).sort();
+  const hasL = (q, l) => (q.labels || []).includes(l);
+  const hsc = { events: hOn.length, held: hAll.length - hOn.length, from: hYears[0] || null, to: hYears[hYears.length - 1] || null,
+    generated: hQ.filter((q) => hasL(q, 'wikiRoom')).length, jpMaps: hQ.filter((q) => hasL(q, 'hscJpTwin')).length,
+    reduced: hOn.filter((e) => ((e.hsc || {}).thresholds || []).some((t) => Number.isFinite(t.originalScore) && t.originalScore !== t.score)).length };
   return { records: all.length, events: on.length, served: quests.filter((q) => q.served).length, quests: quests.length,
-    first: starts[0] || null, last: starts[starts.length - 1] || null, coins, challenge, orgxiii, boosters,
+    first: starts[0] || null, last: starts[starts.length - 1] || null, coins, challenge, orgxiii, boosters, hsc,
     labels: [...used].filter((l) => why[l]).map((l) => ({ id: l, text: why[l] })) };
 }
 // Events Part 6 Task 8: Boosters served (boosters.json byId), spans, expiry sources; Booster cells (rewardSelect 34) of the
@@ -273,6 +280,20 @@ function eventCoinLines(f) {
 function eventNoticeLines(f) {
   if (!f || !f.events) return ['No event quest is served yet: the Event Catalog lists the events and why they are not here yet.'];
   return [`Today **${f.events} events** are served, with **${f.served} of their ${f.quests} quests** (${f.records} events are in the data so far${f.first && f.last ? `, from ${usMonth(f.first)} to ${usMonth(f.last)}` : ''}). The others follow in later updates: the **Event Catalog** lists every event and, for each quest not served yet, the reason (a map or an enemy whose original files are still missing). A quest whose enemy is missing is not served: no other enemy stands in for it.`];
+}
+// Events Part 8 Task 8: the «High Score Challenges» section of the Events notice (docs/notes/events.md «High Score Challenge»)
+function eventHscLines(f) {
+  const h = f && f.hsc;
+  if (!h || !h.events) return [];
+  const span = h.from ? (h.from === h.to ? ` of ${h.from}` : ` of ${h.from} to ${h.to}`) : '';
+  return ['## High Score Challenges',
+    `The **High Score Challenges** are back: **${h.events} High Score Challenges**${span}, with their target, their **Score Bonus Medals** and their original point milestones. As in the original game, your score in battle is multiplied by the score bonus of the Medals in your Keyblade (the red **SCORE +N%** plate of the Keyblade screen), and your best run counts.`,
+    'In the original game the ranking rewards went to the players by **leaderboard position**. This server has one player, so each rank bracket became a **score threshold** (**not original**): reach it with your best run and you receive the original rewards of that bracket, **once** per event. Only the highest bracket you reach is paid; a better run later pays only the **difference**. The rank shown on the Rankings screen is the best rank of the bracket you reached.',
+    `The thresholds are the **original scores** of each bracket, from the players' results of the time (leaderboard screens in videos, posts of the community), or estimated from the other events of the same years where an event left none. The brackets above **rank 1,000** were reached only by the best players in the world, so they are lowered to the score of rank 1,000 (**not original**): the rank 1 rewards need that score. The event's **Details** show each threshold, with the original score beside a lowered one («Original:»).${h.reduced ? ` This applies to **${h.reduced}** events.` : ''} No threshold is lower than half of the event's first point milestone.`,
+    'When a run reaches a new bracket, the original **Score Ranking Results** popup opens at your next visit to the Home screen, and the rewards are in your **Presents**.',
+    'The **Supernova** forms of a 7★ Score Bonus Medal (Supernova, Supernova+ and Supernova++) count as that Medal, as in the original game. The Score Bonus Medal panel of the Keyblade screen uses the **Japanese version** of its logo, which reads **SCORE BONUS MEDAL** (**not original**: the worldwide one, ASSIST MEDALS, is not in the surviving game data).',
+    ...(h.generated || h.jpMaps ? [`The original maps of some High Score Challenges did not survive.${h.generated ? ` ${h.generated === 1 ? '1 of them is' : `${h.generated} of them are`} **rebuilt** from the community wiki, in the original rooms and with the original enemies, their levels and their paths (**reconstructed**).` : ''}${h.jpMaps ? ` ${h.jpMaps === 1 ? '1 uses' : `${h.jpMaps} use`} the map of the **Japanese** High Score Challenge with the same target, level and world.` : ''} The Event Catalog marks each one.`] : []),
+    ...(h.held ? [`${h.held === 1 ? '1 High Score Challenge waits' : `${h.held} High Score Challenges wait`} in the Event Catalog, with the reason.`] : [])];
 }
 function eventLabelLines(f) {
   if (!f || !f.labels.length) return [];
@@ -572,6 +593,7 @@ const NOTICES = [
       'Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.',
       ...eventNoticeLines(eventNoticeFacts()),
       ...eventChallengeLines(eventNoticeFacts()),
+      ...eventHscLines(eventNoticeFacts()),
       '## Gem quests',
       'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
       'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
@@ -978,4 +1000,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines };
+module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines };
