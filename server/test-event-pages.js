@@ -752,9 +752,9 @@ const tests = {
     // with the player's best: the score and the shown rank (ranked-rewards.js shownRank)
     const mine = pages.detailPage(ix, 29930, ctx({ hscBest: (cid) => (cid === 'H-1' ? 6500 : null) }));
     assert.ok(/Your best score: <b>6,500<\/b>/.test(mine) && /shown rank: <b>11th<\/b>/.test(mine), 'best score and shown rank');
-    // a ceiling threshold says so
-    const ix2 = INDEX(); const ce = hscEntry(); ce.hsc.thresholds[2] = { ...ce.hsc.thresholds[2], ceiling: true, tolerance: 50 }; ix2.entries.push(ce);
-    assert.ok(/Ceiling reached \(within 50 points\)/.test(pages.detailPage(ix2, 29930, ctx())), 'ceiling threshold');
+    // a reduced threshold shows the original border
+    const ix2 = INDEX(); const ce = hscEntry(); ce.hsc.thresholds[2] = { ...ce.hsc.thresholds[2], label: 'scaled', originalScore: 148058247 }; ix2.entries.push(ce);
+    assert.ok(/Original: 148,058,247/.test(pages.detailPage(ix2, 29930, ctx())), 'original border shown');
     // an HSC not built yet (no thresholds): «Not built yet» with its reason, no section
     const ix3 = INDEX(); const held = { ...hscEntry(), available: false, stageIds: [], reason: 'hscNoThresholds', why: REASON_TEXT.hscNoThresholds }; delete held.hsc; ix3.entries.push(held);
     assert.ok(!pages.detailPage(ix3, 29930, ctx()).includes('<h2>High Score</h2>'));

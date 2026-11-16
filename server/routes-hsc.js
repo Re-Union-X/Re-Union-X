@@ -28,7 +28,7 @@ const ordinal = (n) => {
   return s + (m100 >= 11 && m100 <= 13 ? 'th' : m10 === 1 ? 'st' : m10 === 2 ? 'nd' : m10 === 3 ? 'rd' : 'th');
 };
 const bracketText = (b) => (b.startRank === b.endRank ? ordinal(b.startRank) : `${ordinal(b.startRank)}–${ordinal(b.endRank)}`);
-const needed = (t) => (t.ceiling ? t.score - (t.tolerance || 0) : t.score);
+const needed = (t) => t.score;
 const parseTime = (s) => Date.parse(String(s).replace(' ', 'T') + 'Z');
 
 function routesHsc({ player, savePlayer, entryOfStage, listed, addPresent, masterRows, realNow, serverTimeAt, clock, serverTime, send, ret, element, log = console.log }) {

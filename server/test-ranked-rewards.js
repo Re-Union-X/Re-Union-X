@@ -10,7 +10,7 @@ const TH = [
   { startRank: 1001, endRank: 10000, score: 100, label: 'original' },
   { startRank: 101, endRank: 1000, score: 500, label: 'scaled' },
   { startRank: 11, endRank: 100, score: 2000, label: 'interpolated' },
-  { startRank: 1, endRank: 10, score: 5000, label: 'original', ceiling: true, tolerance: 50 },
+  { startRank: 1, endRank: 10, score: 5000, label: 'scaled', originalScore: 9000 },
 ];
 const item = (type, id, num, extra) => Object.assign({ type, id, num }, extra || {});
 const BR = [
@@ -65,10 +65,10 @@ const tests = {
     assert.strictEqual(b.best, 600); assert.strictEqual(b.paidIndex, 1); assert.deepStrictEqual(b.due, []);
     assert.deepStrictEqual(st.ev1, { best: 600, paidIndex: 1 });
   },
-  ceiling_tolerance() {
-    assert.strictEqual(rr.bracketOf(TH, 4949), 2);
-    assert.strictEqual(rr.bracketOf(TH, 4950), 3);
-    // tolerance only applies to ceiling thresholds
+  threshold_is_the_score() {
+    // the top threshold is the reduced score (16-11: original borders, top reduced); originalScore is only shown
+    assert.strictEqual(rr.bracketOf(TH, 4999), 2);
+    assert.strictEqual(rr.bracketOf(TH, 5000), 3);
     assert.strictEqual(rr.bracketOf(TH, 1999), 1);
   },
   paid_once_per_event_id() {

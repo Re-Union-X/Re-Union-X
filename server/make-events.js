@@ -308,7 +308,7 @@ function checkRanges(master, config) {
 
 // High Score Challenges (Events Part 8 Task 6, spec docs/superpowers/specs/2026-11-10-ranked-rewards-design.md, client fields
 // docs/notes/events.md «evStage»). A record of type config.hsc.type with its `hsc` block {era, milestones [{score, rewards}],
-// brackets [{startRank, endRank, rewards}], thresholds [{startRank, endRank, score, label, ceiling?, tolerance?}] (one per bracket,
+// brackets [{startRank, endRank, rewards}], thresholds [{startRank, endRank, score, label, originalScore?}] (one per bracket,
 // private calibration, Task 3), scoreBonus [pct] (shown only), bonusMedals [{medalId, rate (hundredths of a percent: 2600 = +26%),
 // display (deck panel slot 1..3, 0 = the «Medals» list), name?, source}], donorRankingId} gives, besides its quests:
 // - its evStage rows eventCategory config.hsc.eventCategory (4: the tap opens the High Score mode) with rankingId,
@@ -340,7 +340,7 @@ function hscHoldOf(rec) {
   return null;
 }
 // -> {hsc: the checked block with our item ids, brackets and thresholds lowest bracket -> top} or {reason, detail}
-const HSC_THRESHOLD_FIELDS = ['startRank', 'endRank', 'score', 'label', 'ceiling', 'tolerance'];
+const HSC_THRESHOLD_FIELDS = ['startRank', 'endRank', 'score', 'label', 'originalScore'];
 function hscPrepare(rec, resolve, payable, aliases = null) {
   const h = rec.hsc, cid = rec.censusId;
   const lowFirst = (a, b) => b.startRank - a.startRank;

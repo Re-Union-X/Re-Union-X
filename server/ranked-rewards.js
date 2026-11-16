@@ -1,11 +1,11 @@
 // Ranked rewards (spec docs/superpowers/specs/2026-11-10-ranked-rewards-design.md, Events Part 8 Task 4).
 // Mode-independent threshold logic: leaderboard brackets become per-event score thresholds. Pure functions: no I/O, no save;
 // the caller saves the state and pays `due`. Thresholds and brackets are ordered lowest bracket -> top, same length.
-//   threshold: { startRank, endRank, score, label, ceiling?, tolerance? }   (tolerance: absolute score amount)
+//   threshold: { startRank, endRank, score, label, originalScore? }   (originalScore: the original border, shown only)
 //   bracket:   { startRank, endRank, rewards: [{ type, id, num, skillId?, skillLv? }] }
 'use strict';
 
-const needed = t => (t.ceiling ? t.score - (t.tolerance || 0) : t.score);
+const needed = t => t.score;
 
 // index of the highest threshold reached, -1 when none
 function bracketOf(thresholds, result) {

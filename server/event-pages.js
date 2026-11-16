@@ -552,10 +552,10 @@ function hscSection(e, ctx) {
   const thr = h.thresholds, top = thr[thr.length - 1];
   const best = ctx.hscBest ? ctx.hscBest(e.censusId) : null, hasBest = Number.isFinite(best);
   const mine = hasBest ? `<p class="ecoin">${icon('bonus')}Your best score: <b>${num(best)}</b> · shown rank: <b>${ordinal(shownRank(thr, best))}</b>.</p>` : '';
-  const needed = (t) => (t.ceiling ? t.score - (t.tolerance || 0) : t.score);
+  const needed = (t) => t.score;
   const rewardsOf = (t) => ((h.brackets || []).find((b) => b.startRank === t.startRank && b.endRank === t.endRank) || {}).rewards;
   const ranks = (t) => (t.startRank === t.endRank ? `Rank ${num(t.startRank)}` : `Ranks ${num(t.startRank)}–${num(t.endRank)}`);
-  const thRows = [...thr].reverse().map((t) => `<tr class="th"><td>${esc(ranks(t))}</td><td>${num(t.score)}${t.ceiling ? `<small>Ceiling reached (within ${num(t.tolerance || 0)} points)</small>` : ''}</td>`
+  const thRows = [...thr].reverse().map((t) => `<tr class="th"><td>${esc(ranks(t))}</td><td>${num(t.score)}${Number.isFinite(t.originalScore) && t.originalScore !== t.score ? `<small>Original: ${num(t.originalScore)}</small>` : ''}</td>`
     + `<td>${ordinal(shownRank(thr, needed(t)))}</td><td>${esc(HSC_SOURCE[t.label] || t.label)}</td><td>${esc(hscRewards(rewardsOf(t), ctx))}</td></tr>`).join('');
   const msRows = (h.milestones || []).map((m) => `<tr><td>${num(m.score)}</td><td>${esc(hscRewards(m.rewards, ctx))}</td>`
     + (hasBest ? (best >= m.score ? `<td class="cd">Reached${CROWN}</td>` : '<td>Not reached</td>') : '') + '</tr>').join('');
