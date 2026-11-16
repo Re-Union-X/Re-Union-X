@@ -22544,3 +22544,10 @@ img/sphere_incentive/5500450.png	loc	=img/sphere_incentive_kept/5500450.png
 img/sphere_incentive/5500451.png	loc	=img/sphere_incentive_kept/5500451.png
 img/sphere_incentive/5500452.png	loc	=img/sphere_incentive_kept/5500452.png
 img/sphere_incentive/5500453.png	loc	=img/sphere_incentive_kept/5500453.png
+
+# 58. Victory jingles of the battle result (16-11, user report: no music on the CONGRATULATIONS of a raid). The client plays
+#     text/audio/clear_jingle_mini (501004018) on every raid victory and defeated_jingle (501004019) on a lost battle of
+#     another mode, both from native code (no LWF event, so jp_sound_effects.py never saw them); the texts were served,
+#     the AKBs were not. Original files: 2016 bundle, identical to the JP 4.3.1 revisions 501004018.00103119 / 501004019.
+audio/501004018.akb	b16,jp
+audio/501004019.akb	b16,jp
