@@ -531,6 +531,24 @@
    "model": "new",
    "approved": true,
    "review": "user-approved 10-11 (rendered animations, Events Part 5 Task 2; atkSp follow-up 1: 3 pictures from eff_10876 / eff_1055 / abl_13566, declared cat 3)"
+  },
+  "129": {
+   "name": "Huge Fireworks",
+   "model": "new",
+   "approved": true,
+   "review": "exact model of the 13-11 import (recon/tools/extra_donors_exact.tsv, user-approved 13-11 on the rendered review of tmp/enemy_exact; not built until 16-11: no master row used it); listed 16-11 for the HSC quest enemies (Events Part 8), dry run complete cat 2"
+  },
+  "172": {
+   "name": "Swaying Spook",
+   "model": "new",
+   "approved": true,
+   "review": "exact model of the 13-11 import (recon/tools/extra_donors_exact.tsv, user-approved 13-11 on the rendered review of tmp/enemy_exact; not built until 16-11: no master row used it); listed 16-11 for the HSC quest enemies (Events Part 8), dry run complete cat 2"
+  },
+  "248": {
+   "name": "Bag O' Points",
+   "model": "new",
+   "approved": true,
+   "review": "exact model of the 13-11 import (recon/tools/extra_donors_exact.tsv, user-approved 13-11 on the rendered review of tmp/enemy_exact; not built until 16-11: no master row used it); listed 16-11 for the HSC quest enemies (Events Part 8), dry run complete cat 2"
   }
  }
 }
