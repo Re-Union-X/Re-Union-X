@@ -1506,7 +1506,7 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   deck slots, the friend's medal, the pet base-slot medal). The bonus marks of the medal views, medal lists and «High Score» sort
   come instead from the FIRST evStage row of eventCategory 4 whose start..end holds now, in eventStageId order: the server serves
   every HSC row not listed now (story week, kept event) with its end in 2015, so the marks follow the listed HSC (two listed: the
-  lower eventStageId, the client's rule; `server/test-hsc-served-evstage.js`). The JP logo «SCORE BONUS MEDAL» stays (WW read
+  higher eventStageId on the bench of 16-11: 22997 over 22952, both open; `server/test-hsc-served-evstage.js`). The JP logo «SCORE BONUS MEDAL» stays (WW read
   «ASSIST MEDALS»; kept by the user's choice, 16-11).
   Supernova forms count as their 7★ root, as in the original master (2021 donor: SN / SN+ / SN++ and their copies carry
   groupId = the root; star and Prime 6★→7★ chains do not): our master keeps groupId 0 on them (it means «copy of» to 25 of our

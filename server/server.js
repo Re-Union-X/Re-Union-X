@@ -689,7 +689,7 @@ function servedMasterRows(name, realMs) {
     // medals (red plates of the medal view, medal lists, «High Score» sort) from the evMedalList of the FIRST evStage row of
     // eventCategory 4 whose startTime..endTime holds now, in eventStageId order; every HSC row is open 2015-2030 in the master, so
     // it always used EV-0026's list. The rows not listed now (story week, kept event) are served closed (an end in 2015), so the
-    // marks follow the listed HSC (two listed: the lower eventStageId). The deck total and the battle multiplier read the played
+    // marks follow the listed HSC (two listed: the bench of 16-11 showed the higher eventStageId, 22997 over 22952). The deck total and the battle multiplier read the played
     // stage's own scoreMedalListId and do not depend on this.
     const open = name === 'evStage' ? hscListedIds(realMs) : null;
     const closed = (r) => (open && r.eventCategory === HSC_EVENT_CATEGORY && !open.has(r.eventStageId)
