@@ -1470,3 +1470,39 @@ round 1 «silent» path marked it sent on the server, but the client learns a bo
 login list. Now a bought board stays listed as the twin the client holds until the next login list, which gives the original
 back with no popup (re-benched: t6c_unk2, t6c_av8). Not benched: a bought board in its own later week (needs a week change; covered
 by `twin_buy_once` / `twin_unkeep_bought_no_popup`).
+
+## High Score Challenge: client behaviour (Events Part 8, Task 1, 16 November 2026)
+
+Bench spike on one hand-built HSC row (evStage eventCategory 4, a cloned easy quest, ranking with 2 brackets, 2 score rewards),
+resources 133, then two passes with stub server answers. Screenshots `t8s_*` (private).
+
+- **Layouts.** A tap on an eventCategory 4 card loads `publish/AdventureTop2_HiScore_Button.json` without a check; WW served
+  none of the High Score layouts, so the client crashed (SIGSEGV in the layout reader). The 9 JP 4.3.1 layouts of the event
+  button, the bonus-medal deck panels and the battle score panels are imported (`recon/tools/jp_coco_layouts.txt`, resources
+  133); their textures carry no Japanese text. The ranking layouts were already served.
+- **Quest view.** «Current: Nth  Goal: Mth» bar (Current from `/stage/event highScoreRank`; Goal = the next bracket up, the
+  lowest bracket when unranked) with a Rewards button (popup: the goal bracket and its `rankingReward`), the «High Score» bar
+  (= `/stage/event stages[].score`: the server must send the HSC best there, not the best Lux), Rankings and Rewards buttons.
+- **Ranking tables.** `ranking.startRank..endRank` is the range of `rankingReward` ids; `rankingReward.startRank/endRank` are
+  ranks. Confirmed by the goal popup and the «Ranking Rewards» list.
+- **Rankings screen** (`/ranking/highscore`, `/own`, `/border`, actions 135/136/179): root `{rankingDatas[], rankingStatus,
+  rankingTermStart, rankingTermEnd, lastRank}`; each row is the full player record of the High Score parser (userData,
+  userAvatar, rank, userMedals, userSkills, userKeyblade, petBaseSlotMedal, supportUserMedals, supportUserSkills, pet,
+  emblemIds) ending with `lux` = **the score shown**. A Lux-ranking row fails the whole parse («200 ERROR :135»). «Ends in» =
+  `rankingTermEnd`.
+- **End-of-event result.** `/ranking/reward/check` `{lastRankingResults[{lastRankingId, lastRank, lastUnionRank, pvpClass}],
+  rankingRewardIds[], openRankingIds[]}` opens the original «Congratulations! Score Ranking Results — Your Rank — bracket
+  rewards» popup when the Rankings screen opens; it shows again on every answer that carries it (the server sends it once).
+- **Point milestones.** `/stage/highscore/reward/list` `{getHighscore, getHighscoreRewardIds[]}` feeds the «High Score Rewards»
+  list (evScoreReward rows; «Ends in» = evStage endTime). `/stage/clear highScoreReward[]` (evScoreReward ids) adds «N points
+  scored! <reward>» rows to the Congratulations screen after Results: the original milestone delivery.
+  `/stage/start startStageData.highScore` is the best score.
+- **Deck.** «SCORE BONUS MEDAL» panel from the evMedalList rows whose `listId` = the stage's `scoreMedalListId`: `display` 1..3
+  is the panel slot (two rows with the same slot overwrite each other), «+N%» = `rate` / 100 (2600 = +26%). An orange «Medals»
+  button (list of the `display` 0 rows) appears when at least one row has `display` 0. Every row of the list counts.
+- **Battle score.** Only in an eventCategory 4 stage. Each hit pays floor(damage / max HP × the enemy's `score` at its level)
+  until that score is paid, plus a kill bonus; everything is multiplied by M = (10000 + the `rate` of the deck's bonus medals) /
+  10000 and dropped as score prizes that the HUD counts when collected; `/stage/clear getPoint.score` carries the total. The
+  enemy `score` field is an original level curve like `lux`; the spike's cloned enemies really had score 1, so the HUD stayed 0
+  and the run scored 4. HSC quests need their original enemies (donor curves, 163 of the 311 HSC enemies are not in our master
+  yet); the bench needs a real HSC stage.
