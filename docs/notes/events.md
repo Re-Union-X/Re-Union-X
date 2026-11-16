@@ -1499,7 +1499,15 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   `/stage/start startStageData.highScore` is the best score.
 - **Deck.** «SCORE BONUS MEDAL» panel from the evMedalList rows whose `listId` = the stage's `scoreMedalListId`: `display` 1..3
   is the panel slot (two rows with the same slot overwrite each other), «+N%» = `rate` / 100 (2600 = +26%). An orange «Medals»
-  button (list of the `display` 0 rows) appears when at least one row has `display` 0. Every row of the list counts.
+  button (list of the `display` 0 rows) appears when at least one row has `display` 0. Every row of the list counts. The
+  «SCORE +N%» deck total (StartDeckHiScore_Deck_ver230, node `Panel_HS`) is drawn on `Hs_Total_Bonus_Panel.png`, which no WW copy
+  holds: imported from JP 4.3.1 (originals.tsv §60, user report 16-11, video reference). The deck total and the battle multiplier
+  read the played stage's own `scoreMedalListId`; a medal counts when its medalId or its groupId equals the row's `medalId` (5
+  deck slots, the friend's medal, the pet base-slot medal). The bonus marks of the medal views, medal lists and «High Score» sort
+  come instead from the FIRST evStage row of eventCategory 4 whose start..end holds now, in eventStageId order: the server serves
+  every HSC row not listed now (story week, kept event) with its end in 2015, so the marks follow the listed HSC (two listed: the
+  lower eventStageId, the client's rule; `server/test-hsc-served-evstage.js`). The JP logo «SCORE BONUS MEDAL» stays (WW read
+  «ASSIST MEDALS»; kept by the user's choice, 16-11).
 - **Battle score.** Only in an eventCategory 4 stage. Each hit pays floor(damage / max HP × the enemy's `score` at its level)
   until that score is paid, plus a kill bonus; everything is multiplied by M = (10000 + the `rate` of the deck's bonus medals) /
   10000 and dropped as score prizes that the HUD counts when collected; `/stage/clear getPoint.score` carries the total. The

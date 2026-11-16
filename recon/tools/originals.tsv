@@ -22573,3 +22573,7 @@ audio/501004019.akb	b16,jp
 #     provisional), on screen since the Boosters (Events Part 6, resources 121; not a High Score import collision). The JP
 #     4.3.1 file is the final art: the cyan flame (no text). Not in the 2016 bundle nor in the IPA 4.4.0.
 cocostudio/publish/MD_Emblem.png	jp
+# 60. High Score Challenge deck total (16-11, user report: no SCORE badge; video stxNmChZYEI 2:13). StartDeckHiScore_Deck_ver230
+#     (WW served) draws «SCORE +N%» on Panel_HS = Hs_Total_Bonus_Panel.png, the red badge of the original. The file is in no WW
+#     copy we hold (delivered with the 2016-17 HSC events); JP 4.3.1 has it, plain art with no text.
+cocostudio/publish/Hs_Total_Bonus_Panel.png	jp

@@ -671,7 +671,16 @@ function servedMasterRows(name, realMs) {
   // drawPetType (Spirit Blind Box, pet-draw.js): same paths; the client opens detailUrl as given (a path = «file not found»)
   if (name === 'evStage' || name === 'drawPetType') {
     const abs = (u) => (String(u || '').startsWith('/') ? WEB_BASE + u : u);
-    return rows.map((r) => ({ ...r, bannerUrl: abs(r.bannerUrl), detailUrl: abs(r.detailUrl) }));
+    // High Score Challenges (docs/notes/events.md «High Score Challenge: client behaviour», Deck): the client marks the score-bonus
+    // medals (red plates of the medal view, medal lists, «High Score» sort) from the evMedalList of the FIRST evStage row of
+    // eventCategory 4 whose startTime..endTime holds now, in eventStageId order; every HSC row is open 2015-2030 in the master, so
+    // it always used EV-0026's list. The rows not listed now (story week, kept event) are served closed (an end in 2015), so the
+    // marks follow the listed HSC (two listed: the lower eventStageId). The deck total and the battle multiplier read the played
+    // stage's own scoreMedalListId and do not depend on this.
+    const open = name === 'evStage' ? hscListedIds(realMs) : null;
+    const closed = (r) => (open && r.eventCategory === HSC_EVENT_CATEGORY && !open.has(r.eventStageId)
+      ? { endTime: HSC_CLOSED_END, endDispTime: HSC_CLOSED_END, boardEndTime: HSC_CLOSED_END } : {});
+    return rows.map((r) => ({ ...r, bannerUrl: abs(r.bannerUrl), detailUrl: abs(r.detailUrl), ...closed(r) }));
   }
   // moogleshop: le offerte a tempo (display 1, «N days left») scadono ogni lunedi' come le Weekly, in ora finta
   // (make-moogleshop.js fissava endDate alla generazione: «2137 days left», I-021)
@@ -714,6 +723,11 @@ function servedMasterRows(name, realMs) {
   });
 }
 
+// the eventStageIds of the High Score Challenge cards listed now (Events tab: story week and kept event); null on an error (all open)
+const HSC_EVENT_CATEGORY = 4, HSC_CLOSED_END = '2015-01-01 00:00:01';
+function hscListedIds(realMs) {
+  try { return new Set(eventRoutes().events(realMs).map((c) => c.eventStageId)); } catch (e) { console.log(`[hsc] listed ids: ${e.message}`); return null; }
+}
 // what the served sphere rows depend on beyond the file (masterBody cache key); an error gives a key that never repeats a stale body
 function sphereServedKey() {
   try {
@@ -732,6 +746,8 @@ function masterBody(name) {
   // sphere: the served type-2 rows follow the kept event (Event Catalog, a keep can change mid-session), the story week and the
   // real week of their countdown, and the avatar board index (servedMasterRows)
   if (name === 'sphere') key += `:${sphereServedKey()}`;
+  // evStage: the HSC rows served open follow the listed cards (a keep can change mid-session)
+  if (name === 'evStage') { const ids = hscListedIds(sessionRealMs()); key += `:hsc${ids ? [...ids].sort((a, b) => a - b).join(',') : 'all'}`; }
   const hit = masterBodyCache.get(name);
   if (hit && hit.key === key) return hit.body;
   const json = Buffer.from(JSON.stringify(servedMasterRows(name, sessionRealMs())), 'utf8');
