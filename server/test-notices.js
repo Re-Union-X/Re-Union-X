@@ -452,7 +452,7 @@ for (const web of [false, true]) {
       && f.unmapped.join() === 'Medal Fusion Set 1' && f.permanent.length === 1 && f.permanent[0].price === 100, `Avatar boards: fatti ${JSON.stringify(f)}`);
     const l = n.avatarBoardLines(f).join(' ');
     check(l.startsWith('## Avatar boards') && l.includes('**3 boards on sale for Jewels**') && l.includes('**2 free boards**') && /Start-Up Boost Board/.test(l) && /100 Jewels/.test(l)
-      && /Medal Fusion Set 1/.test(l) && /2 skills/.test(l) && /description is empty/.test(l) && /1 Skill Enhancement Board shows a plain card/.test(l)
+      && /Medal Fusion Set 1/.test(l) && /2 skills/.test(l) && /description is empty/.test(l) && !/plain card/.test(l)
       && /## Avatar Board Catalog/.test(l) && /Special/.test(l) && /KEPT BOARD/.test(l) && /Unlocked an Avatar Board!/.test(l) && /next login/.test(l)
       && /never charged twice|nothing is paid or earned twice/.test(l) && /Bought/.test(l) && (l.match(/\*\*not original\*\*/g) || []).length >= 3
       && !/restored/i.test(l), `Avatar boards: righe ${l.slice(0, 900)}`);

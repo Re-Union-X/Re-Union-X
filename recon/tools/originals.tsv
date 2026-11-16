@@ -21909,7 +21909,7 @@ img/sphere_incentive/5000303.png	jp	img/sphere_incentive/2500549.png
 img/sphere_incentive/5000304.png	loc	=img/sphere_incentive_av/2510594.png
 img/sphere_incentive/5000305.png	loc	=img/sphere_incentive_av/2510595.png
 img/sphere_incentive/5000306.png	jp	img/sphere_incentive/Board Avatar Premium/Repeat/2510576.png
-img/sphere_incentive/5000307.png	jp	img/sphere_incentive/2500559.png
+img/sphere_incentive/5000307.png	jp	img/sphere_incentive/2500553.png
 img/sphere_incentive/5000308.png	loc	=img/sphere_incentive_av/2510598.png
 img/sphere_incentive/5000309.png	loc	=img/sphere_incentive_av/2510599.png
 img/sphere_incentive/5000312.png	loc	=img/sphere_incentive_av/acb_chip.png
@@ -22093,6 +22093,15 @@ img/sphere_incentive/5000142.png	loc	=img/sphere_incentive_av/2510149.png
 img/sphere_incentive/5000132.png	loc	=img/sphere_incentive_av/2510139.png
 img/sphere_incentive/5000168.png	loc	=img/sphere_incentive_av/2510172.png
 img/sphere_incentive/5000453.png	loc	=img/sphere_incentive_av/2510000.png
+# 16-11 (user): the 8 Skill Enhancement Boards that showed a plain card, JP 4.3.1 cards; 5000307 corrected to 2500553
+img/sphere_incentive/5000372.png	jp	img/sphere_incentive/2500528.png
+img/sphere_incentive/5000283.png	jp	img/sphere_incentive/2500529.png
+img/sphere_incentive/5000290.png	jp	img/sphere_incentive/2500536.png
+img/sphere_incentive/5000291.png	jp	img/sphere_incentive/2500537.png
+img/sphere_incentive/5000310.png	jp	img/sphere_incentive/2500556.png
+img/sphere_incentive/5000311.png	jp	img/sphere_incentive/2500557.png
+img/sphere_incentive/5000314.png	jp	img/sphere_incentive/2500558.png
+img/sphere_incentive/5000315.png	jp	img/sphere_incentive/2500559.png
 
 # 57. KEPT twin avatar board cards (Events Part 7, Task 6c, user 15-11): img/sphere_incentive/<twinId>.png of the KEPT twin
 #     boards 5500001+ (server/avatar-boards.js; event_ids.json avatarTwins), listed instead of the original board when it is
@@ -22381,12 +22390,15 @@ img/sphere_incentive/5500279.png	loc	=img/sphere_incentive_kept/5500279.png
 img/sphere_incentive/5500280.png	loc	=img/sphere_incentive_kept/5500280.png
 img/sphere_incentive/5500281.png	loc	=img/sphere_incentive_kept/5500281.png
 img/sphere_incentive/5500282.png	loc	=img/sphere_incentive_kept/5500282.png
+img/sphere_incentive/5500283.png	loc	=img/sphere_incentive_kept/5500283.png
 img/sphere_incentive/5500284.png	loc	=img/sphere_incentive_kept/5500284.png
 img/sphere_incentive/5500285.png	loc	=img/sphere_incentive_kept/5500285.png
 img/sphere_incentive/5500286.png	loc	=img/sphere_incentive_kept/5500286.png
 img/sphere_incentive/5500287.png	loc	=img/sphere_incentive_kept/5500287.png
 img/sphere_incentive/5500288.png	loc	=img/sphere_incentive_kept/5500288.png
 img/sphere_incentive/5500289.png	loc	=img/sphere_incentive_kept/5500289.png
+img/sphere_incentive/5500290.png	loc	=img/sphere_incentive_kept/5500290.png
+img/sphere_incentive/5500291.png	loc	=img/sphere_incentive_kept/5500291.png
 img/sphere_incentive/5500292.png	loc	=img/sphere_incentive_kept/5500292.png
 img/sphere_incentive/5500293.png	loc	=img/sphere_incentive_kept/5500293.png
 img/sphere_incentive/5500294.png	loc	=img/sphere_incentive_kept/5500294.png
@@ -22405,8 +22417,12 @@ img/sphere_incentive/5500306.png	loc	=img/sphere_incentive_kept/5500306.png
 img/sphere_incentive/5500307.png	loc	=img/sphere_incentive_kept/5500307.png
 img/sphere_incentive/5500308.png	loc	=img/sphere_incentive_kept/5500308.png
 img/sphere_incentive/5500309.png	loc	=img/sphere_incentive_kept/5500309.png
+img/sphere_incentive/5500310.png	loc	=img/sphere_incentive_kept/5500310.png
+img/sphere_incentive/5500311.png	loc	=img/sphere_incentive_kept/5500311.png
 img/sphere_incentive/5500312.png	loc	=img/sphere_incentive_kept/5500312.png
 img/sphere_incentive/5500313.png	loc	=img/sphere_incentive_kept/5500313.png
+img/sphere_incentive/5500314.png	loc	=img/sphere_incentive_kept/5500314.png
+img/sphere_incentive/5500315.png	loc	=img/sphere_incentive_kept/5500315.png
 img/sphere_incentive/5500316.png	loc	=img/sphere_incentive_kept/5500316.png
 img/sphere_incentive/5500317.png	loc	=img/sphere_incentive_kept/5500317.png
 img/sphere_incentive/5500318.png	loc	=img/sphere_incentive_kept/5500318.png
@@ -22463,6 +22479,7 @@ img/sphere_incentive/5500368.png	loc	=img/sphere_incentive_kept/5500368.png
 img/sphere_incentive/5500369.png	loc	=img/sphere_incentive_kept/5500369.png
 img/sphere_incentive/5500370.png	loc	=img/sphere_incentive_kept/5500370.png
 img/sphere_incentive/5500371.png	loc	=img/sphere_incentive_kept/5500371.png
+img/sphere_incentive/5500372.png	loc	=img/sphere_incentive_kept/5500372.png
 img/sphere_incentive/5500373.png	loc	=img/sphere_incentive_kept/5500373.png
 img/sphere_incentive/5500374.png	loc	=img/sphere_incentive_kept/5500374.png
 img/sphere_incentive/5500375.png	loc	=img/sphere_incentive_kept/5500375.png

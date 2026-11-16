@@ -321,7 +321,7 @@ The **Start-Up Boost Board** (100 Jewels) is on sale in every Story week, with n
 
 6 skills of the skill boards were missing from the surviving game data and come from another copy of the original data: they work as in the original game, but their description is empty, because no text for them survives.
 
-Most board cards are the original pictures. 42 cards whose files did not survive are cut from screenshots of the original game and from the community wiki, with their corners cleaned and lightly sharpened (**reconstructed**). 8 Skill Enhancement Boards show a plain card: no picture of them was found.
+Most board cards are the original pictures. 42 cards whose files did not survive are cut from screenshots of the original game and from the community wiki, with their corners cleaned and lightly sharpened (**reconstructed**).
 
 ### Avatar Board Catalog
 
