@@ -508,7 +508,14 @@ function srvBox(e, st, index, o) {
 const EVENT_DETAIL_CSS = '.tt{table-layout:auto}.tt td:nth-child(2),.tt td:nth-child(3){white-space:nowrap}.tt td.r{color:#ffcd4a}.tt small{display:block;color:#b9cfdc;font-size:13px}'
   + '.tt.bt td:nth-child(2){white-space:normal}.bt td.cd{color:#8fe3a0}.bt td.r{white-space:normal}.ecoin{margin:6px 0 12px;font-size:15px}.ecoin b{color:#ffcd4a;font-size:18px}'
   // the Avatar Boards table (class ab, Task 5c fix round 1): card | Board | Dates | Price | Status; Board and Dates wrap, Price on one line
-  + '.tt.ab td:nth-child(3){white-space:normal}.tt.ab td:nth-child(4){white-space:nowrap}' + BOARD_CARD_CSS;
+  + '.tt.ab td:nth-child(3){white-space:normal}.tt.ab td:nth-child(4){white-space:nowrap}' + BOARD_CARD_CSS
+  // High Score tables on a phone (user 16-11: the 5-column thresholds table broke on mobile): one card per row, each cell on its
+  // own line with its column name (data-l), the header row hidden
+  + '@media (max-width:700px){table.tt.hs,table.tt.hs>tbody,table.tt.hs tr,table.tt.hs td{display:block!important;width:auto!important;box-sizing:border-box}'
+  + 'table.tt.hs{overflow:visible!important;padding:0!important}table.tt.hs tr.hh{display:none!important}'
+  + 'table.tt.hs tr{border:1px solid #2f5d78;border-radius:8px;margin:0 0 8px;padding:6px 8px}'
+  + 'table.tt.hs td{border:0!important;padding:2px 0!important;white-space:normal!important;text-align:left}'
+  + 'table.tt.hs td[data-l]::before{content:attr(data-l) ": ";color:#b9cfdc}table.tt.hs small{display:inline;margin-left:6px}}';
 // Event Boards of an entry's set (Part 3 Task 6, as the Raid Catalog lists the boards of a raid, with the cells): the coin line (one
 // balance per set, never expires), then each board of the set in order with its cells. ctx.eventBoard(boardId) -> {name, cells:
 // [{n, cost, reward, done}], finish, done} | null; ctx.eventCoins(setKey) -> n. '' without a set or without a board served.
@@ -555,9 +562,9 @@ function hscSection(e, ctx) {
   const needed = (t) => t.score;
   const rewardsOf = (t) => ((h.brackets || []).find((b) => b.startRank === t.startRank && b.endRank === t.endRank) || {}).rewards;
   const ranks = (t) => (t.startRank === t.endRank ? `Rank ${num(t.startRank)}` : `Ranks ${num(t.startRank)}–${num(t.endRank)}`);
-  const thRows = [...thr].reverse().map((t) => `<tr class="th"><td>${esc(ranks(t))}</td><td>${num(t.score)}${Number.isFinite(t.originalScore) && t.originalScore !== t.score ? `<small>Original: ${num(t.originalScore)}</small>` : ''}</td>`
-    + `<td>${ordinal(shownRank(thr, needed(t)))}</td><td>${esc(HSC_SOURCE[t.label] || t.label)}</td><td>${esc(hscRewards(rewardsOf(t), ctx))}</td></tr>`).join('');
-  const msRows = (h.milestones || []).map((m) => `<tr><td>${num(m.score)}</td><td>${esc(hscRewards(m.rewards, ctx))}</td>`
+  const thRows = [...thr].reverse().map((t) => `<tr class="th"><td>${esc(ranks(t))}</td><td data-l="Score">${num(t.score)}${Number.isFinite(t.originalScore) && t.originalScore !== t.score ? `<small>Original: ${num(t.originalScore)}</small>` : ''}</td>`
+    + `<td data-l="Rank shown">${ordinal(shownRank(thr, needed(t)))}</td><td data-l="Source">${esc(HSC_SOURCE[t.label] || t.label)}</td><td data-l="Rewards">${esc(hscRewards(rewardsOf(t), ctx))}</td></tr>`).join('');
+  const msRows = (h.milestones || []).map((m) => `<tr><td>${num(m.score)}</td><td data-l="Rewards">${esc(hscRewards(m.rewards, ctx))}</td>`
     + (hasBest ? (best >= m.score ? `<td class="cd">Reached${CROWN}</td>` : '<td>Not reached</td>') : '') + '</tr>').join('');
   const pct = (h.scoreBonus || []).filter((x) => Number.isFinite(x));
   // the score-bonus medals (make-events.js bonusMedals): deck slots 1..3 first, then the «Medals» list (display 0); +N% = rate / 100
@@ -565,16 +572,16 @@ function hscSection(e, ctx) {
   const medalName = (m) => m.name || (ctx.itemName && ctx.itemName({ type: 3, id: m.medalId, num: 1 })) || `Medal ${m.medalId}`;
   const bonus = medals.length
     ? '<h3>Score bonus medals</h3><p class="n">A medal of this list in your deck raises the score of every run by its bonus (the original list of the event).</p>'
-      + `<table class="tt hs"><tr><th>Medal</th><th>Bonus</th><th>Shown in</th></tr>${medals.map((m) => `<tr class="bm"><td>${esc(medalName(m))}</td><td>+${m.rate / 100}%</td>`
-      + `<td>${m.display ? `Deck slot ${m.display}` : 'Medals list'}</td></tr>`).join('')}</table>`
+      + `<table class="tt hs"><tr class="hh"><th>Medal</th><th>Bonus</th><th>Shown in</th></tr>${medals.map((m) => `<tr class="bm"><td>${esc(medalName(m))}</td><td data-l="Bonus">+${m.rate / 100}%</td>`
+      + `<td data-l="Shown in">${m.display ? `Deck slot ${m.display}` : 'Medals list'}</td></tr>`).join('')}</table>`
     : pct.length ? `<p class="n">Score-bonus medals of the original event (${pct.map((x) => `+${x}%`).join(', ')}): not built yet.</p>` : '';
   return `<h2>High Score</h2>${mine}<h3>Score thresholds</h3>`
     + '<p class="n">In the original game these rewards went by leaderboard position. On this server each original rank bracket is a score threshold: '
     + "when your best run reaches it you receive that bracket's original rewards, once (only the highest bracket reached; a better run later pays the difference). "
     + `The rank shown is the best rank of the bracket you reached. Below ${num(thr[0].score)} points your rank shows as ${ordinal(shownRank(thr, -Infinity))}; `
     + `1st from ${num(top.score)} points.</p>`
-    + `<table class="tt hs"><tr><th>Original ranks</th><th>Score</th><th>Rank shown</th><th>Source</th><th>Rewards</th></tr>${thRows}</table>`
-    + (msRows ? `<h3>Point milestones</h3><p class="n">The original milestones: each pays once when your score reaches it.</p><table class="tt hs"><tr><th>Score</th><th>Rewards</th>${hasBest ? '<th>Status</th>' : ''}</tr>${msRows}</table>` : '')
+    + `<table class="tt hs"><tr class="hh"><th>Original ranks</th><th>Score</th><th>Rank shown</th><th>Source</th><th>Rewards</th></tr>${thRows}</table>`
+    + (msRows ? `<h3>Point milestones</h3><p class="n">The original milestones: each pays once when your score reaches it.</p><table class="tt hs"><tr class="hh"><th>Score</th><th>Rewards</th>${hasBest ? '<th>Status</th>' : ''}</tr>${msRows}</table>` : '')
     + bonus;
 }
 

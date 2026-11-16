@@ -741,7 +741,9 @@ const tests = {
     const sec = text.slice(text.indexOf('<h2>High Score</h2>'));
     assert.ok(sec.length > 20, 'High Score section');
     // point milestones: score and rewards
-    assert.ok(/<td>1,000<\/td><td>5 Jewels<\/td>/.test(sec) && /<td>5,000<\/td><td>6★ Quest Medal x1<\/td>/.test(sec), 'milestones');
+    assert.ok(/<td>1,000<\/td><td data-l="Rewards">5 Jewels<\/td>/.test(sec) && /<td>5,000<\/td><td data-l="Rewards">6★ Quest Medal x1<\/td>/.test(sec), 'milestones');
+    // phone: one card per row, column names from data-l, header row hidden (user 16-11)
+    assert.ok(/<tr class="hh"><th>Original ranks/.test(sec) && /data-l="Rank shown"/.test(sec), 'phone card cells');
     // thresholds, top first: the original ranks, the score needed, the rank shown, the source label in words
     const rows = [...sec.matchAll(/<tr class="th">([\s\S]*?)<\/tr>/g)].map((m) => m[1].replace(/<[^>]+>/g, '|').replace(/\|+/g, '|'));
     assert.deepStrictEqual(rows, ['|Ranks 1–10|9,000|1st|Original value|50 Jewels, 6★ Quest Medal x1|', '|Ranks 11–50|6,000|11th|Scaled from original|20 Jewels|',
