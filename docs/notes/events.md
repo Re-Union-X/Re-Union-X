@@ -1504,7 +1504,7 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   holds: imported from JP 4.3.1 (originals.tsv §60, user report 16-11, video reference). The deck total and the battle multiplier
   read the played stage's own `scoreMedalListId`; a medal counts when its medalId or its groupId equals the row's `medalId` (5
   deck slots, the friend's medal, the pet base-slot medal). The bonus marks of the medal views, medal lists and «High Score» sort
-  come instead from the FIRST evStage row of eventCategory 4 whose start..end holds now, in eventStageId order: the server serves
+  come instead from ONE evStage row of eventCategory 4 whose start..end holds now (the client reads a single list): the server serves
   every HSC row not listed now (story week, kept event) with its end in 2015, so the marks follow the listed HSC (two listed: the
   higher eventStageId on the bench of 16-11: 22997 over 22952, both open; `server/test-hsc-served-evstage.js`). The JP logo «SCORE BONUS MEDAL» stays (WW read
   «ASSIST MEDALS»; kept by the user's choice, 16-11).
