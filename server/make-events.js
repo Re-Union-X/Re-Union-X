@@ -213,7 +213,14 @@ function allocateIds(records, ids, config, anchors = {}) {
       if (keys.has(key)) throw new Error(`events: two quests give the key ${key}`);
       keys.add(key);
     }
-    const lost = stored.filter((k) => !keys.has(k));
+    // retiredKeys: stored keys the record gives up (kept in event_ids.json, never re-used, not served)
+    const retired = new Set(rec.retiredKeys || []);
+    for (const k of retired) {
+      if (keys.has(k)) throw new Error(`events: ${rec.censusId}: the key ${k} is retired but a quest of the record still gives it`);
+      if (k.startsWith(`${rec.censusId}/r`)) continue; // a donor row key (subRows), checked by allocateRows
+      if (!stored.includes(k)) throw new Error(`events: ${rec.censusId}: the retired key ${k} is not stored in event_ids.json`);
+    }
+    const lost = stored.filter((k) => !keys.has(k) && !retired.has(k));
     if (lost.length) {
       throw new Error(`events: ${rec.censusId}: the stored keys ${lost.slice(0, 5).join(', ')}${lost.length > 5 ? ' ...' : ''} are not given by the record any more `
         + '(anchor in event_anchors.json changed, or a quest removed): check the sidecar and the record before numbering');
@@ -257,7 +264,8 @@ function allocateRows(rec, ids, anchors, config) {
     if (!(key in ids.subRows)) ids.subRows[key] = next++;
     out.set(r.eventStageId, config.evStageBase + ids.subRows[key]);
   }
-  const lost = Object.keys(ids.subRows).filter((k) => k.startsWith(prefix) && !keys.has(k));
+  const retired = new Set(rec.retiredKeys || []); // a donor row the record gave up keeps its number (see allocateIds)
+  const lost = Object.keys(ids.subRows).filter((k) => k.startsWith(prefix) && !keys.has(k) && !retired.has(k));
   if (lost.length) throw new Error(`events: ${cid}: the stored row keys ${lost.join(', ')} are not given by the record any more (a donor row removed, or ${ak} changed)`);
   checkRoom({ ...ids.rows, ...ids.subRows }, 'evStage', config.evStageBase, config.evStageMax);
   checkNumbers({ ...ids.rows, ...ids.subRows }, 'row', config.evStageMax - config.evStageBase);

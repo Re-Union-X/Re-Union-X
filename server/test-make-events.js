@@ -103,6 +103,46 @@ const tests = {
     assert.throws(() => build(gone, a.ids, CONFIG, master(), a.anchors), /not given by the record/);
     assert.throws(() => build(strided(), a.ids, CONFIG, master(), { 'E-1': 700020 }), /not given by the record/);
   },
+  retired_key_kept_not_served() {
+    // a record may give up a stored key (retiredKeys): the number stays in event_ids.json, the quest is not served
+    const strided = () => [record('E-1', [quest(700010, 1, [501]), quest(700020, 1, [501]), quest(700030, 1, [501])])];
+    const a = build(strided());
+    const recs = strided();
+    recs[0].quests.splice(1, 1);
+    recs[0].retiredKeys = ['E-1/+10'];
+    const b = build(recs, a.ids, CONFIG, master(), a.anchors);
+    assert.strictEqual(b.ids.entries['E-1/+10'], a.ids.entries['E-1/+10'], 'retired key kept');
+    assert.deepStrictEqual(entry(b, 'E-1').quests.map((q) => q.donorStageId), [700010, 700030], 'retired quest not served');
+    assert.ok(!b.stage.some((s) => s.stageId === CONFIG.stageBase + a.ids.entries['E-1/+10']), 'no stage row for it');
+    // a retired key that the record still gives, or one never stored, stops the run
+    const still = strided(); still[0].retiredKeys = ['E-1/+10'];
+    assert.throws(() => build(still, a.ids, CONFIG, master(), a.anchors), /retired/);
+    const gone = strided(); gone[0].quests.splice(1, 1);
+    assert.throws(() => build(gone, a.ids, CONFIG, master(), a.anchors), /not given by the record/);
+  },
+  retired_key_not_reallocated() {
+    const strided = () => [record('E-1', [quest(700010, 1, [501]), quest(700020, 1, [501]), quest(700030, 1, [501])])];
+    const a = build(strided());
+    const recs = strided();
+    recs[0].quests.splice(1, 1);
+    recs[0].retiredKeys = ['E-1/+10'];
+    recs[0].quests.push(quest(700040, 1, [501]));
+    const b = build(recs, a.ids, CONFIG, master(), a.anchors);
+    const used = Object.values(b.ids.entries);
+    assert.strictEqual(new Set(used).size, used.length, 'numbers unique');
+    assert.ok(b.ids.entries['E-1/+30'] > Math.max(...Object.values(a.ids.entries)), 'new quest gets a fresh number');
+  },
+  retired_key_row_kept() {
+    // a donor row the record gave up (its quest moved to another record) keeps its subRows number too
+    const mk = () => [record('R-3', [quest(700201, 1, [777], { evStageId: 900021 }), quest(700202, 1, [501], { evStageId: 900022 })],
+      { type: 'GEM', evStage: [donorEv({ eventStageId: 900021 }), donorEv({ eventStageId: 900022 })] })];
+    const a = build(mk());
+    const recs = mk();
+    recs[0].quests.pop(); recs[0].evStage.pop(); recs[0].retiredKeys = ['R-3/+1', 'R-3/r+1'];
+    assert.throws(() => build(mk().map((r) => ({ ...r, evStage: [r.evStage[0]] })), a.ids, CONFIG, master(), a.anchors), /not given by the record/);
+    const b = build(recs, a.ids, CONFIG, master(), a.anchors);
+    assert.strictEqual(b.ids.subRows['R-3/r+1'], a.ids.subRows['R-3/r+1']);
+  },
   anchor_lost_stops() {
     const a = build();
     assert.throws(() => build(records(), a.ids, CONFIG, master(), {}), /no anchor in event_anchors.json/);
