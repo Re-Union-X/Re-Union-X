@@ -110,7 +110,7 @@ function fakePage(raw, hash = '') {
   const apply = (f) => {
     byId.fbtn.onclick();
     byId.freset.onclick({ preventDefault() {} });
-    for (const g of ['show', 'prog', 'bd', 'type']) if (f[g]) box(g).onclick({ target: chip(g, f[g]) });
+    for (const g of ['show', 'prog', 'bd', 'hs', 'type']) if (f[g]) box(g).onclick({ target: chip(g, f[g]) });
     if (f.q) { byId.fq.value = f.q; byId.fq.oninput.call(byId.fq); }
     const fok = byId.fok.textContent;
     byId.fok.onclick();
@@ -506,6 +506,29 @@ const tests = {
     assert.ok(fp.shown().length > 0, 'the chip × clears EVENT BOARDS');
     // the Avatar Board Catalog has no EVENT BOARDS group
     assert.ok(!pages.boardCatalogPage(ix, ctx()).includes('EVENT BOARDS'));
+  },
+  // HIGH SCORE (I-276, user 16-11): an HSC whose best run reached the top (rank 1) threshold has received every ranking reward;
+  // «Rank 1 reached» / «Not reached», a row that is not an HSC is under neither; no group without an HSC in the index
+  catalog_high_score_filter() {
+    const ix = INDEX();
+    const h1 = hscEntry(), h2 = { ...hscEntry(), censusId: 'H-2', evStageId: 29931, name: 'High Score Two', stageIds: [4009931], quests: [quest(4009931)] };
+    ix.entries.push(h1, h2);
+    const best = { 'H-1': 9000, 'H-2': 8999 };
+    const raw = pages.catalogPage(ix, ctx({ hscBest: (cid) => (cid in best ? best[cid] : null) }));
+    const html = pages.expandCatalog(raw), hs = (id) => (/data-hscore="(\w+)"/.exec(rowOf(html, id)) || [])[1];
+    assert.deepStrictEqual([29930, 29931, 29900].map(hs), ['top', 'below', undefined]);
+    assert.ok(/<h4>HIGH SCORE<\/h4><div class="opts" data-g="hs">/.test(raw), 'the HIGH SCORE group of the sheet');
+    const fp = fakePage(raw);
+    fp.tab('all');
+    fp.apply({ hs: 'top' });
+    assert.deepStrictEqual(fp.shown(), [29930]);
+    assert.ok(/High Score: .*Rank 1 reached/.test(fp.byId.sum.innerHTML), 'the summary chip');
+    fp.apply({ hs: 'below' });
+    assert.deepStrictEqual(fp.shown(), [29931]);
+    // no best run yet: below; no HSC in the index: no group
+    const raw2 = pages.catalogPage(ix, ctx({ hscBest: () => null }));
+    assert.strictEqual((/data-hscore="(\w+)"/.exec(rowOf(pages.expandCatalog(raw2), 29930)) || [])[1], 'below');
+    assert.ok(!pages.catalogPage(INDEX(), ctx()).includes('HIGH SCORE'), 'no HSC: no group');
   },
   // Booster rewards (boosterLater): a served quest with a Booster says it comes with the Boosters; the new reasons in plain words
   booster_and_new_reasons() {

@@ -5168,7 +5168,9 @@ const eventPageCtx = (fromCatalog = false) => ({ ...eventRoutes().catalogCtx(), 
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   stageDone: (id) => catalogStageDone(id), hasNotice: (censusId) => !!eventNotices()?.rows?.[censusId],
   eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup(),
-  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...boardCardCtx() });
+  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)),
+  // the HSC best run of an event (routes-hsc.js player.hsc): «Your best score» of the details page, HIGH SCORE filter (I-276)
+  hscBest: (censusId) => { const r = (player.hsc || {})[censusId]; return r && Number.isFinite(r.best) ? r.best : null; }, ...boardCardCtx() });
 // GET /web/event/catalog (Details of the Event Catalog banner; a kept event the index lost is cleared first), /web/event/event/
 // <evStageId> (details page; ?from=catalog: BACK), /web/event/notice/<evStageId> (Details of an event card: its original
 // notice, ?from=event: BACK; always a page, «not available» without it), /web/event/img/v<N>/<evStageId>[-kept].png (the card;

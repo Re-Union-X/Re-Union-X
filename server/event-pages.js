@@ -240,6 +240,16 @@ const SHOW_SETS = { now: ['now', 'kept'] };
 // (ctx.eventBoard(id).done), 'todo' when one is not, 'none' without a served board (neither). boards: the page's memo of searchOf
 const EVENT_BOARD_OPTS = [['all', 'All'], ['done', 'Completed', 'bdone'], ['todo', 'Not completed', 'btodo']];
 const EVENT_BOARD_CSS = '.o.bd-done.on{background:#2e9e3e;border-color:#6fd47f}.o.bd-todo.on{background:#5a6470;border-color:#9aa4ae}';
+// HIGH SCORE (I-276, user 16-11): 'top' when the best run of an HSC reached its top (rank 1) threshold, i.e. every ranking reward
+// was received; 'below' otherwise; null for an event that is not a High Score Challenge (ctx.hscBest(censusId): best or null)
+const HSC_TOP_OPTS = [['all', 'All'], ['top', 'Rank 1 reached', 'done'], ['below', 'Not reached', 'todo']];
+const HSC_TOP_CSS = '.o.hs-top.on{background:#2e9e3e;border-color:#6fd47f}.o.hs-below.on{background:#5a6470;border-color:#9aa4ae}';
+function hscTopState(e, ctx) {
+  const thr = e.hsc && e.hsc.thresholds;
+  if (!thr || !thr.length) return null;
+  const best = ctx.hscBest ? ctx.hscBest(e.censusId) : null;
+  return Number.isFinite(best) && best >= thr[thr.length - 1].score ? 'top' : 'below';
+}
 function eventBoardsState(e, index, ctx, boards) {
   const set = e.boardSet && ((index && index.boardSets) || {})[e.boardSet];
   if (!set || !ctx.eventBoard) return 'none';
@@ -280,17 +290,17 @@ function searchOf(e, ctx, index, boards) {
 // shown rows load (kxImgs of UNPACK_JS: lazy loading per tab). A keep / remove (kxRow of ROWS_JS) renders again. A #q<id> link
 // to a row of another year opens that year.
 const FILTER_JS = `(function(){/* year tabs and filters */
-var PN=__PN__,LAB={type:__TYPE__,show:__SHOW__,prog:__PROG__,bd:__BD__},SHOWSET=__SHOWSET__;
+var PN=__PN__,LAB={type:__TYPE__,show:__SHOW__,prog:__PROG__,bd:__BD__,hs:__HS__},SHOWSET=__SHOWSET__;
 __MATCH__
 function $(id){return document.getElementById(id);}
 function attr(el,a){return el&&el.getAttribute?el.getAttribute(a):null;}
 var tabs=$('tabs');if(!tabs)return;
 var kids=[].slice.call($('rows').children),rows=[],i;
 for(i=0;i<kids.length;i++)if(/(^| )row( |$)/.test(kids[i].className))rows.push({el:kids[i],p:attr(kids[i],'data-p'),t:attr(kids[i],'data-type'),dn:attr(kids[i],'data-done')==='1',
-own:attr(kids[i],'data-own')==='1',buy:attr(kids[i],'data-buy')==='1',pg:attr(kids[i],'data-prog'),bd:attr(kids[i],'data-boards'),ns:(attr(kids[i],'data-search')||'').split(' | '),mt:kids[i].querySelector?kids[i].querySelector('.mt'):null});
-function blank(p){return {p:p,type:'all',show:'all',prog:'all',bd:'all',q:''};}
+own:attr(kids[i],'data-own')==='1',buy:attr(kids[i],'data-buy')==='1',pg:attr(kids[i],'data-prog'),bd:attr(kids[i],'data-boards'),hs:attr(kids[i],'data-hscore'),ns:(attr(kids[i],'data-search')||'').split(' | '),mt:kids[i].querySelector?kids[i].querySelector('.mt'):null});
+function blank(p){return {p:p,type:'all',show:'all',prog:'all',bd:'all',hs:'all',q:''};}
 var cur=blank(attr(tabs,'data-def')||'all'),dr=null;
-function copy(s){return {p:s.p,type:s.type,show:s.show,prog:s.prog,bd:s.bd,q:s.q};}
+function copy(s){return {p:s.p,type:s.type,show:s.show,prog:s.prog,bd:s.bd,hs:s.hs,q:s.q};}
 function hits(r,qq,max){var o=[],i;for(i=0;i<r.ns.length&&o.length<max;i++)if(khuxMatch(qq,r.ns[i]))o.push(r.ns[i]);return o;}
 function match(r,s,anyPeriod){
 if(!anyPeriod&&s.p!=='all'&&r.p!==s.p)return false;
@@ -299,9 +309,10 @@ if(s.show==='bought'){if(!r.own)return false;}else if(s.show==='notbought'){if(!
 else if(s.show!=='all'&&(SHOWSET[s.show]||[s.show]).indexOf(attr(r.el,'data-show'))<0)return false;
 if(s.prog!=='all'&&(r.pg!==null?r.pg!==s.prog:r.dn!==(s.prog==='done')))return false;
 if(s.bd!=='all'&&r.bd!==s.bd)return false;
+if(s.hs!=='all'&&r.hs!==s.hs)return false;
 return !s.q||hits(r,s.q,1).length>0;}
 function count(s){var n=0;for(var i=0;i<rows.length;i++)if(match(rows[i],s))n++;return n;}
-function nf(s){return (s.type!=='all'?1:0)+(s.show!=='all'?1:0)+(s.prog!=='all'?1:0)+(s.bd!=='all'?1:0)+(s.q?1:0);}
+function nf(s){return (s.type!=='all'?1:0)+(s.show!=='all'?1:0)+(s.prog!=='all'?1:0)+(s.bd!=='all'?1:0)+(s.hs!=='all'?1:0)+(s.q?1:0);}
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function plural(n,w){return n+' '+w+(n===1?'':'s');}
 function tag(g,l){return '<span class="tag">'+l+'<a href="#" data-x="'+g+'" aria-label="Remove">×</a></span>';}
@@ -321,11 +332,12 @@ if(cur.type!=='all')h+=' '+tag('type',LAB.type[cur.type]);
 if(cur.show!=='all')h+=' '+tag('show',LAB.show[cur.show]);
 if(cur.prog!=='all')h+=' '+tag('prog',LAB.prog[cur.prog]);
 if(cur.bd!=='all')h+=' '+tag('bd',LAB.bd[cur.bd]);
+if(cur.hs!=='all')h+=' '+tag('hs',LAB.hs[cur.hs]);
 if(cur.q)h+=' '+tag('q','Find: &quot;'+esc(cur.q)+'&quot;');
 h+=' <a href="#" class="clear" data-x="all">Clear all</a>';}
 $('sum').innerHTML=h;if(typeof kxImgs==='function')kxImgs();$('fdot').textContent=f?f:'';
 for(i=0;i<rows.length;i++){r=rows[i];if(!r.mt)continue;var w=cur.q&&r.el.className.indexOf(' hide')<0?hits(r,cur.q,3):[];r.mt.textContent=w.length?'Matches: '+w.join(', '):'';r.mt.style.display=w.length?'block':'none';}
-var none=$('none'),wq=(cur.prog==='done'?'completed ':cur.prog==='todo'?'incomplete ':'')+__NOUNS__+(cur.bd==='done'?' with completed Event Boards':cur.bd==='todo'?' with Event Boards to complete':'');none.textContent=n?'':(cur.q?'No '+wq+' match "'+cur.q+'"':'No '+wq+' match your filters');none.style.display=n?'none':'';}
+var none=$('none'),wq=(cur.prog==='done'?'completed ':cur.prog==='todo'?'incomplete ':'')+__NOUNS__+(cur.bd==='done'?' with completed Event Boards':cur.bd==='todo'?' with Event Boards to complete':'')+(cur.hs==='top'?' with rank 1 reached':cur.hs==='below'?' without rank 1':'');none.textContent=n?'':(cur.q?'No '+wq+' match "'+cur.q+'"':'No '+wq+' match your filters');none.style.display=n?'none':'';}
 window.kxRender=render;
 function sync(){[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){var g=attr(box,'data-g');[].forEach.call(box.children,function(o){o.className=o.className.replace(/ on/g,'')+(attr(o,'data-v')===dr[g]?' on':'');});});
 $('fok').textContent='Show '+plural(count(dr),'result');}
@@ -335,10 +347,10 @@ $('fbtn').onclick=openF;$('fx').onclick=closeF;$('dim').onclick=closeF;
 $('fq').oninput=function(){dr.q=this.value.replace(/\\s+/g,' ').replace(/^ | $/g,'');sync();};
 $('fq').onkeydown=function(e){if(e.keyCode===13)this.blur();};
 [].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){box.onclick=function(e){var t=e.target;while(t&&t!==box&&!attr(t,'data-v'))t=t.parentNode;var v=attr(t,'data-v');if(!v||!dr)return;dr[attr(box,'data-g')]=v;sync();};});
-$('freset').onclick=function(e){e.preventDefault();dr.type='all';dr.show='all';dr.prog='all';dr.bd='all';dr.q='';$('fq').value='';sync();};
+$('freset').onclick=function(e){e.preventDefault();dr.type='all';dr.show='all';dr.prog='all';dr.bd='all';dr.hs='all';dr.q='';$('fq').value='';sync();};
 $('fok').onclick=function(){if(!dr)return;var s=dr;s.p=cur.p;closeF();cur=s;render();};
 $('sum').onclick=function(e){var t=e.target;while(t&&t!==this&&!attr(t,'data-x'))t=t.parentNode;var x=attr(t,'data-x');if(!x)return;e.preventDefault();
-if(x==='type'||x==='all')cur.type='all';if(x==='show'||x==='all')cur.show='all';if(x==='prog'||x==='all')cur.prog='all';if(x==='bd'||x==='all')cur.bd='all';if(x==='q'||x==='all')cur.q='';render();};
+if(x==='type'||x==='all')cur.type='all';if(x==='show'||x==='all')cur.show='all';if(x==='prog'||x==='all')cur.prog='all';if(x==='bd'||x==='all')cur.bd='all';if(x==='hs'||x==='all')cur.hs='all';if(x==='q'||x==='all')cur.q='';render();};
 tabs.onclick=function(e){var t=e.target;while(t&&t!==tabs&&!attr(t,'data-p'))t=t.parentNode;if(!t||t===tabs)return;cur.p=attr(t,'data-p');render();};
 var h=location.hash?$(location.hash.slice(1)):null;if(h&&cur.p!=='all'&&attr(h,'data-p')&&attr(h,'data-p')!==cur.p)cur.p=attr(h,'data-p');
 render();if(h&&h.scrollIntoView)h.scrollIntoView();})();`;
@@ -370,7 +382,7 @@ const boardCount = (e) => {
 };
 const MODES = {
   event: { base: BASE, title: 'Event Catalog', noun: 'event', entries: eventEntriesOf, status: statusOf, pills: PILLS, keepJs: KEEP_JS, href: detailHref, button: keepButton,
-    typeOf, typeOpts: TYPE_OPTS, showOpts: SHOW_OPTS, placeholder: 'Event, quest or reward name', progOpts: PROG_OPTS, css: NO_CARD_CSS + EVENT_BOARD_CSS, ncJs: NO_CARD_JS,
+    typeOf, typeOpts: TYPE_OPTS, showOpts: SHOW_OPTS, placeholder: 'Event, quest or reward name', progOpts: PROG_OPTS, css: NO_CARD_CSS + EVENT_BOARD_CSS + HSC_TOP_CSS, ncJs: NO_CARD_JS,
     eventBoards: true,
     hint: 'Matches the start of words in event and quest names and in the rewards of the quests and Event Boards (e.g. Halloween, Marluxia, Dewey).',
     count: (e) => { const served = servedOf(e).length, all = (e.quests || []).length; return served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`; },
@@ -409,14 +421,14 @@ function catalogOf(index, ctx, m) {
     const done = mk ? mk.prog === 'done' : doneOf(e, ctx), search = esc(m.search ? m.search(e) : searchOf(e, ctx, index, boards)), t = m.typeOf(e);
     const card = cards ? `<span class="im bc">${cards.html}</span>` : `<span class="im"><img width="320" height="70" data-src="${imgOf(ctx, e.evStageId)}" alt="" onerror="kxNc(this)"></span>`;
     // event mode: the EVENT BOARDS state of the row (packed as a mark, so the rows keep sharing their templates)
-    const bd = m.eventBoards ? eventBoardsState(e, index, ctx, boards) : null;
-    const marks = (mk ? ` data-own="${mk.own}" data-buy="${mk.buy}" data-prog="${mk.prog}"` : '') + (bd ? ` data-boards="${bd}"` : '');
+    const bd = m.eventBoards ? eventBoardsState(e, index, ctx, boards) : null, hs = m.eventBoards ? hscTopState(e, ctx) : null;
+    const marks = (mk ? ` data-own="${mk.own}" data-buy="${mk.buy}" data-prog="${mk.prog}"` : '') + (bd ? ` data-boards="${bd}"` : '') + (hs ? ` data-hscore="${hs}"` : '');
     // one minimal row (Part 4 Task 4, catalog_size_budget: about 340 events): the row opens its page (ROWS_JS, from data-eid), the
     // name is the link, the missing card box and the Keep handler are functions of the page; the rows are sent packed, as the
     // Raid Catalog's (catalog-pages.js packCatalog), and the cards load from data-src once the rows are built (kxImgs). The
     // filters read data-p (game year), data-show, data-type, data-done and data-search (FIND names); «Matches:» goes in .mt
     packed.push({ label, fields: { s: search, d: line, n: name, e: String(e.evStageId), y, t, ...(cards && cards.ids.length ? { c: cards.ids } : {}), ...(cards && cards.more ? { cm: cards.more } : {}),
-        ...(mk || bd ? { a: [...(mk ? [['data-own', String(mk.own)], ['data-buy', String(mk.buy)], ['data-prog', mk.prog]] : []), ...(bd ? [['data-boards', bd]] : [])] } : {}) },
+        ...(mk || bd || hs ? { a: [...(mk ? [['data-own', String(mk.own)], ['data-buy', String(mk.buy)], ['data-prog', mk.prog]] : []), ...(bd ? [['data-boards', bd]] : []), ...(hs ? [['data-hscore', hs]] : [])] } : {}) },
       html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}" data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
       + ` data-type="${t}" data-done="${done ? 1 : 0}"${marks} data-search="${search}">`
       + card
@@ -436,12 +448,14 @@ function catalogOf(index, ctx, m) {
   const n0 = def === 'all' ? entries.length : perYear[Number(def)];
   const js = FILTER_JS.replace('__PN__', JSON.stringify(Object.fromEntries(GAME_YEARS.map((g, i) => [i, g.name])))).replace('__TYPE__', optLabels(typeOpts))
     .replace('__SHOW__', optLabels(m.showOpts)).replace('__PROG__', optLabels(m.progOpts))
-    .replace('__BD__', JSON.stringify(Object.fromEntries(EVENT_BOARD_OPTS.slice(1).map((o) => [o[0], `Event Boards: ${optLabel(o)}`])))).replace('__SHOWSET__', JSON.stringify(SHOW_SETS)).replace('__MATCH__', () => MATCH_JS)
+    .replace('__BD__', JSON.stringify(Object.fromEntries(EVENT_BOARD_OPTS.slice(1).map((o) => [o[0], `Event Boards: ${optLabel(o)}`]))))
+    .replace('__HS__', JSON.stringify(Object.fromEntries(HSC_TOP_OPTS.slice(1).map((o) => [o[0], `High Score: ${optLabel(o)}`])))).replace('__SHOWSET__', JSON.stringify(SHOW_SETS)).replace('__MATCH__', () => MATCH_JS)
     .split('__NOUNS__').join(NOUN_JS[m.noun][1]).split('__NOUN__').join(NOUN_JS[m.noun][0]);
   const sheet = filterSheet({ placeholder: m.placeholder, n: n0, hint: m.hint,
     groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(m.showOpts, (v) => (v === 'all' ? '' : ` st-${v}`))}</div>${m.showHint ? `<div class="hint sh">${esc(m.showHint)}</div>` : ''}`],
       ['PROGRESS', `<div class="opts" data-g="prog">${filterOpts(m.progOpts, progCls)}</div>${m.progHint ? `<div class="hint sh">${esc(m.progHint)}</div>` : ''}`],
       ...(m.eventBoards ? [['EVENT BOARDS', `<div class="opts" data-g="bd">${filterOpts(EVENT_BOARD_OPTS, (v) => (v === 'all' ? '' : ` bd-${v}`))}</div>`]] : []),
+      ...(m.eventBoards && entries.some((e) => hscTopState(e, ctx)) ? [['HIGH SCORE', `<div class="opts" data-g="hs">${filterOpts(HSC_TOP_OPTS, (v) => (v === 'all' ? '' : ` hs-${v}`))}</div>`]] : []),
       ['TYPE', `<div class="opts" data-g="type">${filterOpts(typeOpts)}</div>`]] });
   const backTo = { special: '/web/special/catalog', event: `${BASE}/catalog` }[ctx.from];
   const back = m === MODES.board && backTo ? backBar(backTo) : '';
