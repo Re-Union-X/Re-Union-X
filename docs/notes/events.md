@@ -1506,3 +1506,20 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   enemy `score` field is an original level curve like `lux`; the spike's cloned enemies really had score 1, so the HUD stayed 0
   and the run scored 4. HSC quests need their original enemies (donor curves, 163 of the 311 HSC enemies are not in our master
   yet); the bench needs a real HSC stage.
+
+## High Score Challenge maps rebuilt (Events Part 8, user decisions 16 November 2026)
+
+- **Why maps are lost.** The served HSC maps are JP-range ids (300xxx) that the JP 4.3.1 files kept. The 2016-17 worldwide runs
+  used WW-only ids (590xxx) delivered per event; no file of them is in any copy we hold (JP 4.3.1, WW 2016 container, WW 4.4.0
+  OBB, WW 2020 index, IPAs, JP 5.0.1, donated packs: searched by name and by content).
+- **Rebuilt (private records, `map_recon.py` of the HSC builder):**
+  - EV-0395 (300380, own JP map): parts 15, 16, 19-24 were dropped by the JP extraction; no exit leads into them and parts 0-29
+    hold every enemy and chest the STG counts. Filled from the map's own spare empty parts 27 / 28 (`partSources`, basis
+    `hscSparePart` -> label `mapPartSpare`).
+  - EV-0140 (590140) <- JP-only HSC map 300270, EV-0247 (590230) <- 300260, EV-0050 (590060) <- 300060 with Trickmaster 10240
+    replaced by Playing Cards 10169: `map.layoutTwin` with label `hscJpTwin` (EV-0050 also `hscEnemySwap`); same target, level
+    and world. 590060 is in `worldExceptions` (only room: the neutral DG_0100_02_00).
+  - EV-0300 (300150) <- 300250 with level shift +300 (card 300 -> 600): `levelShiftMixed` in event_config.json lets
+    `import_event_stages.py` shift a layout whose enemies have several levels (only the card level must equal `from`).
+- **Held:** EV-0395 until Chipper Chef (displayId 1513) has a model; EV-0247 needs the event enemy rows 199 / 240 (served
+  models) in the master.

@@ -625,7 +625,9 @@ const tests = {
     assert.match(q[5].why, /ZZ_0001_00_00/, 'a prefix missing from roomWorlds is another world');
     assert.ok(entry(out, 'W-8').quests[0].served, 'a map listed in worldExceptions is served');
     assert.ok(REAL_CONFIG.reasonText.worldMismatch && REAL_CONFIG.roomWorlds.DB === 1 && REAL_CONFIG.neutralRooms.DG === 1);
-    const kw = Object.keys(REAL_CONFIG.worldExceptions).filter((k) => !['360010', '360030'].includes(k));
+    // EV-0050 HSC (user 16-11-2026): the rebuilt map 590060 on the JP boss map 300060, neutral room DG_0100_02_00 only
+    assert.ok(/EV-0050/.test(REAL_CONFIG.worldExceptions['590060'] || ''), 'HSC 590060 on DG_0100_02_00');
+    const kw = Object.keys(REAL_CONFIG.worldExceptions).filter((k) => !['360010', '360030', '590060'].includes(k));
     assert.deepStrictEqual(Object.keys(REAL_CONFIG.worldExceptions).filter((k) => ['360010', '360030'].includes(k)).sort(), ['360010', '360030'], 'EV-0282 and EV-0293 (ruling 07-11)');
     // The Keyblade War Pt. 3 (user decision 3, 10-11-2026): the donor stage rows say world 13 on KG_0000_01_00 (donor world 13 = KG)
     assert.deepStrictEqual(kw.map(Number).sort(), [...Array(20).keys()].map((i) => 740911 + i).filter((k) => k !== 740927), 'KW 19 maps (740927 has no STG)');

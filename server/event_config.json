@@ -163,9 +163,13 @@
   "unionTwin": "unionTwin",
   "enemiesInferred": "enemiesInferred",
   "hpFromFootage": "hpFromFootage",
-  "enemyRowRebuilt": "enemyRowRebuilt"
+  "enemyRowRebuilt": "enemyRowRebuilt",
+  "hsc enemy swapped": "hscEnemySwap"
  },
  "reconstructedWhy": {
+  "hscJpTwin": "The worldwide map file of this High Score Challenge is lost: it is in none of the game files or donated data we hold. The Japanese version ran a High Score Challenge with the same target, level and world on a map that survives; that map is used here. Layout reconstructed.",
+  "hscEnemySwap": "The Japanese map used for this High Score Challenge has another boss; it is replaced by the boss the worldwide run had (khuxwiki), with its original enemy row. Enemy original, placement reconstructed.",
+  "mapPartSpare": "Eight parts of this quest's map are missing from the surviving Japanese files. No path of the map leads into them (every enemy and chest of the quest is in the other parts), so they were filled with the map's own spare empty parts of the same room. The quest itself is played on the original map. Rebuilt, not original.",
   "hscThresholds": "In the original game the ranking rewards of a High Score Challenge went to the players by leaderboard position. This server has one player, so each original rank bracket became a score threshold: reach it with your best run and you receive that bracket's original rewards (only the highest bracket reached is paid; a better run later pays the difference, once per event). The thresholds are calibrated on the original scores where known, scaled from them or interpolated, as each one is marked. The rank shown is the best rank of the bracket you reached. The point milestones are the original ones.",
   "wikiRoom": "No original map of this quest survives in any source we hold (the Japanese and worldwide game files, the donated data, the rooms rebuilt so far): its map was generated in the quest's original room (the room of its surviving stage data, else the room the khuxwiki page names), with the enemies and the target of the page at the quest's level. Not original.",
   "enemiesInferred": "Some enemies of this quest could not be checked on the original footage (they were never hit, or fell to one special attack): their version was taken from the other quests of the same event, where it was measured. Inferred from the same run, not verified on footage.",
@@ -210,9 +214,11 @@
  "roomWorlds": { "DB": 1, "DW": 2, "WL": 3, "AG": 4, "OC": 5, "BC": 6, "CD": 7, "ED": 8, "CS": 11, "HD": 12, "NL": 13, "SR": 14, "KG": 15, "SA": 16 },
  "neutralRooms": { "DG": 1 },
  "mapRestoreNote": "make-events.js mapRestoreLabels (Events Part 5, user decision 6, 10-11-2026): an imported map with a part or STG filled from its JP dedup-stub source (recon/tools/import_event_stages.py report partSources) gets mapPartShared when the copy is exact (reconstructed false), else the label of partSourceLabels[basis] (default mapPartRebuilt); a map on a room of rebuiltRooms gets that room's label (the room build completed it: recon/tools/make_jp_rooms.py DEDUP_TILES).",
- "partSourceLabels": { "stgCandidate": "mapHeaderRebuilt" },
+ "partSourceLabels": { "stgCandidate": "mapHeaderRebuilt", "hscSparePart": "mapPartSpare" },
+ "levelShiftMixed": { "4003814": "EV-0300 HSC 10/16-10/23 2017 (map 300150 lost): JP map 300250 (card level 300, enemies 50-300) at the run's level 600, every enemy +300 (user 16-11-2026)" },
  "rebuiltRooms": { "DB_0000_01_00": "roomTilesRebuilt" },
  "worldExceptions": {
+  "590060": "EV-0050 HSC 9/16-9/22 2016 (Wonderland, Playing Cards): map rebuilt on the JP HSC boss map 300060, whose only room is the neutral DG_0100_02_00 (home world 1); the JP boss HSC maps all use it (user 16-11-2026)",
   "360010": "EV-0282 Weekly Gem (Sept. 25 2017): donor world Olympus Coliseum (= khuxwiki), JP map of the later run on Enchanted Dominion rooms; donor kept",
   "360030": "EV-0293 Weekly Gem (Oct. 2017): donor world Castle of Dreams (= khuxwiki), JP map of the later run on Enchanted Dominion rooms; donor kept (ruling 07-11, as EV-0282)",
   "740911": "EV-0941 The Keyblade War, The Ultimate Test Pt. 1: donor stage row 740911 worldId 13, thumbId 100 (= KG_0000_01_00); donor world table 13 = KG (bg_KG1): the original quest stood in world 13 on the KG room, roomWorlds KG 15 is our numbering; donor kept (user decision 3, 10-11-2026)",

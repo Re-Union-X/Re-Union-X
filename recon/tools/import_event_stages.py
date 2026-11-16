@@ -34,7 +34,8 @@ JP layout used at the quest's own level (user 10-11-2026, label levelShifted). T
 above; enemy swaps keyed by fromKey too) are copied under the item's own key (its stage id) with every enemy record's level and
 STG [11] (the quest level of the card) shifted by delta (never below 1); positions, ids, drops and uids stay. The JP folder is
 never changed. The report entry carries `fromKey`, `levelShift` and `levelShifted: true` (make-events.js serves such a quest
-only then); a JP map whose levels are not all `from` is left out (status skipped, cause 'level shift').
+only then); a JP map whose levels are not all `from` is left out (status skipped, cause 'level shift'), unless its key is in
+event_config.json levelShiftMixed (then only the card level must be `from`; every enemy level moves by the same delta).
 Part sources (Events Part 5 Task 4 follow-up; map items with `partSources {part: {key, part, reconstructed, basis}}`, from the
 records' map.partSources): the JP 4.3.1 extraction did not write its dedup stub records (a 4-byte record meaning «the same data
 as record N», the JP data manifest), so a part whose STG is present can be missing although the game had it as a byte
@@ -125,7 +126,9 @@ def shift_levels(raw, ls):
             levels.add(e['level'])
             struct.pack_into('<i', nb, base + 0x20 * i + 20, max(1, e['level'] + delta))
         out.append(bytes(nb))
-    if levels - {frm} or card != frm:
+    # the card level (STG [11], the quest level) must be `from`; the enemy levels too, unless the item says `mixed` (a layout
+    # whose enemies have several levels, shifted together: HSC 300150 <- 300250, user 16-11-2026)
+    if (levels - {frm} and not ls.get('mixed')) or card != frm:
         return None, 'level shift: JP levels %s, card %s, expected %s' % (sorted(levels), card, frm)
     struct.pack_into('<i', stg, 44, max(1, card + delta))
     return [bytes(stg)] + out, None
@@ -401,6 +404,11 @@ def main(argv=None):
         indexes['ww2018 index'] = {line.split('\t', 1)[0].rsplit('/', 1)[-1] for line in open(a.index2018, encoding='utf-8')
                                    if line.startswith('stage/mappoi_stg')}
     items = json.load(open(a.maps, encoding='utf-8'))
+    # event_config.json levelShiftMixed {map key: why}: level-shifted maps whose JP enemies have several levels (shift_levels `mixed`)
+    mixed = json.load(open(a.config, encoding='utf-8')).get('levelShiftMixed') or {}
+    for it in items:
+        if it.get('levelShift') and str(it['key']) in mixed:
+            it['levelShift'] = dict(it['levelShift'], mixed=True)
     rows = lambda n: json.load(open(os.path.join(a.master, n + '.json'), encoding='utf-8'))
     rep = run(items, mapfile.iter_stage_files(a.jp), served_rooms(), {r['enemyId'] for r in rows('enemy')},
               {r['rewardId'] for r in rows('reward')}, a.out, json.load(open(a.config, encoding='utf-8')).get('mapEnemySwaps') or {},

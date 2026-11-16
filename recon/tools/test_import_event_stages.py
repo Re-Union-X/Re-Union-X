@@ -179,6 +179,23 @@ try:
     bad = ies.run([dict(it_l, levelShift={'from': 30, 'to': 20, 'delta': -10})], files, rooms_l, ids_l, rw_l, out)['stages'][0]
     assert bad['status'] == 'skipped' and bad['cause'] == 'level shift' and not bad.get('levelShifted'), bad
     assert os.listdir(os.path.join(out, 'stage')) == []
+    # mixed levels (levelShiftMixed, HSC 300150 <- 300250, 16-11-2026): JP 300250 has card level 300 and enemies at 50..300;
+    # without `mixed` it is left out, with it every enemy level and the card move by the same delta
+    MK, MOWN = 300250, 4003814
+    sm, pm = mapfile.load_stage(files, MK)
+    ids_m = {e['enemyId'] for p in pm for e in p['enemies']}
+    rw_m = {e['reward'] for p in pm for e in p['enemies']} | {c['reward'] for p in pm for c in p['chests']}
+    it_m = {'stageId': MOWN, 'key': MOWN, 'fromKey': MK, 'levelShift': {'from': 300, 'to': 600, 'delta': 300}, 'name': 'mixed'}
+    no = ies.run([it_m], files, {p['room'] for p in pm}, ids_m, rw_m, out)['stages'][0]
+    assert no['status'] == 'skipped' and no['cause'] == 'level shift', no
+    it_m['levelShift'] = dict(it_m['levelShift'], mixed=True)
+    ok = ies.run([it_m], files, {p['room'] for p in pm}, ids_m, rw_m, out)['stages'][0]
+    assert ok['status'] == 'imported' and ok['levelShifted'] is True, ok
+    gm = sorted(n for n in os.listdir(os.path.join(out, 'stage')) if str(MOWN) in n)
+    s_m, p_m = mapfile.load_stage({(MOWN, None): rd(gm[0]), **{(MOWN, k): rd(n) for k, n in enumerate(gm[1:])}}, MOWN)
+    assert s_m['card_level_bonus'] == 600 and sm['card_level_bonus'] == 300
+    assert [e['level'] for p in p_m for e in p['enemies']] == [e['level'] + 300 for p in pm for e in p['enemies']]
+    ies.run([], files, set(), set(), set(), out)
     # part sources (Task 4 follow-up, dedup stubs): The Ultimate Test 740911 has its STG but no part 0 in the dump; part 0 is the
     # byte copy of 740920_00 (same Master). Filled byte for byte, reported; a part the copy holds is never replaced; without the
     # entry the map stays incomplete
