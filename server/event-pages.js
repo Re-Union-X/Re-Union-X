@@ -565,7 +565,7 @@ function hscSection(e, ctx) {
     + '<p class="n">In the original game these rewards went by leaderboard position. On this server each original rank bracket is a score threshold: '
     + "when your best run reaches it you receive that bracket's original rewards, once (only the highest bracket reached; a better run later pays the difference). "
     + `The rank shown is the best rank of the bracket you reached. Below ${num(thr[0].score)} points your rank shows as ${ordinal(shownRank(thr, -Infinity))}; `
-    + `1st only above ${num(top.score)} points.</p>`
+    + `1st from ${num(top.score)} points.</p>`
     + `<table class="tt hs"><tr><th>Original ranks</th><th>Score</th><th>Rank shown</th><th>Source</th><th>Rewards</th></tr>${thRows}</table>`
     + (msRows ? `<h3>Point milestones</h3><p class="n">The original milestones: each pays once when your score reaches it.</p><table class="tt hs"><tr><th>Score</th><th>Rewards</th>${hasBest ? '<th>Status</th>' : ''}</tr>${msRows}</table>` : '')
     + bonus;

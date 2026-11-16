@@ -1753,6 +1753,15 @@ const tests = {
     assert.ok(h.scoreMedalListId > 0);
     assert.deepStrictEqual(out.evMedalList.map((r) => [r.listId, r.medalId, r.rate, r.display, r.isDeleted]), [[h.scoreMedalListId, 90011, 26, 1, 0], [h.scoreMedalListId, 90012, 23, 1, 0]]);
     assert.strictEqual(out.evStage[0].scoreMedalListId, h.scoreMedalListId);
+    // review fixes: reward types aliased as the quest rewards (18 -> 20), only the threshold fields reach the index
+    const al = hscRecord('H-A');
+    al.hsc.brackets[1].rewards.push({ type: 18, id: 331, num: 1, name: 'Coat' });
+    al.hsc.thresholds[0].note = 'private calibration note';
+    al.hsc.thresholds[2] = { ...al.hsc.thresholds[2], ceiling: true, tolerance: 10 };
+    const ha = entry(build([al]), 'H-A').hsc;
+    assert.deepStrictEqual(ha.brackets[1].rewards[1], { type: 20, id: 331, num: 1, name: 'Coat', origType: 18 });
+    assert.deepStrictEqual(ha.thresholds[0], { startRank: 51, endRank: 100, score: 2000, label: 'interpolated' });
+    assert.deepStrictEqual(ha.thresholds[2], { startRank: 1, endRank: 10, score: 9000, label: 'original', ceiling: true, tolerance: 10 });
     // no id of the four tables collides between two records
     const two = build([hscRecord('H-1'), hscRecord('H-2', {}, 701310)]);
     for (const [t, k] of [['ranking', 'rankingId'], ['rankingReward', 'rankingRewardId'], ['evScoreReward', 'scoreRewardId']]) {

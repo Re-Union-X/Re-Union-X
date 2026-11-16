@@ -76,7 +76,8 @@ const RAID_SPECIAL = [970000, 989999], EGGCOGNITO = 100;
 const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
-  'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas'];
+  'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
+  'hscThresholds'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
 // (quizBoardScreenshot)
@@ -330,7 +331,8 @@ function hscHoldOf(rec) {
   return null;
 }
 // -> {hsc: the checked block with our item ids, brackets and thresholds lowest bracket -> top} or {reason, detail}
-function hscPrepare(rec, resolve, payable) {
+const HSC_THRESHOLD_FIELDS = ['startRank', 'endRank', 'score', 'label', 'ceiling', 'tolerance'];
+function hscPrepare(rec, resolve, payable, aliases = null) {
   const h = rec.hsc, cid = rec.censusId;
   const lowFirst = (a, b) => b.startRank - a.startRank;
   const brackets = [...(h.brackets || [])].sort(lowFirst), thresholds = [...h.thresholds].sort(lowFirst);
@@ -343,7 +345,10 @@ function hscPrepare(rec, resolve, payable) {
     if (!HSC_LABELS.includes(t.label)) throw new Error(`events: ${cid}: threshold label ${t.label} (ranks ${t.startRank}-${t.endRank}) is not ${HSC_LABELS.join(' / ')}`);
   });
   const missing = [], unknown = [];
-  const item = (d, where) => {
+  // reward types the server pays as another type (rewardTypeAliases, as the quest rewards: aliasRewardTypes)
+  const alias = (d) => (d && d.type && aliases && aliases[String(d.type)] ? { ...d, type: aliases[String(d.type)], origType: d.type } : d);
+  const item = (d0, where) => {
+    const d = alias(d0);
     if (payable && !payable.types.has(d.type)) unknown.push(`${where} type ${d.type}`);
     return resolve ? resolve(d, missing) : d;
   };
@@ -357,7 +362,7 @@ function hscPrepare(rec, resolve, payable) {
     .map((x) => ({ ...x, medalId: item({ type: 3, id: x.medalId, num: 1, ...(x.name ? { name: x.name } : {}) }, 'bonus medal').id }));
   if (unknown.length) return { reason: 'rewardTypeUnknown', detail: [...new Set(unknown)].join('; ') };
   if (missing.length) return { reason: 'rewardItemMissing', detail: [...new Set(missing)].join('; ') };
-  return { hsc: { era: h.era, milestones, brackets: bks, thresholds: thresholds.map((t) => ({ ...t })), medals, scoreBonus: h.scoreBonus || [], donorRankingId: h.donorRankingId || null } };
+  return { hsc: { era: h.era, milestones, brackets: bks, thresholds: thresholds.map((t) => Object.fromEntries(HSC_THRESHOLD_FIELDS.filter((k) => t[k] !== undefined).map((k) => [k, t[k]]))), medals, scoreBonus: h.scoreBonus || [], donorRankingId: h.donorRankingId || null } };
 }
 const hscSlots = (rs, f) => { const a = rs.map(f); while (a.length < HSC_SLOTS) a.push(0); return a; };
 const hscItems = (rs) => ({ type: hscSlots(rs, (r) => r.type), id: hscSlots(rs, (r) => r.id || 0), skillType: hscSlots(rs, (r) => (r.skillId ? 1 : 0)),
@@ -375,7 +380,9 @@ function hscRows(p, r, cfg, rows, cid) {
   const evScoreReward = milestones.map((m) => ({ scoreRewardId: m.scoreRewardId, score: m.score, validReward: m.rewards.length, ...hscItems(m.rewards), num: hscSlots(m.rewards, (x) => x.num || 0) }));
   const evMedalList = p.medals.map((m, i) => ({ evMedalListId: mdBase + i, listId, medalId: m.medalId, rate: m.rate || 0, display: 1, isDeleted: 0 }));
   const z5 = [0, 0, 0, 0, 0];
-  const ranking = [{ rankingId, category: cfg.rankingCategory, startDatetime: rows[0].startTime, endDatetime: rows[0].endTime,
+  // the ranking window covers every built row of the record (earliest start, latest end)
+  const startDatetime = rows.map((x) => x.startTime).sort()[0], endDatetime = rows.map((x) => x.endTime).sort().pop();
+  const ranking = [{ rankingId, category: cfg.rankingCategory, startDatetime, endDatetime,
     startRank: rankingReward.length ? rankingReward[0].rankingRewardId : 0, endRank: rankingReward.length ? rankingReward[rankingReward.length - 1].rankingRewardId : 0,
     unionStartRank: [...z5], unionEndRank: [...z5], validReward: rankingReward.length ? 1 : 0 }];
   const fields = { rankingId, scoreMedalListId: listId, scoreStartReward: milestones.length ? milestones[0].scoreRewardId : 0,
@@ -1049,7 +1056,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     let hsc = null;
     if (isHsc(rec)) {
       const held = hscHoldOf(rec);
-      const p = held ? null : hscPrepare(rec, resolveItem, payable);
+      const p = held ? null : hscPrepare(rec, resolveItem, payable, aliases);
       if (held || p.reason) {
         entry.reason = held || p.reason;
         entry.why = held ? textOf(held) : `${textOf(p.reason)} (${p.detail})`;

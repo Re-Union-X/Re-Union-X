@@ -747,7 +747,7 @@ const tests = {
     assert.deepStrictEqual(rows, ['|Ranks 1–10|9,000|1st|Original value|50 Jewels, 6★ Quest Medal x1|', '|Ranks 11–50|6,000|11th|Scaled from original|20 Jewels|',
       '|Ranks 51–100|2,000|51st|Interpolated|5 Jewels|']);
     assert.ok(/Below 2,000 points your rank shows as 100th/.test(sec), 'below the lowest threshold');
-    assert.ok(/1st only above 9,000 points|above 9,000 points shows 1st/.test(sec), '1st only above the top');
+    assert.ok(/1st from 9,000 points/.test(sec), '1st from the top threshold (as the table)');
     assert.ok(!/Your best score/.test(sec), 'no best score without ctx.hscBest');
     // with the player's best: the score and the shown rank (ranked-rewards.js shownRank)
     const mine = pages.detailPage(ix, 29930, ctx({ hscBest: (cid) => (cid === 'H-1' ? 6500 : null) }));
