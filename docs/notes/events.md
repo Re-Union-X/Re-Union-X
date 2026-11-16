@@ -1269,6 +1269,31 @@ Booster was not measured (automated taps did not trigger a special attack): the 
   Only a server restart is needed (no regen, no resources).
 - **Not benched:** a bought board in its own later week after an unkeep (needs a week change; covered by tests).
 
+## Part 8 summary (High Score Challenges, 16 November 2026)
+
+- **Served** (master revision 340, resources 138): **67 High Score Challenges** of 2016-2021 (all 71 records built, 67 with a
+  map; all events 417, 2,914 of 3,636 quests). Client behaviour in «High Score Challenge: client behaviour» above; routes in
+  `server/routes-hsc.js` (stage clear `highScoreReward[]`, Rankings, `/ranking/reward/check` only on `type` 5, the result popup
+  opens on Home by itself after `/mypage rankingHighScore` 1), thresholds in `server/ranked-rewards.js` (pure).
+- **Maps:** 27 lost maps generated from the khuxwiki pages (`wikiRoom` + `wikiAreas` + `hscBaseRows`): per-group levels, the 14
+  three-path pages built branched (start area with one exit per path, layout of the JP three-path maps 300370/300390/300400),
+  rooms Rocky Crag / Mine: Section 9 / Ballroom found in `reference/world_schema/areas.json`; per-member enemy rows (EV-0067
+  Pumpkin Soldier by attribute, EV-0874 Ribbitoad 11588); 6 JP twin maps (`hscJpTwin`), level shifts (`levelShifted`),
+  EV-0050 on JP story map 60422. Enemies: Chipper Chef 1513 and 129/172/248 approved on their renders (16-11).
+- **Thresholds (user 16-11):** the original leaderboard borders, from the online evidence (private `tmp/events/hsc/online_scores`,
+  230 rows for 63 events: Border Rank screens in videos, community posts), else the era pattern; brackets above rank 1,000
+  lowered to the rank-1,000 border (rank 1 = that score), `originalScore` kept and shown («Original:» on the Details page); no
+  threshold below half the lowest point milestone; the cap is at least the top milestone (#3, #47, #51). The ceiling model and
+  the bench «reference deck» samples were dropped (the user: runs cannot be played in full on the bench). Point milestones
+  unchanged. Private table `tmp/events/hsc/THRESHOLDS.md` approved by the user.
+- **Score bonus medals:** the SCORE badge art imported from JP (§60); the served evStage closes the HSC rows not listed now so
+  the client's bonus marks follow the listed HSC; Supernova forms count as their 7★ root (served `groupId`, 142 families, as
+  the 2021 master); battle multiplier checked by the user (+26% medal: 36,291 -> 45,051 on the same hit).
+- **Notice:** «Events» section «High Score Challenges» (`eventHscLines`). JP logo «SCORE BONUS MEDAL» kept (user choice).
+- **Open:** PvP Rankings unreachable (known PvP crash); Coliseum «Tier Rewards» `GET /colosseum/reward/list` unhandled
+  («200 ERROR :125», separate issue); new-game crash after naming reported by a tester on the companion app (not reproduced
+  server-side, waiting for a log); `test-special-server` fails also before this part («VIP fissata senza VIP»).
+
 ## Event Board card pictures (14 November 2026)
 
 User 14-11: the Event Board cards were the plain lilac frame since Part 3 (no `img/sphere_incentive/<id>.png` for the event board
