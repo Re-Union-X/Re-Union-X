@@ -763,7 +763,7 @@ function genMapOf(q, stageId, look) {
 
 // Multi-area generated map (Events Part 5, multi-room generator, 11-11-2026): a quest whose khuxwiki page lists its map as several
 // areas («Corridor of Darkness x5», «Frozen Forest C/B/A + Entrance», enemy rows «Corridor of Darkness (3)») carries genAreas
-// {areas: [{label, room (room code), groups: [{members: [{name, n, level?}], target, level?}], chests, layout?}], backExits, source, why} (private
+// {areas: [{label, room (room code), groups: [{members: [{name, n, level?}], target, level?}], chests, layout?, next?}], backExits, source, why} (private
 // Org XIII builder, from the khuxwiki page and the original maps of the same rooms). The ids of a name are those of the flat rule
 // above (genMapOf members: objective ids first, then the name's row), handed out over the areas in page order; the per-name counts
 // of the areas must equal the page's wikiEnemies (else held, enemyMissing with the difference). Exactly one group is the target's:
@@ -803,6 +803,15 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
   // a name with no row or several rows: held for that cause (the counts below need every id)
   if (missing.length || ambiguous.length) return res(null);
   if (tGroups.length !== 1) missing.push(`genAreas: ${tGroups.length} target groups (one expected)`);
+  // the generator ends the map at the target (recon/tools/gen_story_maps.py build_event_areas); a branched map (HSC pages with one
+  // path per attribute, 16-11-2026: JP 300370 / 300390 / 300400) lists in `next` the later areas an area's exits lead to
+  else if (tGroups[0] !== ga.areas.length - 1) missing.push(`genAreas: the target area ${tGroups[0]} must be the last (${ga.areas.length - 1})`);
+  ga.areas.forEach((a, k) => {
+    if (a.next === undefined || a.next === null) return;
+    if (!Array.isArray(a.next) || !a.next.length || a.next.some((n) => !Number.isInteger(n) || n <= k || n >= ga.areas.length)) {
+      missing.push(`genAreas: area ${k} next ${JSON.stringify(a.next)} (later areas only)`);
+    }
+  });
   const page = new Map([...queue].map(([n, ids]) => [n, ids.length]));
   for (const n of new Set([...page.keys(), ...inAreas.keys()])) {
     if ((page.get(n) || 0) !== (inAreas.get(n) || 0)) missing.push(`genAreas: ${n} ${inAreas.get(n) || 0} in the areas, ${page.get(n) || 0} on the page`);
@@ -824,7 +833,8 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
       if (g.target) targetWith = merge(list);
       else if (list.length) groups.push(merge(list));
     }
-    return { room: a.label, roomCodes: [a.room], enemies: groups, chests: Number(a.chests) || 0, ...(a.layout ? { layout: a.layout } : {}) };
+    return { room: a.label, roomCodes: [a.room], enemies: groups, chests: Number(a.chests) || 0, ...(a.layout ? { layout: a.layout } : {}),
+      ...(Array.isArray(a.next) ? { next: a.next } : {}) };
   });
   const entry = { stageId, world: q.worldId, name: q.name, room: areas[0].room, roomCodes: areas[0].roomCodes, target, targetId, level: q.level || 1,
     enemies: areas.flatMap((a) => a.enemies), treasures: [], rooms: areas.length, areas, targetArea: tGroups[0], targetWith,

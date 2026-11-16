@@ -162,7 +162,17 @@ try:
                        {'room': 'Room A', 'roomCodes': [two], 'enemies': [[B(2)]], 'chests': 1},
                        {'room': 'Room B', 'roomCodes': [R27], 'enemies': [[B(1)]], 'chests': 0}])
         outa = os.path.join(tmp, 'stagea')
-        json.dump([eva, evb], open(os.path.join(tmp, 'eventsa.json'), 'w'))
+        # branched map (HSC pages with one path per attribute, 16-11-2026; JP 300370 / 300390 / 300400): a start part whose exits
+        # lead to three paths, each path's last part leads to the common target part (`next` of each area)
+        EVC = 4009992
+        evc = dict(base, stageId=EVC, room='Hub', roomCodes=[R27], censusId='EV-TEST', rooms=5, targetArea=4, backExits=False,
+                   layoutSource=None, enemies=[[B(1)], [B(1)], [B(1)]], targetWith=[], areas=[
+                       {'room': 'Hub', 'roomCodes': [R27], 'enemies': [], 'chests': 0, 'next': [1, 2, 3]},
+                       {'room': 'P1', 'roomCodes': [R27], 'enemies': [[B(1)]], 'chests': 0, 'next': [4]},
+                       {'room': 'P2', 'roomCodes': [R27], 'enemies': [[B(1)]], 'chests': 0, 'next': [4]},
+                       {'room': 'P3', 'roomCodes': [R27], 'enemies': [[B(1)]], 'chests': 1, 'next': [4]},
+                       {'room': 'End', 'roomCodes': [R27], 'enemies': [], 'chests': 0}])
+        json.dump([eva, evb, evc], open(os.path.join(tmp, 'eventsa.json'), 'w'))
         cfga = dict(cfg, out=outa, report=os.path.join(tmp, 'reporta.json'), events=os.path.join(tmp, 'eventsa.json'))
         cfga.pop('special')
         json.dump(cfga, open(os.path.join(tmp, 'cfga.json'), 'w'))
@@ -217,8 +227,20 @@ try:
         va = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'validate_maps.py'), outa, CLS, '--json', os.path.join(tmp, 'va.json')],
                             capture_output=True, text=True, encoding='utf-8', errors='replace')
         vra = json.load(open(os.path.join(tmp, 'va.json'), encoding='utf-8')) if os.path.exists(os.path.join(tmp, 'va.json')) else {}
-        for sid in (EVA, EVB):
+        for sid in (EVA, EVB, EVC):
             check(vra.get(str(sid), {}).get('errors') == [], 'validate_maps areas map %d: no errors (%s)' % (sid, vra.get(str(sid)) or va.stderr[-400:]))
+        if all(os.path.exists(fa(EVC, p)) for p in ('', '_00', '_01', '_02', '_03', '_04')):
+            sc = mapfile.parse_stg(open(fa(EVC), 'rb').read())
+            pc_ = [mapfile.parse_map(open(fa(EVC, '_%02d' % k), 'rb').read(), k) for k in range(5)]
+            check((sc['parts'], sc['field12'], sc['enemies_total'], sc['chests_total']) == (5, 4, 4, 1), 'branched STG (%s)' % sc)
+            check([sorted(e['dest_part'] for e in p['exits']) for p in pc_] == [[1, 2, 3], [4], [4], [4], []],
+                  'branched exits: hub -> 1, 2, 3; each path -> 4 (%s)' % [[e['dest_part'] for e in p['exits']] for p in pc_])
+            check([sorted(e['field4'] for e in p['exits']) for p in pc_][:2] == [[2, 2, 2], [1]], 'field4 = parts left to the target + 1')
+            hx = [(e['x'], e['y']) for e in pc_[0]['exits']]
+            gaps = [((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5 for i, a in enumerate(hx) for b in hx[i + 1:]]
+            check(min(gaps, default=0) >= 200, 'hub exits apart (%s)' % hx)
+        else:
+            check(False, 'branched map %d not written' % EVC)
         # a door of an original map at the room's edge (outside the walkable component): snapped to the nearest walkable pixel of the
         # entry's component, noted; facings 0 of the originals -> 1 / 2 (validate_maps)
         edge = dict(eva, stageId=EVB, areas=[dict(eva['areas'][0], layout=dict(eva['areas'][0]['layout'], exit=[1790, 980]))] + [

@@ -160,6 +160,7 @@ def room_folder(name, world):
 
 
 GRID, MARGIN = 40, 40
+HUB_GAP = 400  # least distance between the doors of a branch area (build_event_areas)
 # Raggiungibilita' a livello di pixel (come validate_maps.py di stage_gen/reach): la bitmap CLS ha
 # 1 bit per unita'; componenti 4-connesse dei pixel con spazio libero > REACH_R (gli originali
 # 1010-1040 passano fino a 20), ogni punto della griglia agganciato al pixel piu' vicino entro
@@ -1304,6 +1305,13 @@ def build_event_areas(sp):
     tk = sp.get('targetArea', R - 1)
     assert tk == R - 1, 'stage %s: the target must be in the last area (targetArea %s of %d)' % (sid, tk, R)
     back = bool(sp.get('backExits'))
+    # the areas each area's exits lead to: `next` of a branched map (HSC pages with one path per attribute, 16-11-2026, after JP
+    # 300370 / 300390 / 300400: a start part with three exits, three chains, one common target part), else the following area
+    nxt = [list(a['next']) if a.get('next') else ([k + 1] if k < R - 1 else []) for k, a in enumerate(areas)]
+    assert all(n > k and n < R for k, ns in enumerate(nxt) for n in ns), 'stage %s: next must name later areas (%s)' % (sid, nxt)
+    assert all(nxt[k] for k in range(R - 1)) and not nxt[R - 1], 'stage %s: every area but the last needs a next (%s)' % (sid, nxt)
+    branched = any(len(ns) > 1 or ns != [k + 1] for k, ns in enumerate(nxt[:R - 1]))
+    assert not (back and branched), 'stage %s: backExits on a branched map' % sid
     folders_ = []
     for a in areas:
         f = next((c for c in a.get('roomCodes', []) if c not in EXCL and os.path.exists(cls_path(c))), None)
@@ -1342,12 +1350,24 @@ def build_event_areas(sp):
         dists.append(geodesic(pc, pts[k], entry[k]))
     # doors: forward door of k < R-1, back door of k > 0 (backExits), arrival back into k-1 next to its forward door
     fwd = [(tp(lays[k].get('exit')) or max(dists[k], key=lambda p: (dists[k][p], -p[1]))) if k < R - 1 else None for k in range(R)]
+    # the other doors of a branch area (next[1:]): far from the entry and HUB_GAP apart from its other doors (fewer apart: the
+    # farthest points left); doors[k] = [(point, area)] in next order
+    doors = []
+    for k in range(R):
+        ds = [(fwd[k], nxt[k][0])] if nxt[k] else []
+        for n in nxt[k][1:]:
+            taken = [d for d, _ in ds]
+            cand = sorted(dists[k], key=lambda p: (-dists[k][p], p))
+            q = next((c for c in cand if all(dd(c, t) >= HUB_GAP for t in taken)), None) or next(
+                (c for c in cand if all(dd(c, t) >= 200 for t in taken)), cand[0])
+            ds.append((q, n))
+        doors.append(ds)
     bdoor = [(tp(lays[k].get('back')) or grids[k][0]) if back and k > 0 else None for k in range(R)]
     barr = [(tp(lays[k + 1].get('backArrive')) or arrival_near(fwd[k], pts[k], folders_[k])) if back and k < R - 1 else None for k in range(R)]
     uid, parts, placed = 1, [], []
     for k in range(R):
         f, dist, lay = folders_[k], dists[k], lays[k]
-        ex_pts = [p for p in (fwd[k], bdoor[k]) if p]
+        ex_pts = [p for p in (fwd[k], bdoor[k]) if p] + [d for d, _ in doors[k][1:]]
         pool = dict(dist)
         for r in KEEP_OUT:
             pool = {p: v for p, v in dist.items() if all(dd(p, e) >= r for e in ex_pts)}
@@ -1429,6 +1449,8 @@ def build_event_areas(sp):
                     q = min(cand, key=lambda c: (dd(c, p), c))
                     doubts.append('area %d: %s exit moved from %s to %s (an enemy within %d)' % (k, nm_, p, q, EXIT_KEEP))
                     arr[k] = q
+                    if nm_ == 'fwd':
+                        doors[k][0] = (q, doors[k][0][1])
         used = {(e[0], e[1]) for e in ens}
         chests = []
         for c in lay.get('chests') or []:
@@ -1446,10 +1468,12 @@ def build_event_areas(sp):
     # target point, route left (straight lines, as build_multi) and parts left to the target
     t_recs, t_ens, _ = placed[tk]
     tpos = t_ens[struct.unpack_from('<i', t_recs[-1], 0)[0]][:2]
-    rem = [0] * R            # rem[j]: route from the entry of area j to the target
+    rem = [0] * R            # rem[j]: route from the entry of area j to the target (the shortest branch)
+    steps = [0] * R          # steps[j]: parts from area j to the target part
     rem[tk] = int(round(dd(entry[tk], tpos)))
     for j in range(tk - 1, -1, -1):
-        rem[j] = int(round(dd(entry[j], fwd[j]))) + rem[j + 1]
+        rem[j] = min(int(round(dd(entry[j], d))) + rem[n] for d, n in doors[j])
+        steps[j] = 1 + min(steps[n] for _, n in doors[j])
     face = lambda k, p: 1 if cents[k][0] < p[0] else 2  # noqa: E731
     tot_a = tot_e = tot_c = 0
     target_id = None
@@ -1457,11 +1481,11 @@ def build_event_areas(sp):
         f, lay = folders_[k], lays[k]
         recs, ens, chests = placed[k]
         ex = []
-        if k < R - 1:
-            a = entry[k + 1]
-            ang = lay.get('exitAngle', exit_angle(f, pts[k], fwd[k], cents[k]))
-            ex.append((fwd[k][0], fwd[k][1], ang, rem[k + 1], tk - (k + 1) + 1, a[0], a[1], k + 1,
-                       lays[k + 1]['arriveFacing'] if lays[k + 1].get('arriveFacing') in (1, 2) else face(k + 1, a)))
+        for j_, (d, n) in enumerate(doors[k]):
+            a = entry[n]
+            ang = lay.get('exitAngle', exit_angle(f, pts[k], d, cents[k])) if j_ == 0 else exit_angle(f, pts[k], d, cents[k])
+            ex.append((d[0], d[1], ang, rem[n], steps[n] + 1, a[0], a[1], n,
+                       lays[n]['arriveFacing'] if lays[n].get('arriveFacing') in (1, 2) else face(n, a)))
         if back and k > 0:
             a = barr[k - 1]
             ang = lay.get('backAngle', exit_angle(f, pts[k], bdoor[k], cents[k]))

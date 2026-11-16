@@ -1367,6 +1367,31 @@ const tests = {
     assert.deepStrictEqual(lv.map((x) => [x.name, x.level, x.count, x.target]),
       [['Foe B', 25, 2, false], ['Foe B', 80, 1, false], ['Foe B', ql, 1, false], ['Foe B', 400, 2, false], ['Foe A', ql, 1, true]]);
   },
+  // branched multi-area map (HSC pages with one path per attribute, 16-11-2026; JP 300370 / 300390 / 300400: a start part with
+  // three exits, three chains, one common target part): an area's `next` (the areas its exits lead to, later areas only) goes to
+  // entry.areas[].next; a next pointing back or past the end, or a target area that is not the last, holds the quest
+  wiki_areas_branched() {
+    const one = (name, n, extra = {}) => ({ members: [{ name, n }], ...extra });
+    const ga = { areas: [
+      { label: 'Hub', room: 'DG_0100_02_00', groups: [], chests: 0, next: [1, 2, 3] },
+      { label: 'Path 1', room: 'DG_0200_27_00', groups: [one('Foe B', 2)], chests: 0, next: [4] },
+      { label: 'Path 2', room: 'DG_0200_27_00', groups: [one('Foe B', 1)], chests: 0, next: [4] },
+      { label: 'Path 3', room: 'DG_0200_27_00', groups: [one('Foe B', 1)], chests: 1, next: [4] },
+      { label: 'End', room: 'DG_0200_27_00', groups: [{ target: true, members: [{ name: 'Foe A', n: 1 }] }], chests: 0 }],
+    backExits: false, source: 'JP 300370', why: 'w' };
+    const q0 = genQuest(702320, { genAreas: ga, wikiEnemies: { 'Foe B': 4, 'Foe A': 1 } });
+    const out = me.buildEvents([record('E-B', [q0])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.ok(entry(out, 'E-B').quests[0].served, JSON.stringify(entry(out, 'E-B').quests[0]));
+    const e = out.genMaps[0];
+    assert.deepStrictEqual(e.areas.map((a) => a.next || null), [[1, 2, 3], [4], [4], [4], null]);
+    assert.deepStrictEqual([e.rooms, e.targetArea], [5, 4]);
+    const back = { ...ga, areas: ga.areas.map((a, k) => (k === 2 ? { ...a, next: [1] } : a)) };
+    const ob = me.buildEvents([record('E-B2', [genQuest(702321, { genAreas: back, wikiEnemies: { 'Foe B': 4, 'Foe A': 1 } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.match(entry(ob, 'E-B2').quests[0].why || '', /genAreas: area 2 next/);
+    const notLast = { ...ga, areas: [...ga.areas.slice(0, 4).map((a) => ({ ...a, next: undefined })), ga.areas[4]].reverse() };
+    const on = me.buildEvents([record('E-B3', [genQuest(702322, { genAreas: notLast, wikiEnemies: { 'Foe B': 4, 'Foe A': 1 } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.match(entry(on, 'E-B3').quests[0].why || '', /genAreas: the target area .* last/);
+  },
   // a generated-map quest naming an enemy not in the master (an event row never answers a name lookup): enemyMissing with the
   // name, no event_gen_maps.json entry, no stage row
   wiki_room_enemy_missing_held() {

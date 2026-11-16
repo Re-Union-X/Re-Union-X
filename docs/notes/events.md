@@ -1527,8 +1527,16 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   row with its «LV n» (make-events.js `genAreasOf` passes a group's `level` to its members; gen_story_maps.py `build_event_areas`
   writes it), chests per area, rooms by name (area_names_master.json, the quest's world first, served rooms only). Enemy rows by
   name (`wikiEnemyIds`, label `hscBaseRows`): the row the JP HSC maps 300000-300499 place for that name (one row for at least 90 % of
-  its placements), else its only row under 10000; the target its 1xxxx row. 9 maps; held: 14 branching maps (khuxwiki tabs: one
-  path per attribute, the generator chains areas in one line), 4 with a room not served (Rocky Crag, Mine: Section 9, Ballroom),
-  EV-0874 (Ribbitoad: event rows only).
+  its placements), else its only row under 10000; the target its 1xxxx row.
+- **Branched maps (16-11-2026).** 14 pages give one path per attribute (khuxwiki tabs). As the JP three-path HSC maps 300370 /
+  300390 / 300400 (a start part whose exits lead to three chains that end in one target part), the record gets a start area with
+  no enemies (DG_0100_02_00, as 300370's start), each path's areas in page order and the common target area last; an area's
+  `next` lists the later areas its exits lead to. make-events.js `genAreasOf` checks and passes `next` (and holds a map whose target
+  area is not the last); gen_story_maps.py `build_event_areas` writes one exit per `next` (the doors of a branch area at least
+  HUB_GAP = 400 apart), field4 = parts left to the target + 1 over the shortest branch.
+- **Rooms.** Rocky Crag (DW_0020_00_00), Mine: Section 9 (DW_0005_06_00) and Ballroom (BC_0004_00_00) come from
+  reference/world_schema/areas.json (the room schema, khuxwiki area names matched to the room pictures); all three are served.
+- **Result (dry run 16-11-2026):** 25 generated maps (validate_maps 0 errors); held EV-0067 (Jack O' Lantern / Pumpkin Soldier:
+  several rows, no evidence), EV-0874 (Ribbitoad: event rows only).
 - **Held:** EV-0395 until Chipper Chef (displayId 1513) has a model; EV-0247 needs the event enemy rows 199 / 240 (served
   models) in the master.
