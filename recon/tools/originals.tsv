@@ -22577,3 +22577,9 @@ cocostudio/publish/MD_Emblem.png	jp
 #     (WW served) draws «SCORE +N%» on Panel_HS = Hs_Total_Bonus_Panel.png, the red badge of the original. The file is in no WW
 #     copy we hold (delivered with the 2016-17 HSC events); JP 4.3.1 has it, plain art with no text.
 cocostudio/publish/Hs_Total_Bonus_Panel.png	jp
+# 61. High Score Challenge small score star (I-275, 16-11). The battle drops each score payment as stars from the client's
+#     prize table (index 12 ScorePrize01 small, 13 ScorePrize02 big); a payment of 1000 or less uses only small stars. Only
+#     ScorePrize02.png came with the ActMapHighScore_* import, so small payments (low-level enemies, partial hits) dropped no
+#     star and the HUD stayed 0 while the run total (/stage/clear getPoint.score) counted them. JP 4.3.1 has it: a 40x40 star
+#     with no text; in no WW copy we hold.
+cocostudio/publish/ScorePrize01.png	jp

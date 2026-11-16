@@ -1539,7 +1539,7 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   families, `server/test-supernova-groups.js`), and the dot-material check of /user/medal/enhance uses the same groups.
 - **Battle score.** Only in an eventCategory 4 stage. Each hit pays floor(damage / max HP × the enemy's `score` at its level)
   until that score is paid, plus a kill bonus; everything is multiplied by M = (10000 + the `rate` of the deck's bonus medals) /
-  10000 and dropped as score prizes that the HUD counts when collected; `/stage/clear getPoint.score` carries the total. The
+  10000 and dropped as score prizes that the HUD counts when collected; `/stage/clear getPoint.score` carries the total. Each payment (after M) drops as stars: 1,000 or less only small stars (`cocostudio/publish/ScorePrize01.png`, prize table index 12), above 1,000 big ones first (`ScorePrize02.png`, index 13). The battle total counts every payment, the HUD only the collected stars: without `ScorePrize01.png` (in no WW copy, imported from JP 4.3.1, originals.tsv §61, I-275) payments of 1,000 or less showed no star and the HUD stayed 0 on low-score enemies, while the run total was right. The
   enemy `score` field is an original level curve like `lux`; the spike's cloned enemies really had score 1, so the HUD stayed 0
   and the run scored 4. HSC quests need their original enemies (donor curves, 163 of the 311 HSC enemies are not in our master
   yet); the bench needs a real HSC stage.
