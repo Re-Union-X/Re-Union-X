@@ -36,6 +36,7 @@ const vipBenefit = require('./vip-benefit');
 const infoAlbum = require('./routes-info-album');
 const routesRaid = require('./routes-raid'); // raid routes (docs/notes/raid.md)
 const routesEvents = require('./routes-events'); // event quest routes (docs/notes/events.md)
+const routesHsc = require('./routes-hsc'); // High Score Challenges (Events Part 8 Task 5)
 const { eventsTabOrder } = require('./events-tab-order'); // Events tab order (user 10-11)
 const eventBoardRoutes = require('./routes-event-boards'); // Event Coins and Event Boards (type 4)
 const raidPages = require('./raid-pages'); // Raid Catalog web pages (Task 9)
@@ -267,6 +268,8 @@ function route(url) {
   if (p === '/campaign') return 'campaign';
   if (p === '/shop/campaign') return 'shopcampaign'; // popup di «Unlock All» (Task 15)
   if (p === '/ranking/reward/check') return 'rankingrewardcheck';
+  if (p === '/stage/highscore/reward/list') return 'hscrewardlist'; // High Score Rewards list (action 112, routes-hsc.js)
+  if (routesHsc.HSC_KEYS[p]) return 'hscranking'; // High Score rankings (actions 135/136/179, routes-hsc.js)
   if (routePartyRanking(p)) return routePartyRanking(p);
   if (chatRoutes.routeChat(p)) return chatRoutes.routeChat(p);
   // Coliseum PvP (azioni 194-205): respondPvp
@@ -2289,7 +2292,7 @@ function respondStageStart(res, req) {
       clearMissionIds: stageClearMissions(storyKeyOf(req?.stageId ?? START_STAGE_ID)),
       stageSkip: req?.stageSkip ?? 0,
       eventId: req?.eventId ?? 0,
-      highScore: 0,
+      highScore: hscStartScore(player.currentStageId), // the HSC best (routes-hsc.js), 0 for any other quest
     },
     userRandomEnemies: [],
     userEnemyDropItems: startEnemyDrops(req),
@@ -2407,6 +2410,10 @@ function respondMyPage(res) {
     isNewAlbumChallenge: 0,
     isMissionReward: false,
   });
+  // a High Score «Score Ranking Results» popup waits for the Rankings screen (routes-hsc.js; flag meaning not seen on the bench)
+  let hscWaiting = false;
+  try { hscWaiting = hsc().pendingResult(); } catch (e) { console.log(`[hsc] pendingResult: ${e.message}`); }
+  body.rankingRewards = { ...(body.rankingRewards || {}), rankingHighScore: hscWaiting ? 1 : 0 };
   send(res, 200, body);
 }
 
@@ -2823,6 +2830,12 @@ function respondStageClear(res, req) {
   const skipped = !!player.currentStageSkip;
   player.currentStageSkip = 0;
   player.stageScores[stageId] = skipped ? (player.stageScores[stageId] || 0) : Math.max(player.stageScores[stageId] || 0, lux);
+  // High Score Challenge (routes-hsc.js): the run's score (getPoint.score) into player.hsc, never into the Lux record above; bracket
+  // and point milestones into the Presents; an HSC error must never turn a quest clear into «200 ERROR :116»
+  let highScoreReward = [];
+  if (eventStage) {
+    try { highScoreReward = hsc().onClear(stageId, skipped ? 0 : req?.getPoint?.score); } catch (e) { console.log(`[hsc] onClear ${stageId}: ${e.message}`); }
+  }
   // Eggcognito points: spawn of the raid boss. A raid error must never turn a quest clear into «200 ERROR :116»
   try { raid().onStageClear(playedId, req?.getPoint); } catch (e) { console.log(`[raid] onStageClear ${playedId}: ${e.message}`); }
   // EXP di skill del combattimento (getPoint.exp) a ogni medaglia del deck con una skill salvata
@@ -2833,7 +2846,7 @@ function respondStageClear(res, req) {
     ret: ret(),
     userData: { userPoint: userPointData(now), userDetail: userDetailData(), stageResumption: stageResumptionData() },
     stageRewardUserMedalIds: [],
-    highScoreReward: [], clearTimeMissionIds: [], pvpPointReward: [],
+    highScoreReward, clearTimeMissionIds: [], pvpPointReward: [],
     firstClearFlag: first ? 1 : 0,
     stageOpenNum: 1,
     clearMissionIds: cleared,
@@ -3564,11 +3577,12 @@ function seedTestPresents() {
 let noticesServedAt = 0;
 
 // dots: Medal pre-strengthened to that many Special Attack dots (campaign rewards, I-234), set when collected
-function addPresent(resourceType, resourceId, number, comment, skillId, dots) {
+// skillLv: the level of that skill (High Score rewards, routes-hsc.js); without it the maximum
+function addPresent(resourceType, resourceId, number, comment, skillId, dots, skillLv) {
   player.presents = player.presents || [];
   const id = Math.max(player.presentLastId || 0, ...player.presents.map((p) => p.userPresentId)) + 1;
   player.presents.push({ userPresentId: id, resourceType, resourceId, number,
-    limitDatetime: realNow() + 30 * 86400000, comment, created: realNow(), ...(skillId ? { skillId } : {}), ...(dots ? { dots } : {}) });
+    limitDatetime: realNow() + 30 * 86400000, comment, created: realNow(), ...(skillId ? { skillId } : {}), ...(skillId && skillLv ? { skillLv } : {}), ...(dots ? { dots } : {}) });
   player.presentLastId = id;
 }
 
@@ -3660,7 +3674,7 @@ function respondPresentReceive(res, body) {
     if (!want.has(p.userPresentId)) { keep.push(p); continue; }
     const before = (player.medals || []).length;
     grantItem(p.resourceType === 1 ? 2 : p.resourceType, p.resourceId, p.number);
-    if (p.skillId && p.resourceType === 3) giveSkill(player.medals.slice(before), p.skillId);
+    if (p.skillId && p.resourceType === 3) giveSkill(player.medals.slice(before), p.skillId, p.skillLv);
     if (p.dots && p.resourceType === 3) presetDots(player.medals.slice(before), p.dots);
     console.log(`[presents] riscosso ${p.userPresentId}: tipo ${p.resourceType} id ${p.resourceId} x${p.number}`);
   }
@@ -4685,7 +4699,10 @@ function respondStageEvent(res, body) {
   if (Number(body?.eventCategory) === 2) {
     events = [...eventsTabOrder(raid().events(), eventRoutes().catalogEvents(), eventRoutes().events()), ...events];
   }
-  send(res, 200, { ret: ret(), events, highScoreRank: 0 });
+  // «Current: Nth» of the High Score quest view: the shown rank of the HSC listed (routes-hsc.js), 0 without one
+  let highScoreRank = 0;
+  if (Number(body?.eventCategory) === 2) { try { highScoreRank = hsc().listedRank(events); } catch (e) { console.log(`[hsc] highScoreRank: ${e.message}`); } }
+  send(res, 200, { ret: ret(), events, highScoreRank });
 }
 // ---------------------------------------------------------------------------
 // Scheda Special (docs/superpowers/specs/2026-10-30-special-tab-design.md)
@@ -4910,7 +4927,38 @@ function eventRoutes() {
     avatarBoardState: (id) => avatarBoards().listState(player, id, avatarCtx(), null),
     // a kept board entry: its boards join avatarBoardsSent silently, never one popup per board (Task 5b, Task 6 bench)
     markBoardsSent: (kept) => avatarBoards().markKept(player, avatarCtx(), kept),
+    // stages[].score of a High Score quest = its HSC best, not the Lux record (routes-hsc.js; null for any other quest)
+    hscBest: (id) => hsc().bestOfStage(id),
   });
+}
+// High Score Challenges (Events Part 8 Task 5, server/routes-hsc.js): player.hsc, the score thresholds of the HSC entries
+var hscMemo = null; // var: respondStageStart can run before this line
+function hsc() {
+  return hscMemo ??= routesHsc({ player, savePlayer, masterRows, realNow, serverTimeAt, clock, serverTime, send, ret,
+    entryOfStage: (id) => eventRoutes().entryOfStage(id),
+    listed: () => eventRoutes().events(),
+    addPresent: (type, id, num, comment, skillId, skillLv) => addPresent(type, id, num, comment, skillId, undefined, skillLv),
+    element: (score, rank) => hscElement(serverTime(), score, rank),
+    log: (l) => console.log(l) });
+}
+function hscStartScore(stageId) {
+  if (!eventRoutes().isEventStage(stageId)) return 0;
+  try { return hsc().startHighScore(stageId); } catch (e) { console.log(`[hsc] startHighScore ${stageId}: ${e.message}`); return 0; }
+}
+// the ranking element of the High Score parser (actions 135/136/179, bench 16-11): the full player record, not the Lux one:
+// userData {user, userDetail}, userAvatar, rank int, userMedals[], userSkills[], userKeyblade {}, petBaseSlotMedal uint64,
+// supportUserMedals[], supportUserSkills[], pet {petSubslot}, emblemIds[], then lux uint64 = the SCORE shown. A Lux-ranking row
+// fails the whole parse («200 ERROR :135»)
+function hscElement(now, score, rank) {
+  const uk = userKeybladeData(favoriteKeyblade());
+  const ids = new Set(uk.deckMedals.filter((id) => id > 0));
+  const medals = userMedalList().filter((m) => ids.has(m.userMedalId));
+  return {
+    userData: { user: userObject(now), userDetail: userDetailData() }, userAvatar: userAvatarData(), rank,
+    userMedals: medals.map((m) => userMedalElement(m, now)), userSkills: userSkillsData(now, medals), userKeyblade: uk,
+    petBaseSlotMedal: 0, supportUserMedals: [], supportUserSkills: [], pet: { petSubslot: petSubslotNow() },
+    emblemIds: activeEmblemIds(), lux: score,
+  };
 }
 // Limited and level avatar boards (avatar-boards.js): game_data/avatar_boards.json, the story week of storyCtx(), the Lux level and
 // the kept board entry (Avatar Board Catalog, Task 5b: player.avatarBoards.kept, a census id or an avatar entry key; an older save's
@@ -5666,9 +5714,10 @@ function handler(scheme) {
       // vuole tre array in radice (lastRankingResults, rankingRewardIds, openRankingIds),
       // poi rankingReward: array vuoto = nessun premio di classifica.
       // Senza: «200 ERROR :142» al Challenge della Daily del Coliseum (banco 14-10)
-      if (kind === 'rankingrewardcheck') {
-        return send(res, 200, { ret: ret(), lastRankingResults: [], rankingRewardIds: [], openRankingIds: [], rankingReward: [] });
-      }
+      // High Score Challenge (routes-hsc.js): the «Score Ranking Results» popup of a new bracket, once; else the empty arrays
+      if (kind === 'rankingrewardcheck') return hsc().respondRewardCheck(res);
+      if (kind === 'hscranking') return hsc().respondRanking(res, req.url.split('?')[0].toLowerCase());
+      if (kind === 'hscrewardlist') return hsc().respondRewardList(res);
       if (kind === 'pvp') return respondPvp(res, req.url.split('?')[0], req.method, entry.bodyDecoded);
       // Raid (azioni 240, 122, 123, 120, 121): server/routes-raid.js
       if (kind === 'raidlist') return raid().list(res);
@@ -5964,6 +6013,7 @@ module.exports._test = {
   userTitlesData, // server/test-title-popup.js (I-220)
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
   eventRoutes, eventIndex, // server/test-event-routes.js
+  hsc, // server/test-hsc-routes.js
   eventBoards, // server/test-event-board-routes.js
   avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
   respondEventWeb, respondEventPost, respondAvatarWeb, respondAvatarPost, migrateAvatarKeep, // server/test-event-pages.js

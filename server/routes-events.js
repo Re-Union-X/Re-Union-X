@@ -45,7 +45,7 @@ const STAGE_FIRST = CONFIG.stageBase, STAGE_LAST = CONFIG.stageMax; // stage ids
 const COIN_TYPE = 15; // Event Coins: into the entry's board set (addEventCoins)
 
 const BOOSTER_TYPE = 34; // a Booster reward (master emblem; Events Part 6, boosters.js)
-function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, realNow, serverTimeAt, clock, stageState, grantItem, grantObjective, addEventCoins = null, canPay = null, addPresent = null, grantBooster = null, avatarBoardState = null, markBoardsSent = null, webBase, log = console.log }) {
+function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, realNow, serverTimeAt, clock, stageState, grantItem, grantObjective, addEventCoins = null, canPay = null, addPresent = null, grantBooster = null, avatarBoardState = null, markBoardsSent = null, hscBest = null, webBase, log = console.log }) {
   // read-only view of player.events (an older save has none: nothing kept, nothing cleared); state() creates it to write
   const view = () => player.events || { kept: null, cleared: {} };
   const state = () => {
@@ -340,7 +340,9 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
     const cleared = view().cleared || {};
     const stageOf = (q) => {
       const st = stageState(q.stageId);
-      return { stageId: q.stageId, useAp: Number(q.ap) || 0, score: st.score, playStatus: st.playStatus, clearMissionIds: [...(cleared[q.stageId] || [])] };
+      // a High Score quest shows its HSC best in the «High Score» bar (hscBest, routes-hsc.js: null for any other quest)
+      const hs = hscBest ? hscBest(q.stageId) : null;
+      return { stageId: q.stageId, useAp: Number(q.ap) || 0, score: hs == null ? st.score : hs, playStatus: st.playStatus, clearMissionIds: [...(cleared[q.stageId] || [])] };
     };
     const objectives = (id) => Math.min(3, (stageRow(id) || {}).validSubmission || 0);
     const hasDays = (x) => Array.isArray(x.days) && x.days.length > 0;
