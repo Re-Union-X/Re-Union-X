@@ -22568,3 +22568,8 @@ img/sphere_incentive/5500453.png	loc	=img/sphere_incentive_kept/5500453.png
 #     the AKBs were not. Original files: 2016 bundle, identical to the JP 4.3.1 revisions 501004018.00103119 / 501004019.
 audio/501004018.akb	b16,jp
 audio/501004019.akb	b16,jp
+# 59. Booster plate icon on Medal Details (16-11, user report): Emblem_Icon of MedalInfo_Information2_ver240 draws the
+#     static layout texture MD_Emblem.png. The WW served one is a development placeholder (star, Japanese label, 仮 =
+#     provisional), on screen since the Boosters (Events Part 6, resources 121; not a High Score import collision). The JP
+#     4.3.1 file is the final art: the cyan flame (no text). Not in the 2016 bundle nor in the IPA 4.4.0.
+cocostudio/publish/MD_Emblem.png	jp
