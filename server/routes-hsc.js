@@ -64,7 +64,8 @@ function routesHsc({ player, savePlayer, entryOfStage, listed, addPresent, maste
     const tmp = { [cid]: cur ? { best: cur.best, paidIndex: cur.paidIndex } : { best: -Infinity, paidIndex: -1 } };
     const r = ranked.record(tmp, cid, n, { thresholds: h.thresholds, brackets: h.brackets });
     const st = (player.hsc ||= {})[cid] = { ...(cur || {}), best: r.best, paidIndex: r.paidIndex, milestones: [...((cur && cur.milestones) || [])] };
-    if (r.due.length) {
+    const before = cur ? cur.paidIndex : -1;
+    if (r.paidIndex > before) { // a new bracket: its popup even when it adds no new items (review round 1, Minor 1)
       const text = `High Score Challenge: ${nameOf(e)} — ${bracketText(h.brackets[r.paidIndex])}`;
       for (const x of r.due) pay(x, text);
       st.result = { rankingId: h.rankingId, rank: ranked.shownRank(h.thresholds, r.best), rankingRewardId: rankingRewardIdOf(e, r.paidIndex) };
@@ -139,9 +140,15 @@ function routesHsc({ player, savePlayer, entryOfStage, listed, addPresent, maste
   }
   // a «Score Ranking Results» popup waits (/mypage rankingRewards.rankingHighScore)
   const pendingResult = () => Object.values(player.hsc || {}).some((x) => x && x.result);
-  // POST /ranking/reward/check (action 142): the waiting results, once
-  function respondRewardCheck(res) {
-    const waiting = Object.entries(player.hsc || {}).filter(([, x]) => x && x.result);
+  // POST /ranking/reward/check (action 142): the waiting results, once. The action is also called by the Coliseum Daily
+  // «Challenge», the PvP Ranking scene and the Lux/Party Rankings; the request names its ranking `type`. Bench log 16-11 (spike
+  // pass 2, logs/server.log #81-#92): opening the HSC Rankings screen sends 142 {"type":5} FIRST, then 135/136/179, and the
+  // popup opened from that 142 answer. So the results are sent (and cleared) only on a type 5 request; any other caller gets the
+  // empty arrays and leaves them waiting.
+  const HSC_CHECK_TYPE = 5;
+  function respondRewardCheck(res, req = null) {
+    const forHsc = Number(req && req.type) === HSC_CHECK_TYPE;
+    const waiting = forHsc ? Object.entries(player.hsc || {}).filter(([, x]) => x && x.result) : [];
     const body = { ret: ret(), lastRankingResults: [], rankingRewardIds: [], openRankingIds: [], rankingReward: [] };
     for (const [cid, x] of waiting) {
       body.lastRankingResults.push({ lastRankingId: x.result.rankingId, lastRank: x.result.rank, lastUnionRank: 0, pvpClass: 0 });

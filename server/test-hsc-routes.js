@@ -156,18 +156,42 @@ const tests = {
   reward_check_shapes() {
     const w = world();
     const empty = { ret: { code: 0 }, lastRankingResults: [], rankingRewardIds: [], openRankingIds: [], rankingReward: [] };
-    assert.deepStrictEqual(w.body(w.h.respondRewardCheck), empty);
+    assert.deepStrictEqual(w.body(w.h.respondRewardCheck, { type: 5 }), empty);
     assert.strictEqual(w.h.pendingResult(), false);
     w.h.onClear(SH, 2500);
     w.h.onClear(SH, 6500);
     assert.strictEqual(w.h.pendingResult(), true);
-    assert.deepStrictEqual(w.body(w.h.respondRewardCheck), { ret: { code: 0 }, lastRankingResults: [{ lastRankingId: 8001, lastRank: 11, lastUnionRank: 0, pvpClass: 0 }],
+    assert.deepStrictEqual(w.body(w.h.respondRewardCheck, { type: 5 }), { ret: { code: 0 }, lastRankingResults: [{ lastRankingId: 8001, lastRank: 11, lastUnionRank: 0, pvpClass: 0 }],
       rankingRewardIds: [8000101], openRankingIds: [8001], rankingReward: [] });
-    assert.deepStrictEqual(w.body(w.h.respondRewardCheck), empty, 'shown once');
+    assert.deepStrictEqual(w.body(w.h.respondRewardCheck, { type: 5 }), empty, 'shown once');
     assert.strictEqual(w.h.pendingResult(), false);
     w.h.onClear(SH, 6600);
-    assert.deepStrictEqual(w.body(w.h.respondRewardCheck), empty, 'same bracket: no new popup');
+    assert.deepStrictEqual(w.body(w.h.respondRewardCheck, { type: 5 }), empty, 'same bracket: no new popup');
     assert.deepStrictEqual(w.body(w.h.respondRewardList), { ret: { code: 0 }, getHighscore: 6600, getHighscoreRewardIds: [9000100, 9000101] });
+  },
+  // review round 1: 142 is also called by the Coliseum Daily, the PvP Ranking scene, the Lux/Party Rankings; only the HSC
+  // Rankings screen's call ({type: 5}, bench log 16-11: it precedes 135/136/179) shows and clears the waiting result
+  reward_check_not_consumed_by_other_rankings() {
+    const w = world();
+    const empty = { ret: { code: 0 }, lastRankingResults: [], rankingRewardIds: [], openRankingIds: [], rankingReward: [] };
+    w.h.onClear(SH, 2500);
+    for (const body of [null, {}, { type: 1 }, { type: 3 }, { type: '4' }]) assert.deepStrictEqual(w.body(w.h.respondRewardCheck, body), empty, JSON.stringify(body));
+    assert.strictEqual(w.h.pendingResult(), true, 'still waiting');
+    assert.deepStrictEqual(w.body(w.h.respondRewardCheck, { type: '5' }).openRankingIds, [8001], 'the HSC Rankings screen');
+    assert.strictEqual(w.h.pendingResult(), false);
+  },
+  // review round 1, Minor 1: a new bracket arms the popup even when it adds no new items (same rewards as the bracket paid)
+  popup_on_new_bracket_without_items() {
+    const ix = INDEX();
+    ix.entries[1].hsc.brackets[1].rewards = [{ type: 2, id: 0, num: 5 }];
+    const w = world({ index: ix });
+    w.h.onClear(SH, 2500);
+    w.body(w.h.respondRewardCheck, { type: 5 });
+    const br = () => w.presents.filter((p) => !/points/.test(p.comment)).length, n = br();
+    w.h.onClear(SH, 6500);
+    assert.strictEqual(br(), n, 'no bracket item to pay');
+    const r = w.body(w.h.respondRewardCheck, { type: 5 });
+    assert.deepStrictEqual([r.lastRankingResults[0].lastRank, r.rankingRewardIds], [11, [8000101]]);
   },
   start_sends_best() {
     const w = world();
@@ -232,7 +256,8 @@ function wiring() {
     const st = (id) => ev.events.flatMap((c) => c.stages).find((s) => s.stageId === id);
     assert.deepStrictEqual([st(SH).score, st(S1).score, ev.highScoreRank], [2500, 50, 51], 'HSC best on the HSC quest, Lux elsewhere, shown rank');
     assert.strictEqual(call(t.respondMyPage).rankingRewards.rankingHighScore, 1, 'a result popup waits');
-    const chk = call((res) => t.hsc().respondRewardCheck(res));
+    assert.deepStrictEqual(call((res) => t.hsc().respondRewardCheck(res, { type: 1 })).openRankingIds, [], 'another ranking: not consumed');
+    const chk = call((res) => t.hsc().respondRewardCheck(res, { type: 5 }));
     assert.deepStrictEqual([chk.lastRankingResults, chk.rankingRewardIds, chk.openRankingIds], [[{ lastRankingId: 8001, lastRank: 51, lastUnionRank: 0, pvpClass: 0 }], [8000102], [8001]]);
     assert.strictEqual(call(t.respondMyPage).rankingRewards.rankingHighScore, 0);
     const own = call((res) => t.hsc().respondRanking(res, '/ranking/highscore/own')).highscoreRankingOwn.rankingDatas[0];

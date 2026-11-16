@@ -5715,7 +5715,7 @@ function handler(scheme) {
       // poi rankingReward: array vuoto = nessun premio di classifica.
       // Senza: «200 ERROR :142» al Challenge della Daily del Coliseum (banco 14-10)
       // High Score Challenge (routes-hsc.js): the «Score Ranking Results» popup of a new bracket, once; else the empty arrays
-      if (kind === 'rankingrewardcheck') return hsc().respondRewardCheck(res);
+      if (kind === 'rankingrewardcheck') return hsc().respondRewardCheck(res, entry.bodyDecoded); // HSC only on {type: 5}
       if (kind === 'hscranking') return hsc().respondRanking(res, req.url.split('?')[0].toLowerCase());
       if (kind === 'hscrewardlist') return hsc().respondRewardList(res);
       if (kind === 'pvp') return respondPvp(res, req.url.split('?')[0], req.method, entry.bodyDecoded);
