@@ -21,6 +21,7 @@
 const special = require('./special-pages');
 const { rowState, informative } = require('./calendar-util');
 const parts = require('./catalog-pages');
+const { shownRank } = require('./ranked-rewards');
 
 const { CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, CROWN, gameYearOf, GAME_YEARS, YEAR_SPAN, MATCH_JS, PROG_OPTS, progCls } = special;
 const { PAGE_HEAD, pill, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues, srvFrame, noticeCard, parseNotice, noticeBlocks, backBar, packCatalog, expandCatalog, UNPACK_JS,
@@ -228,7 +229,8 @@ rows.forEach(function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el)
 // with its chips, the empty-state line and «Matches:» under a row found by FIND.
 // TYPE of an event: the type of its census row (index entries .type); only the kinds in the index get a chip, an unknown one by its code
 const TYPE_OPTS = [['all', 'All'], ['EQ', 'Event Quests', 'camp'], ['STORY', 'Story Events', 'avatar'], ['GEM', 'Gem Quests', 'jewel'], ['COIN', 'Event Coins', 'medal'],
-  ['KEY', 'Keyblade Challenges', 'skill'], ['QUIZ', 'Quizzes', 'daily'], ['CELEB', 'Celebrations', 'lux'], ['BOARD', 'Avatar Boards', 'avatar']];
+  ['KEY', 'Keyblade Challenges', 'skill'], ['QUIZ', 'Quizzes', 'daily'], ['CELEB', 'Celebrations', 'lux'], ['BOARD', 'Avatar Boards', 'avatar'],
+  ['HSC', 'High Score Challenges', 'bonus']];
 const typeOf = (e) => String(e.type || 'EQ');
 const SHOW_OPTS = [['all', 'All events'], ['now', 'In Events now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later'],
   ['removed', 'Not built yet', 'removed']];
@@ -479,10 +481,11 @@ const EVENT_SHORT = {
   quizBoard: ['values', 'Quiz board', 'Redrawn from the khuxwiki text of the question', 'replaced'],
   wholeDay: ['rules', 'Opening time', 'Its whole original day (was a short window)', 'bonus'],
   dramaOff: ['rules', 'Scenes', 'The original scenes are not shown yet', 'later'],
+  hscThresholds: ['rewards', 'Score thresholds', 'Ranking rewards by your own best score, not by a leaderboard', 'bonus'],
 };
 const EVENT_LABEL = { wikiAp: 'AP', donorKept: 'later game data', wikiLowConfidence: 'a wiki value', noWikiPage: 'no wiki page', mapIncomplete: 'map', eventCoins: 'Event Coins',
   wholeDay: 'opening time', dramaOff: 'scenes', boardsLater: 'event boards', noCoinSource: 'event boards', boosterLater: 'Boosters', noBoardSet: 'Event Coins', quizBoard: 'quiz board',
-  communityBonus: 'community goal', completionReward: 'completion reward' };
+  communityBonus: 'community goal', completionReward: 'completion reward', hscThresholds: 'score thresholds' };
 const EVENT_GROUPS = [['values', 'Quest data', 'tleg', ''], ['rewards', 'Rewards', 'camp', ' rw'], ['rules', 'Rules', 'weekday', ' ru'], ['other', 'Other', 'replaced', ' ot']];
 // every label in use: the event's and its quests' (served or not), in the order of EVENT_SHORT, unknown ones last
 const codesOf = (e) => {
@@ -530,6 +533,43 @@ function boardsSection(index, e, ctx) {
 const daysText = (days) => days.map(niceDay).join(', ');
 // a served quest with a Booster reward (make-events.js boosters, label boosterLater): the Booster comes with the Boosters (Part 6)
 const boosterLine = (q) => ((q.boosters || []).length ? `<small>${(q.boosters || []).map((b) => `${esc(b.emblemName)} (${b.objective ? `objective ${b.objective}` : 'first clear'})`).join(', ')}: comes with the Boosters</small>` : '');
+
+// High Score Challenge (Events Part 8 Task 6): the point milestones (original) and the score thresholds that stand for the original
+// rank brackets (make-events.js entry.hsc, lowest bracket -> top), each with the rank it shows (ranked-rewards.js shownRank) and its
+// source label; ctx.hscBest(censusId) -> the player's best score or null (routes-hsc.js). '' without an hsc block (not built yet).
+const HSC_SOURCE = { original: 'Original value', scaled: 'Scaled from original', interpolated: 'Interpolated' };
+const ordinal = (n) => { const t = n % 100, u = n % 10; return `${num(n)}${t >= 11 && t <= 13 ? 'th' : u === 1 ? 'st' : u === 2 ? 'nd' : u === 3 ? 'rd' : 'th'}`; };
+const hscReward = (r, ctx) => {
+  if (r.type === 2) return `${num(r.num)} Jewels`;
+  if (r.type === 4) return `${num(r.num)} Munny`;
+  const name = r.name || (ctx.itemName && ctx.itemName(r)) || `Reward (type ${r.type}, id ${r.id})`;
+  return `${name} x${num(r.num)}`;
+};
+const hscRewards = (rs, ctx) => (rs || []).map((r) => hscReward(r, ctx)).join(', ') || '—';
+function hscSection(e, ctx) {
+  const h = e.hsc;
+  if (!h || !(h.thresholds || []).length) return '';
+  const thr = h.thresholds, top = thr[thr.length - 1];
+  const best = ctx.hscBest ? ctx.hscBest(e.censusId) : null, hasBest = Number.isFinite(best);
+  const mine = hasBest ? `<p class="ecoin">${icon('bonus')}Your best score: <b>${num(best)}</b> · shown rank: <b>${ordinal(shownRank(thr, best))}</b>.</p>` : '';
+  const needed = (t) => (t.ceiling ? t.score - (t.tolerance || 0) : t.score);
+  const rewardsOf = (t) => ((h.brackets || []).find((b) => b.startRank === t.startRank && b.endRank === t.endRank) || {}).rewards;
+  const ranks = (t) => (t.startRank === t.endRank ? `Rank ${num(t.startRank)}` : `Ranks ${num(t.startRank)}–${num(t.endRank)}`);
+  const thRows = [...thr].reverse().map((t) => `<tr class="th"><td>${esc(ranks(t))}</td><td>${num(t.score)}${t.ceiling ? `<small>Ceiling reached (within ${num(t.tolerance || 0)} points)</small>` : ''}</td>`
+    + `<td>${ordinal(shownRank(thr, needed(t)))}</td><td>${esc(HSC_SOURCE[t.label] || t.label)}</td><td>${esc(hscRewards(rewardsOf(t), ctx))}</td></tr>`).join('');
+  const msRows = (h.milestones || []).map((m) => `<tr><td>${num(m.score)}</td><td>${esc(hscRewards(m.rewards, ctx))}</td>`
+    + (hasBest ? (best >= m.score ? `<td class="cd">Reached${CROWN}</td>` : '<td>Not reached</td>') : '') + '</tr>').join('');
+  const pct = (h.scoreBonus || []).filter((x) => Number.isFinite(x));
+  const bonus = pct.length && !h.scoreMedalListId ? `<p class="n">Score-bonus medals of the original event (${pct.map((x) => `+${x}%`).join(', ')}): not built yet.</p>` : '';
+  return `<h2>High Score</h2>${mine}<h3>Score thresholds</h3>`
+    + '<p class="n">In the original game these rewards went by leaderboard position. On this server each original rank bracket is a score threshold: '
+    + "when your best run reaches it you receive that bracket's original rewards, once (only the highest bracket reached; a better run later pays the difference). "
+    + `The rank shown is the best rank of the bracket you reached. Below ${num(thr[0].score)} points your rank shows as ${ordinal(shownRank(thr, -Infinity))}; `
+    + `1st only above ${num(top.score)} points.</p>`
+    + `<table class="tt hs"><tr><th>Original ranks</th><th>Score</th><th>Rank shown</th><th>Source</th><th>Rewards</th></tr>${thRows}</table>`
+    + (msRows ? `<h3>Point milestones</h3><p class="n">The original milestones: each pays once when your score reaches it.</p><table class="tt hs"><tr><th>Score</th><th>Rewards</th>${hasBest ? '<th>Status</th>' : ''}</tr>${msRows}</table>` : '')
+    + bonus;
+}
 
 // A board not served, in plain words (the builder's note and the build reason of avatar-boards.js stay out of the page)
 const BOARD_WHY = [
@@ -632,7 +672,7 @@ function detailPage(index, evStageId, ctx = {}) {
   return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
     + `<h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140)}>${box}`
     + `<h2>Event</h2><table class="kv">${kv}</table>`
-    + cards + boardsSection(index, e, ctx) + avatarBoardsSection(e, ctx, true)
+    + cards + hscSection(e, ctx) + boardsSection(index, e, ctx) + avatarBoardsSection(e, ctx, true)
     + (boardOnly(e) ? '' : `<h2>Quests</h2><table class="tt"><tr><th>Quest</th><th>LV</th><th>AP</th><th>Status</th></tr>${qRows}</table>`)
     + `<p class="n">The Event Catalog is an addition of this server: in the original game an event was played only in its own dates.</p>${back}<script>${KEEP_JS}</script></body></html>`;
 }

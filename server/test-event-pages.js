@@ -53,6 +53,15 @@ const BOARD_INDEX = () => {
   ix.avatarHeld = [{ donorId: 9100, name: 'Draw Ticket Board 1', why: 'windowUnknown: no dated notice' }];
   return avatarBoards.catalogIndex(ix, AVATAR_DOC());
 };
+// a High Score Challenge entry as make-events.js writes it (Part 8 Task 6): brackets and thresholds lowest bracket -> top
+const hscEntry = () => ({ censusId: 'H-1', evStageId: 29930, name: 'High Score Fun', type: 'HSC', start: '2019-03-15', end: '2019-03-21', stageIds: [4009930], available: true,
+  labels: ['hscThresholds'], noticeIds: [], quests: [quest(4009930)],
+  hsc: { era: 'B', rankingId: 8001, scoreMedalListId: 0, scoreStartReward: 800100, scoreEndReward: 800101, donorRankingId: 6049, scoreBonus: [26],
+    milestones: [{ score: 1000, rewards: [{ type: 2, id: 0, num: 5, name: '5 Jewels' }], scoreRewardId: 800100 }, { score: 5000, rewards: [{ type: 3, id: 90011, num: 1, name: '6★ Quest Medal' }], scoreRewardId: 800101 }],
+    brackets: [{ startRank: 51, endRank: 100, rewards: [{ type: 2, id: 0, num: 5 }] }, { startRank: 11, endRank: 50, rewards: [{ type: 2, id: 0, num: 20 }] },
+      { startRank: 1, endRank: 10, rewards: [{ type: 2, id: 0, num: 50 }, { type: 3, id: 90011, num: 1, name: '6★ Quest Medal' }] }],
+    thresholds: [{ startRank: 51, endRank: 100, score: 2000, label: 'interpolated' }, { startRank: 11, endRank: 50, score: 6000, label: 'scaled' },
+      { startRank: 1, endRank: 10, score: 9000, label: 'original' }] } });
 const ctx = (extra = {}) => ({ shopFrom: '2019-04-08', shopTo: '2019-04-14', current: new Set(['E-1']), kept: null, imgVersion: 1, unlockQuestOf: () => 612, ...extra });
 // one catalogue row (its opening div to the next one)
 function rowOf(html, id) {
@@ -720,6 +729,46 @@ const tests = {
     const pill = JSON.parse(braw.slice(braw.indexOf('var PILL=') + 9, braw.indexOf(';\nfunction attr(el,a)')));
     assert.ok(/Avatar Boards/.test(pill.kept[1]) && /boards/.test(pill.can[1]), 'board pills after a keep');
     assert.ok(braw.includes("'/web/avatar/board/'"), 'a row opens its Avatar Board page');
+  },
+  // Events Part 8 Task 6: the details page of a High Score Challenge lists its point milestones and its score thresholds (each with
+  // its source label and the rank it shows, spec 4.4 / 6.4) and, with ctx.hscBest, the player's best score and shown rank
+  hsc_details_thresholds_and_labels() {
+    const ix = INDEX();
+    ix.entries.push(hscEntry());
+    const html = pages.detailPage(ix, 29930, ctx());
+    const text = html.replace(/<script[\s\S]*?<\/script>/g, '');
+    assert.ok(!/restored/i.test(text), 'no «restored» in the page text');
+    const sec = text.slice(text.indexOf('<h2>High Score</h2>'));
+    assert.ok(sec.length > 20, 'High Score section');
+    // point milestones: score and rewards
+    assert.ok(/<td>1,000<\/td><td>5 Jewels<\/td>/.test(sec) && /<td>5,000<\/td><td>6★ Quest Medal x1<\/td>/.test(sec), 'milestones');
+    // thresholds, top first: the original ranks, the score needed, the rank shown, the source label in words
+    const rows = [...sec.matchAll(/<tr class="th">([\s\S]*?)<\/tr>/g)].map((m) => m[1].replace(/<[^>]+>/g, '|').replace(/\|+/g, '|'));
+    assert.deepStrictEqual(rows, ['|Ranks 1–10|9,000|1st|Original value|50 Jewels, 6★ Quest Medal x1|', '|Ranks 11–50|6,000|11th|Scaled from original|20 Jewels|',
+      '|Ranks 51–100|2,000|51st|Interpolated|5 Jewels|']);
+    assert.ok(/Below 2,000 points your rank shows as 100th/.test(sec), 'below the lowest threshold');
+    assert.ok(/1st only above 9,000 points|above 9,000 points shows 1st/.test(sec), '1st only above the top');
+    assert.ok(!/Your best score/.test(sec), 'no best score without ctx.hscBest');
+    // with the player's best: the score and the shown rank (ranked-rewards.js shownRank)
+    const mine = pages.detailPage(ix, 29930, ctx({ hscBest: (cid) => (cid === 'H-1' ? 6500 : null) }));
+    assert.ok(/Your best score: <b>6,500<\/b>/.test(mine) && /shown rank: <b>11th<\/b>/.test(mine), 'best score and shown rank');
+    // a ceiling threshold says so
+    const ix2 = INDEX(); const ce = hscEntry(); ce.hsc.thresholds[2] = { ...ce.hsc.thresholds[2], ceiling: true, tolerance: 50 }; ix2.entries.push(ce);
+    assert.ok(/Ceiling reached \(within 50 points\)/.test(pages.detailPage(ix2, 29930, ctx())), 'ceiling threshold');
+    // an HSC not built yet (no thresholds): «Not built yet» with its reason, no section
+    const ix3 = INDEX(); const held = { ...hscEntry(), available: false, stageIds: [], reason: 'hscNoThresholds', why: REASON_TEXT.hscNoThresholds }; delete held.hsc; ix3.entries.push(held);
+    assert.ok(!pages.detailPage(ix3, 29930, ctx()).includes('<h2>High Score</h2>'));
+    assert.ok(rowOf(catalog(ix3, ctx()), 29930).includes('Not built yet'));
+  },
+  hsc_type_chip() {
+    const ix = INDEX();
+    ix.entries.push(hscEntry());
+    const html = catalog(ix, ctx());
+    const sheet = html.slice(html.indexOf('<div class="sheet" id="sheet"'), html.indexOf('<div id="pinmsg"'));
+    const types = [...((/<div class="opts" data-g="type">([\s\S]*?)<\/div>/.exec(sheet) || [])[1] || '').matchAll(/data-v="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)</g)].map((m) => [m[1], m[2]]);
+    assert.deepStrictEqual(types, [['all', 'All'], ['EQ', 'Event Quests'], ['HSC', 'High Score Challenges']]);
+    assert.ok(/data-type="HSC"/.test(rowOf(html, 29930)));
+    assert.ok(/data-search="[^"]*High Score Challenges/.test(rowOf(html, 29930)), 'the type name is found by FIND');
   },
   // Task 5b fix round 1 (review 1): the board catalogue's page script counts «entries», never «entrys»; the Event Catalog «events»
   board_noun_entries() {

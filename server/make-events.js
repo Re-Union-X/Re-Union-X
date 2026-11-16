@@ -57,6 +57,8 @@
 // row's bgmField / bgmBattle / bgmBoss, which the client plays as audio/<id>.akb) replaces it: q.bgm {field, battle, boss} of the
 // record, else the private overlay event_bgm.json (opts.bgm / KHUX_EVENT_BGM / next to community_bonus.json) {quests: {"<donor
 // stage id>": {bgm: [field, battle, boss]}}} by the quest's stageId (or donorStageOfLaterRun); neither: the story row's music.
+// High Score Challenges (Part 8 Task 6, type config.hsc.type): evStage rows eventCategory 4, the master tables ranking,
+// rankingReward, evScoreReward, evMedalList and the index entry.hsc block (see hscPrepare / hscRows below).
 // Wired in make-game-tables.js after make-raid. KHUX_EVENTS=0 turns it off; without KHUX_EVENT_SRC it warns and writes nothing.
 //
 //   node server/make-events.js [master folder]
@@ -88,7 +90,9 @@ const QUIZ_BOARD_LABELS = ['quizBoard', 'quizBoardFootage', 'quizBoardScreenshot
 // Part 7 Task 5: avatarBoards (a BOARD entry of the avatar board records: boards only, no quest, avatarCatalog)
 const REASONS = ['shared', 'board', 'coin', 'undated', 'wikiEmpty', 'rewardItemMissing', 'notSelected',
   'enemyMissing', 'mapUnusable', 'mapKeyUsed', 'rewardRowsMissing', 'raidSpecial', 'worldMismatch',
-  'boosterOnly', 'rewardTypeUnknown', 'quizTextMissing', 'objectiveMismatch', 'notice', 'objectiveUnmapped', 'scheduleLine', 'enemyAmbiguous', 'avatarBoards'];
+  'boosterOnly', 'rewardTypeUnknown', 'quizTextMissing', 'objectiveMismatch', 'notice', 'objectiveUnmapped', 'scheduleLine', 'enemyAmbiguous', 'avatarBoards',
+  // Part 8 Task 6: a High Score Challenge with no quest / an unmapped reward (the private builder) or no score thresholds yet
+  'hscNoQuest', 'hscRewardUnmapped', 'hscNoThresholds'];
 // flags the private builder writes in a quest label (Task 1): this generator decides them itself (payableTypes, quizDramas,
 // objectiveMismatch), so they carry no label of their own. objectiveResolved (I-251): a note, the donor objective is served as recorded
 const RECORD_FLAGS = ['boosterLater', 'boosterOnly', 'quizTextMissing', 'rewardTypeUnknown', 'objectiveMismatch', 'objectiveResolved'];
@@ -286,11 +290,98 @@ function rowOfQuest(rows, q) {
 const BOARD_TABLES = { sphere: 'sphereBoardId', sphereArray: 'arryId', sphereMasu: 'masuId' };
 function checkRanges(master, config) {
   const ranges = { evStage: ['eventStageId', config.evStageBase, config.evStageMax], stage: ['stageId', config.stageBase, config.stageMax],
-    ...Object.fromEntries(Object.entries(BOARD_TABLES).map(([t, k]) => [t, [k, eventBoards.ID_BASE, eventBoards.ID_MAX]])) };
+    ...Object.fromEntries(Object.entries(BOARD_TABLES).map(([t, k]) => [t, [k, eventBoards.ID_BASE, eventBoards.ID_MAX]])), ...hscRanges(config) };
   for (const [table, [key, lo, hi]] of Object.entries(ranges)) {
     const hit = (master[table] || []).find((r) => r[key] >= lo && r[key] <= hi);
     if (hit) throw new Error(`events: ${table} row ${hit[key]} is inside our id range ${lo}-${hi} and is not ours`);
   }
+}
+
+// High Score Challenges (Events Part 8 Task 6, spec docs/superpowers/specs/2026-11-10-ranked-rewards-design.md, client fields
+// docs/notes/events.md «evStage»). A record of type config.hsc.type with its `hsc` block {era, milestones [{score, rewards}],
+// brackets [{startRank, endRank, rewards}], thresholds [{startRank, endRank, score, label, ceiling?, tolerance?}] (one per bracket,
+// private calibration, Task 3), scoreBonus [pct | {medalId, rate}], donorRankingId} gives, besides its quests:
+// - its evStage rows eventCategory config.hsc.eventCategory (4: the tap opens the High Score mode) with rankingId,
+//   scoreMedalListId (0 when the record names no bonus medal) and scoreStartReward..scoreEndReward;
+// - master rows: ranking (one, category config.hsc.rankingCategory; startRank..endRank = its rankingReward id range, as
+//   scoreStartReward..scoreEndReward: the Task 1 spike reading, not proven), rankingReward (one per bracket, rank order),
+//   evScoreReward (one per point milestone, score order), evMedalList (one per named bonus medal, listId = scoreMedalListId);
+// - index entry.hsc {era, rankingId, scoreMedalListId, scoreStartReward, scoreEndReward, milestones (+ scoreRewardId), brackets and
+//   thresholds lowest bracket -> top (server/ranked-rewards.js order), scoreBonus, donorRankingId}: read by routes-hsc.js (Task 5).
+// Ids come from the record's evStage number r (event_ids.json rows, append-only): ranking rankingBase + r, list
+// medalListBase + r, row ids <table base> + r * perRecord + i. Held (no row, no card): the private builder's reason (rec.reason
+// hscNoQuest / hscRewardUnmapped), no hsc block (hscNoQuest), no thresholds yet (hscNoThresholds), a reward of a type we cannot pay or an item not in our
+// master (rewardTypeUnknown / rewardItemMissing). Thresholds that do not stand for the brackets stop the run.
+const HSC_TABLES = { ranking: 'rankingId', rankingReward: 'rankingRewardId', evScoreReward: 'scoreRewardId', evMedalList: 'evMedalListId' };
+const HSC_LABELS = ['original', 'scaled', 'interpolated'];
+const HSC_SLOTS = 10;
+function hscRanges(config) {
+  const h = config.hsc;
+  if (!h) return {};
+  const n = config.evStageMax - config.evStageBase, per = h.perRecord;
+  return { ranking: ['rankingId', h.rankingBase, h.rankingBase + n], rankingReward: ['rankingRewardId', h.rankingRewardBase, h.rankingRewardBase + (n + 1) * per - 1],
+    evScoreReward: ['scoreRewardId', h.scoreRewardBase, h.scoreRewardBase + (n + 1) * per - 1], evMedalList: ['evMedalListId', h.medalRowBase, h.medalRowBase + (n + 1) * per - 1] };
+}
+// why an HSC record is not built (a reasonText key) or null
+function hscHoldOf(rec) {
+  if (['hscNoQuest', 'hscRewardUnmapped'].includes(rec.reason)) return rec.reason;
+  if (!rec.hsc) return 'hscNoQuest';
+  if (!(rec.hsc.thresholds || []).length) return 'hscNoThresholds';
+  return null;
+}
+// -> {hsc: the checked block with our item ids, brackets and thresholds lowest bracket -> top} or {reason, detail}
+function hscPrepare(rec, resolve, payable) {
+  const h = rec.hsc, cid = rec.censusId;
+  const lowFirst = (a, b) => b.startRank - a.startRank;
+  const brackets = [...(h.brackets || [])].sort(lowFirst), thresholds = [...h.thresholds].sort(lowFirst);
+  if (thresholds.length !== brackets.length) throw new Error(`events: ${cid}: ${thresholds.length} thresholds for ${brackets.length} rank brackets`);
+  thresholds.forEach((t, i) => {
+    const b = brackets[i];
+    if (t.startRank !== b.startRank || t.endRank !== b.endRank) throw new Error(`events: ${cid}: thresholds do not match the rank brackets (${t.startRank}-${t.endRank} vs ${b.startRank}-${b.endRank})`);
+    if (!Number.isFinite(t.score) || t.score < 0) throw new Error(`events: ${cid}: thresholds: score ${t.score} of ranks ${t.startRank}-${t.endRank}`);
+    if (i && t.score < thresholds[i - 1].score) throw new Error(`events: ${cid}: thresholds go down at ranks ${t.startRank}-${t.endRank}`);
+    if (!HSC_LABELS.includes(t.label)) throw new Error(`events: ${cid}: threshold label ${t.label} (ranks ${t.startRank}-${t.endRank}) is not ${HSC_LABELS.join(' / ')}`);
+  });
+  const missing = [], unknown = [];
+  const item = (d, where) => {
+    if (payable && !payable.types.has(d.type)) unknown.push(`${where} type ${d.type}`);
+    return resolve ? resolve(d, missing) : d;
+  };
+  const list = (rs, where) => {
+    if ((rs || []).length > HSC_SLOTS) throw new Error(`events: ${cid}: ${where}: ${rs.length} rewards (${HSC_SLOTS} slots)`);
+    return (rs || []).map((r) => ({ ...item(r, where) }));
+  };
+  const milestones = [...(h.milestones || [])].sort((a, b) => a.score - b.score).map((m) => ({ ...m, rewards: list(m.rewards, `milestone ${m.score}`) }));
+  const bks = brackets.map((b) => ({ ...b, rewards: list(b.rewards, `ranks ${b.startRank}-${b.endRank}`) }));
+  const medals = (h.scoreBonus || []).filter((x) => x && typeof x === 'object' && Number.isInteger(x.medalId))
+    .map((x) => ({ ...x, medalId: item({ type: 3, id: x.medalId, num: 1, ...(x.name ? { name: x.name } : {}) }, 'bonus medal').id }));
+  if (unknown.length) return { reason: 'rewardTypeUnknown', detail: [...new Set(unknown)].join('; ') };
+  if (missing.length) return { reason: 'rewardItemMissing', detail: [...new Set(missing)].join('; ') };
+  return { hsc: { era: h.era, milestones, brackets: bks, thresholds: thresholds.map((t) => ({ ...t })), medals, scoreBonus: h.scoreBonus || [], donorRankingId: h.donorRankingId || null } };
+}
+const hscSlots = (rs, f) => { const a = rs.map(f); while (a.length < HSC_SLOTS) a.push(0); return a; };
+const hscItems = (rs) => ({ type: hscSlots(rs, (r) => r.type), id: hscSlots(rs, (r) => r.id || 0), skillType: hscSlots(rs, (r) => (r.skillId ? 1 : 0)),
+  skillId: hscSlots(rs, (r) => r.skillId || 0), skillLv: hscSlots(rs, (r) => r.skillLv || 0) });
+// the master rows and the index block of a prepared HSC record whose evStage rows are `rows` (built), record number r
+function hscRows(p, r, cfg, rows, cid) {
+  const per = cfg.perRecord;
+  if (p.brackets.length > per || p.milestones.length > per || p.medals.length > per) throw new Error(`events: ${cid}: more than ${per} brackets, milestones or bonus medals`);
+  const rankingId = cfg.rankingBase + r, listId = p.medals.length ? cfg.medalListBase + r : 0;
+  const rwBase = cfg.rankingRewardBase + r * per, scBase = cfg.scoreRewardBase + r * per, mdBase = cfg.medalRowBase + r * per;
+  const byRank = [...p.brackets].sort((a, b) => a.startRank - b.startRank);
+  const rankingReward = byRank.map((b, i) => ({ rankingRewardId: rwBase + i, startRank: b.startRank, endRank: b.endRank, validReward: b.rewards.length, ...hscItems(b.rewards),
+    burstUpperNumber: hscSlots([], () => 0), num: hscSlots(b.rewards, (x) => x.num || 0) }));
+  const milestones = p.milestones.map((m, i) => ({ ...m, scoreRewardId: scBase + i }));
+  const evScoreReward = milestones.map((m) => ({ scoreRewardId: m.scoreRewardId, score: m.score, validReward: m.rewards.length, ...hscItems(m.rewards), num: hscSlots(m.rewards, (x) => x.num || 0) }));
+  const evMedalList = p.medals.map((m, i) => ({ evMedalListId: mdBase + i, listId, medalId: m.medalId, rate: m.rate || 0, display: 1, isDeleted: 0 }));
+  const z5 = [0, 0, 0, 0, 0];
+  const ranking = [{ rankingId, category: cfg.rankingCategory, startDatetime: rows[0].startTime, endDatetime: rows[0].endTime,
+    startRank: rankingReward.length ? rankingReward[0].rankingRewardId : 0, endRank: rankingReward.length ? rankingReward[rankingReward.length - 1].rankingRewardId : 0,
+    unionStartRank: [...z5], unionEndRank: [...z5], validReward: rankingReward.length ? 1 : 0 }];
+  const fields = { rankingId, scoreMedalListId: listId, scoreStartReward: milestones.length ? milestones[0].scoreRewardId : 0,
+    scoreEndReward: milestones.length ? milestones[milestones.length - 1].scoreRewardId : 0 };
+  const block = { era: p.era, ...fields, milestones, brackets: p.brackets, thresholds: p.thresholds, scoreBonus: p.scoreBonus, donorRankingId: p.donorRankingId };
+  return { fields, block, tables: { ranking, rankingReward, evScoreReward, evMedalList } };
 }
 
 const mapKeyOf = (q) => {
@@ -899,7 +990,9 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     return genLook;
   };
   const aliases = config.rewardTypeAliases || null;
-  const out = { evStage: [], stage: [], reward: [], sphere: [], sphereArray: [], sphereMasu: [], poi: {}, maps: [], genMaps: [], ids: allIds, anchors: allAnchors, skipped: [],
+  const isHsc = (rec) => !!config.hsc && rec.type === config.hsc.type;
+  const out = { evStage: [], stage: [], reward: [], sphere: [], sphereArray: [], sphereMasu: [], ranking: [], rankingReward: [], evScoreReward: [], evMedalList: [],
+    poi: {}, maps: [], genMaps: [], ids: allIds, anchors: allAnchors, skipped: [],
     boardReport: eb ? eb.report : null, index: { entries: [], reasons: {}, boardSets: {} } };
   const used = new Set();
   const builtMaps = new Map(); // map key -> our stage id built on it in this run
@@ -952,7 +1045,22 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       put(out.index.entries, entry);
       continue;
     }
+    // a High Score Challenge (Part 8 Task 6, hscPrepare): held without its thresholds or with a reward we cannot pay
+    let hsc = null;
+    if (isHsc(rec)) {
+      const held = hscHoldOf(rec);
+      const p = held ? null : hscPrepare(rec, resolveItem, payable);
+      if (held || p.reason) {
+        entry.reason = held || p.reason;
+        entry.why = held ? textOf(held) : `${textOf(p.reason)} (${p.detail})`;
+        put(out.index.entries, entry);
+        continue;
+      }
+      hsc = p.hsc;
+    }
     const labels = new Set();
+    // the score thresholds stand for the original leaderboard (spec 1): a deviation, declared
+    if (hsc) labels.add('hscThresholds');
     // short windows of the donor rows: open the whole Pacific day (label wholeDay, not original). A `shortWindow` record whose rows
     // are all whole days (the Surprise events) was open that whole Pacific day in the original too: oneDay, no label
     const shortDays = new Set();
@@ -1104,7 +1212,8 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       // a quest paying Event Coins is shared only between entries of the same board set (fix round 1, I2: its coins go to the set
       // of the entry that built it); otherwise the later one waits (mapKeyUsed below)
       const sameSet = !coins || (twin && (twin.setKey || null) === (entry.boardSetKey || null));
-      if (twin && twin.censusId !== rec.censusId && twin.sig === sig && !quiz && sameSet) {
+      // a High Score quest is never shared: its score counts for its own event (routes-hsc.js finds the event by stage)
+      if (twin && twin.censusId !== rec.censusId && twin.sig === sig && !quiz && sameSet && !hsc && !twin.hsc) {
         item.sharedWith = twin.censusId;
         markServed(twin.stageId);
         continue;
@@ -1201,7 +1310,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         hardmodeName: r.hardmodeName || 'strDummy', hardmodeComparison: r.hardmodeComparison === undefined ? 1 : r.hardmodeComparison, hardmodeNum: r.hardmodeNum || 0,
         validClearGetTitle: 0, clearGetTitle: 0, validClearGetSphere: 0, clearGetSphere: 0, resetClearGet: 0, ...firstClearOf(q), resetSubMission: 0,
         ...questSubs(q, key), combinedSubmissionFlag: q.combined ? 1 : 0, raidBoss: 0, ...questMusic(q0, bgmOver) });
-      if (hasStage(q0) && !builtQuests.has(q0.stageId)) builtQuests.set(q0.stageId, { stageId, censusId: rec.censusId, sig, setKey: entry.boardSetKey || null, item });
+      if (hasStage(q0) && !builtQuests.has(q0.stageId)) builtQuests.set(q0.stageId, { stageId, censusId: rec.censusId, sig, setKey: entry.boardSetKey || null, item, hsc: !!hsc });
       markServed(stageId);
     }
     // stagesOf (Part 5 Task 3, The Keyblade War Pt. 3, EV-0941): quests of another record that the original row of this one also
@@ -1286,6 +1395,14 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         r.available = true;
       }
       entry.available = true;
+      // a High Score Challenge: its rows open the High Score mode, its ranking / reward tables, the hsc block (hscRows)
+      if (hsc) {
+        const mine = out.evStage.filter((x) => entry.rows.some((r) => r.available && r.evStageId === x.eventStageId));
+        const h = hscRows(hsc, allIds.rows[rec.censusId], config.hsc, mine, rec.censusId);
+        for (const x of mine) Object.assign(x, { eventCategory: config.hsc.eventCategory }, h.fields);
+        for (const [t, list] of Object.entries(h.tables)) for (const x of list) put(out[t], x);
+        entry.hsc = h.block;
+      }
       // the entry covers its built rows (a donor row may start before the census dates)
       const built = entry.rows.filter((r) => r.available);
       const lo = built.map((r) => r.start).filter(Boolean).sort()[0], hi = built.map((r) => r.end).filter(Boolean).sort().pop();
@@ -1298,7 +1415,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     entry.labels.forEach((l) => used.add(l));
     put(out.index.entries, entry);
   }
-  for (const arr of [out.skipped, out.index.entries, out.maps, out.reward, out.stage, out.evStage]) arr.sort((a, b) => ixMap.get(a) - ixMap.get(b));
+  for (const arr of [out.skipped, out.index.entries, out.maps, out.reward, out.stage, out.evStage, ...Object.keys(HSC_TABLES).map((t) => out[t])]) arr.sort((a, b) => ixMap.get(a) - ixMap.get(b));
   // board sets handed out: their rows and the index; a member entry of a set not handed out says why (label)
   // a set is handed out only when one of its entries is served as eventType 1 (donor 1); a feeder alone does not hand it out, its
   // coins still accrue to the set (boardSetKey). The entries of a set not handed out go back to the plain list.
@@ -1519,15 +1636,15 @@ function patch(masterDir, opts = {}) {
   }
   const gameData = opts.gameDataDir || path.join(__dirname, 'game_data');
   const prev = readJson(path.join(gameData, 'events.json'), {}).own || {};
-  const keyOf = { stage: 'stageId', evStage: 'eventStageId', reward: 'rewardId', ...BOARD_TABLES };
+  const keyOf = { stage: 'stageId', evStage: 'eventStageId', reward: 'rewardId', ...BOARD_TABLES, ...HSC_TABLES };
   const load = (table, dflt) => {
     const mine = new Set(prev[table] || []);
     return readJson(path.join(masterDir, `${table}.json`), dflt).filter((r) => !mine.has(r[keyOf[table]]));
   };
-  const had = Object.fromEntries(['reward', ...Object.keys(BOARD_TABLES)].map((t) => [t, fs.existsSync(path.join(masterDir, `${t}.json`))]));
+  const had = Object.fromEntries(['reward', ...Object.keys(BOARD_TABLES), ...Object.keys(HSC_TABLES)].map((t) => [t, fs.existsSync(path.join(masterDir, `${t}.json`))]));
   const master = { stage: load('stage'), evStage: load('evStage'), reward: load('reward', []), enemy: readJson(path.join(masterDir, 'enemy.json')),
     medal: readJson(path.join(masterDir, 'medal.json'), null), material: readJson(path.join(masterDir, 'material.json'), null),
-    ...Object.fromEntries(Object.keys(BOARD_TABLES).map((t) => [t, load(t, [])])),
+    ...Object.fromEntries([...Object.keys(BOARD_TABLES), ...Object.keys(HSC_TABLES)].map((t) => [t, load(t, [])])),
     ...Object.fromEntries(['title', 'avatarParts', 'petParts'].map((t) => [t, readJson(path.join(masterDir, `${t}.json`), [])])) };
   // the private board sets (KHUX_EVENT_BOARDS, or opts.boardSets in the tests): none -> no event board, every entry as before
   let boardSets = opts.boardSets !== undefined ? opts.boardSets : null;
@@ -1567,7 +1684,7 @@ function patch(masterDir, opts = {}) {
   if (!avatarBoards && !opts.records) console.warn('events: KHUX_AVATAR_BOARDS not set (the private avatar board records): no BOARD entry in the Event Catalog');
   const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters, avatarBoards });
   const added = { stage: out.stage, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...(out.avatarCatalogEvStage ? [out.avatarCatalogEvStage] : []), ...out.evStage], reward: out.reward,
-    sphere: out.sphere, sphereArray: out.sphereArray, sphereMasu: out.sphereMasu };
+    sphere: out.sphere, sphereArray: out.sphereArray, sphereMasu: out.sphereMasu, ...Object.fromEntries(Object.keys(HSC_TABLES).map((t) => [t, out[t]])) };
   const clashR = out.reward.find((r) => master.reward.some((m) => m.rewardId === r.rewardId));
   if (clashR) throw new Error(`events: reward row ${clashR.rewardId} is in the master already`);
   // reward and sphere tables: written when the file is there, or when there are rows to add

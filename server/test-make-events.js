@@ -416,12 +416,12 @@ const tests = {
     // the old key alone still filters
     const old = build(recs, undefined, { ...CONFIG, onlyCensusIds: ['E-2'] });
     assert.deepStrictEqual(old.index.entries.map((e) => e.censusId), ['E-2']);
-    // the real config: 13 pilot ids, the GEM type (Part 2), the COIN type (Part 3), the challenge types EQ, KEY, QUIZ (Part 4) and
-    // the 35 Org XIII / Keyblade War ids (Part 5)
+    // the real config: 13 pilot ids, the GEM type (Part 2), the COIN type (Part 3), the challenge types EQ, KEY, QUIZ (Part 4),
+    // the 35 Org XIII / Keyblade War ids (Part 5) and the High Score Challenges HSC (Part 8)
     assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35);
     assert.strictEqual(new Set(REAL_CONFIG.serve.censusIds).size, REAL_CONFIG.serve.censusIds.length, 'no id twice');
     for (const id of ['EV-0081', 'EV-0346', 'EV-0441', 'EV-0741', 'EV-1103', 'EV-1273', 'EV-0913', 'EV-0941']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
-    assert.deepStrictEqual(REAL_CONFIG.serve.types, ['GEM', 'COIN', 'EQ', 'KEY', 'QUIZ']);
+    assert.deepStrictEqual(REAL_CONFIG.serve.types, ['GEM', 'COIN', 'EQ', 'KEY', 'QUIZ', 'HSC']);
     assert.ok(!('onlyCensusIds' in REAL_CONFIG));
   },
   shared_notice_built_once() {
@@ -1704,7 +1704,122 @@ const tests = {
     const rows = { ...CONFIG, evStageMax: CONFIG.evStageBase + 1 };
     assert.throws(() => build(records(), undefined, rows), /20000-20001.*2/);
   },
+  // Events Part 8 Task 6: a High Score Challenge record (type HSC, its `hsc` block) -> an evStage row of eventCategory 4 with its
+  // rankingId, scoreMedalListId and scoreStartReward..scoreEndReward, the stage row with no continue, the `hsc` block in the index
+  // (brackets and thresholds lowest bracket -> top, as server/ranked-rewards.js reads them); other records keep category 2
+  hsc_rows_category_4() {
+    assert.ok(REAL_CONFIG.serve.types.includes('HSC'), 'HSC is served by type');
+    const out = build([...records(), hscRecord('H-1')]);
+    const e = entry(out, 'H-1');
+    assert.strictEqual(e.available, true, e.why);
+    const row = out.evStage.find((r) => r.eventStageId === e.evStageId);
+    assert.strictEqual(row.eventCategory, 4);
+    assert.ok(row.rankingId > 0 && row.scoreStartReward > 0 && row.scoreEndReward === row.scoreStartReward + 1, JSON.stringify(row));
+    assert.strictEqual(row.scoreMedalListId, 0, 'no medal list in the record: list id 0');
+    assert.ok(out.evStage.filter((r) => r !== row).every((r) => r.eventCategory === CONFIG.eventCategory && r.rankingId === 0), 'other rows unchanged');
+    assert.strictEqual(out.stage.find((s) => s.stageId === e.stageIds[0]).disableContinue, 1);
+    const h = e.hsc;
+    assert.strictEqual(h.era, 'B');
+    assert.strictEqual(h.rankingId, row.rankingId);
+    assert.strictEqual(h.scoreMedalListId, 0);
+    assert.deepStrictEqual([h.scoreStartReward, h.scoreEndReward], [row.scoreStartReward, row.scoreEndReward]);
+    assert.deepStrictEqual(h.brackets.map((b) => [b.startRank, b.endRank]), [[51, 100], [11, 50], [1, 10]], 'lowest bracket first');
+    assert.deepStrictEqual(h.thresholds.map((t) => [t.startRank, t.score, t.label]), [[51, 2000, 'interpolated'], [11, 6000, 'scaled'], [1, 9000, 'original']]);
+    assert.deepStrictEqual(h.milestones.map((m) => m.score), [1000, 5000]);
+    assert.strictEqual(h.donorRankingId, 6049);
+    // the thresholds are calibrated values (labels interpolated / scaled): the entry is reconstructed
+    assert.ok(e.labels.includes('hscThresholds') && e.label === 'reconstructed', JSON.stringify(e.labels));
+    // ids are stable from run to run (the record's evStage number)
+    const again = build([...records(), hscRecord('H-1')], out.ids, CONFIG, master(), out.anchors);
+    assert.deepStrictEqual(entry(again, 'H-1').hsc, h);
+  },
+  ranking_tables_from_record() {
+    const out = build([hscRecord('H-1', { scoreBonus: [{ medalId: 90011, rate: 26 }, { medalId: 90012, rate: 23 }] })]);
+    const e = entry(out, 'H-1'), h = e.hsc;
+    const pad = (a, v = 0) => [...a, ...Array(10 - a.length).fill(v)];
+    assert.deepStrictEqual(out.ranking, [{ rankingId: h.rankingId, category: 6, startDatetime: out.evStage[0].startTime, endDatetime: out.evStage[0].endTime,
+      startRank: out.rankingReward[0].rankingRewardId, endRank: out.rankingReward[2].rankingRewardId, unionStartRank: [0, 0, 0, 0, 0], unionEndRank: [0, 0, 0, 0, 0], validReward: 1 }]);
+    // one rankingReward row per bracket, in rank order, its rewards in the 10 slots
+    assert.deepStrictEqual(out.rankingReward.map((r) => [r.startRank, r.endRank, r.validReward]), [[1, 10, 2], [11, 50, 1], [51, 100, 1]]);
+    assert.deepStrictEqual(out.rankingReward[0], { rankingRewardId: out.rankingReward[0].rankingRewardId, startRank: 1, endRank: 10, validReward: 2, type: pad([2, 3]), id: pad([0, 90011]),
+      skillType: pad([0, 1]), skillId: pad([0, 7]), skillLv: pad([0, 2]), burstUpperNumber: pad([]), num: pad([50, 1]) });
+    assert.deepStrictEqual(out.rankingReward.map((r) => r.rankingRewardId - out.rankingReward[0].rankingRewardId), [0, 1, 2], 'consecutive ids');
+    // one evScoreReward row per point milestone, scoreStartReward..scoreEndReward
+    assert.deepStrictEqual(out.evScoreReward.map((r) => [r.scoreRewardId, r.score, r.validReward, r.type[0], r.num[0]]),
+      [[h.scoreStartReward, 1000, 1, 2, 5], [h.scoreEndReward, 5000, 1, 3, 1]]);
+    assert.strictEqual(out.evScoreReward[1].skillId[0], 7);
+    assert.deepStrictEqual(h.milestones[0], { score: 1000, rewards: [{ type: 2, id: 0, num: 5, name: '5 Jewels' }], scoreRewardId: h.scoreStartReward });
+    // the score-bonus medals of the record (when it names them): one evMedalList row each, listId = scoreMedalListId
+    assert.ok(h.scoreMedalListId > 0);
+    assert.deepStrictEqual(out.evMedalList.map((r) => [r.listId, r.medalId, r.rate, r.display, r.isDeleted]), [[h.scoreMedalListId, 90011, 26, 1, 0], [h.scoreMedalListId, 90012, 23, 1, 0]]);
+    assert.strictEqual(out.evStage[0].scoreMedalListId, h.scoreMedalListId);
+    // no id of the four tables collides between two records
+    const two = build([hscRecord('H-1'), hscRecord('H-2', {}, 701310)]);
+    for (const [t, k] of [['ranking', 'rankingId'], ['rankingReward', 'rankingRewardId'], ['evScoreReward', 'scoreRewardId']]) {
+      const ids = two[t].map((r) => r[k]);
+      assert.strictEqual(new Set(ids).size, ids.length, `${t} ids unique`);
+    }
+    // patch writes the four tables (own rows of the previous run dropped first, as the other tables)
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-hsc-'));
+    try {
+      const md = path.join(dir, 'master');
+      fs.mkdirSync(md);
+      for (const [t, rows] of Object.entries({ ...master(), ranking: [{ rankingId: 1 }], rankingReward: [], evScoreReward: [], evMedalList: [] })) fs.writeFileSync(path.join(md, `${t}.json`), JSON.stringify(rows));
+      const opts = { records: [hscRecord('H-1')], config: CONFIG, gameDataDir: path.join(dir, 'gd'), idsFile: path.join(dir, 'event_ids.json'), anchorsFile: path.join(dir, 'event_anchors.json') };
+      me.patch(md, opts);
+      me.patch(md, opts);
+      const rd = (t) => JSON.parse(fs.readFileSync(path.join(md, `${t}.json`), 'utf8'));
+      assert.deepStrictEqual(rd('ranking').map((r) => r.rankingId), [1, h.rankingId], 'own rows written once, other rows kept');
+      assert.strictEqual(rd('rankingReward').length, 3);
+      assert.strictEqual(rd('evScoreReward').length, 2);
+      const ix = JSON.parse(fs.readFileSync(path.join(dir, 'gd', 'events.json'), 'utf8'));
+      assert.deepStrictEqual(ix.own.ranking, [h.rankingId]);
+      assert.ok(ix.entries[0].hsc && ix.entries[0].hsc.thresholds.length === 3);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  },
+  held_hsc_not_served() {
+    const noThr = hscRecord('H-1');
+    delete noThr.hsc.thresholds;
+    const noHsc = { ...hscRecord('H-2', {}, 701310), quests: [], reason: 'hscNoQuest', why: 'no quest in the census' };
+    delete noHsc.hsc;
+    const badType = hscRecord('H-3', {}, 701320);
+    badType.hsc.brackets[0].rewards.push({ type: 99, id: 1, num: 1 });
+    const out = build([...records(), noThr, noHsc, badType]);
+    for (const [cid, reason] of [['H-1', 'hscNoThresholds'], ['H-2', 'hscNoQuest'], ['H-3', 'rewardTypeUnknown']]) {
+      const e = entry(out, cid);
+      assert.strictEqual(e.available, false, cid);
+      assert.strictEqual(e.reason, reason, cid);
+      assert.ok(e.why && !/restored/i.test(e.why), e.why);
+      assert.ok(!e.hsc, `${cid}: no hsc block served`);
+      assert.ok(!out.stage.some((s) => e.quests.some((q) => q.stageId === s.stageId)), `${cid}: no stage row`);
+    }
+    assert.strictEqual(entry(out, 'H-1').why, REAL_CONFIG.reasonText.hscNoThresholds);
+    for (const t of ['ranking', 'rankingReward', 'evScoreReward', 'evMedalList']) assert.deepStrictEqual(out[t], [], t);
+    assert.ok(out.evStage.every((r) => r.eventCategory === CONFIG.eventCategory));
+    // thresholds that do not stand for the record's brackets (count or rank range) or go down stop the run
+    const short = hscRecord('H-4'); short.hsc.thresholds.pop();
+    assert.throws(() => build([short]), /H-4.*thresholds/);
+    const ranks = hscRecord('H-5'); ranks.hsc.thresholds[0].endRank = 99;
+    assert.throws(() => build([ranks]), /H-5.*thresholds/);
+    const down = hscRecord('H-6'); down.hsc.thresholds[0].score = 99999;
+    assert.throws(() => build([down]), /H-6.*thresholds/);
+    const lab = hscRecord('H-7'); lab.hsc.thresholds[0].label = 'guess';
+    assert.throws(() => build([lab]), /H-7.*label/);
+  },
 };
+
+// a High Score Challenge record (Part 8 Task 2 shape; brackets top first as the private records list them, thresholds lowest -> top
+// as Task 3 writes them)
+function hscRecord(cid, hscExtra = {}, stageId = 701300) {
+  return record(cid, [quest(stageId, 1, [501], { restrictions: { disableContinue: 1, holdKeyblade: 0, noPartner: 0, hardmodeRequire: 0, hardmodeName: 'strDummy', hardmodeComparison: 1, hardmodeNum: 0 } })], {
+    type: 'HSC', evStage: [donorEv({ eventStageId: 900100, eventCategory: 4, eventType: 3 })],
+    hsc: { era: 'B', donorRankingId: 6049, scoreBonus: [26, 23], knownScores: [],
+      milestones: [{ score: 5000, rewards: [{ type: 3, id: 90011, num: 1, skillId: 7, skillLv: 2, name: '6★ Quest Medal' }] }, { score: 1000, rewards: [{ type: 2, id: 0, num: 5, name: '5 Jewels' }] }],
+      brackets: [{ startRank: 1, endRank: 10, rewards: [{ type: 2, id: 0, num: 50 }, { type: 3, id: 90011, num: 1, skillId: 7, skillLv: 2 }] },
+        { startRank: 11, endRank: 50, rewards: [{ type: 2, id: 0, num: 20 }] }, { startRank: 51, endRank: 100, rewards: [{ type: 2, id: 0, num: 5 }] }],
+      thresholds: [{ startRank: 51, endRank: 100, score: 2000, label: 'interpolated' }, { startRank: 11, endRank: 50, score: 6000, label: 'scaled' },
+        { startRank: 1, endRank: 10, score: 9000, label: 'original' }], ...hscExtra } });
+}
 
 let failed = 0;
 for (const [name, fn] of Object.entries(tests)) {
