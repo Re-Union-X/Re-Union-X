@@ -625,9 +625,7 @@ const tests = {
     assert.match(q[5].why, /ZZ_0001_00_00/, 'a prefix missing from roomWorlds is another world');
     assert.ok(entry(out, 'W-8').quests[0].served, 'a map listed in worldExceptions is served');
     assert.ok(REAL_CONFIG.reasonText.worldMismatch && REAL_CONFIG.roomWorlds.DB === 1 && REAL_CONFIG.neutralRooms.DG === 1);
-    // EV-0050 HSC (user 16-11-2026): the rebuilt map 590060 on the JP boss map 300060, neutral room DG_0100_02_00 only
-    assert.ok(/EV-0050/.test(REAL_CONFIG.worldExceptions['590060'] || ''), 'HSC 590060 on DG_0100_02_00');
-    const kw = Object.keys(REAL_CONFIG.worldExceptions).filter((k) => !['360010', '360030', '590060'].includes(k));
+    const kw = Object.keys(REAL_CONFIG.worldExceptions).filter((k) => !['360010', '360030'].includes(k));
     assert.deepStrictEqual(Object.keys(REAL_CONFIG.worldExceptions).filter((k) => ['360010', '360030'].includes(k)).sort(), ['360010', '360030'], 'EV-0282 and EV-0293 (ruling 07-11)');
     // The Keyblade War Pt. 3 (user decision 3, 10-11-2026): the donor stage rows say world 13 on KG_0000_01_00 (donor world 13 = KG)
     assert.deepStrictEqual(kw.map(Number).sort(), [...Array(20).keys()].map((i) => 740911 + i).filter((k) => k !== 740927), 'KW 19 maps (740927 has no STG)');
@@ -1347,6 +1345,27 @@ const tests = {
     m.enemy = [{ enemyId: 501, name: 'Foe A', hp: [1] }, { enemyId: 502, name: 'Foe B', hp: [1] }, { enemyId: 30502, name: 'Foe B', hp: [9] }];
     const amb = me.buildEvents([record('E-A4', [genQuest(702303, { genAreas: ga })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
     assert.deepStrictEqual([entry(amb, 'E-A4').quests[0].reason, amb.genMaps.length], ['enemyAmbiguous', 0]);
+  },
+  // per-group levels of a multi-area map (HSC pages: «LV 25» ... «LV 400» per enemy row, user 16-11-2026): a genAreas group's
+  // `level` goes to each of its members (entry.areas[].enemies, targetWith) and to the record-shape enemies; members of the same
+  // id at different levels stay apart; a group without level keeps the quest level (no `level` key, the entry shape of before)
+  wiki_areas_group_levels() {
+    const ga = { areas: [
+      { label: 'Room (1)', room: 'DG_0200_27_00', groups: [{ level: 25, members: [{ name: 'Foe B', n: 2 }] }, { level: 80, members: [{ name: 'Foe B', n: 1 }] }], chests: 0 },
+      { label: 'Room (2)', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 1 }] }, { target: true, level: 400, members: [{ name: 'Foe A', n: 1 }, { name: 'Foe B', n: 2 }] }], chests: 0 }],
+    backExits: false, source: null, why: 'w' };
+    const out = me.buildEvents([record('E-L', [genQuest(702310, { genAreas: ga, wikiEnemies: { 'Foe B': 6, 'Foe A': 1 } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const q = entry(out, 'E-L').quests[0];
+    assert.ok(q.served, JSON.stringify(q));
+    const e = out.genMaps[0];
+    const B = (n, level) => ({ name: 'Foe B', enemyId: 502, n, reward: 1, ...(level ? { level } : {}) });
+    assert.deepStrictEqual(e.areas.map((a) => a.enemies), [[[B(2, 25)], [B(1, 80)]], [[B(1)]]]);
+    assert.deepStrictEqual(e.targetWith, [B(2, 400)]);
+    const lv = me.genMapOf(genQuest(702310, { genAreas: ga, wikiEnemies: { 'Foe B': 6, 'Foe A': 1 } }), 1, {
+      byName: (n) => (n === 'Foe A' ? [501] : n === 'Foe B' ? [502] : []), nameOf: () => null, statsOf: () => 'x' }).enemies;
+    const ql = genQuest(702310, {}).level;
+    assert.deepStrictEqual(lv.map((x) => [x.name, x.level, x.count, x.target]),
+      [['Foe B', 25, 2, false], ['Foe B', 80, 1, false], ['Foe B', ql, 1, false], ['Foe B', 400, 2, false], ['Foe A', ql, 1, true]]);
   },
   // a generated-map quest naming an enemy not in the master (an event row never answers a name lookup): enemyMissing with the
   // name, no event_gen_maps.json entry, no stage row

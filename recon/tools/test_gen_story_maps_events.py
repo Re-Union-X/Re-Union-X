@@ -152,7 +152,7 @@ try:
                    layoutSource='test 706830', enemies=[[B(1)], [B(2)]], targetWith=[B(1)], areas=[
                        {'room': 'Corridor (1)', 'roomCodes': [R27], 'enemies': [[B(1)]], 'chests': 1,
                         'layout': {'start': [432, 988], 'exit': [1308, 952], 'groups': [[1296, 1014]], 'chests': [[668, 902]], 'kinds': [2], 'polys': [[[1471, 840], [1470, 1189], [1121, 1188], [1122, 839]]]}},
-                       {'room': 'Corridor (2)', 'roomCodes': [R27], 'enemies': [[B(2)]], 'chests': 0,
+                       {'room': 'Corridor (2)', 'roomCodes': [R27], 'enemies': [[dict(B(2), level=300)]], 'chests': 0,
                         'layout': {'arrive': [475, 978], 'exit': [1500, 980]}},
                        {'room': 'Corridor (3)', 'roomCodes': [R27], 'enemies': [], 'chests': 0,
                         'layout': {'arrive': [445, 988], 'target': [[1270, 1070], [1200, 1100]]}}])
@@ -186,6 +186,9 @@ try:
             ex = ps[0]['exits'][0]
             check((ex['x'], ex['y']) == (1308, 952), 'exit of the original layout kept, guarded by its enemy (%s)' % ex)
             check([(c['x'], c['y']) for c in ps[0]['chests']] == [(668, 902)], 'chest at the layout point')
+            # a member's own level (HSC khuxwiki «LV n» per group, 16-11-2026): written on its records; the others keep the quest level
+            check([e['level'] for e in ps[1]['enemies']] == [300, 300] and [e['level'] for e in ps[0]['enemies']] == [120],
+                  'member level 300 in area 1, quest level elsewhere (%s)' % [e['level'] for p in ps for e in p['enemies']])
             last = ps[2]['enemies']
             check([(e['enemyId'], e['x'], e['y'], e['level']) for e in last] == [(10001, 1270, 1070, 120), (80001, 1200, 1100, 120)], 'target team at the layout points (%s)' % last)
             check(ps[2]['teams'][0]['boss'] and not ps[1]['teams'][0]['boss'], 'only the target team is the boss team')

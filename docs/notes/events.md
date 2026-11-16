@@ -1516,10 +1516,19 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   - EV-0395 (300380, own JP map): parts 15, 16, 19-24 were dropped by the JP extraction; no exit leads into them and parts 0-29
     hold every enemy and chest the STG counts. Filled from the map's own spare empty parts 27 / 28 (`partSources`, basis
     `hscSparePart` -> label `mapPartSpare`).
-  - EV-0140 (590140) <- JP-only HSC map 300270, EV-0247 (590230) <- 300260, EV-0050 (590060) <- 300060 with Trickmaster 10240
-    replaced by Playing Cards 10169: `map.layoutTwin` with label `hscJpTwin` (EV-0050 also `hscEnemySwap`); same target, level
-    and world. 590060 is in `worldExceptions` (only room: the neutral DG_0100_02_00).
-  - EV-0300 (300150) <- 300250 with level shift +300 (card 300 -> 600): `levelShiftMixed` in event_config.json lets
-    `import_event_stages.py` shift a layout whose enemies have several levels (only the card level must equal `from`).
+  - EV-0140 (590140) <- JP-only HSC map 300270, EV-0247 (590230) <- 300260: `map.layoutTwin` with label `hscJpTwin`; same
+    target, level and world.
+  - EV-0300 (300150) <- 300250 with level shift +300 (card 300 -> 600) and EV-0395 (its own 300380, -700 to the page's 1300):
+    `levelShiftMixed` in event_config.json lets `import_event_stages.py` shift a layout whose enemies have several levels (only the
+    card level must equal `from`).
+  - EV-0050 (590060) <- JP story map 60422 (Playing Cards 10169 alone in The Queen's Castle, the page's room), +10 to level 150.
+- **Generated (rulings 16-11-2026):** the maps lost in every source are generated multi-area maps (`genAreas`, labels
+  `wikiRoom` / `wikiAreas`) from the run's own khuxwiki page: areas in page order (the target's area last), one group per enemy
+  row with its «LV n» (make-events.js `genAreasOf` passes a group's `level` to its members; gen_story_maps.py `build_event_areas`
+  writes it), chests per area, rooms by name (area_names_master.json, the quest's world first, served rooms only). Enemy rows by
+  name (`wikiEnemyIds`, label `hscBaseRows`): the row the JP HSC maps 300000-300499 place for that name (one row for at least 90 % of
+  its placements), else its only row under 10000; the target its 1xxxx row. 9 maps; held: 14 branching maps (khuxwiki tabs: one
+  path per attribute, the generator chains areas in one line), 4 with a room not served (Rocky Crag, Mine: Section 9, Ballroom),
+  EV-0874 (Ribbitoad: event rows only).
 - **Held:** EV-0395 until Chipper Chef (displayId 1513) has a model; EV-0247 needs the event enemy rows 199 / 240 (served
   models) in the master.

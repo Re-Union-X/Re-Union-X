@@ -763,13 +763,15 @@ function genMapOf(q, stageId, look) {
 
 // Multi-area generated map (Events Part 5, multi-room generator, 11-11-2026): a quest whose khuxwiki page lists its map as several
 // areas («Corridor of Darkness x5», «Frozen Forest C/B/A + Entrance», enemy rows «Corridor of Darkness (3)») carries genAreas
-// {areas: [{label, room (room code), groups: [{members: [{name, n}], target}], chests, layout?}], backExits, source, why} (private
+// {areas: [{label, room (room code), groups: [{members: [{name, n, level?}], target, level?}], chests, layout?}], backExits, source, why} (private
 // Org XIII builder, from the khuxwiki page and the original maps of the same rooms). The ids of a name are those of the flat rule
 // above (genMapOf members: objective ids first, then the name's row), handed out over the areas in page order; the per-name counts
 // of the areas must equal the page's wikiEnemies (else held, enemyMissing with the difference). Exactly one group is the target's:
 // its first member of the target's name is the target, the others fight in its team (targetWith). -> the genMapOf result with
 // entry.areas [{room (area label), roomCodes [code], enemies (groups), chests, layout?}], targetArea, backExits, layoutSource, rooms
-// = the number of areas (recon/tools/gen_story_maps.py build_event_areas: one MAP part per area).
+// = the number of areas (recon/tools/gen_story_maps.py build_event_areas: one MAP part per area). A group's (or member's) level
+// (the page's «LV n», HSC 16-11-2026) is written on each member of the entry ({..., level}) and on the record-shape enemies; members
+// of one id at two levels are not merged; without it the quest level, as before.
 function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous }) {
   const ga = q.genAreas;
   const queue = new Map();
@@ -778,8 +780,8 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
     const g = [];
     for (const m of list) {
       const last = g[g.length - 1];
-      if (last && last.enemyId === m.enemyId) last.n += m.n;
-      else g.push({ name: m.name, enemyId: m.enemyId, n: m.n, reward: 1 });
+      if (last && last.enemyId === m.enemyId && (last.level || 0) === (m.level || 0)) last.n += m.n;
+      else g.push({ name: m.name, enemyId: m.enemyId, n: m.n, reward: 1, ...(m.level ? { level: m.level } : {}) });
     }
     return g;
   };
@@ -795,7 +797,7 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
       inAreas.set(x.name, (inAreas.get(x.name) || 0) + Math.max(0, n));
     }
   }));
-  const res = (entry) => ({ entry, enemies: entry ? [...entry.enemies.flat(), ...entry.targetWith].map((m) => ({ id: m.enemyId, name: m.name, level: q.level, count: m.n, reward: 1, target: false }))
+  const res = (entry) => ({ entry, enemies: entry ? [...entry.enemies.flat(), ...entry.targetWith].map((m) => ({ id: m.enemyId, name: m.name, level: m.level || q.level, count: m.n, reward: 1, target: false }))
     .concat(targetId ? [{ id: targetId, name: target, level: q.level, count: 1, reward: 1, target: true }] : []) : [],
   targets: targetId ? [{ id: targetId, name: target }] : [], missing: [...new Set(missing)], ambiguous });
   // a name with no row or several rows: held for that cause (the counts below need every id)
@@ -806,7 +808,8 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
     if ((page.get(n) || 0) !== (inAreas.get(n) || 0)) missing.push(`genAreas: ${n} ${inAreas.get(n) || 0} in the areas, ${page.get(n) || 0} on the page`);
   }
   if (missing.length) return res(null);
-  const take = (name, n) => Array.from({ length: n }, () => ({ name, enemyId: queue.get(name).shift(), n: 1 }));
+  // a group's level (khuxwiki «LV n» of its enemy row, HSC 16-11-2026) goes to each of its members; none: the quest level
+  const take = (name, n, level) => Array.from({ length: n }, () => ({ name, enemyId: queue.get(name).shift(), n: 1, level: Number(level) || 0 }));
   let targetWith = [];
   const areas = ga.areas.map((a) => {
     const groups = [];
@@ -816,7 +819,7 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
       for (const x of g.members || []) {
         let n = Number(x.n) || 0;
         if (!tSeen && x.name === target) { tSeen = true; n -= 1; }
-        list = list.concat(take(x.name, n));
+        list = list.concat(take(x.name, n, x.level || g.level));
       }
       if (g.target) targetWith = merge(list);
       else if (list.length) groups.push(merge(list));

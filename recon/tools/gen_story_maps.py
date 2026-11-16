@@ -1357,11 +1357,11 @@ def build_event_areas(sp):
         far = max(pool, key=lambda p: (pool[p], -p[1]))
         maxd = pool[far] or 1
         by_d = sorted(pool, key=lambda p: pool[p])
-        normal = [{'members': [(x['name'], x.get('n', 1), x.get('reward', 1), x.get('enemyId')) for x in g]} for g in areas[k].get('enemies', [])]
+        normal = [{'members': [(x['name'], x.get('n', 1), x.get('reward', 1), x.get('enemyId'), x.get('level')) for x in g]} for g in areas[k].get('enemies', [])]
         order = [(g, False) for g in normal]
         if k == tk:
             order.append(({'members': [(sp['target'], 1, sp.get('targetReward', 1), sp.get('targetId'))]
-                           + [(x['name'], x.get('n', 1), x.get('reward', 1), x.get('enemyId')) for x in sp.get('targetWith', [])]}, True))
+                           + [(x['name'], x.get('n', 1), x.get('reward', 1), x.get('enemyId'), x.get('level')) for x in sp.get('targetWith', [])]}, True))
         lay_g, lay_t = list(lay.get('groups') or []), [tuple(p) for p in lay.get('target') or []]
         recs, ens = [], []
         for i, (g, is_t) in enumerate(order):
@@ -1376,7 +1376,7 @@ def build_event_areas(sp):
             members = []
             for m in g['members']:
                 eid = (m[3] if len(m) > 3 and m[3] else None) or enemy_id(m[0], is_t and not members)
-                members += [(eid, member_reward(m))] * m[1]
+                members += [(eid, member_reward(m), (m[4] if len(m) > 4 and m[4] else None) or level)] * m[1]  # a member's own level (HSC page «LV n»)
             if not members:
                 continue
             rec = bytearray(ARENA if is_t else NORMAL)
@@ -1402,14 +1402,14 @@ def build_event_areas(sp):
                 # target battle starts on contact (a 120 x 80 box made it start only inside the box: bench, Larxene IX / XI)
                 else:
                     struct.pack_into('<8i', rec, 0x24, *[0] * 8)
-            for j, (eid, rw) in enumerate(members):
+            for j, (eid, rw, lv) in enumerate(members):
                 if is_t and j < len(lay_t):
                     x, y = lay_t[j]
                 elif not is_t and j == 0 and i < len(lay_g) and lay_g[i]:
                     x, y = cx, cy
                 else:
                     x, y = near[min(j * 3, len(near) - 1)]
-                ens.append((x, y, eid, 1, 1, level, rw, uid))
+                ens.append((x, y, eid, 1, 1, lv, rw, uid))
                 uid += 1
             recs.append(bytes(rec))
         # an exit next to an enemy of its part: moved (docstring), unless both come from the original layout: there the enemy
