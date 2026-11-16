@@ -1774,7 +1774,9 @@ const tests = {
     assert.deepStrictEqual(entry(again, 'H-1').hsc, h);
   },
   ranking_tables_from_record() {
-    const out = build([hscRecord('H-1', { scoreBonus: [{ medalId: 90011, rate: 26 }, { medalId: 90012, rate: 23 }] })]);
+    const BONUS = [{ medalId: 90011, rate: 2600, display: 1, source: 'donor', name: '6★ Quest Medal' }, { medalId: 90012, rate: 2300, display: 2, source: 'donor' },
+      { medalId: 90013, rate: 1500, display: 0, source: 'donor' }];
+    const out = build([hscRecord('H-1', { bonusMedals: BONUS })]);
     const e = entry(out, 'H-1'), h = e.hsc;
     const pad = (a, v = 0) => [...a, ...Array(10 - a.length).fill(v)];
     assert.deepStrictEqual(out.ranking, [{ rankingId: h.rankingId, category: 6, startDatetime: out.evStage[0].startTime, endDatetime: out.evStage[0].endTime,
@@ -1789,10 +1791,23 @@ const tests = {
       [[h.scoreStartReward, 1000, 1, 2, 5], [h.scoreEndReward, 5000, 1, 3, 1]]);
     assert.strictEqual(out.evScoreReward[1].skillId[0], 7);
     assert.deepStrictEqual(h.milestones[0], { score: 1000, rewards: [{ type: 2, id: 0, num: 5, name: '5 Jewels' }], scoreRewardId: h.scoreStartReward });
-    // the score-bonus medals of the record (when it names them): one evMedalList row each, listId = scoreMedalListId
+    // the score-bonus medals of the record (hsc.bonusMedals, rate in hundredths of a percent, display = deck slot 1..3 or 0 = the
+    // «Medals» list): one evMedalList row each, exact rate and display, listId = scoreMedalListId; the old percentages give no row
     assert.ok(h.scoreMedalListId > 0);
-    assert.deepStrictEqual(out.evMedalList.map((r) => [r.listId, r.medalId, r.rate, r.display, r.isDeleted]), [[h.scoreMedalListId, 90011, 26, 1, 0], [h.scoreMedalListId, 90012, 23, 1, 0]]);
+    assert.deepStrictEqual(out.evMedalList.map((r) => [r.listId, r.medalId, r.rate, r.display, r.isDeleted]),
+      [[h.scoreMedalListId, 90011, 2600, 1, 0], [h.scoreMedalListId, 90012, 2300, 2, 0], [h.scoreMedalListId, 90013, 1500, 0, 0]]);
+    assert.deepStrictEqual(out.evMedalList.map((r) => r.evMedalListId - out.evMedalList[0].evMedalListId), [0, 1, 2]);
     assert.strictEqual(out.evStage[0].scoreMedalListId, h.scoreMedalListId);
+    assert.deepStrictEqual(h.bonusMedals, [{ medalId: 90011, rate: 2600, display: 1, name: '6★ Quest Medal' }, { medalId: 90012, rate: 2300, display: 2 }, { medalId: 90013, rate: 1500, display: 0 }]);
+    assert.deepStrictEqual(build([hscRecord('H-1', { scoreBonus: [{ medalId: 90011, rate: 26 }] })]).evMedalList, [], 'scoreBonus alone: no row');
+    // two medals on one deck slot (the client keeps one), a rate that is not a whole number or a slot outside 0..3 stop the run
+    for (const bad of [[BONUS[0], { ...BONUS[1], display: 1 }], [{ ...BONUS[0], rate: 26.5 }], [{ ...BONUS[0], display: 4 }]]) {
+      assert.throws(() => build([hscRecord('H-B', { bonusMedals: bad })]), /H-B.*bonus medal/);
+    }
+    // a bonus medal not in our medal table holds the event (the score multiplier would be wrong)
+    const mm = master(); mm.medal = [{ medalId: 90011, name: 'Quest Medal', rare: 6, groupId: 0 }];
+    const held = entry(build([hscRecord('H-M', { bonusMedals: BONUS })], undefined, CONFIG, mm), 'H-M');
+    assert.strictEqual(held.reason, 'rewardItemMissing', held.why);
     // review fixes: reward types aliased as the quest rewards (18 -> 20), only the threshold fields reach the index
     const al = hscRecord('H-A');
     al.hsc.brackets[1].rewards.push({ type: 18, id: 331, num: 1, name: 'Coat' });

@@ -309,9 +309,10 @@ function checkRanges(master, config) {
 // High Score Challenges (Events Part 8 Task 6, spec docs/superpowers/specs/2026-11-10-ranked-rewards-design.md, client fields
 // docs/notes/events.md «evStage»). A record of type config.hsc.type with its `hsc` block {era, milestones [{score, rewards}],
 // brackets [{startRank, endRank, rewards}], thresholds [{startRank, endRank, score, label, ceiling?, tolerance?}] (one per bracket,
-// private calibration, Task 3), scoreBonus [pct | {medalId, rate}], donorRankingId} gives, besides its quests:
+// private calibration, Task 3), scoreBonus [pct] (shown only), bonusMedals [{medalId, rate (hundredths of a percent: 2600 = +26%),
+// display (deck panel slot 1..3, 0 = the «Medals» list), name?, source}], donorRankingId} gives, besides its quests:
 // - its evStage rows eventCategory config.hsc.eventCategory (4: the tap opens the High Score mode) with rankingId,
-//   scoreMedalListId (0 when the record names no bonus medal) and scoreStartReward..scoreEndReward;
+//   scoreMedalListId (0 when the record has no bonusMedals) and scoreStartReward..scoreEndReward;
 // - master rows: ranking (one, category config.hsc.rankingCategory; startRank..endRank = its rankingReward id range, as
 //   scoreStartReward..scoreEndReward: the Task 1 spike reading, not proven), rankingReward (one per bracket, rank order),
 //   evScoreReward (one per point milestone, score order), evMedalList (one per named bonus medal, listId = scoreMedalListId);
@@ -366,8 +367,18 @@ function hscPrepare(rec, resolve, payable, aliases = null) {
   };
   const milestones = [...(h.milestones || [])].sort((a, b) => a.score - b.score).map((m) => ({ ...m, rewards: list(m.rewards, `milestone ${m.score}`) }));
   const bks = brackets.map((b) => ({ ...b, rewards: list(b.rewards, `ranks ${b.startRank}-${b.endRank}`) }));
-  const medals = (h.scoreBonus || []).filter((x) => x && typeof x === 'object' && Number.isInteger(x.medalId))
-    .map((x) => ({ ...x, medalId: item({ type: 3, id: x.medalId, num: 1, ...(x.name ? { name: x.name } : {}) }, 'bonus medal').id }));
+  // score-bonus medals (docs/notes/events.md «High Score Challenge: client behaviour»): the battle score is multiplied by
+  // (10000 + the rates of the deck's medals) / 10000, so the rate is copied exactly; a deck slot 1..3 holds one medal (the client
+  // overwrites a second one), 0 = the extra rows of the «Medals» list
+  const slots = new Set();
+  const medals = (h.bonusMedals || []).map((x) => {
+    if (!Number.isInteger(x.medalId) || !Number.isInteger(x.rate) || x.rate < 0) throw new Error(`events: ${cid}: bonus medal ${x.medalId}: rate ${x.rate} is not a whole number of hundredths of a percent`);
+    if (![0, 1, 2, 3].includes(x.display)) throw new Error(`events: ${cid}: bonus medal ${x.medalId}: display ${x.display} is not 0..3`);
+    if (x.display && slots.has(x.display)) throw new Error(`events: ${cid}: bonus medal ${x.medalId}: deck slot ${x.display} given twice`);
+    slots.add(x.display);
+    const id = item({ type: 3, id: x.medalId, num: 1, ...(x.name ? { name: x.name } : {}) }, 'bonus medal').id;
+    return { medalId: id, rate: x.rate, display: x.display, ...(x.name ? { name: x.name } : {}) };
+  });
   if (unknown.length) return { reason: 'rewardTypeUnknown', detail: [...new Set(unknown)].join('; ') };
   if (missing.length) return { reason: 'rewardItemMissing', detail: [...new Set(missing)].join('; ') };
   return { hsc: { era: h.era, milestones, brackets: bks, thresholds: thresholds.map((t) => Object.fromEntries(HSC_THRESHOLD_FIELDS.filter((k) => t[k] !== undefined).map((k) => [k, t[k]]))), medals, scoreBonus: h.scoreBonus || [], donorRankingId: h.donorRankingId || null } };
@@ -386,7 +397,7 @@ function hscRows(p, r, cfg, rows, cid) {
     burstUpperNumber: hscSlots([], () => 0), num: hscSlots(b.rewards, (x) => x.num || 0) }));
   const milestones = p.milestones.map((m, i) => ({ ...m, scoreRewardId: scBase + i }));
   const evScoreReward = milestones.map((m) => ({ scoreRewardId: m.scoreRewardId, score: m.score, validReward: m.rewards.length, ...hscItems(m.rewards), num: hscSlots(m.rewards, (x) => x.num || 0) }));
-  const evMedalList = p.medals.map((m, i) => ({ evMedalListId: mdBase + i, listId, medalId: m.medalId, rate: m.rate || 0, display: 1, isDeleted: 0 }));
+  const evMedalList = p.medals.map((m, i) => ({ evMedalListId: mdBase + i, listId, medalId: m.medalId, rate: m.rate, display: m.display, isDeleted: 0 }));
   const z5 = [0, 0, 0, 0, 0];
   // the ranking window covers every built row of the record (earliest start, latest end)
   const startDatetime = rows.map((x) => x.startTime).sort()[0], endDatetime = rows.map((x) => x.endTime).sort().pop();
@@ -395,7 +406,7 @@ function hscRows(p, r, cfg, rows, cid) {
     unionStartRank: [...z5], unionEndRank: [...z5], validReward: rankingReward.length ? 1 : 0 }];
   const fields = { rankingId, scoreMedalListId: listId, scoreStartReward: milestones.length ? milestones[0].scoreRewardId : 0,
     scoreEndReward: milestones.length ? milestones[milestones.length - 1].scoreRewardId : 0 };
-  const block = { era: p.era, ...fields, milestones, brackets: p.brackets, thresholds: p.thresholds, scoreBonus: p.scoreBonus, donorRankingId: p.donorRankingId };
+  const block = { era: p.era, ...fields, milestones, brackets: p.brackets, thresholds: p.thresholds, bonusMedals: p.medals, scoreBonus: p.scoreBonus, donorRankingId: p.donorRankingId };
   return { fields, block, tables: { ranking, rankingReward, evScoreReward, evMedalList } };
 }
 

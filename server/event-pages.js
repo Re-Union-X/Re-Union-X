@@ -560,7 +560,14 @@ function hscSection(e, ctx) {
   const msRows = (h.milestones || []).map((m) => `<tr><td>${num(m.score)}</td><td>${esc(hscRewards(m.rewards, ctx))}</td>`
     + (hasBest ? (best >= m.score ? `<td class="cd">Reached${CROWN}</td>` : '<td>Not reached</td>') : '') + '</tr>').join('');
   const pct = (h.scoreBonus || []).filter((x) => Number.isFinite(x));
-  const bonus = pct.length && !h.scoreMedalListId ? `<p class="n">Score-bonus medals of the original event (${pct.map((x) => `+${x}%`).join(', ')}): not built yet.</p>` : '';
+  // the score-bonus medals (make-events.js bonusMedals): deck slots 1..3 first, then the «Medals» list (display 0); +N% = rate / 100
+  const medals = [...(h.bonusMedals || [])].sort((a, b) => (a.display || 4) - (b.display || 4));
+  const medalName = (m) => m.name || (ctx.itemName && ctx.itemName({ type: 3, id: m.medalId, num: 1 })) || `Medal ${m.medalId}`;
+  const bonus = medals.length
+    ? '<h3>Score bonus medals</h3><p class="n">A medal of this list in your deck raises the score of every run by its bonus (the original list of the event).</p>'
+      + `<table class="tt hs"><tr><th>Medal</th><th>Bonus</th><th>Shown in</th></tr>${medals.map((m) => `<tr class="bm"><td>${esc(medalName(m))}</td><td>+${m.rate / 100}%</td>`
+      + `<td>${m.display ? `Deck slot ${m.display}` : 'Medals list'}</td></tr>`).join('')}</table>`
+    : pct.length ? `<p class="n">Score-bonus medals of the original event (${pct.map((x) => `+${x}%`).join(', ')}): not built yet.</p>` : '';
   return `<h2>High Score</h2>${mine}<h3>Score thresholds</h3>`
     + '<p class="n">In the original game these rewards went by leaderboard position. On this server each original rank bracket is a score threshold: '
     + "when your best run reaches it you receive that bracket's original rewards, once (only the highest bracket reached; a better run later pays the difference). "

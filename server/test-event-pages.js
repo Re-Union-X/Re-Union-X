@@ -760,6 +760,19 @@ const tests = {
     assert.ok(!pages.detailPage(ix3, 29930, ctx()).includes('<h2>High Score</h2>'));
     assert.ok(rowOf(catalog(ix3, ctx()), 29930).includes('Not built yet'));
   },
+  // the score-bonus medals of an HSC (entry.hsc.bonusMedals): the deck slots first, then the «Medals» list, «+N%» = rate / 100
+  hsc_bonus_medals() {
+    const ix = INDEX(), e = hscEntry();
+    e.hsc.scoreMedalListId = 8001;
+    e.hsc.bonusMedals = [{ medalId: 3, rate: 1500, display: 0, name: '6★ Yuffie' }, { medalId: 1, rate: 2600, display: 1, name: '6★ Cloud' }, { medalId: 2, rate: 2350, display: 2 }];
+    ix.entries.push(e);
+    const text = pages.detailPage(ix, 29930, ctx({ itemName: (r) => (r.type === 3 && r.id === 2 ? '6★ Sephiroth' : null) })).replace(/<script[\s\S]*?<\/script>/g, '');
+    const sec = text.slice(text.indexOf('<h3>Score bonus medals</h3>'));
+    assert.ok(sec.length > 30, 'bonus medal section');
+    const rows = [...sec.matchAll(/<tr class="bm">([\s\S]*?)<\/tr>/g)].map((m) => m[1].replace(/<[^>]+>/g, '|').replace(/\|+/g, '|'));
+    assert.deepStrictEqual(rows, ['|6★ Cloud|+26%|Deck slot 1|', '|6★ Sephiroth|+23.5%|Deck slot 2|', '|6★ Yuffie|+15%|Medals list|']);
+    assert.ok(!/not built yet/.test(sec), 'no «not built yet» line with a medal list');
+  },
   hsc_type_chip() {
     const ix = INDEX();
     ix.entries.push(hscEntry());
