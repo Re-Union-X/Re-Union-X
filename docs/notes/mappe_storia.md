@@ -630,6 +630,17 @@ Before/after cutscenes without `img/light/SEQ/<id>.l` or `lwf/drama/<id>/` disab
 `stage_base.json`). Of the 116 lwf cutscenes (2xxxxxx) 5 are missing (all 2999951); the 175 dialogues
 (SEQ scripts 1xxxxxx) almost all missing: the missing ids are removed (ISSUES I-014).
 
+**Opening vs closing cutscenes** (tester report 16-11). The client plays `beforeDramaId[]` before the map and `afterDramaId[]`
+after the clear (`dramaType 10` = a `stageDrama` bundle of up to 10 cutscenes; nothing plays inside the map). The `theater`
+table lists a quest's cutscenes without saying which are openings, and not in play order: `make-story-oltre.js` used to put
+them all before the map (87 quests played their closing scene first, 26 lost scenes, 6 had another quest's scenes). Now
+Quests 526-979 take the original before/after split from a private overlay (`KHUX_DRAMA_OLTRE`, default
+`reference/world_schema/oltre525/drama_per_quest.json`), the theater is only a logged fallback (`dramaFallback`) that never
+opens with the row's own closing scene, a type-10 bundle is kept when its `stageDrama` row and all its cutscenes exist (10860,
+10920, 10990 appended), and the 1-525 theater fallback of `make-game-tables.js` skips theater rows holding the row's closing
+scene (Quests 51, 73). Left as version differences of the older 1-525 rows: 34, 200, 201, 350. Proud Mode copies the fields.
+Bench check pending: a story row with a `dramaType 10` bundle (Quest 966 or 978).
+
 <a id="npc-talk"></a>
 **NPC texts** (I-154, 18-10). Symptom on the bench: quest 132 (stage 5020, Agrabah), the guard has the
 yellow balloon but tapping does nothing (no text, no request). Client: the npc record of the map holds two talk ids; the client uses the first with type 3, the first or the

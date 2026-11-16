@@ -209,9 +209,10 @@ function storyEnemyId(enemies, name, learned = {}, eventIds = require('./make-ev
 
 function buildRows(stageRows, sources) {
   const { stage113 = [], wiki = {}, wikiRaw = {}, oltre = { missions: [] }, theater = [], dramas = null,
-    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null, headers = null, bgm = {} } = sources;
+    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null, headers = null, bgm = {},
+    dramaSplit = null, stageDrama = [] } = sources;
   const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [], wikiObjectives: [],
-    branchObjectives: [] };
+    branchObjectives: [], dramaFallback: [], stageDramaAdd: [] };
   const knownEnemies = enemies ? new Set(enemies.map((e) => e.enemyId)) : null;
   const eventIds = sources.eventIds || require('./make-event-enemies').eventIds();
   const byName = (rows, key, name) => rows.filter((r) => r[key] === name);
@@ -244,19 +245,48 @@ function buildRows(stageRows, sources) {
     if (!theaterBy.has(t.stageId)) theaterBy.set(t.stageId, []);
     theaterBy.get(t.stageId).push(t);
   }
-  const present = (id) => id && (!dramas || dramas.has(id));
-  const setDramas = (row, before, after) => {
-    const b = before.filter(([id]) => present(id)), a = after.filter(([id]) => present(id));
-    const dropped = [...before, ...after].filter(([id]) => !present(id)).map(([id]) => id);
+  // dramaType 10 = a stageDrama row (bundle of up to 10 cutscenes, original rows 966, 976, 978, 979...): usable when the row is
+  // in the master stageDrama table or in the overlay and all its cutscenes are in the resources
+  const stageDramaRows = new Map((stageDrama || []).map((r) => [r.id, r]));
+  for (const [id, r] of Object.entries((dramaSplit && dramaSplit.stageDrama) || {})) {
+    if (!stageDramaRows.has(Number(id))) stageDramaRows.set(Number(id), { id: Number(id), validBeforeDrama: r.dramaId.length, ...r, added: true });
+  }
+  const stageDramaUsed = new Set();
+  const presentOne = (id) => id && (!dramas || dramas.has(id));
+  const present = (id, type) => {
+    if (type !== 10) return presentOne(id);
+    const r = stageDramaRows.get(id);
+    return !!r && r.dramaId.slice(0, r.validBeforeDrama).every(presentOne);
+  };
+  // spill: the old theater path (no split known) moves openings past the 5th to the closing side; with the original split
+  // (overlay) each side keeps its own cutscenes and the 5 slots are never exceeded
+  const setDramas = (row, before, after, spill = true) => {
+    const b = before.filter(([id, t]) => present(id, t)), a = after.filter(([id, t]) => present(id, t));
+    const dropped = [...before, ...after].filter(([id, t]) => !present(id, t)).map(([id]) => id);
     if (dropped.length) report.droppedDramas.push([row.id, dropped]);
+    for (const [id, t] of [...b, ...a]) if (t === 10) stageDramaUsed.add(id);
     const all = [...b, ...a];
     // il client legge al massimo 5 filmati per lato
-    const pre = b.length ? b.slice(0, 5) : [], post = (b.length ? b.slice(5).concat(a) : a).slice(0, 5);
+    const pre = b.length ? b.slice(0, 5) : [], post = spill ? (b.length ? b.slice(5).concat(a) : a).slice(0, 5) : a.slice(0, 5);
     if (all.length > pre.length + post.length) report.overflow.push([row.id, all.slice(pre.length + post.length).map((d) => d[0])]);
     Object.assign(row, { validBeforeDrama: pre.length, beforeDramaId: pre.map((d) => d[0]), beforeDramaType: pre.map((d) => d[1]),
       validAfterDrama: post.length, afterDramaId: post.map((d) => d[0]), afterDramaType: post.map((d) => d[1]) });
   };
   const theaterDramas = (stageId) => (theaterBy.get(stageId) || []).flatMap((t) => t.dramaId.map((id, i) => [id, (t.dramaType || [])[i] || 0]));
+  // opening/closing split of the original row (private overlay drama_per_quest.json, donated WW ~2021 master, 16-11-2026
+  // tester report: the theater groups a quest's cutscenes without saying which play after the clear, so every theater
+  // cutscene became an opening one). The theater stays the fallback for a quest the overlay does not list.
+  const splitOf = (n, stageId) => {
+    const s = dramaSplit && dramaSplit.quests && dramaSplit.quests[n];
+    if (!s) return null;
+    if (s.stageId !== stageId) throw new Error(`story-oltre: drama_per_quest.json quest ${n} stageId ${s.stageId}, row ${stageId}`);
+    return s;
+  };
+  // theater fallback for the openings: never a cutscene the row itself plays after the clear (536, 538, 545 played it twice)
+  const theaterOpenings = (stageId, after) => {
+    const closing = new Set(after.map(([id]) => id));
+    return theaterDramas(stageId).filter(([id]) => !closing.has(id));
+  };
   const finish = (r) => Object.fromEntries(FIELDS.map((k) => [k, k in r ? r[k] : DEFAULTS[k]]));
   const remapEnemies = (row) => {
     if (!knownEnemies) return;
@@ -326,7 +356,9 @@ function buildRows(stageRows, sources) {
       if (tid) Object.assign(row, { validClearGetTitle: 1, clearGetTitle: tid });
       setClear(row, clear);
       setSubs(row, []);
-      setDramas(row, theaterDramas(CUTSCENE_STAGE), []);
+      const sp = splitOf(n, CUTSCENE_STAGE);
+      if (sp) setDramas(row, sp.before, sp.after, false);
+      else { report.dramaFallback.push(n); setDramas(row, theaterDramas(CUTSCENE_STAGE), []); }
     } else if (s113.has(n)) {
       // 526-555: riga vera 1.1.3, array tagliati alle lunghezze valide
       const r = s113.get(n);
@@ -335,9 +367,13 @@ function buildRows(stageRows, sources) {
       for (const a of SUB_FIELDS) row[a] = (r[a] || []).slice(0, 3);
       const before = (r.beforeDramaId || []).slice(0, r.validBeforeDrama).map((id, i) => [id, (r.beforeDramaType || [])[i] || 0]);
       const after = (r.afterDramaId || []).slice(0, r.validAfterDrama).map((id, i) => [id, (r.afterDramaType || [])[i] || 0]);
+      // the original split when the overlay lists the quest (the 1.1.3 rows hold the same cutscenes on the same side); else
       // come make-game-tables.js: senza filmati prima rimasti nelle risorse, quelli del theater della stessa stageId
-      const keep = before.filter(([id]) => present(id));
-      setDramas(row, keep.length ? before : theaterDramas(r.stageId).concat(before), after);
+      // (closing ones excluded)
+      const sp = splitOf(n, r.stageId);
+      const keep = before.filter(([id, t]) => present(id, t));
+      if (sp) setDramas(row, sp.before, sp.after, false);
+      else { report.dramaFallback.push(n); setDramas(row, keep.length ? before : theaterOpenings(r.stageId, after).concat(before), after); }
       if (n === 555) Object.assign(row, { stageId: Q555_STAGE, branchType: 1 });
       if (q) row.useAp = q.ap === 'zero' ? 0 : num(q.ap);
       row.worldId = roomWorld(mis && mis.stage.rooms[0]) || r.worldId;
@@ -407,13 +443,19 @@ function buildRows(stageRows, sources) {
       if (tid) Object.assign(row, { validClearGetTitle: 1, clearGetTitle: tid });
       if (clear.length > 3) report.overflow.push([n, 'clearGet', clear.slice(3)]);
       setClear(row, clear.slice(0, 3));
-      setDramas(row, theaterDramas(stageId), []);
+      const sp = splitOf(n, stageId);
+      if (sp) setDramas(row, sp.before, sp.after, false);
+      else { report.dramaFallback.push(n); setDramas(row, theaterDramas(stageId), []); }
     }
     remapEnemies(row);
     row = finish(row);
     rows.push(row);
     prev = row;
   }
+  // stageDrama rows referenced by the served rows and missing from the master table (10860, 10920, 10990: 978/979, newer
+  // than the 4.3.1 master): patch() appends them
+  report.stageDramaAdd = [...stageDramaUsed].sort((x, y) => x - y).map((id) => stageDramaRows.get(id)).filter((r) => r.added)
+    .map((r) => ({ id: r.id, validBeforeDrama: r.dramaId.length, dramaId: [...r.dramaId], dramaType: [...r.dramaType] }));
   Object.defineProperty(rows, 'report', { value: report });
   return rows;
 }
@@ -497,6 +539,9 @@ function defaultSources() {
     // nemici degli stage JP (Task 3): obiettivi 1.1.3 su nemici fuori dallo stage -> quelli della wiki
     stagePoi: readRequired(process.env.KHUX_STAGE_POI_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage_poi_oltre.json'),
     bgm: readRequired(process.env.KHUX_BGM_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\bgm_per_quest.json'),
+    // opening/closing cutscene split of the original rows (private overlay, 16-11-2026): without it every theater cutscene
+    // of a quest plays before the map
+    dramaSplit: readRequired(process.env.KHUX_DRAMA_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\drama_per_quest.json'),
     dramas: dramas || new Set(),
     thumbs,
     headers: readHeaders(process.env.KHUX_STAGE_DIR_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage'),
@@ -537,8 +582,10 @@ function patch(masterDir, src) {
   const stages = JSON.parse(fs.readFileSync(file, 'utf8')).filter((r) => !isOltre(r));
   const t = (name) => readJson(path.join(masterDir, name + '.json'), []);
   const s = src || defaultSources();
+  const stageDramaFile = path.join(masterDir, 'stageDrama.json');
+  const stageDrama = t('stageDrama');
   const rows = buildRows(stages, { ...s, theater: t('theater'), enemies: fs.existsSync(path.join(masterDir, 'enemy.json')) ? t('enemy') : null,
-    titles: t('title'), medals: t('medal'), keyblades: t('keyblade'), skills: t('skill') });
+    titles: t('title'), medals: t('medal'), keyblades: t('keyblade'), skills: t('skill'), stageDrama });
   let at = -1;
   stages.forEach((r, i) => { if (r.stageKind === 1 && r.stageId < 100000 && r.id <= 525) at = i; });
   const out = [...stages.slice(0, at + 1), ...rows, ...stages.slice(at + 1)];
@@ -549,6 +596,10 @@ function patch(masterDir, src) {
   if (world) fs.writeFileSync(worldFile, JSON.stringify(world));
   else console.log(`story-oltre: ${worldFile} assente, righe world 11-14 non aggiunte`);
   const rep = rows.report;
+  // stageDrama bundles the served rows reference (dramaType 10) and the master lacks: appended (idempotent, ids are new)
+  if (rep.stageDramaAdd.length) fs.writeFileSync(stageDramaFile, JSON.stringify([...stageDrama, ...rep.stageDramaAdd]));
+  if (rep.dramaFallback.length) console.log(`story-oltre: ${rep.dramaFallback.length} quests without the original cutscene split `
+    + `(theater fallback, closing cutscenes may play first): ${rep.dramaFallback.join(', ')}`);
   console.log(`story-oltre: +${rows.length} missioni 526-979 (978 solo filmato); ${rep.enemiesToShadow} obiettivi su nemici assenti -> 1; `
     + `${rep.stopgapObjectives.length} obiettivi tappabuchi, ${rep.missingRewards.length} premi non ricavati, `
     + `${rep.droppedDramas.length} missioni con filmati assenti tolti, ${rep.overflow.length} oltre i limiti; `

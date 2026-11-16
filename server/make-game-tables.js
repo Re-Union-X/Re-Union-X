@@ -827,8 +827,12 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
         // filmati veri (lwf/drama 2xxxxxx, le missioni con la pellicola) ci sono quasi tutti
         const types = ids.replace('Id', 'Type');
         const keep = s[ids].map((id, i) => [id, (s[types] || [])[i] || 0]).filter(([id]) => id && dramas.has(id));
+        // theater fallback for the openings only with cutscenes the row does not play after the clear: the theater
+        // lists a quest's opening and closing cutscenes together (16-11-2026 tester report: Quests 34, 51, 73 played
+        // their closing cutscene before the map, 51 and 73 twice)
+        const closing = new Set((s.afterDramaId || []).slice(0, s.validAfterDrama));
         const rows = flag === 'validBeforeDrama' && !keep.length
-          ? (theaterBy.get(s.stageId) || []).filter((t) => t.dramaId.every((d) => dramas.has(d))) : [];
+          ? (theaterBy.get(s.stageId) || []).filter((t) => t.dramaId.every((d) => dramas.has(d) && !closing.has(d))) : [];
         if (keep.length) {
           s[ids] = keep.map((k) => k[0]);
           s[types] = keep.map((k) => k[1]);

@@ -12,6 +12,7 @@ const tmpDirs = [];
 const mkTmp = () => { const d = fs.mkdtempSync(path.join(TMP, 'oltre-')); tmpDirs.push(d); return d; };
 const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
+const throws0 = (f, re) => { try { f(); return false; } catch (e) { return re.test(e.message); } };
 
 // --- fonti finte ---------------------------------------------------------------------------------------------
 const PREFIX = { 526: 'DW', 537: 'DB', 556: 'AG', 600: 'CD', 700: 'ED', 871: 'CS', 880: 'NL', 890: 'HD', 931: 'SR' };
@@ -234,6 +235,74 @@ check(rows.filter((r) => r.onlyDrama).length === 1, 'solo la 978 senza mappa');
     'senza stagePoi: obiettivi 1.1.3');
 }
 
+// --- opening/closing cutscenes (tester report 16-11-2026: every cutscene played before the map) ------------------------
+// overlay drama_per_quest.json (original split, private): closing cutscenes stay after the clear, stageDrama bundles
+// (dramaType 10) kept when the row is known and its cutscenes are served; theater only as fallback, never a closing one first
+{
+  const dramasS = new Set([...dramas, 2180101, 2999941, 2190201, 2551001, 2551101, 2540201, 2540301, 2540401,
+    2561401, 2561501, 2561601, 2561701, 2561801, 2550101]);
+  const theaterS = [...theater,
+    { stageId: stageIdOf(536), validTheater: 1, dramaId: [2180101], dramaType: [0] },
+    { stageId: stageIdOf(559), validTheater: 1, dramaId: [2190201], dramaType: [0] },
+    { stageId: stageIdOf(970), validTheater: 1, dramaId: [2540201, 2540301, 2540401], dramaType: [0, 0, 0] },
+    { stageId: stageIdOf(970), validTheater: 1, dramaId: [2551001], dramaType: [0] },
+    { stageId: stageIdOf(970), validTheater: 1, dramaId: [2551101], dramaType: [0] }];
+  // 536 (1.1.3 row): no opening, closing 2999941 + 2180101, as the original
+  const s113S = stage113.map((r) => (r.id === 536 ? { ...r, validBeforeDrama: 0, validAfterDrama: 2,
+    afterDramaId: [2999941, 2180101, 0, 0, 0], afterDramaType: [0, 0, 0, 0, 0] } : r));
+  const split = { quests: {
+    536: { stageId: stageIdOf(536), before: [], after: [[2999941, 0], [2180101, 0]] },
+    559: { stageId: stageIdOf(559), before: [], after: [[2190201, 0]] },
+    970: { stageId: stageIdOf(970), before: [[2551001, 0]], after: [[2551101, 0], [2540201, 0], [2540301, 0], [2540401, 0]] },
+    966: { stageId: stageIdOf(966), before: [[140280, 10]], after: [] },
+    978: { stageId: 39158, before: [[10860, 10]], after: [] },
+    979: { stageId: 39159, before: [[2561301, 0], [2561401, 0], [2561501, 0], [2561601, 0]], after: [[10920, 10]] } },
+  stageDrama: { 10860: { dramaId: [2560701, 2560801, 2560901, 2561001, 2561101, 2561201], dramaType: [0, 0, 0, 0, 0, 0] },
+    10920: { dramaId: [2561701, 2561801], dramaType: [0, 0] },
+    140280: { dramaId: [2550101], dramaType: [0] } } };
+  // 140280 is already in the master table: not added again
+  const stageDramaS = [{ id: 140280, validBeforeDrama: 1, dramaId: [2550101], dramaType: [0] }];
+  const srcS = { ...sources, stage113: s113S, theater: theaterS, dramas: dramasS };
+  const side = (r) => `${r.beforeDramaId.slice(0, r.validBeforeDrama)}|${r.beforeDramaType.slice(0, r.validBeforeDrama)}`
+    + ` / ${r.afterDramaId.slice(0, r.validAfterDrama)}|${r.afterDramaType.slice(0, r.validAfterDrama)}`;
+  // without the overlay (old behaviour): the theater puts the closing cutscenes first (the bug), 536 plays 2180101 twice no more
+  const old = new Map(buildRows(stageRows, srcS).map((r) => [r.id, r]));
+  check(side(old.get(559)) === '2190201|0 / |', `no overlay, 559 theater fallback: ${side(old.get(559))}`);
+  check(side(old.get(536)) === '| / 2999941,2180101|0,0', `no overlay, 536: theater opening minus the closing ones (${side(old.get(536))})`);
+  const rs = buildRows(stageRows, { ...srcS, dramaSplit: split, stageDrama: stageDramaS });
+  const bs = new Map(rs.map((r) => [r.id, r]));
+  check(side(bs.get(559)) === '| / 2190201|0', `559: closing cutscene after the clear (${side(bs.get(559))})`);
+  check(side(bs.get(536)) === '| / 2999941,2180101|0,0', `536: original split (${side(bs.get(536))})`);
+  check(side(bs.get(970)) === '2551001|0 / 2551101,2540201,2540301,2540401|0,0,0,0',
+    `970: original split and order, not the theater order (${side(bs.get(970))})`);
+  check(side(bs.get(966)) === '140280|10 / |', `966: stageDrama bundle from the master table (${side(bs.get(966))})`);
+  check(side(bs.get(978)) === '10860|10 / |' && bs.get(978).onlyDrama === 1, `978: one bundle of 6, nothing after (${side(bs.get(978))})`);
+  check(side(bs.get(979)) === '2561301,2561401,2561501,2561601|0,0,0,0 / 10920|10', `979: 4 openings, closing bundle (${side(bs.get(979))})`);
+  check(JSON.stringify(rs.report.stageDramaAdd) === JSON.stringify([
+    { id: 10860, validBeforeDrama: 6, dramaId: [2560701, 2560801, 2560901, 2561001, 2561101, 2561201], dramaType: [0, 0, 0, 0, 0, 0] },
+    { id: 10920, validBeforeDrama: 2, dramaId: [2561701, 2561801], dramaType: [0, 0] }]), `stageDrama to add: ${JSON.stringify(rs.report.stageDramaAdd)}`);
+  check(!rs.report.dramaFallback.includes(559) && rs.report.dramaFallback.includes(600), 'dramaFallback: quests outside the overlay');
+  // a bundle with a cutscene missing from the resources is dropped like any absent cutscene
+  const miss = buildRows(stageRows, { ...srcS, dramas: new Set([...dramasS].filter((d) => d !== 2561801)), dramaSplit: split, stageDrama: stageDramaS });
+  const m979 = miss.find((r) => r.id === 979);
+  check(m979.validAfterDrama === 0 && miss.report.droppedDramas.some(([n, ids]) => n === 979 && ids.includes(10920)), '979: bundle with an absent cutscene dropped');
+  check(throws0(() => buildRows(stageRows, { ...srcS, dramaSplit: { quests: { 559: { stageId: 1, before: [], after: [] } } } }), /quest 559 stageId 1/),
+    'overlay with another stageId -> error');
+  // patch: stageDrama.json gets the missing bundles once
+  const d = mkTmp();
+  fs.writeFileSync(path.join(d, 'stage.json'), JSON.stringify(stageRows));
+  fs.writeFileSync(path.join(d, 'stageDrama.json'), JSON.stringify(stageDramaS));
+  fs.writeFileSync(path.join(d, 'theater.json'), JSON.stringify(theaterS));
+  const srcP = { stage113: s113S, wiki, wikiRaw, oltre, dramas: dramasS, dramaSplit: split };
+  patch(d, srcP);
+  const sd1 = fs.readFileSync(path.join(d, 'stageDrama.json'), 'utf8'), st1 = fs.readFileSync(path.join(d, 'stage.json'), 'utf8');
+  patch(d, srcP);
+  check(fs.readFileSync(path.join(d, 'stageDrama.json'), 'utf8') === sd1 && fs.readFileSync(path.join(d, 'stage.json'), 'utf8') === st1,
+    'patch with the overlay idempotent');
+  check(JSON.parse(sd1).map((r) => r.id).join() === '140280,10860,10920', `patch: stageDrama.json ${JSON.parse(sd1).map((r) => r.id)}`);
+  check(side(JSON.parse(st1).find((r) => r.id === 559)) === '| / 2190201|0', 'patch: 559 closing cutscene in the master');
+}
+
 // stessa forma delle righe 1-525 (stesse chiavi, stesso ordine)
 const KEYS = Object.keys(rows[0]).join();
 check(rows.every((r) => Object.keys(r).join() === KEYS), 'tutte le righe con le stesse chiavi');
@@ -364,7 +433,7 @@ const dir3 = mkTmp();
 fs.writeFileSync(path.join(dir3, 'stage.json'), JSON.stringify(stageRows));
 check(throws(() => patch(dir3, { ...src, stage113: [] }), /1\.1\.3/)
   && fs.readFileSync(path.join(dir3, 'stage.json'), 'utf8') === JSON.stringify(stageRows), 'patch: 1.1.3 assente -> errore, file intatto');
-for (const k of ['KHUX_BGM_OLTRE', 'KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WIKI_ALL', 'KHUX_STAGE_POI_OLTRE']) {
+for (const k of ['KHUX_DRAMA_OLTRE', 'KHUX_BGM_OLTRE', 'KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WIKI_ALL', 'KHUX_STAGE_POI_OLTRE']) {
   const old = process.env[k];
   process.env[k] = path.join(dir3, 'manca.json');
   check(throws(() => defaultSources(), /fonte obbligatoria .*manca\.json/), `${k} assente -> errore col percorso`);
