@@ -66,18 +66,19 @@ function rollGuilt(guiltProb, tier, rng = Math.random) {
 // Pallini massimi per rarita' (khuxwiki): per le burst di Roboloid con maxEnhanceCount 0.
 const MAX_DOTS = { 1: 0, 2: 0, 3: 1, 4: 2, 5: 3, 6: 5, 7: 5 };
 
-function groupOf(row) { return row.groupId || row.medalId; }
+// groups: medal-boost.js supernovaRoots (the family groupId the client is served), optional
+function groupOf(row, groups = null) { return (groups && groups.get(row.medalId)) || row.groupId || row.medalId; }
 
-function isDotMaterial(baseRow, matRow) {
-  const g = groupOf(matRow);
-  if (g === groupOf(baseRow)) return true;
+function isDotMaterial(baseRow, matRow, groups = null) {
+  const g = groupOf(matRow, groups);
+  if (g === groupOf(baseRow, groups)) return true;
   if ((baseRow.burstEnhanceCategory || []).some((c) => c && c === g)) return true;
   return matRow.type === 8;
 }
 
 // base: {burstUpperNumber, guiltFactor, attackUpperNumber, defenseUpperNumber, upperCost}
 // comps: [{row, burstUpperNumber}] in ordine (copie impilate gia' espanse).
-// opts: {burstRow, guiltProb, isGuilt (userDetail.isGuilt), rng}
+// opts: {burstRow, guiltProb, isGuilt (userDetail.isGuilt), rng, groups (supernovaRoots: the served family groupId)}
 // Torna {state, events: {dots, guiltUnlocked, guiltRaised, guiltMaxed, rolls}}.
 function applyEnhance(baseRow, base, comps, opts) {
   const s = {
@@ -98,7 +99,7 @@ function applyEnhance(baseRow, base, comps, opts) {
   // anche quando e' la stessa copia a riempire i pallini (banco 18-10: 2 + 2 + 2 su 5 -> guilt). La guilt
   // della copia non conta. Prima l'eccedenza si perdeva e tirava solo una copia aggiunta a pallini pieni.
   if (maxDots > 0) {
-    const sum = comps.filter((c) => isDotMaterial(baseRow, c.row)).reduce((t, c) => t + 1 + (c.burstUpperNumber || 0), 0);
+    const sum = comps.filter((c) => isDotMaterial(baseRow, c.row, opts.groups)).reduce((t, c) => t + 1 + (c.burstUpperNumber || 0), 0);
     const total = s.burstUpperNumber + sum;
     ev.dots = Math.max(0, Math.min(maxDots, total) - s.burstUpperNumber);
     s.burstUpperNumber = Math.max(s.burstUpperNumber, Math.min(maxDots, total));

@@ -109,4 +109,32 @@ function resolveIds(entry, banner, catalog, rowsById) {
 const tierMatch = (on, row) => (on.star == null || row.rare === on.star) && (row.guiltValue || 0) >= (on.tierMin || 0)
   && (on.tierMax == null || (row.guiltValue || 0) <= on.tierMax) && !(on.excludePrime && norm(row.name).startsWith('prime - '));
 
-module.exports = { VARIANTS, BADGES, norm, boostedId, isBoosted, boostedRow, boostedIndex, origBoostedBase, slotOf, resolveNames, resolveIds, tierMatch };
+// Supernova families (user 16-11, docs/notes/events.md «High Score Challenge: client behaviour»): in the original master (ReLux
+// 2021 medal table: 142 chains, all reproduced by this rule) the Supernova forms a 7* medal evolves into (Supernova / Supernova+ /
+// SN / SN+ / SN++, via evolveId) and every copy of them carry groupId = that 7* root; star evolutions (1*-6*) and Prime forms do
+// not. The client reads groupId as the family: an HSC bonus row naming the root counts its SN++ (evMedalList medalId == groupId),
+// and a family member is dot material for another (medal-guilt.js isDotMaterial). Our master keeps groupId = «copy of»
+// (isBoosted and ~25 readers); the family groupId is applied to the SERVED rows only (server.js servedMasterRows 'medal').
+// rows: the medal master -> Map medalId -> root id (members and their copies; roots themselves are not in it)
+const SN_FORM = /^(Supernova\+?|SN\+{0,2}) - /;
+function supernovaRoots(rows) {
+  const byId = new Map(rows.map((r) => [r.medalId, r]));
+  const normal = (r) => r && r.medalId < 1000000 && !r.groupId;
+  const seven = (r) => normal(r) && r.rare === 7 && r.validEvolve && r.evolveId;
+  const evolvedInto = new Set(rows.filter(seven).map((r) => r.evolveId));
+  const out = new Map();
+  for (const root of rows) {
+    if (!seven(root) || evolvedInto.has(root.medalId)) continue;
+    const seen = new Set([root.medalId]);
+    for (let r = root; r.validEvolve && r.evolveId && !seen.has(r.evolveId) && normal(byId.get(r.evolveId));) {
+      r = byId.get(r.evolveId); seen.add(r.medalId);
+      if (SN_FORM.test(r.name || '') && !out.has(r.medalId)) out.set(r.medalId, root.medalId);
+    }
+  }
+  // copies (boosted, cut-in aliases: groupId = the member) follow their member
+  for (const r of rows) if (r.groupId && out.has(r.groupId) && !out.has(r.medalId)) out.set(r.medalId, out.get(r.groupId));
+  return out;
+}
+
+module.exports = { VARIANTS, BADGES, norm, boostedId, isBoosted, boostedRow, boostedIndex, origBoostedBase, slotOf, resolveNames, resolveIds, tierMatch,
+  supernovaRoots };

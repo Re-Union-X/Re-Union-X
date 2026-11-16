@@ -1508,6 +1508,10 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   every HSC row not listed now (story week, kept event) with its end in 2015, so the marks follow the listed HSC (two listed: the
   lower eventStageId, the client's rule; `server/test-hsc-served-evstage.js`). The JP logo «SCORE BONUS MEDAL» stays (WW read
   «ASSIST MEDALS»; kept by the user's choice, 16-11).
+  Supernova forms count as their 7★ root, as in the original master (2021 donor: SN / SN+ / SN++ and their copies carry
+  groupId = the root; star and Prime 6★→7★ chains do not): our master keeps groupId 0 on them (it means «copy of» to 25 of our
+  readers), so server.js serves the medal table with the root groupId on those rows (medal-boost.js `supernovaRoots`, 142
+  families, `server/test-supernova-groups.js`), and the dot-material check of /user/medal/enhance uses the same groups.
 - **Battle score.** Only in an eventCategory 4 stage. Each hit pays floor(damage / max HP × the enemy's `score` at its level)
   until that score is paid, plus a kill bonus; everything is multiplied by M = (10000 + the `rate` of the deck's bonus medals) /
   10000 and dropped as score prizes that the HUD counts when collected; `/stage/clear getPoint.score` carries the total. The

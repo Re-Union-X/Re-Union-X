@@ -646,6 +646,14 @@ function storyTranche() {
   return Math.max(0, [...new Set((cat.story || []).map((r) => r[2]))].sort().indexOf(day));
 }
 
+// Supernova families of the served medal rows (medal-boost.js supernovaRoots), rebuilt when medal.json changes (masterCache entry)
+let supernovaCache = { key: null, map: new Map() };
+function supernovaGroups() {
+  const rows = masterRows('medal'), key = masterCache.get('medal') || null;
+  if (!key || supernovaCache.key !== key) supernovaCache = { key, map: medalBoost.supernovaRoots(rows) };
+  return supernovaCache.map;
+}
+
 // righe servite: per «mission» le scadenze delle Weekly A/B e dei gruppi Limited (prossima
 // occorrenza), in ora finta con lo scostamento del mese della revisione
 function servedMasterRows(name, realMs) {
@@ -655,6 +663,12 @@ function servedMasterRows(name, realMs) {
   }
   if (name === 'enemy' && BENCH_ENEMY_ATK > 1) {
     return rows.map((r) => ({ ...r, attack: (r.attack || []).map((v) => v * BENCH_ENEMY_ATK) }));
+  }
+  // medal: the Supernova forms of a 7* medal and their copies are served with groupId = the 7* root, as the original master
+  // (medal-boost.js supernovaRoots); master_data keeps groupId = «copy of» for the server's own readers
+  if (name === 'medal') {
+    const roots = supernovaGroups();
+    return rows.map((r) => (roots.has(r.medalId) ? { ...r, groupId: roots.get(r.medalId) } : r));
   }
   // drawMedalType: bannerUrl/detailUrl sono percorsi (server/make-banners.js); l'indirizzo http si
   // aggiunge qui (max 128 byte, strncpy del client)
@@ -4104,7 +4118,7 @@ function respondMedalEnhance(res, body) {
   const burstRow = row.validBurst ? masterRows('burst').find((b) => b.burstId === row.burstId) : null;
   const { state, events } = medalGuilt.applyEnhance(row, base,
     comps.map((m) => ({ row: rows.get(m.medalId), burstUpperNumber: m.burstUpperNumber || 0 })).filter((c) => c.row),
-    { burstRow, guiltProb: masterRows('guiltProb'), isGuilt: isGuiltUnlocked() });
+    { burstRow, guiltProb: masterRows('guiltProb'), isGuilt: isGuiltUnlocked(), groups: supernovaGroups() });
   // Overwrite Skill (I-088, server/medal-skill.js): con isOverwriteSkill la skill del materiale piu'
   // a sinistra passa alla base con la probabilita' del client (20% al livello 1, 100% al massimo);
   // altrimenti le skill dei materiali si perdono con i materiali
