@@ -310,3 +310,20 @@ StartDeckEdit3_Panel_KB_Ad_ver240.json
 StartDeckEdit3_Deck_ver240.json
 StartDeckEdit2_NotChangeKB_ver240.json
 StartDeckEdit3_Rules_ver240.json
+
+# --- High Score Challenge (Events Part 8, Task 1; spike crash 16-11) ---
+# Il tocco su una scheda evento eventCategory 4 carica senza controllo publish/AdventureTop2_HiScore_Button.json
+# (ramo High Score della vista delle missioni evento), assente da ogni risorsa WW: GUIReader su documento vuoto,
+# SIGSEGV in createWidget (widgetTree). StartDeckHiScoreScene_ver330 e StartDeckHiScore_Deck_ver230 sono servite
+# (sotto-layout tutti presenti); mancano i layout che il codice carica per percorso: pannello e lista delle medaglie
+# bonus (StartDeckHiScore_Base_Medal/Panel_SBM, List_Base, List_Medal) e i pannelli del punteggio in battaglia
+# (ActMapHighScore_*). Le classifiche (RankingHiScoreScene, Ranking_*) sono gia' nel blocco «Party e classifiche».
+AdventureTop2_HiScore_Button.json
+StartDeckHiScore_Base_Medal_SBM.json
+StartDeckHiScore_Base_Panel_SBM.json
+StartDeckHiScore_List_Base.json
+StartDeckHiScore_List_Medal.json
+ActMapHighScore_ScorePanel.json
+ActMapHighScore_HighScorePanel.json
+ActMapHighScore_ResultPanel.json
+ActMapHighScore_NewRecord.json
