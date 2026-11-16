@@ -661,8 +661,25 @@ function genMapOf(q, stageId, look) {
   // the name has such rows, else all its non-event rows): one row, or rows with the same stats (hp, attack, defense, baseLv,
   // growth), give that id; rows with different stats -> ambiguous (the quest is held: enemyAmbiguous, the candidates in why)
   const explicit = q.wikiEnemyIds || {};
+  // a genAreas member may name its own row (enemyId: HSC pages with one path per attribute, khuxwiki {{e|Pumpkin Soldier|1|s}} =
+  // the Speed row 9043, |p 43, |m 8043; EV-0067, 16-11-2026): a name whose every member has one needs no name lookup
+  const ownIds = new Map();
+  for (const a of (q.genAreas || {}).areas || []) {
+    for (const g of a.groups || []) {
+      for (const x of g.members || []) {
+        if (!ownIds.has(x.name)) ownIds.set(x.name, []);
+        ownIds.get(x.name).push(Number.isInteger(x.enemyId) ? x.enemyId : null);
+      }
+    }
+  }
   const ambiguous = [];
   const mapId = (name, isTarget) => {
+    const own = ownIds.get(name);
+    if (!isTarget && !Number.isInteger(explicit[name]) && own && own.length && own.every(Number.isInteger)) {
+      const bad = own.filter((i) => look.nameOf(i) !== name);
+      if (bad.length) { missing.push(`${name} (genAreas enemyId ${bad.join(', ')} is not a row of that name)`); return -1; }
+      return own[0];
+    }
     const pinned = isTarget ? ((q.targets || [])[0] || {}).id : explicit[name];
     if (Number.isInteger(pinned)) return pinned;
     const ids = look.byName(name);
@@ -818,7 +835,11 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
   }
   if (missing.length) return res(null);
   // a group's level (khuxwiki «LV n» of its enemy row, HSC 16-11-2026) goes to each of its members; none: the quest level
-  const take = (name, n, level) => Array.from({ length: n }, () => ({ name, enemyId: queue.get(name).shift(), n: 1, level: Number(level) || 0 }));
+  // a member's own enemyId (see ownIds in genMapOf) replaces the name's id; the name's queue is still consumed (same counts)
+  const take = (name, n, level, own) => Array.from({ length: n }, () => {
+    const id = queue.get(name).shift();
+    return { name, enemyId: Number.isInteger(own) ? own : id, n: 1, level: Number(level) || 0 };
+  });
   let targetWith = [];
   const areas = ga.areas.map((a) => {
     const groups = [];
@@ -828,7 +849,7 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
       for (const x of g.members || []) {
         let n = Number(x.n) || 0;
         if (!tSeen && x.name === target) { tSeen = true; n -= 1; }
-        list = list.concat(take(x.name, n, x.level || g.level));
+        list = list.concat(take(x.name, n, x.level || g.level, x.enemyId));
       }
       if (g.target) targetWith = merge(list);
       else if (list.length) groups.push(merge(list));

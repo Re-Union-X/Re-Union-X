@@ -1392,6 +1392,34 @@ const tests = {
     const on = me.buildEvents([record('E-B3', [genQuest(702322, { genAreas: notLast, wikiEnemies: { 'Foe B': 4, 'Foe A': 1 } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
     assert.match(entry(on, 'E-B3').quests[0].why || '', /genAreas: the target area .* last/);
   },
+  // a genAreas member's own enemyId (HSC EV-0067, 16-11-2026: khuxwiki {{e|Pumpkin Soldier|1|s}} = the Speed row 9043, |p 43, |m
+  // 8043, one per path): each member keeps its row even when the name alone is ambiguous; an id whose row has another name holds
+  // the quest (enemyMissing), never served
+  wiki_areas_member_ids() {
+    const m = master();
+    m.enemy = [{ enemyId: 501, name: 'Foe A', hp: [1] }, { enemyId: 502, name: 'Foe B', hp: [1] }, { enemyId: 30502, name: 'Foe B', hp: [9] }];
+    const path = (id, n) => ({ members: [{ name: 'Foe B', n, enemyId: id }] });
+    const ga = { areas: [
+      { label: 'Hub', room: 'DG_0100_02_00', groups: [], chests: 0, next: [1, 2] },
+      { label: 'Path 1', room: 'DG_0200_27_00', groups: [path(502, 2)], chests: 0, next: [3] },
+      { label: 'Path 2', room: 'DG_0200_27_00', groups: [path(30502, 1)], chests: 0, next: [3] },
+      { label: 'End', room: 'DG_0200_27_00', groups: [{ target: true, members: [{ name: 'Foe A', n: 1 }] }], chests: 0 }],
+    backExits: false, source: 'JP 300370', why: 'w' };
+    const out = me.buildEvents([record('E-P', [genQuest(702330, { genAreas: ga, wikiEnemies: { 'Foe B': 3, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const q = entry(out, 'E-P').quests[0];
+    assert.ok(q.served, JSON.stringify(q));
+    assert.deepStrictEqual(out.genMaps[0].areas.map((a) => a.enemies.map((g) => g.map((x) => [x.enemyId, x.n]))), [[], [[[502, 2]]], [[[30502, 1]]], []]);
+    // without the member ids the same quest is ambiguous (502 / 30502 differ): held
+    const plain = { ...ga, areas: ga.areas.map((a) => ({ ...a, groups: a.groups.map((g) => ({ ...g, members: g.members.map(({ enemyId, ...x }) => x) })) })) };
+    const amb = me.buildEvents([record('E-P2', [genQuest(702331, { genAreas: plain, wikiEnemies: { 'Foe B': 3, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.deepStrictEqual(entry(amb, 'E-P2').quests[0].reason, 'enemyAmbiguous');
+    // a member id whose row is another name (501 is Foe A): held, no map
+    const wrong = { ...ga, areas: ga.areas.map((a, k) => (k === 2 ? { ...a, groups: [path(501, 1)] } : a)) };
+    const bad = me.buildEvents([record('E-P3', [genQuest(702332, { genAreas: wrong, wikiEnemies: { 'Foe B': 3, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const bq = entry(bad, 'E-P3').quests[0];
+    assert.deepStrictEqual([bq.served, bq.reason, bad.genMaps.length], [false, 'enemyMissing', 0]);
+    assert.match(bq.why, /Foe B \(genAreas enemyId 501 is not a row of that name\)/);
+  },
   // a generated-map quest naming an enemy not in the master (an event row never answers a name lookup): enemyMissing with the
   // name, no event_gen_maps.json entry, no stage row
   wiki_room_enemy_missing_held() {
