@@ -249,6 +249,12 @@ function loginSpecialLines(f) {
     'The **Total** login milestones stop at **Day 1,850**, as in the original game: the Day 1,900 to 3,200 milestones found in the donated data never existed in the original game (it closed after about 1,870 days) and are not served.',
     '**Monthly missions.** From April 2018 to February 2021 the «[Monthly]» Limited missions are those of your **Story month** (the month of your Story week), not of the real month (**not original**: the original ones followed the calendar); their counters still restart every real month. In the other months they rotate as before.'];
 }
+// Events Part 9c: the Home Lux Boost (lux-boost.js)
+function luxBoostLines() {
+  return ['## Lux Boost',
+    'The **Lux Boost** button of the Home screen is back: press it and your party gets **5% more Lux for 60 minutes**. It can be used **once a day**; the button comes back after 12:00 a.m. (Pacific time). As in the original game you must be in a party, and the button cannot be used on the day you create (join) your party.',
+    'On this server your party has only you, so the boost applies to your own Lux; the boosts of other members cannot stack (**not original**: there are no other players). The extra 5% is added when the quest is cleared inside the 60 minutes, on top of a Lux Bonus Time.'];
+}
 // Events Part 4 Task 6: the census types of the challenge events, and the quiz board plan (sources of the boards)
 const CHALLENGE_TYPES = ['EQ', 'KEY', 'QUIZ'];
 function quizBoardSources(file = path.join(__dirname, '..', 'recon', 'tools', 'quiz_dramas.json')) {
@@ -645,6 +651,8 @@ const NOTICES = [
       ...bonusTimeLines(bonusTimeFacts()),
       // Events Part 9b (22-11): special login bonuses and monthly missions by story month
       ...loginSpecialLines(loginSpecialFacts()),
+      // Events Part 9c (22-11): the Home Lux Boost
+      ...luxBoostLines(),
       '## Gem quests',
       'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
       'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
@@ -1053,4 +1061,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines, loginSpecialFacts, loginSpecialLines };
+module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines, loginSpecialFacts, loginSpecialLines, luxBoostLines };

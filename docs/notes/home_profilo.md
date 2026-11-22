@@ -842,6 +842,18 @@ Test: `test-trait-choice.js` (Special Trait section). Bench 20-10: tested by the
 with a Special Trait already present: choice window), ok.
 
 <a id="login-bonus"></a>
+## Lux Boost (Events Part 9c, I-293, bench 22-11)
+
+- GET `/party/lux_up_time` (action 105) at every Home: `luxUp {magnification, available, restrictionKind}`.
+- The **Lux Boost** button (left, above Quests) shows when `available` is true or `restrictionKind` is 1; otherwise hidden.
+- Its confirmation («Party members get 5% more Lux for the next 60 minutes. The button resets at midnight.») sends
+  **PUT `/party/lux_up_time`** with no parameters: the only activation request (no other API class in the client).
+- `magnification` is in 1/10000: 500 shows the Home banner «5% Lux Boost!».
+- `restrictionKind` 1: pressing shows «You cannot use this feature on the day you joined the party.»
+- Server: `lux-boost.js` (`player.luxBoost {day, at}`, Pacific day), Lux of `/stage/clear` x 1.05 inside the hour
+  (`clearLuxFactor`, with the Bonus Time factor); `luxMagnifications.party` of `/stage/start` stays 0 (as `campaign`:
+  the client does not apply it, 9a bench).
+
 ## Login bonus (I-176, 20-10)
 
 **Special login bonuses (Events Part 9b, 22-11).** `loginBonus.specials` lists the special rows (bonusType 3/4) paid by

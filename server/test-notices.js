@@ -517,6 +517,14 @@ for (const web of [false, true]) {
     check(n.loginSpecialLines(null).join(' ').includes('## Special login bonuses'), 'login specials: without data, generic lines');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 }
+// Events Part 9c: the Lux Boost section of the Events notice
+{
+  const l = n.luxBoostLines().join(' ');
+  check(l.includes('## Lux Boost') && l.includes('5%') && l.includes('60 minutes'), 'Lux Boost: section, 5%, 60 minutes');
+  check(/once a day/i.test(l) && /midnight|12:00 a\.m\./.test(l) && /party/.test(l) && /not original/.test(l), 'Lux Boost: daily reset, party, offline note');
+  const ev = n.NOTICES.find((x) => x.title === 'Events');
+  check(ev && ev.body.join(' ').includes('## Lux Boost'), 'Lux Boost: in the Events notice');
+}
 // Events Part 9a: the Bonus Times section (whole original day, donated master, raids keep their own, notices win)
 {
   const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';

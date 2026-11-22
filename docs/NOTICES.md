@@ -259,6 +259,12 @@ The **Total** login milestones stop at **Day 1,850**, as in the original game: t
 
 **Monthly missions.** From April 2018 to February 2021 the «[Monthly]» Limited missions are those of your **Story month** (the month of your Story week), not of the real month (**not original**: the original ones followed the calendar); their counters still restart every real month. In the other months they rotate as before.
 
+### Lux Boost
+
+The **Lux Boost** button of the Home screen is back: press it and your party gets **5% more Lux for 60 minutes**. It can be used **once a day**; the button comes back after 12:00 a.m. (Pacific time). As in the original game you must be in a party, and the button cannot be used on the day you create (join) your party.
+
+On this server your party has only you, so the boost applies to your own Lux; the boosts of other members cannot stack (**not original**: there are no other players). The extra 5% is added when the quest is cleared inside the 60 minutes, on top of a Lux Bonus Time.
+
 ### Gem quests
 
 The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).
