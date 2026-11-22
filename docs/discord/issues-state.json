@@ -518,6 +518,83 @@
    "group": "TO VERIFY",
    "hash": "fbf9962d72d3c503",
    "name": "I-272 · Keyblade: cannot be raised to +10"
+  },
+  "I-277": {
+   "thread": "1573952520521257010",
+   "msg": "1573952520521257010",
+   "group": "OPEN",
+   "hash": "74a135862ffd604e",
+   "name": "I-277 · Equipment tab: the orange SPIRIT button plate is not drawn"
+  },
+  "I-278": {
+   "thread": "1573952523478241311",
+   "msg": "1573952523478241311",
+   "group": "OPEN",
+   "hash": "7ab0bcca19e2fe30",
+   "name": "I-278 · New save already owns the Moogle o' Glory keyblade"
+  },
+  "I-279": {
+   "thread": "1573952526569447426",
+   "msg": "1573952526569447426",
+   "group": "OPEN",
+   "hash": "29bdb3af40cfa4f0",
+   "name": "I-279 · Lady Luck: slot attribute arrows follow the Moogle o' Glory slots"
+  },
+  "I-280": {
+   "thread": "1573952529559986319",
+   "msg": "1573952529559986319",
+   "group": "OPEN",
+   "hash": "b51a83c72d9daec0",
+   "name": "I-280 · Kept HSC does not appear in Events"
+  },
+  "I-281": {
+   "thread": "1573952533091586101",
+   "msg": "1573952533091586101",
+   "group": "OPEN",
+   "hash": "9e937218d8741b90",
+   "name": "I-281 · Quest 25 gives an Orichalcum"
+  },
+  "I-282": {
+   "thread": "1573952536220799077",
+   "msg": "1573952536220799077",
+   "group": "OPEN",
+   "hash": "7adffe9493f51e8b",
+   "name": "I-282 · Raid bosses drop Mythril Stones"
+  },
+  "I-283": {
+   "thread": "1573952539102027880",
+   "msg": "1573952539102027880",
+   "group": "OPEN",
+   "hash": "8fca1a81657e804c",
+   "name": "I-283 · Prize boxes give Special Attack gauge prizes instead of their 1-3★ medals"
+  },
+  "I-284": {
+   "thread": "1573952542331637871",
+   "msg": "1573952542331637871",
+   "group": "OPEN",
+   "hash": "1482bec0cae66bbc",
+   "name": "I-284 · Lady Luck +15 -> +16 does nothing"
+  },
+  "I-285": {
+   "thread": "1573952544986894367",
+   "msg": "1573952544986894367",
+   "group": "OPEN",
+   "hash": "e108054028b455cb",
+   "name": "I-285 · Keyblade upgrade screen shows more materials than owned"
+  },
+  "I-286": {
+   "thread": "1573952550900596878",
+   "msg": "1573952550900596878",
+   "group": "OPEN",
+   "hash": "8e5da8d6b1d7024a",
+   "name": "I-286 · Duplicate keyblades in the test save"
+  },
+  "I-287": {
+   "thread": "1573952562196127767",
+   "msg": "1573952562196127767",
+   "group": "OPEN",
+   "hash": "b930953becd4913f",
+   "name": "I-287 · Medal list SCORE filter ignores some active HSCs"
   }
  }
 }
