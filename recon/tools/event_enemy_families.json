@@ -559,8 +559,8 @@
   "26": {
    "name": "Large Fireworks",
    "model": "new",
-   "approved": false,
-   "review": "Events Part 10b (user 22-11): donor rows 26 / 10026 for EV-0108 and EV-0310; to render and show the user"
+   "approved": true,
+   "review": "user-approved 22-11 (rendered animations wait/move/atk1_o/knockback/dead, tmp/events/part10/fw26/large_fireworks_26.png; complete with the standard rules); Events Part 10b, donor rows 26 / 10026 for EV-0108 and EV-0310"
   }
  }
 }
