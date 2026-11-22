@@ -1108,6 +1108,9 @@ require('./make-raid').patch(OUT);
 require('./make-events').patch(OUT);
 // Raid «AP 0» campaign: evCampaign rows type 7 power 0 over the raid quest stages written just above (make-ev-campaign.js)
 require('./make-ev-campaign').patch(OUT);
+// Bonus Times of the story day (Events Part 9a, make-campaigns.js): evCampaign rows 96000-97999 and campaign_days.json from the
+// private campaign calendar (KHUX_CAMPAIGN_CALENDAR; without it no Bonus Time row)
+require('./make-campaigns').patch(OUT);
 // Limited, returning and level avatar boards (Events Part 7, avatar-boards.js): the 6 skills of the donated master (KHUX_DONOR_MASTER,
 // label skillFromDonor) into skill.json, then the rows of the private board records (KHUX_AVATAR_BOARDS; without it no board)
 // after the Raid and Event Boards: sphere 5000000+ (event_ids.json avatarBoards) and the level boards 2100119-2100126;

@@ -1526,6 +1526,12 @@ function enemyDropTypes(rewardId) {
 const ODDS_ALWAYS = 10000;
 // bench only (run-server.ps1 -DropLuck): every position wins, to see the rare prizes (gold bags) without farming
 const BENCH_DROP_LUCK = process.env.KHUX_BENCH_DROP_LUCK === '1';
+// Bench switch (Part 9a Task 1): campaign ids listed as active whatever the day, to see which side applies each evCampaign
+// type (docs/notes/campaigns.md). Comma-separated ids; unset = none.
+const BENCH_CAMPAIGN_FORCE = String(process.env.KHUX_CAMPAIGN_FORCE || '').split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0);
+if (BENCH_CAMPAIGN_FORCE.length) console.log(`[campaigns] bench KHUX_CAMPAIGN_FORCE: ${BENCH_CAMPAIGN_FORCE.join(',')}`);
+// campaigns of GET /campaign and /stage/start: the raid AP 0 ids (routes-raid.js) and the bench ids
+const servedCampaignIds = () => [...new Set([...raid().campaignIds(), ...BENCH_CAMPAIGN_FORCE])];
 function rollDropTypes(rewardId, types, rng = Math.random) {
   if (BENCH_DROP_LUCK) rng = () => 0;
   const odds = rewardRowById(rewardId)?.odds || [];
@@ -2380,7 +2386,7 @@ function respondStageStart(res, req) {
     userRandomEnemies: [],
     userEnemyDropItems: startEnemyDrops(req),
     userTreasures: startTreasures(req),
-    campaigns: raid().campaignIds(), // raid AP 0 campaign in the bonus hours (routes-raid.js)
+    campaigns: servedCampaignIds(), // raid AP 0 campaign in the bonus hours (routes-raid.js), bench ids
     luxMagnifications: { campaign: 0, party: 0 },
     // l'amico scelto (supportUserId 1 = il giocatore stesso, /stage/support/list) con la medaglia condivisa:
     // con la lista vuota il client non ha la medaglia dell'amico da mettere nel deck della battaglia
@@ -5805,7 +5811,7 @@ function handler(scheme) {
   if (kind === 'useroption') return respondUserOption(res, entry.bodyDecoded);
   if (kind === 'colosseum') return respondColosseum(res);
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive): the raid AP 0 campaign in the bonus hours
-      if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: raid().campaignIds() });
+      if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: servedCampaignIds() });
       if (kind === 'shopcampaign') return respondShopCampaign(res, req.headers);
       // POST /ranking/reward/check (azione 142): il client
       // vuole tre array in radice (lastRankingResults, rankingRewardIds, openRankingIds),
