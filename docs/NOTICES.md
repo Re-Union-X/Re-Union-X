@@ -231,6 +231,8 @@ The thresholds are the **original scores** of each bracket, from the players' re
 
 When a run reaches a new bracket, the original **Score Ranking Results** popup opens at your next visit to the Home screen, and the rewards are in your **Presents**.
 
+In the original game one High Score Challenge ran at a time. Here the week's High Score Challenge and the one you keep from the Event Catalog can be open together: the **score bonus marks** of the Medal List, the Medal details and the **Score** sort then show the Score Bonus Medals of **all of them** at once, each Medal with its highest bonus (**not original**). In battle and on the Keyblade screen each High Score Challenge still uses only its own Score Bonus Medals. After you keep or release a High Score Challenge, the game downloads its data again (about 40 MB) at the next login.
+
 The **Supernova** forms of a 7★ Score Bonus Medal (Supernova, Supernova+ and Supernova++) count as that Medal, as in the original game. The Score Bonus Medal panel of the Keyblade screen uses the **Japanese version** of its logo, which reads **SCORE BONUS MEDAL** (**not original**: the worldwide one, ASSIST MEDALS, is not in the surviving game data).
 
 The original maps of some High Score Challenges did not survive. 27 of them are **rebuilt** from the community wiki, in the original rooms and with the original enemies, their levels and their paths (**reconstructed**). 3 use the map of the **Japanese** High Score Challenge with the same target, level and world. The Event Catalog marks each one.

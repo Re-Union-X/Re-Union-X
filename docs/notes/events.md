@@ -1530,8 +1530,16 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   read the played stage's own `scoreMedalListId`; a medal counts when its medalId or its groupId equals the row's `medalId` (5
   deck slots, the friend's medal, the pet base-slot medal). The bonus marks of the medal views, medal lists and «High Score» sort
   come instead from ONE evStage row of eventCategory 4 whose start..end holds now (the client reads a single list): the server serves
-  every HSC row not listed now (story week, kept event) with its end in 2015, so the marks follow the listed HSC (two listed: the
-  higher eventStageId on the bench of 16-11: 22997 over 22952, both open; `server/test-hsc-served-evstage.js`). The JP logo «SCORE BONUS MEDAL» stays (WW read
+  every HSC row not listed now (story week, kept event) with its end in 2015, so the marks follow the listed HSC. The client takes
+  the **first** open row (bench 22-11: kept 22952 won over 22998; the 16-11 reading «the higher id» came from a stale master). **I-287
+  (user 22-11, option B):** with two or more HSC listed the served evStage gets a **phantom row 5999** (category 4, before every HSC
+  row, below every evStage id, copy of the first listed row with `scoreMedalListId` 19999) and the served evMedalList a merged list
+  19999 (every listed HSC's medals, the highest rate of a medal, `display` 0, ids 9999000+); the real rows keep their own lists, so
+  the deck panel and the battle multiplier are unchanged. The phantom is not in the server's Events list, so no card shows. **The
+  client downloads the master only when the global revision changes** (`respondMaster`): a login whose listed HSC set differs from
+  the previous one raises the revision by one (`player.hscListRev`, signature `player.hscListSig`; ~40 MB master download), else a
+  keep kept the client's old master (kept HSC closed, no phantom). Benched 22-11 on `kbfix` (22998 week + kept 22952): the Medal
+  List «Score» sort marks +26/+23/+21/+19/+14% from both lists (`server/test-hsc-served-evstage.js` parts 3-4). The JP logo «SCORE BONUS MEDAL» stays (WW read
   «ASSIST MEDALS»; kept by the user's choice, 16-11).
   Supernova forms count as their 7★ root, as in the original master (2021 donor: SN / SN+ / SN++ and their copies carry
   groupId = the root; star and Prime 6★→7★ chains do not): our master keeps groupId 0 on them (it means «copy of» to 25 of our
