@@ -48,6 +48,21 @@ check(monthly.length === 35, `campagne mensili ${monthly.length}, attese 35`);
 check(weekly.length >= 4, `campagne brevi ${weekly.length}`);
 check(rows.length === monthly.flat().length + weekly.flat().length, 'righe del master e rotazione diverse');
 
+// Part 9b: the monthly slot follows the story month when it has an original campaign (2018-04..2021-02), else the rotation
+const M = t.LIMITED_ROTATION.monthlyMonths || [];
+check(M.length === monthly.length && M[0] === '2018-04' && M[34] === '2021-02', `monthlyMonths ${JSON.stringify(M.slice(0, 2))}..${M[34]} (${M.length})`);
+check(t.monthlySlot('2018-04-10', 7, M) === 0, 'April 2018 story month: slot 0');
+check(t.monthlySlot('2021-02-27', 7, M) === 34, 'February 2021: slot 34');
+check(t.monthlySlot('2017-12-01', 7, M) === 7, 'before the campaigns: the real-month rotation');
+check(t.monthlySlot(null, 40, M) === 40 % 35, 'no story day: the rotation');
+t.forceLimitedStoryDay('2019-01-15');
+for (const m of [0, 5]) {
+  at(new Date(Date.UTC(2026, m, 10, 12)).toISOString());
+  const act = monthly.map((ids, i) => (ids.every((id) => t.limitedActive(id)) ? i : -1)).filter((i) => i >= 0);
+  check(JSON.stringify(act) === '[9]', `story month 2019-01, real month ${m}: slot ${JSON.stringify(act)}, expected [9]`);
+}
+t.forceLimitedStoryDay(null); // the rotation below runs without a story month
+
 // una campagna mensile e una breve per volta, tutte a turno
 const seenM = new Set(), seenW = new Set();
 for (let m = 0; m < 35; m++) {

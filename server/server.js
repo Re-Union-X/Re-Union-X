@@ -742,13 +742,13 @@ function servedMasterRows(name, realMs) {
   const off = clock.twinOffset(realMs);
   const w = clock.weekIndex(realMs), mi = clock.monthIndex(realMs);
   const nextWeek = (i, n) => { let k = w; while (k % n !== i) k++; return clock.weekStartOf(k + 1); };
-  const nextMonth = (i, n) => { let k = mi; while (k % n !== i) k++; return clock.monthEndOf(k); };
   return rows.map((r) => {
     let endMs = null;
     if (r.missionType === 3) endMs = nextWeek(weeklySeriesOf(r), 2);
     const g = LIMITED_GROUP.get(r.id);
     if (r.missionType === 4 && g) {
-      endMs = g.kind === 'monthly' ? nextMonth(g.index, LIMITED_ROTATION.monthly.length) : nextWeek(g.index, LIMITED_ROTATION.weekly.length);
+      // monthly: the real month end (Part 9b: the slot follows the story month, it may change before the rotation would)
+      endMs = g.kind === 'monthly' ? clock.monthEndOf(mi) : nextWeek(g.index, LIMITED_ROTATION.weekly.length);
     }
     if (endMs === null) return r;
     // rewardEndTime: per le missioni COMPLETE non riscosse il client conta fino a questo campo, non a
@@ -3359,11 +3359,28 @@ LIMITED_ROTATION.weekly.forEach((ids, i) => ids.forEach((id) => LIMITED_GROUP.se
 function limitedPeriod(kind, realMs = realNow()) {
   return kind === 'monthly' ? clock.monthIndex(realMs) : clock.weekIndex(realMs);
 }
+// Events Part 9b: the monthly slot of the story month when it has an original «[Monthly]» campaign (monthlyMonths,
+// 2018-04..2021-02), else the real-month rotation. Counters stay on the real month (missionPeriod).
+function monthlySlot(storyDayIso, realMonthIndex, months) {
+  const i = storyDayIso ? (months || []).indexOf(String(storyDayIso).slice(0, 7)) : -1;
+  return i >= 0 ? i : realMonthIndex % months.length;
+}
+let limitedStoryDayForced; // tests only: undefined = the player's story day
+let limitedStoryMemo = { minute: null, day: null };
+function limitedStoryDay(realMs) {
+  if (limitedStoryDayForced !== undefined) return limitedStoryDayForced;
+  const minute = Math.floor(realMs / 60000);
+  if (limitedStoryMemo.minute !== minute) limitedStoryMemo = { minute, day: loginSpecialStoryDay() };
+  return limitedStoryMemo.day;
+}
 function limitedActive(id, realMs = realNow()) {
   const g = LIMITED_GROUP.get(id);
   if (!g) return false;
   const n = LIMITED_ROTATION[g.kind].length;
-  return limitedPeriod(g.kind, realMs) % n === g.index && limitedUnlocked(g);
+  const slot = g.kind === 'monthly' && LIMITED_ROTATION.monthlyMonths
+    ? monthlySlot(limitedStoryDay(realMs), clock.monthIndex(realMs), LIMITED_ROTATION.monthlyMonths)
+    : limitedPeriod(g.kind, realMs) % n;
+  return slot === g.index && limitedUnlocked(g);
 }
 // Campagne settimanali che regalano una medaglia (weeklyMedalFrom, make-limited-missions.js): solo dalla tranche
 // della storia con quella data, come i banner dello Shop (decisione dell'utente 19-10: W04 regala SN++ - FF7R
@@ -6229,6 +6246,7 @@ module.exports._test = {
   applySteal, stealMultiplier, respondStageStart, respondStageClear, STAGE_POI, rewardRowById, ENEMY_DROP_TYPE,
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet, limitedGroupQuest, forceStoryQuest: (q) => { storyQuestForced = q; },
+  monthlySlot, forceLimitedStoryDay: (d) => { limitedStoryDayForced = d; },
   // server/test-mission-settle.js
   settleClock, MISSION_COUNTER, MISSION_DERIVED, missionProgress, petSubslotNow, guiltBurst,
   // server/test-master-clock.js

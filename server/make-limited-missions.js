@@ -76,7 +76,9 @@ function build() {
   const rows = [];
   // weeklyMedalFrom[i]: data originale (ISO) della campagna settimanale i se regala una medaglia, altrimenti null
   // (19-10, decisione dell'utente: W04 SN++ - FF7R Aerith 7★ solo dalla tranche della storia di aprile 2020)
-  const rotation = { monthly: [], weekly: [], weeklyMedalFrom: [] };
+  // monthlyMonths[i]: original month (YYYY-MM) of the monthly campaign i, from its period (Events Part 9b: the slot follows the
+  // story month when it has one)
+  const rotation = { monthly: [], weekly: [], weeklyMedalFrom: [], monthlyMonths: [] };
   const groups = new Map();
   const missing = new Set();
   readTsv(path.join(D, 'limited_missions.tsv')).forEach(([group, period, missionName, cond, target, reward], i) => {
@@ -88,6 +90,7 @@ function build() {
       groups.set(group, []);
       (group.startsWith('M') ? rotation.monthly : rotation.weekly).push(groups.get(group));
       if (!group.startsWith('M')) rotation.weeklyMedalFrom.push(null);
+      else { const [mm, , yy] = period.split(' - ')[0].split('/'); rotation.monthlyMonths.push(`20${yy}-${mm}`); }
     }
     if (!group.startsWith('M') && r && r.rewardType === 3) {
       const [mm, dd, yy] = period.split(' - ')[0].split('/');
