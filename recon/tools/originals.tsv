@@ -22583,3 +22583,8 @@ cocostudio/publish/Hs_Total_Bonus_Panel.png	jp
 #     star and the HUD stayed 0 while the run total (/stage/clear getPoint.score) counted them. JP 4.3.1 has it: a 40x40 star
 #     with no text; in no WW copy we hold.
 cocostudio/publish/ScorePrize01.png	jp
+# 62. Equipment SPIRIT button plate (I-277, tester 16-11, reproduced 22-11): the Spirit/deck switch is Switching_Button
+#     (CheckBox) of DeckEdit_Area_Left_ver260 with But26_Off.png / But26_On.png; the WW resources hold only dark_But26_*,
+#     so the client drew the icon and text with no plate. JP 4.3.1 has both (blue 128x72 plate, like But04 of Traits).
+cocostudio/publish/But26_Off.png	jp
+cocostudio/publish/But26_On.png	jp
