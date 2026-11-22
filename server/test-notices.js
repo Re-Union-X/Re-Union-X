@@ -545,6 +545,30 @@ for (const web of [false, true]) {
       check(h.events === 1 && h.served === 1 && h.quests === 3 && h.later === 1 && h.generated === 0 && h.boards === 0, `hole facts: ${JSON.stringify(h)}`);
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
+  // Part 10c: Booster Challenges, Damage Contests (score thresholds, not original), the Classic Donald / Goofy hours and the raid
+  // summons are named with their counts; none of them: no line
+  const l3 = n.eventHoleLines({ hole: { events: 30, served: 700, quests: 900, later: 0, boosterEvents: 3, damageContests: 3, openHours: 1, bonusHours: 1, summonsLater: 10 } }).join(' ');
+  check(/\*\*3 Booster Challenges\*\*/.test(l3), `hole 10c boosters: ${l3}`);
+  check(/\*\*3 Damage Contests\*\*/.test(l3) && /score thresholds/.test(l3), 'hole 10c damage contests');
+  check(/Classic Donald/.test(l3) && /reconstructed/.test(l3) && /Classic Goofy/.test(l3) && /Bonus Time/.test(l3), 'hole 10c hours');
+  check(/raid boss/.test(l3) && /\*\*10 quests\*\*/.test(l3), 'hole 10c summons');
+  const l4 = n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, later: 8 } }).join(' ');
+  check(!/Booster Challenge|Damage Contest|Classic Donald|raid boss/.test(l4), 'hole 10c: no line without them');
+  {
+    const fs = require('fs'), path = require('path');
+    const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'hole10c-'));
+    const f = path.join(dir, 'events.json');
+    fs.writeFileSync(f, JSON.stringify({ entries: [
+      { type: 'BOOST', start: '2017-11-09', available: true, quests: [{ served: true }] },
+      { type: 'HSC', start: '2017-07-21', available: true, hsc: { damageContest: 'DC-WW-1' }, quests: [{ served: true }] },
+      { type: 'HSC', start: '2017-08-21', available: true, hsc: {}, quests: [{ served: true }] },
+      { type: 'EQ', start: '2017-01-08', available: true, labels: ['openWindowsReconstructed'], quests: [{ served: true, labels: [] }] },
+      { type: 'EQ', start: '2017-01-01', available: true, labels: ['bonusHoursFactor'], quests: [{ served: true, labels: ['raidSummonLater'] }, { served: false, labels: ['raidSummonLater'] }] }] }));
+    try {
+      const h = n.eventHoleFacts(f).hole;
+      check(h.boosterEvents === 1 && h.damageContests === 1 && h.openHours === 1 && h.bonusHours === 1 && h.summonsLater === 1, `hole facts 10c: ${JSON.stringify(h)}`);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
   check(n.eventHoleLines(null).join(' ').includes('## Events of 2016-2018'), 'hole section: without data');
   const ev = n.NOTICES.find((x) => x.title === 'Events');
   check(ev && ev.body.join(' ').includes('## Events of 2016-2018'), 'hole section in the Events notice');

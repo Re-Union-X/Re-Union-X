@@ -255,14 +255,24 @@ const HOLE_TYPES = ['EQ', 'COIN', 'CELEB', 'SPEC', 'COLLAB'];
 function eventHoleFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dirname, 'game_data', 'events.json')) {
   let x;
   try { x = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
-  const all = (x.entries || []).filter((e) => HOLE_TYPES.includes(e.type) && e.start >= '2016-11-01' && e.start <= '2018-03-31');
+  const inPeriod = (e) => e.start >= '2016-11-01' && e.start <= '2018-03-31';
+  const all = (x.entries || []).filter((e) => HOLE_TYPES.includes(e.type) && inPeriod(e));
   const qs = all.flatMap((e) => e.quests || []);
+  // Part 10c: Booster Challenges (type BOOST), Damage Contests (HSC entries marked damageContest), the hours inside the day and the
+  // raid summons not served, among the served entries / quests of the period
+  const live = (x.entries || []).filter((e) => e.available && inPeriod(e));
+  const hasLabel = (e, l) => (e.labels || []).includes(l);
   return { hole: { events: all.filter((e) => e.available).length, served: qs.filter((q) => q.served).length, quests: qs.length,
     later: qs.filter((q) => !q.served && /Part 10b/.test(q.why || '')).length,
     // Part 10b: served quests on a generated map (labels wikiRoom / wikiAreas), with calibrated drops, and the board sets of the period
     generated: qs.filter((q) => q.served && (q.labels || []).some((l) => l === 'wikiRoom' || l === 'wikiAreas')).length,
     calibrated: qs.filter((q) => q.served && (q.labels || []).includes('dropsCalibrated')).length,
-    boards: Object.keys(x.boardSets || {}).filter((k) => k.startsWith('hole-')).length } };
+    boards: Object.keys(x.boardSets || {}).filter((k) => k.startsWith('hole-')).length,
+    boosterEvents: live.filter((e) => e.type === 'BOOST').length,
+    damageContests: live.filter((e) => e.hsc && e.hsc.damageContest).length,
+    openHours: live.filter((e) => hasLabel(e, 'openWindowsReconstructed')).length,
+    bonusHours: live.filter((e) => hasLabel(e, 'bonusHoursFactor')).length,
+    summonsLater: live.flatMap((e) => e.quests || []).filter((q) => q.served && hasLabel(q, 'raidSummonLater')).length } };
 }
 function eventHoleLines(f) {
   const h = f && f.hole;
@@ -273,6 +283,11 @@ function eventHoleLines(f) {
     if (h.later) out.push(`For ${h.later} of the other quests, made for the worldwide version only, no map survives in any source we hold: they wait in the **Event Catalog** until their maps are rebuilt from the community wiki and videos of the time (**not original**).`);
     if (h.generated) out.push(`**${h.generated} quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (**not original**).${h.calibrated ? ` Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **${h.calibrated} quests** drop it at the rates of the original KH 3D event quests of 2017 (**not original**); the others drop nothing.` : ''}`);
     if (h.boards) out.push(`The **Event Coins** of the coin events go to **${h.boards} sets of Event Boards** of the original game data (the event boards, the Gem Boards and the daily Jewel boards of the period); all boards of a set are open for the whole event (**not original**: some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.`);
+    if (h.boosterEvents) out.push(`**${h.boosterEvents} Booster Challenge${h.boosterEvents === 1 ? '' : 's'}** of the period ${h.boosterEvents === 1 ? 'is' : 'are'} back: their objectives pay the original **Boosters** of the donated game data (see **Boosters** below).`);
+    if (h.damageContests) out.push(`**${h.damageContests} Damage Contest${h.damageContests === 1 ? '' : 's'}** («Test Your Might») ${h.damageContests === 1 ? 'is' : 'are'} back as High Score runs: the score is the damage you deal. As for the High Score Challenges, the original rank brackets became **score thresholds** (calibrated, **not original**). The July and October 2017 contests use the map of the December 2017 one, the same quest (no other map survives: **not original**).`);
+    if (h.openHours) out.push('**Classic Donald**: the original quests opened only for 12-hour periods at times never published; here they open every day at **reconstructed** hours shown on the event (**not original**).');
+    if (h.bonusHours) out.push('**Classic Goofy**: in the **Bonus Time** hours of the original notice (12:00 p.m. to 1:59 p.m. and 8:00 p.m. to 9:59 p.m., Pacific time) rare Medals drop more often; the notice gave no rate, so the drop rates are **doubled** in those hours (**not original**).');
+    if (h.summonsLater) out.push(`In the original game **${h.summonsLater} quests** of the period could make a **raid boss** appear (the WORLD OF FINAL FANTASY event, the Eggcognito Daily Challenge); no raid of those bosses with their strength of the time is restored yet, so here they summon none.`);
     const rest = h.quests - h.served - (h.later || 0);
     if (rest > 0) out.push(`The other ${rest} quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.`);
   }
