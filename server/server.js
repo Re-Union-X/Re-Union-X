@@ -1524,7 +1524,10 @@ function enemyDropTypes(rewardId) {
 // the original table has sums up to 20,833, so the positions are rolled one by one, not as one share). Rolled at
 // /stage/start, so the client shows exactly what /stage/clear pays (bench 07-11: all four were paid, x4 with Steal).
 const ODDS_ALWAYS = 10000;
+// bench only (run-server.ps1 -DropLuck): every position wins, to see the rare prizes (gold bags) without farming
+const BENCH_DROP_LUCK = process.env.KHUX_BENCH_DROP_LUCK === '1';
 function rollDropTypes(rewardId, types, rng = Math.random) {
+  if (BENCH_DROP_LUCK) rng = () => 0;
   const odds = rewardRowById(rewardId)?.odds || [];
   const out = types.map((t, i) => (t && (odds[i] ?? ODDS_ALWAYS) >= ODDS_ALWAYS ? t : t && rng() * ODDS_ALWAYS < odds[i] ? t : 0));
   while (out.length && !out[out.length - 1]) out.pop();
