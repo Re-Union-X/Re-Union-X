@@ -48,7 +48,7 @@ const ORIGINAL = [
   { name: 'Three Wishes', quest: 34, mode: 'story', src: 'W G' },
   { name: 'Olympia', quest: 130, mode: 'story', src: 'W G' },
   { name: 'Divine Rose', quest: 433, mode: 'story', src: 'W G' },
-  { name: "Moogle O' Glory", how: "Special Quest «A New Keyblade: Moogle O' Glory»", src: 'W G' },
+  { name: "Moogle O' Glory", how: "Special Quest «A New Keyblade: Moogle O' Glory»", special: [970100, 970700], src: 'W G' }, // I-278: first clear of the Special row (make-special.js clearItems), 970700 = its weekend twin
   { name: 'Sleeping Lion', quest: 3, mode: 'proud', src: 'W G' },
   { name: 'Counterpoint', quest: 103, mode: 'proud', src: 'W G' },
   { name: 'Fenrir', quest: 203, mode: 'proud', src: 'W G' },
@@ -79,10 +79,10 @@ for (const o of ORIGINAL) {
   const normal = o.quest ? stages.find((s) => s.id === o.quest && s.stageKind === 1) : null;
   // Proud: la riga stageKind 4 (id 1 000 000 + numero, make-proud.js) se il master ce l'ha
   const proud = o.mode === 'proud' ? stages.find((s) => s.stageKind === 4 && s.id === 1000000 + o.quest) : null;
-  const st = o.mode === 'proud' ? proud || normal : normal;
+  const st = o.special ? stages.find((s) => s.stageId === o.special[0]) : o.mode === 'proud' ? proud || normal : normal;
   const kbReward = st ? (st.clearGetItemType || []).map((ty, i) => (ty === 13 ? st.clearGetItemId[i] : 0)).filter(Boolean) : [];
   const missionKb = st ? (st.submissionRewardType || []).filter((ty) => ty === 13).length : 0;
-  const inMaster = !!(st && (o.mode === 'story' || proud));
+  const inMaster = !!(st && (o.mode === 'story' || proud || o.special));
   if (inMaster) {
     check(st.validClearGetItem > 0 && kbReward.length === 1 && cat(kbReward[0]) === base.category && kbById.get(kbReward[0]).lv === 0,
       `${o.name}: lo stage ${st.stageId} (Quest ${o.quest}) premia ${JSON.stringify(kbReward)}, atteso ${base.keybladeId}`);
@@ -98,7 +98,7 @@ for (const o of ORIGINAL) {
 check(rows.length === baseByName.size, `${baseByName.size} serie nel master, ${rows.length} con fonte`);
 // nessun altro stage premia un keyblade
 const otherKb = stages.filter((s) => ((s.clearGetItemType || []).includes(13) || (s.submissionRewardType || []).includes(13))
-  && !rows.some((r) => r.inMaster && r.st.stageId === s.stageId));
+  && !rows.some((r) => r.inMaster && (r.st.stageId === s.stageId || (r.special || []).includes(s.stageId))));
 check(otherKb.length === 0, `altri stage con premio keyblade: ${otherKb.map((s) => s.stageId)}`);
 
 // ---- 2. giocatore nuovo: niente keyblade della storia prima del completamento ---------------
@@ -141,9 +141,9 @@ function clear(st, missions = []) {
 
 // ---- 3. primo completamento di ogni missione della storia -----------------------------------
 const lines = [];
-for (const r of rows.filter((x) => x.inMaster).sort((a, b) => a.quest - b.quest)) {
+for (const r of rows.filter((x) => x.inMaster).sort((a, b) => (a.quest || 0) - (b.quest || 0))) {
   const { resp, added, popups } = clear(r.st);
-  const tag = `Quest ${r.quest} (stage ${r.st.stageId}) -> ${r.name}`;
+  const tag = `${r.special ? 'Special' : `Quest ${r.quest}`} (stage ${r.st.stageId}) -> ${r.name}`;
   check(resp.firstClearFlag === 1, `${tag}: firstClearFlag ${resp.firstClearFlag}`);
   check(added.length === 1, `${tag}: ${added.length} keyblade nuovi nella risposta`);
   const k = added[0];
