@@ -32,8 +32,8 @@
   "I-022": {
    "thread": "1569614659340992534",
    "msg": "1569614659340992534",
-   "group": "OPEN",
-   "hash": "b9ab5ad0b19f5db9",
+   "group": "CLOSED",
+   "hash": "ff5f35b894ab8b80",
    "name": "I-022 · Sell"
   },
   "I-025": {
@@ -67,15 +67,15 @@
   "I-033": {
    "thread": "1569614676864536617",
    "msg": "1569614676864536617",
-   "group": "OPEN",
-   "hash": "38a1406b41f894da",
+   "group": "CLOSED",
+   "hash": "06d79aa2ea633810",
    "name": "I-033 · Generated special attacks"
   },
   "I-038": {
    "thread": "1569614686431744081",
    "msg": "1569614686431744081",
    "group": "OPEN",
-   "hash": "51f00eb3a2a45b45",
+   "hash": "5c2d37766c22ad28",
    "name": "I-038 · Unequip"
   },
   "I-043": {
@@ -228,8 +228,8 @@
   "I-161": {
    "thread": "1569614779608338543",
    "msg": "1569614779608338543",
-   "group": "OPEN",
-   "hash": "23969965b76d675d",
+   "group": "CLOSED",
+   "hash": "81f0bc1f6705d7f7",
    "name": "I-161 · SN++ «adjusted» 302008-302012"
   },
   "I-162": {
@@ -501,8 +501,8 @@
   "I-270": {
    "thread": "1570491682242166948",
    "msg": "1570491682242166948",
-   "group": "OPEN",
-   "hash": "796ab13ac96e9f79",
+   "group": "CLOSED",
+   "hash": "34a423693cd20f78",
    "name": "I-270 · Album: a medal's detail shows its abilities under the picture instead of its description"
   },
   "I-271": {
