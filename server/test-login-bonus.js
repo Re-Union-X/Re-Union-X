@@ -33,6 +33,39 @@ check(r.rewards.some((x) => x.type === 7 && x.id === 14001) && r.response.total.
 r = lb.claim(r.state, 107, ROWS); r = lb.claim(r.state, 108, ROWS);
 check(r.response.continue.loginBonusId === 100 && r.rewards[0].num === 100, 'giorno 6: il Daily riparte da 1');
 
+// Events Part 9b: special logins of the story day (blue «Welcome!» popup), each paid once
+const SP = [...ROWS,
+  { loginBonusId: 311, bonusType: 3, day: 0, comment: 'Receive 50 Jewels per Day!', rewardType: 2, rewardId: 0, rewardNum: 50 },
+  { loginBonusId: 312, bonusType: 4, day: 0, comment: 'Free KH 2.8 Trailer Celebration Medal', rewardType: 3, rewardId: 23175, rewardNum: 1 },
+  { loginBonusId: 313, bonusType: 4, day: 0, comment: 'Back-to-School Event', rewardType: 2, rewardId: 0, rewardNum: 1000 }];
+const WIN = { 311: { from: '2016-04-07', to: '2016-04-13', perDay: true }, 312: { from: '2016-06-16', to: '2016-06-22', perDay: false },
+  313: { from: '2016-09-01', to: '2016-09-30', perDay: false }, 999: { from: '2016-06-16', to: '2016-06-22', perDay: false } };
+const spOf = (res) => res.rewards.filter((x) => x.special);
+let s = lb.claim(undefined, 200, SP, { storyDay: '2016-06-18', windows: WIN });
+check(JSON.stringify(s.response.specials) === '[312]', `special of the day: ${JSON.stringify(s.response.specials)}`);
+check(JSON.stringify(spOf(s).map((x) => [x.type, x.id, x.num, x.comment, x.special])) === JSON.stringify([[3, 23175, 1, 'Free KH 2.8 Trailer Celebration Medal', 312]]), `special reward: ${JSON.stringify(spOf(s))}`);
+check(s.state.specials && s.state.specials['312'] === '2016-06-18', `special recorded: ${JSON.stringify(s.state.specials)}`);
+check(s.rewards.length === 3, 'Daily + Total + special');
+const same = lb.claim(s.state, 200, SP, { storyDay: '2016-06-18', windows: WIN });
+check(same.rewards.length === 0 && JSON.stringify(same.response.specials) === '[312]', `same login day again: same answer, nothing paid (${JSON.stringify(same.response)})`);
+const replay = lb.claim(s.state, 201, SP, { storyDay: '2016-06-18', windows: WIN });
+check(spOf(replay).length === 0 && JSON.stringify(replay.response.specials) === '[]', 'replayed story week: the special is not paid twice');
+check(JSON.stringify(lb.claim(s.state, 202, SP, { storyDay: '2016-06-23', windows: WIN }).response.specials) === '[]', 'after the window');
+const noWeek = lb.claim(undefined, 200, SP, { storyDay: null, windows: WIN });
+check(JSON.stringify(noWeek.response.specials) === '[]' && noWeek.rewards.length === 2, 'no story day: Daily and Total only');
+const old = lb.claim({ lastDay: 150, total: 3 }, 200, SP, { storyDay: '2016-06-18', windows: WIN });
+check(JSON.stringify(old.response.specials) === '[312]' && old.state.total === 4, 'pre-9b save: today\'s special paid once');
+let n1 = lb.claim(undefined, 300, SP, { storyDay: '2016-04-07', windows: WIN });
+const n2 = lb.claim(n1.state, 301, SP, { storyDay: '2016-04-08', windows: WIN });
+const n3 = lb.claim(n2.state, 302, SP, { storyDay: '2016-04-08', windows: WIN });
+check(spOf(n1).length === 1 && spOf(n2).length === 1 && spOf(n2)[0].num === 50 && spOf(n3).length === 0, 'Newcomer (perDay): once per story day');
+check(n2.state.specials['311@2016-04-08'] === '2016-04-08', `perDay key: ${JSON.stringify(n2.state.specials)}`);
+const forced = lb.claim(undefined, 400, SP, { storyDay: null, windows: WIN, force: [313, 999] });
+check(JSON.stringify(forced.response.specials) === '[313]', `bench switch: listed ids that exist only (${JSON.stringify(forced.response.specials)})`);
+check(JSON.stringify(lb.claim(forced.state, 401, SP, { storyDay: null, windows: WIN, force: [313] }).response.specials) === '[]', 'bench switch: once too');
+check(JSON.stringify(lb.claim(undefined, 200, SP, { storyDay: '2016-06-18', windows: WIN }).response.specials) === '[312]' && !lb.claim(undefined, 200, SP, { storyDay: '2016-06-18', windows: WIN }).response.specials.includes(999), 'a window without a master row is never listed');
+check(JSON.stringify(lb.claim(undefined, 200, SP).response.specials) === '[]', 'no options: no specials (old callers)');
+
 // generatore: 5 righe Daily con i jewel dalla v2.3.1, Total intatte
 const gen = require('./make-login-bonus');
 const src = [...[50, 50, 100, 100, 200].map((n, i) => ({ loginBonusId: 100 + i, bonusType: 1, day: i + 1, rewardType: 2, rewardNum: n, _end: 1 })),

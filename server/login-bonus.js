@@ -19,11 +19,31 @@ const fresh = () => ({ lastDay: null, total: 0 });
 // whose date was wrong): today counts as a new day, otherwise the bonus would hide for weeks (tester report 15-11)
 const acquirable = (state, day) => !state || state.lastDay === null || state.lastDay === undefined || day !== state.lastDay;
 
-// Riscossione del giorno `day`: { state, rewards: [{type, id, num, comment}], response } (response = loginBonus del
-// client). Lo stesso giorno una seconda volta (rete, riavvio) da' la stessa risposta senza premi.
-function claim(state, day, rows) {
+// Events Part 9b: special logins (bonusType 3/4, blue «Welcome!» popup). windows {"<id>": {from, to, perDay}} gives each
+// row its original Pacific days (make-login-specials.js); a row is due when the story day is inside them and it was never
+// paid (state.specials {"<id>": storyDay}; perDay rows, the Newcomer Campaign, once per story day: key "<id>@<day>").
+// force: bench ids (KHUX_LOGIN_SPECIAL_FORCE), due whatever the day, still once. Only ids with a master row (crash otherwise).
+function dueSpecials(state, storyDay, windows, rows, force = []) {
+  const paid = (state && state.specials) || {};
+  const exists = new Set(rows.filter((r) => r.bonusType === 3 || r.bonusType === 4).map((r) => r.loginBonusId));
+  const out = [];
+  for (const id of [...exists].sort((a, b) => a - b)) {
+    const w = (windows || {})[id];
+    const inDay = storyDay && w && w.from <= storyDay && storyDay <= w.to;
+    if (!inDay && !force.includes(id)) continue;
+    const key = w && w.perDay && storyDay ? `${id}@${storyDay}` : String(id);
+    if (!(key in paid)) out.push({ id, key });
+  }
+  return out;
+}
+
+// Riscossione del giorno `day`: { state, rewards: [{type, id, num, comment, special?}], response } (response = loginBonus
+// del client). Lo stesso giorno una seconda volta (rete, riavvio) da' la stessa risposta senza premi.
+// opts {storyDay, windows, force}: the special logins of the story day (dueSpecials), only on a new login day.
+function claim(state, day, rows, opts = {}) {
   const s = { ...fresh(), ...(state || {}) };
   const rewards = [];
+  const byId = new Map(rows.map((r) => [r.loginBonusId, r]));
   const daily = rows.filter((r) => r.bonusType === 1).sort((a, b) => a.day - b.day);
   const totals = rows.filter((r) => r.bonusType === 2);
   if (acquirable(s, day)) {
@@ -33,6 +53,14 @@ function claim(state, day, rows) {
     const t = totals.find((r) => r.day === s.total);
     if (d) rewards.push({ type: d.rewardType, id: d.rewardId, num: d.rewardNum, comment: DAILY_COMMENT });
     if (t) rewards.push({ type: t.rewardType, id: t.rewardId, num: t.rewardNum, comment: TOTAL_COMMENT });
+    const due = dueSpecials(s, opts.storyDay || null, opts.windows, rows, opts.force || []);
+    s.specials = { ...(s.specials || {}) };
+    for (const { id, key } of due) {
+      const r = byId.get(id);
+      s.specials[key] = opts.storyDay || 'bench';
+      rewards.push({ type: r.rewardType, id: r.rewardId, num: r.rewardNum, comment: r.comment || r.title, special: id });
+    }
+    s.lastSpecials = due.map((x) => x.id);
   }
   const d = daily.find((r) => r.day === cycleDay(s.total));
   const t = totals.find((r) => r.day === s.total);
@@ -40,9 +68,9 @@ function claim(state, day, rows) {
   const response = {
     continue: { loginBonusId: d ? d.loginBonusId : 0, dayCount: s.total ? cycleDay(s.total) : 0 },
     total: { loginBonusId: t ? t.loginBonusId : 0, dayCount: s.total },
-    specials: [],
+    specials: [...(s.lastSpecials || [])],
   };
   return { state: s, rewards, response };
 }
 
-module.exports = { DAILY_COMMENT, TOTAL_COMMENT, cycleDay, fresh, acquirable, claim };
+module.exports = { DAILY_COMMENT, TOTAL_COMMENT, cycleDay, fresh, acquirable, claim, dueSpecials };
