@@ -20,9 +20,9 @@
   "2018": {"name": "Ralph", "template": 2001, "look": 2001, "confidence": "high", "quests": [930], "evidence": "Ralph textures"},
   "2019": {"name": "Ralph", "template": 2001, "look": 2001, "confidence": "high", "quests": [955], "evidence": "Ralph textures; no wait in any source"},
   "2020": {"name": "Ralph", "template": 2001, "look": 2001, "confidence": "high", "quests": [965], "evidence": "965 «Player, Ralph, and Calhoun»; Ralph textures; no wait in any source"},
-  "2021": {"name": "Union Leader", "template": 2001, "look": 2003, "confidence": "medium", "quests": [977], "evidence": "977 «The Union leaders fight Darkness with the help of Player»; which leader is not known"},
-  "2022": {"name": "Union Leader", "template": 2001, "look": 2003, "confidence": "medium", "quests": [977], "evidence": "977 Union leaders; which leader is not known"},
-  "2023": {"name": "Union Leader", "template": 2001, "look": 2003, "confidence": "medium", "quests": [977], "evidence": "977 Union leaders; which leader is not known"},
+  "2021": {"name": "Ephemer", "template": 2001, "look": 2003, "confidence": "high", "nameSource": "2021 live master (ReLux extract, enemy 2021), user 22-11", "quests": [977], "evidence": "977 «The Union leaders fight Darkness with the help of Player»; which leader is not known"},
+  "2022": {"name": "Skuld", "template": 2001, "look": 2003, "confidence": "high", "nameSource": "2021 live master (ReLux extract, enemy 2022), user 22-11", "quests": [977], "evidence": "977 Union leaders; which leader is not known"},
+  "2023": {"name": "Brain", "template": 2001, "look": 2003, "confidence": "high", "nameSource": "2021 live master (ReLux extract, enemy 2023), user 22-11", "quests": [977], "evidence": "977 Union leaders; which leader is not known"},
   "2024": {"name": "Lauriam", "template": 2001, "look": 2003, "confidence": "medium", "quests": [977], "evidence": "977 Union leaders; textures identified as Lauriam in the deep scan (tmp/deep_scan/sheets)"}
  }
 }

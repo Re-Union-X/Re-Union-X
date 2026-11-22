@@ -29,7 +29,11 @@ const kbRow = new Map(require('./master_data/keyblade.json').map((r) => [r.keybl
 const series = (s) => { const m = new Map(); for (const k of s.keyblades) { const r = kbRow.get(k.keybladeId); if (!m.has(r.category) || r.lv > m.get(r.category)) m.set(r.category, r.lv); } return m; };
 const cats = p.keyblades.map((k) => kbRow.get(k.keybladeId).category);
 check(new Set(cats).size === cats.length, `keyblade series owned twice: ${cats.filter((c, i) => cats.indexOf(c) !== i).join(', ')}`);
+// Starlight is never an entry (the server's implicit userKeybladeId 1): its level is starlightKeybladeId (pkg 2026-11-22)
+check(!cats.includes(kbRow.get(1000).category), 'explicit Starlight entry in the start save');
 const got = series(p);
+const slCat = kbRow.get(1000).category;
+got.set(slCat, Math.max(got.get(slCat) ?? 0, kbRow.get(p.starlightKeybladeId || 1000).lv));
 for (const [c, lv] of [...series(max), ...series(proud)]) check((got.get(c) ?? -1) >= lv, `keyblade series ${c}: lv ${got.get(c)} < ${lv}`);
 const uk = p.keyblades.map((k) => k.userKeybladeId);
 check(new Set(uk).size === uk.length, 'duplicate userKeybladeId');

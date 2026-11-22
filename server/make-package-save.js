@@ -21,8 +21,16 @@ function merge(max, proud) {
   const kbRow = new Map(require('./master_data/keyblade.json').map((r) => [r.keybladeId, r]));
   const bySeries = new Map(max.keyblades.map((k) => [kbRow.get(k.keybladeId)?.category, k]));
   let next = Math.max(0, ...max.keyblades.map((k) => k.userKeybladeId)) + 1;
+  // Starlight is the server's implicit userKeybladeId 1 (player.starlightKeybladeId), never an entry: an explicit one
+  // showed it twice in Equipment (pkg 2026-11-22.1113, user 22-11); its level goes to starlightKeybladeId if higher
+  const starlightCat = kbRow.get(1000)?.category;
+  const lvOf = (id) => kbRow.get(id)?.lv ?? 0;
   for (const k of proud.keyblades) {
     const row = kbRow.get(k.keybladeId);
+    if (row?.category === starlightCat) {
+      if (lvOf(k.keybladeId) > lvOf(max.starlightKeybladeId || 1000)) max.starlightKeybladeId = k.keybladeId;
+      continue;
+    }
     const own = bySeries.get(row?.category);
     if (!own) { const add = { ...k, userKeybladeId: next++ }; max.keyblades.push(add); bySeries.set(row?.category, add); }
     else if ((row?.lv ?? 0) > (kbRow.get(own.keybladeId)?.lv ?? 0)) own.keybladeId = k.keybladeId;

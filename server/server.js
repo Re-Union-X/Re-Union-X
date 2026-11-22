@@ -6068,9 +6068,18 @@ function dedupeKeybladeSeries() {
   const rows = new Map(masterRows('keyblade').map((r) => [r.keybladeId, r]));
   const keep = new Map(); // category -> kept entry
   const moved = new Map(); // dropped userKeybladeId -> kept userKeybladeId
+  const starlightCat = rows.get(startingInventory().keybladeId)?.category;
   for (const k of player.keyblades || []) {
     const r = rows.get(k.keybladeId);
-    if (!r || r.category === rows.get(startingInventory().keybladeId)?.category) continue;
+    if (!r) continue;
+    // Starlight is always the implicit userKeybladeId 1 (ownedKeyblades): an explicit Starlight entry (tester start save
+    // 2026-11-22, merged from the Proud save) showed it twice. Keep the higher level on the implicit one (user 22-11)
+    if (r.category === starlightCat) {
+      const cur = rows.get(kbEvo().starlightKeybladeId(startingInventory().keybladeId));
+      if ((r.lv ?? 0) > (cur?.lv ?? 0)) player.starlightKeybladeId = k.keybladeId;
+      moved.set(k.userKeybladeId, USER_KEYBLADE_ID);
+      continue;
+    }
     const own = keep.get(r.category);
     if (!own) { keep.set(r.category, k); continue; }
     const [hi, lo] = (r.lv > (rows.get(own.keybladeId)?.lv ?? 0)) ? [k, own] : [own, k];

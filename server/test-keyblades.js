@@ -135,6 +135,19 @@ check(ownedCats().length === series.length, 'grantKeyblade 2000 ha duplicato Tre
   check(p.favoriteKeybladeId === 99, `I-286 favorite ${p.favoriteKeybladeId}, expected 99`);
   p.keyblades = saved; delete p.favoriteKeybladeId;
 }
+// an explicit Starlight entry (start save 2026-11-22) goes: the implicit Starlight (userKeybladeId 1) takes its higher level
+{
+  const saved = JSON.parse(JSON.stringify(p.keyblades)); const savedSl = p.starlightKeybladeId;
+  const sl60 = kb.filter((r) => r.category === byId.get(1000).category).sort((a, b) => b.lv - a.lv)[0].keybladeId;
+  delete p.starlightKeybladeId;
+  p.keyblades.push({ userKeybladeId: 98, keybladeId: sl60, getDatetime: 0, burst: 0 });
+  p.favoriteKeybladeId = 98;
+  quiet(() => t.grantMissingKeyblades());
+  const sl = t.ownedKeyblades().filter((k) => byId.get(k.keybladeId).category === byId.get(1000).category);
+  check(sl.length === 1 && sl[0].keybladeId === sl60, `Starlight twice or lower: ${JSON.stringify(sl)}`);
+  check(p.favoriteKeybladeId === 1, `favorite on the dropped Starlight: ${p.favoriteKeybladeId}`);
+  p.keyblades = saved; p.starlightKeybladeId = savedSl; delete p.favoriteKeybladeId;
+}
 
 // ---- 3. Strengthen di ogni keyblade fino a +60 -----------------------------------------------
 const evo = t.kbEvo();

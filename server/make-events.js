@@ -979,8 +979,17 @@ function avatarCatalog(out, records, ids, config, textOf) {
   for (const u of (records && records.unmapped) || []) out.index.avatarHeld.push({ donorId: u.donorId, name: u.name, why: u.why });
 }
 
+// dateFixes (event_config.json, user 22-11): a record whose notice date is a typo (end before start: EV-0124 «2016-01-26»,
+// EV-1123 «2020-03-17») takes the corrected date given there, with its source; the records are not touched
+function applyDateFixes(records, fixes = {}) {
+  return records.map((r) => {
+    const f = fixes[r.censusId];
+    return f ? { ...r, ...(f.start ? { start: f.start } : {}), ...(f.end ? { end: f.end } : {}) } : r;
+  });
+}
+
 function buildEvents(records0, config, master, ids, anchors = {}, maps = null, boardSets = null, opts = {}) {
-  const records = applyDatesOf(records0);
+  const records = applyDatesOf(applyDateFixes(records0, config.dateFixes));
   const dramas = opts.dramas ? new Set(opts.dramas) : null;
   const bgmOver = (opts.bgm && opts.bgm.quests) || {};
   checkRanges(master, config);

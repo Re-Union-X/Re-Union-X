@@ -509,5 +509,7 @@
   "2310161": {
    "jp": "img/sphere_incentive/2900711.png"
   }
- }
+ },
+  "dateFixesNote": "Records whose notice gives an end before the start (typos): the corrected date and its source (make-events.js applyDateFixes, user 22-11).",
+  "dateFixes": {"EV-0124":{"end":"2017-01-26","source":"notice 24594 «Jan 26» printed with the year 2016; khuxwiki High Score Challenge #14 2017-01-19..2017-01-25"},"EV-1123":{"end":"2020-05-16","source":"2021 live master (ReLux) evStage 201577 2020-05-05 07:00 .. 2020-05-17 06:59 UTC = 05-16 Pacific; khuxwiki Defeat Upright Defender #1 2020-05-05..2020-05-16"}}
 }
