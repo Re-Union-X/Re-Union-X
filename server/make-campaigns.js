@@ -9,10 +9,11 @@
 //   boss). routes-raid.js owns the raid Bonus Time (98000-98999 rows, make-ev-campaign.js).
 // - stageType 2 lists: story ids (our stage table) stay, original event stage ids go to ours through game_data/events.json
 //   (quests donorStageId -> stageId); an unknown id is dropped and counted.
-// - stageType 4 («every event stage») and the every-quest AP scopes 5/6/7/19 are never served as such (they would take the
-//   Special quests too): on each day they become explicit lists of the stages of the events running that day (stageType 2,
-//   5 ids per row).
-// - other scopes without a list (1 fusion, 20) are kept.
+// - stageType 4 (every stage of the screen) and 6 (every event quest) are never served as such (they would take the Special
+//   quests too): on each day they become explicit lists of the stages of the events running that day (stageType 2, 5 per row).
+// - AP never on story or Proud quests (they cost 0 AP here: stageType 5/19 AP kinds and story ids of AP lists dropped);
+//   Coliseum (7) and co-op (20) scopes are not served; fusion (1) and Lux on every story quest (5) are kept.
+// - each day lists its AP rows first, lowest power first (the client takes the first AP row that matches).
 // Wired at the end of make-game-tables.js after make-events and make-ev-campaign. On its own (then raise the revision):
 //   node server/make-campaigns.js [master folder]
 'use strict';
@@ -24,7 +25,12 @@ const PER_ROW = 5;
 const START = '2015-01-01 00:00:00', END = '2030-12-31 23:59:59';
 const LIST = 2;
 const RAID_TYPES = new Set([6, 9]), RAID_SCOPES = new Set([3, 8]);
-const EVENT_SCOPES = new Set([4, 5, 6, 7, 19]);
+// client scopes (docs/notes/campaigns.md): 4 every stage of the screen, 6 every event quest -> narrowed to the day's event stages;
+// 5 every story quest (stageKind 1), 19 every Proud quest: kept for Lux, dropped for AP (story and Proud cost 0 AP here);
+// 7 every Coliseum stage and 20 every co-op (Union Cross) quest: not served
+const EVENT_SCOPES = new Set([4, 6]);
+const STORY_SCOPES = new Set([5, 19]);
+const AP = 7;
 const STORY_FIRST = 1010, STORY_LAST = 39159;
 const CALENDAR = process.env.KHUX_CAMPAIGN_CALENDAR
   || 'D:/Progetto_Restauro_KH_UX/private/donations/relux_2026-11/verified/campaign_calendar_2021.json';
@@ -56,10 +62,15 @@ function buildCampaigns(calendar, ctx) {
   };
   for (const k of [...(calendar.kinds || [])].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))) {
     if (RAID_TYPES.has(k.type) || RAID_SCOPES.has(k.stageType)) { drop('raid'); continue; }
+    if (k.stageType === 7) { drop('colosseum'); continue; }
+    if (k.stageType === 20) { drop('multi'); continue; }
+    if (STORY_SCOPES.has(k.stageType) && k.type === AP) { drop('storyFree'); continue; }
     if (k.stageType === LIST) {
       const ids = [];
       for (const id of k.stageIds || []) {
-        const ours = id >= STORY_FIRST && id <= STORY_LAST && ctx.storyStageIds.has(id) ? id : ctx.eventStageOf.get(id);
+        const story = id >= STORY_FIRST && id <= STORY_LAST;
+        if (story && k.type === AP) { drop('storyFree'); continue; } // the client could show 1 AP on a free quest
+        const ours = story && ctx.storyStageIds.has(id) ? id : ctx.eventStageOf.get(id);
         if (ours) ids.push(ours); else drop('unknownStage');
       }
       const uniq = [...new Set(ids)].sort((a, b) => a - b);
@@ -84,7 +95,10 @@ function buildCampaigns(calendar, ctx) {
     rows.push(row(id, x.k, x.stageType, x.ids));
     for (const d of x.days) (days[d] = days[d] || []).push(id);
   });
-  const sortedDays = Object.fromEntries(Object.keys(days).sort().map((d) => [d, days[d].sort((a, b) => a - b)]));
+  // AP rows first, lowest power first: the client takes the first listed AP row that matches a stage
+  const rank = (id) => { const r = rows[id - CAMPAIGN_BASE]; return r.type === AP ? r.power : Infinity; };
+  const order = (a, b) => rank(a) - rank(b) || a - b;
+  const sortedDays = Object.fromEntries(Object.keys(days).sort().map((d) => [d, days[d].sort(order)]));
   return { rows, days: sortedDays, dropped };
 }
 

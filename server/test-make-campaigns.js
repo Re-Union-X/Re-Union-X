@@ -18,19 +18,36 @@ const cal = {
     kind({ type: 9, power: 20000, displayText: 'Next Raid Level +2', stageType: 3, stageIds: [1] }),
     kind({ type: 10, power: 20000, displayText: 'Big Lux boost!', stageType: 3, stageIds: [2] }),
     kind({ type: 10, power: 20000, displayText: 'Lux x 2', stageType: 8 }),
-    kind({ stageIds: [1010, 60110] }),
+    kind({ type: 1, power: 20000, displayText: 'Rare items drop rate up!', stageIds: [1010, 60110] }),
     kind({ stageIds: [63010], days: [E] }),
     kind({ stageType: 4, days: [D, E] }),
-    kind({ power: 3500, displayText: '1 AP', stageType: 7, days: [E] }),
+    kind({ power: 3500, displayText: '1 AP', stageType: 6, days: [E] }),
     kind({ type: 18, power: 150000, displayText: 'Rare enemy encounter rate up!', stageType: 20, days: [D] }),
+    kind({ power: 5000, displayText: 'Half AP', stageType: 2, stageIds: [63010, 1020], days: [D] }),
+    kind({ displayText: '0 AP! story', stageType: 5, days: [D] }),
+    kind({ displayText: '0 AP! proud', stageType: 19, days: [D] }),
+    kind({ power: 3500, displayText: '1 AP colo', stageType: 7, days: [D] }),
+    kind({ type: 10, power: 20000, displayText: 'Lux x 2 story', stageType: 5, days: [D] }),
+    kind({ type: 11, power: 20000, displayText: 'Medal Fusion: EXP x 2', stageType: 1, days: [D] }),
   ],
 };
 
 const out = mc.buildCampaigns(cal, ctx);
 assert.strictEqual(out.dropped.raid, 4, 'raid kinds dropped');
 assert.strictEqual(out.dropped.unknownStage, 1, 'unknown original stage counted');
-const byList = (ids) => out.rows.filter((r) => r.power === 0 && JSON.stringify(r.stageId.slice(0, r.validStageId)) === JSON.stringify(ids));
-assert.strictEqual(byList([1010]).length, 1, 'story id kept, unknown event id dropped');
+const byList = (ids) => out.rows.filter((r) => r.type === 7 && r.power === 0 && JSON.stringify(r.stageId.slice(0, r.validStageId)) === JSON.stringify(ids));
+assert.strictEqual(out.rows.filter((r) => r.type === 1 && r.validStageId === 1 && r.stageId[0] === 1010).length, 1, 'story id kept on a drop kind, unknown event id dropped');
+assert.ok(!out.rows.some((r) => r.type === 7 && r.stageId.slice(0, r.validStageId).some((x) => x >= 1010 && x <= 39159)), 'AP kinds never list story stages (they cost 0 AP)');
+assert.strictEqual(out.dropped.storyFree, 3, 'story id of the Half AP list, stageType 5 and 19 AP kinds');
+assert.strictEqual(out.dropped.colosseum, 1, 'Coliseum scope not served');
+assert.strictEqual(out.dropped.multi, 1, 'co-op scope (Union Cross) not served');
+const luxStory = out.rows.filter((r) => r.type === 10 && r.stageType === 5);
+assert.strictEqual(luxStory.length, 1, 'Lux on every story quest kept as stageType 5');
+// the day lists AP rows first, lowest power first (the client takes the first AP row that matches)
+const dayD = out.days[D].map((id) => out.rows[id - mc.CAMPAIGN_BASE]);
+const apPowers = dayD.filter((r) => r.type === 7).map((r) => r.power);
+assert.deepStrictEqual(apPowers, [...apPowers].sort((a, b) => a - b), 'AP rows by power');
+assert.strictEqual(dayD.findIndex((r) => r.type !== 7), apPowers.length, 'AP rows first');
 assert.strictEqual(byList([4000010]).length, 1, 'event id mapped; the stageType 4 kind on day E gives the same row content: one shared row');
 assert.ok(out.days[E].includes(byList([4000010])[0].campaignId), 'shared row listed on E');
 // stageType 4 on D: 7 event stages -> 5 + 2, explicit lists (stageType 2)
@@ -40,11 +57,7 @@ assert.ok(four.every((r) => r.stageType === 2), 'stageType 4 never served');
 assert.ok(four.every((r) => out.days[D].includes(r.campaignId)), 'both rows listed on D');
 assert.ok(!out.rows.some((r) => r.stageType === 4), 'no stageType 4 row');
 const oneAp = out.rows.filter((r) => r.power === 3500);
-assert.ok(oneAp.length === 1 && oneAp[0].stageType === 2 && oneAp[0].stageId[0] === 4000010, 'every-quest AP scopes (5/6/7/19) narrowed to the event stages of the day');
-const rare = out.rows.filter((r) => r.type === 18);
-assert.strictEqual(rare.length, 1, 'global kind: one row');
-assert.strictEqual(rare[0].stageType, 20, 'global stageType kept');
-assert.strictEqual(rare[0].validStageId, 0);
+assert.ok(oneAp.length === 1 && oneAp[0].stageType === 2 && oneAp[0].stageId[0] === 4000010, 'every-event-quest scope (6) narrowed to the event stages of the day');
 // ids, formats, determinism
 out.rows.forEach((r, i) => assert.strictEqual(r.campaignId, mc.CAMPAIGN_BASE + i, 'ids in order'));
 const r0 = out.rows[0];
@@ -59,6 +72,6 @@ assert.deepStrictEqual(mc.buildCampaigns(cal, ctx), out, 'deterministic');
 const ids = new Set(out.rows.map((r) => r.campaignId));
 assert.ok(Object.values(out.days).every((l) => l.length && l.every((x) => ids.has(x))));
 // overflow
-const many = { kinds: Array.from({ length: 2001 }, (_, i) => kind({ stageIds: [1010], displayText: `x${i}` })) };
+const many = { kinds: Array.from({ length: 2001 }, (_, i) => kind({ type: 1, stageIds: [1010], displayText: `x${i}` })) };
 assert.throws(() => mc.buildCampaigns(many, ctx), /overflow/);
 console.log(`test-make-campaigns: OK (${out.rows.length} rows)`);

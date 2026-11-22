@@ -6,37 +6,48 @@
 'use strict';
 const { weekDateAt } = require('./calendar-util');
 
-const AP = 7, LUX = 10, DROP = 1, FUSION_EXP = 11, FUSION_MUNNY = 14;
+const AP = 7, LUX = 10, DROP = 1, FUSION_EXP = 11, FUSION_MUNNY = 14, SP_ATK = 17;
 const LIST = 2;
-// types whose effect the server applies; the others are listed for the client only (docs/notes/campaigns.md)
-const SERVER_APPLIES = new Set([AP]);
-// scopes without a stage list that take every stage (fusion types have no stage)
-const EVERY_STAGE = new Set([20]);
+// types whose effect the server applies; the others are listed for the client only (docs/notes/campaigns.md). The client
+// also shows AP (7) and the fusion EXP / munny / Sp. Atk range (11, 14, 17): the server applies the same numbers. Lux (10)
+// and drops (1) only show a balloon: the server multiplies the Lux of /stage/clear (bench 22-11: luxMagnifications.campaign
+// of /stage/start leaves the reported Lux unchanged) and the drop odds.
+const SERVER_APPLIES = new Set([DROP, AP, LUX, FUSION_EXP, FUSION_MUNNY, SP_ATK]);
 
 // ids of the day; [] without a day or a table
 const activeIds = (dayIso, daysTable) => (dayIso && daysTable && Array.isArray(daysTable[dayIso]) ? [...daysTable[dayIso]] : []);
 
-const takes = (r, stageId) => (r.stageType === LIST ? (r.stageId || []).slice(0, r.validStageId || 0).includes(stageId) : EVERY_STAGE.has(r.stageType));
+// served scopes (make-campaigns.js narrows the others): 2 explicit list, 5 every story quest (Lux only)
+const STORY_FIRST = 1010, STORY_LAST = 39159, EVERY_STORY = 5;
+const takes = (r, stageId) => (r.stageType === LIST ? (r.stageId || []).slice(0, r.validStageId || 0).includes(stageId)
+  : r.stageType === EVERY_STORY && stageId >= STORY_FIRST && stageId <= STORY_LAST);
 
-// effects of the listed ids on a stage: lowest AP power, highest factor of each kind (never multiplied together)
+// effects of the listed ids on a stage, as the client reads them: the FIRST listed AP row that takes the stage (the day table
+// lists the lowest power first), the LAST row of each fusion type (the fusion screen); Lux and drops: the highest factor.
 function effectsFor(ids, rowsById, stageId) {
-  const out = { apPower: null, lux: 1, drop: 1, fusionExp: 1, fusionMunny: 1 };
+  const out = { apPower: null, lux: 1, drop: 1, fusionExp: 1, fusionMunny: 1, spAtk: null };
   for (const id of ids || []) {
     const r = rowsById.get(id);
     if (!r) continue;
     const f = r.power / 10000;
-    if (r.type === FUSION_EXP) out.fusionExp = Math.max(out.fusionExp, f);
-    else if (r.type === FUSION_MUNNY) out.fusionMunny = Math.min(out.fusionMunny, f);
+    if (r.type === FUSION_EXP) out.fusionExp = f;
+    else if (r.type === FUSION_MUNNY) out.fusionMunny = f;
+    else if (r.type === SP_ATK) out.spAtk = r.power;
     else if (!takes(r, stageId)) continue;
-    else if (r.type === AP) out.apPower = out.apPower === null ? r.power : Math.min(out.apPower, r.power);
+    else if (r.type === AP) { if (out.apPower === null) out.apPower = r.power; }
     else if (r.type === LUX) out.lux = Math.max(out.lux, f);
     else if (r.type === DROP) out.drop = Math.max(out.drop, f);
   }
   return out;
 }
 
-// AP of a quest under an AP campaign (power / 10000 of the master useAp, rounded down: 90 x 556 = 5, 3 x 3500 = 1)
-const apWith = (useAp, apPower) => (apPower === null || apPower === undefined ? useAp : Math.floor((useAp * apPower) / 10000));
+// AP of a quest under an AP campaign, as the client shows it: power 0 = 0, else useAp x power / 10000 rounded UP and never
+// below 1 (90 x 556 = 6, 3 x 3500 = 2); a free quest stays free
+function apWith(useAp, apPower) {
+  if (apPower === null || apPower === undefined) return useAp;
+  if (!apPower || !useAp) return 0;
+  return Math.max(1, Math.ceil((useAp * apPower) / 10000));
+}
 
 // Route side, used by server.js (deps injected so it can be tested with stubs):
 //   masterRows(t), readDays() -> campaign_days table, storyWeek() -> {shopFrom, shopTo}, realNow(), raidIds(ms) (routes-raid.js
@@ -54,13 +65,14 @@ function campaignRoutes(deps) {
   // ids of the story day: the original day of the Shop week on today's Pacific weekday
   function dayIds(ms = deps.realNow()) {
     try {
-      return activeIds(weekDateAt(deps.storyWeek() || {}, ms), deps.readDays());
+      return [...activeIds(weekDateAt(deps.storyWeek() || {}, ms), deps.readDays()), ...((deps.benchIds && deps.benchIds()) || [])];
     } catch (e) {
       if (!warned) { warned = true; deps.log(`[campaigns] day table unreadable: ${e.message}`); }
       return [];
     }
   }
-  const ids = (ms = deps.realNow()) => [...new Set([...(deps.raidIds(ms) || []), ...dayIds(ms), ...((deps.benchIds && deps.benchIds()) || [])])];
+  // the bench ids (KHUX_CAMPAIGN_FORCE) count as ids of the day: listed and applied
+  const ids = (ms = deps.realNow()) => [...new Set([...(deps.raidIds(ms) || []), ...dayIds(ms)])];
   // effects of the day on a stage, only for the types the server applies (the client applies or only shows the others)
   function effects(stageId, ms = deps.realNow()) {
     const ids0 = dayIds(ms), rows = byId();
@@ -75,4 +87,4 @@ function campaignRoutes(deps) {
   return { ids, dayIds, effects, stageAp };
 }
 
-module.exports = { campaignRoutes, activeIds, effectsFor, apWith, SERVER_APPLIES, EVERY_STAGE, AP, LUX, DROP, FUSION_EXP, FUSION_MUNNY };
+module.exports = { campaignRoutes, activeIds, effectsFor, apWith, SERVER_APPLIES, AP, LUX, DROP, FUSION_EXP, FUSION_MUNNY, SP_ATK };

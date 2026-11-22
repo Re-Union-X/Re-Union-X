@@ -52,10 +52,10 @@ assert.strictEqual(w.routes.stageAp(EVENT, MON), 0, 'AP 0 Bonus Time on the even
 assert.strictEqual(w.routes.stageAp(OTHER, MON), 10, 'another stage: master useAp');
 assert.strictEqual(w.routes.stageAp(RAID_STAGE, MON), 90, 'a raid stage keeps the raid rule (Review Focus 4)');
 assert.strictEqual(world({ days: {} }).routes.stageAp(EVENT, MON), 10, 'no Bonus Time that day');
+assert.strictEqual(world({ days: {}, bench: [96000] }).routes.stageAp(EVENT, MON), 0, 'bench ids are applied too');
 
-// effects: only the types the server applies; the others stay neutral (the client applies them)
-const neutral = w.routes.effects(EVENT, MON);
-assert.deepStrictEqual(neutral, { apPower: 0, lux: 1, drop: 1, fusionExp: 1, fusionMunny: 1 }, 'default: only AP is server side');
-const all = world({ serverApplies: new Set([7, 10, 1, 11, 14]) }).routes.effects(EVENT, MON);
-assert.deepStrictEqual(all, { apPower: 0, lux: 2, drop: 2, fusionExp: 2, fusionMunny: 0.5 }, 'server-side types apply once');
+// effects: the types the server applies (Lux at /stage/clear, drops, fusion; AP above)
+assert.deepStrictEqual(w.routes.effects(EVENT, MON), { apPower: 0, lux: 2, drop: 2, fusionExp: 2, fusionMunny: 0.5, spAtk: null }, 'server-side types apply once');
+assert.strictEqual(w.routes.effects(OTHER, MON).lux, 1, 'no Lux campaign on that stage');
+assert.deepStrictEqual(world({ serverApplies: new Set([7]) }).routes.effects(EVENT, MON), { apPower: 0, lux: 1, drop: 1, fusionExp: 1, fusionMunny: 1, spAtk: null }, 'types outside serverApplies stay neutral');
 console.log('test-campaign-routes: OK');

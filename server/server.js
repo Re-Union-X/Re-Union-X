@@ -1551,7 +1551,9 @@ function campaigns() {
 const servedCampaignIds = () => campaigns().ids();
 function rollDropTypes(rewardId, types, rng = Math.random) {
   if (BENCH_DROP_LUCK) rng = () => 0;
-  const odds = rewardRowById(rewardId)?.odds || [];
+  // «Rare items drop rate up!» of the story day on the quest being played (campaigns.js, type 1): odds x power / 10000
+  const boost = campaigns().effects(player.currentStageId).drop;
+  const odds = (rewardRowById(rewardId)?.odds || []).map((o) => (boost > 1 && o < ODDS_ALWAYS ? Math.min(ODDS_ALWAYS - 1, Math.trunc(o * boost)) : o));
   const out = types.map((t, i) => (t && (odds[i] ?? ODDS_ALWAYS) >= ODDS_ALWAYS ? t : t && rng() * ODDS_ALWAYS < odds[i] ? t : 0));
   while (out.length && !out[out.length - 1]) out.pop();
   return out;
@@ -2913,7 +2915,8 @@ function respondStageClear(res, req) {
   // Le missioni sui Lux (submissionRequire 29, «Collect %d or more Lux») il client non
   // le riporta: le valuta il server sui Lux della partita (getPoint.lux), che
   // restituisce in getLux (la barra Lux di RESULTS).
-  const lux = training ? 0 : Number(req?.getPoint?.lux) || 0;
+  // a Lux Bonus Time of the story day on this quest multiplies it (campaigns.js, type 10: the client only shows the balloon)
+  const lux = training ? 0 : Math.trunc((Number(req?.getPoint?.lux) || 0) * campaigns().effects(player.currentStageId).lux);
   addBattleLux(lux);
   if (!training) {
     missionCount('quest', 1);
@@ -4196,10 +4199,14 @@ function respondMedalEnhance(res, body) {
   const before = userMedalElement(base, now);
   let gain = comps.reduce((s, m) => s + (rows.get(m.medalId) ? materialExpFor(row, rows.get(m.medalId), m.level || 1) : 0), 0);
   if (Number(body.isGreatSuccess)) gain = Math.trunc(gain * medalMiscValue(118)[0] / 10000);
+  // Medal Fusion Bonus Times of the story day (campaigns.js, types 11 / 14 / 17): the numbers the client shows on the screen
+  const fusionBonus = campaigns().effects(0);
+  gain = Math.trunc(gain * fusionBonus.fusionExp);
   // con la base gia' al livello massimo (copie per pallini/guilt) x medalMisc 123 (2500: 2.000
   // invece di 8.000 a LV 100, banco gu_21)
   let cost = medalMiscValue(115)[0] * (base.level || 1) * comps.length;
   if ((base.level || 1) >= row.maxLv) cost = Math.trunc(cost * medalMiscValue(123)[0] / 10000);
+  cost = Math.trunc(cost * fusionBonus.fusionMunny);
   const exp = (base.exp || 0) + gain;
   const level = medalLevelFor(row, base.level || 1, exp);
   // medaglie speciali e copie (server/medal-guilt.js, docs/notes/guilt.md): pallini, sblocco e
@@ -4207,7 +4214,7 @@ function respondMedalEnhance(res, body) {
   const burstRow = row.validBurst ? masterRows('burst').find((b) => b.burstId === row.burstId) : null;
   const { state, events } = medalGuilt.applyEnhance(row, base,
     comps.map((m) => ({ row: rows.get(m.medalId), burstUpperNumber: m.burstUpperNumber || 0 })).filter((c) => c.row),
-    { burstRow, guiltProb: masterRows('guiltProb'), isGuilt: isGuiltUnlocked(), groups: supernovaGroups() });
+    { burstRow, guiltProb: masterRows('guiltProb'), isGuilt: isGuiltUnlocked(), groups: supernovaGroups(), spAtk: fusionBonus.spAtk });
   // Overwrite Skill (I-088, server/medal-skill.js): con isOverwriteSkill la skill del materiale piu'
   // a sinistra passa alla base con la probabilita' del client (20% al livello 1, 100% al massimo);
   // altrimenti le skill dei materiali si perdono con i materiali

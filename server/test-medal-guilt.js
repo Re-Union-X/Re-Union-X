@@ -9,6 +9,12 @@ const byId = new Map(medal.map((r) => [r.medalId, r]));
 const bById = new Map(burst.map((r) => [r.burstId, r]));
 const gp = g.guiltProbRows();
 console.log('guiltProb rows', gp.length, g.guiltRange(gp, 3));
+// Sp. Atk Bonus campaign (Events Part 9a, evCampaign type 17): the rows below the campaign minimum are isCampaign; the
+// client multiplies their weight by the campaign power (0 = left out), the server roll does the same
+assert.ok(gp.every((x) => x.isCampaign === (x.factor < g.GUILT_RANGES[x.value].campaignMin ? 1 : 0)), 'isCampaign below campaignMin');
+assert.equal(g.rollGuilt(gp, 5, () => 0), 8000, 'no campaign: the lowest value can come out');
+assert.equal(g.rollGuilt(gp, 5, () => 0, 0), 10000, 'Sp. Atk campaign (power 0): never below the campaign minimum');
+assert.equal(g.rollGuilt(gp, 5, () => 0, null), 8000, 'null = no campaign');
 
 // una 6★ originale con tier
 const base = medal.find((r) => r.type === 1 && r.rare === 6 && r.guiltValue >= 3 && r.medalId < 300000 && r.validBurst);

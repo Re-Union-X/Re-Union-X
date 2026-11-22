@@ -1,101 +1,71 @@
-# Conditional Present campaigns (I-234)
+# Campaigns (Bonus Times), evCampaign
 
-Original campaigns that sent Medals (and titles, Gems, Jewels, Draw Tickets) to the **Present Box** when the player met a
-condition (own some Medals, unlock their Special Attack Bonus or traits, draw a Deal N times, clear a Story Quest, collect
-N Medals of a kind, LUX level, Medal storage).
-Without them some Medals of the master cannot be obtained in any other way.
+Events Part 9a ([design](../superpowers/specs/2026-11-22-campaigns-design.md), [plan](../superpowers/plans/2026-11-22-events-part9a-bonus-times.md)).
+Research of 22 November 2026: what the WW 4.3.1 client does with each row (study of the client's behaviour, facts only), checked on
+the bench where noted.
 
-- Data: [`server/campaign_gifts.json`](../../server/campaign_gifts.json) (Medals by master name, rarity for the
-  rewards; ids resolved at load, so the I-225 renumbering does not matter).
-- Rules: [`server/campaign-gifts.js`](../../server/campaign-gifts.js) (pure), wired in `server/server.js`
-  (`checkCampaignGifts`, called by `/mypage` and `GET /user/present`; `addPresent(..., dots)` and
-  `presetDots` for the «pre-strengthened to N dots» rewards, set when the present is collected).
-- Player state: `player.campaignGifts[id] = {open, units | keys}` (what was already sent: never twice).
-- Test: `node server/test-campaign-gifts.js` (pure rules, the real data against the served master, the server flow
-  Home -> Present Box -> collect with dots).
-- Notice: «Campaign Rewards» (IMPORTANT, 11/05; «Campaign Medals» before the non-Medal rewards),
-  [NOTICES.md](../NOTICES.md#campaign-rewards).
-- Reward rows: `{medal, rare, num, dots?, skill?, boosted?}` (present type 3), `{material}` (5), `{title}` (7),
-  `{jewels: n}` (2, `freeStone`), `{ticket: currency, num}` (41, item id = index in `gacha.TICKET_CURRENCIES`: the
-  payType 8 Shop currencies draw / holiday / spooky / moogle). Bronze / Silver / Gold Tickets have no balance the client
-  is served (`drawTicket1-3` are always 0) and the Gold Ticket payType is the one the Banner Catalog plate is leaving
-  (I-135): `compile` rejects them.
+## How the client reads a campaign
 
-## Calendar
+- A row counts as active only when the server lists its id (`campaigns` of GET `/campaign`, action 143, and of `/stage/start`
+  and `/raid/start`). The row's times and weekdays are never checked.
+- A screen walks the listed ids in order and skips missing rows, rows of another type, and rows its scope filter rejects. For AP
+  the **first** row that passes wins; there is no minimum or product. The Medal Fusion screen keeps the **last** row of each
+  fusion type.
+- Power: 0 gives 0. Otherwise value × power / 10000; AP rounds **up** and is never below 1 (90 × 556 → 6, 3 × 3500 → 2).
 
-A campaign opens when the **Story Shop week** of the player (`storyCtx().shopTo`, the same calendar as the Shop
-banners) reaches its start date, and then **stays open** (`open` flag): the original deadlines would make the rewards
-unobtainable in a game that follows the Story, and the condition Medals stay drawable through the Banner Catalog. A
-late-Story player gets every campaign at once, counting the Medals already owned. The original sent the rewards days
-after the deadline; here they arrive at the next Home / Present Box load. Both are declared in the Notice.
+## Who applies each type
 
-## Campaigns found (WW notices, private notice archive outside the repository)
+| type | text in the original data | client | server (Part 9a) |
+|---|---|---|---|
+| 1 | Rare items drop rate up! | balloon only | drop odds × power / 10000 (`rollDropTypes`) |
+| 6 | Raid Boss Encounter x 2 | balloon (story / event / co-op screens) | not served: raids keep their own Bonus Time (routes-raid.js) |
+| 7 | 0 AP! / 5 AP / Half AP / 1 AP | shows the changed AP (bench 22-11: Daily Challenge Cid 10 → 5 with a Half AP row) | charges the same AP at `/stage/start` (bench: −5 AP) |
+| 8 | 100% Raid Boss Ω Encounter (2015 test rows) | balloon only | not served |
+| 9 | Next Raid Level +2 / +5 | balloon on raid screens | not served (raid code) |
+| 10 | Lux x 2, Big / Great Lux boost! | balloon only | Lux of `/stage/clear` × power / 10000 (bench 22-11: 19.5M → 39.0M) |
+| 11 | Medal Fusion: EXP x 2 | fusion EXP shown × power / 10000 | the same on the EXP gained |
+| 14 | Medal Fusion: Half Munny Cost | fusion munny shown × power / 10000 (bench: balloon on the Level Up screen) | the same on the munny charged |
+| 17 | Limited-time bonus boost! (the Sp. Atk Bonus campaign) | `guiltProb` rows with `isCampaign` 1 get weight × power / 10000: power 0 leaves them out | the same in the guilt roll (`medal-guilt.js rollGuilt`) |
+| 18 | Rare enemy encounter rate up! | balloon only | not served (its rows are co-op scope) |
 
-Search: every notice with «own / possess / in possession / unlock the Special Attack Bonus / for each condition /
-by owning / Tally Date / Commemorative Medal / VIP Draw N times» (2,604 notices, 2016-2021). Paraphrased; the notice id
-is the source.
+`luxMagnifications.campaign` of `/stage/start` does not change the Lux the client reports at `/stage/clear` (bench 22-11, 0 and
+20000 gave the same Lux), so it stays 0.
 
-| Id (json) | Notice | Original period (PT) | Condition | Reward | Otherwise obtainable? |
-|---|---|---|---|---|---|
-| story-q200-2016 | 20758 | 2016-09-05 → 09-11 | Story Quest 200 cleared | 600 Jewels | (Jewels) |
-| tva-2016 | 20642 | 2016-09-02 → 09-08 | own Illustrated Terra / Ventus / Aqua (one each, duplicates no) | Terra & Ventus & Aqua 6★, 3 dots (up to 3) | **no** |
-| mirror-2016 | 21433 | 2016-09-30 → 10-13 | SA Bonus unlocked on Sora & Donald & Goofy / SP Axel (one each) | 10 Magic Mirror | yes (Deal bonuses) |
-| srk-2016 | 22102 | 2016-10-28 → 11-10 | SA Bonus on Illustrated Kairi / Sora (A) / Riku (A) (one each) | Sora & Riku & Kairi 6★, 2 dots | **no** |
-| hdkm-sora-2016 | 23113 | 2016-11-25 → 12-02 | SA Bonus on HD Sora (once) | HD King Mickey 6★, 3 dots | **no** |
-| hdkm-riku-2016 | 23118 | 2016-12-02 → 12-09 | SA Bonus on HD Riku (once) | HD King Mickey 6★, 3 dots | **no** |
-| ka1-xion/axel/roxas-2016 | 23543, 23790, 23792 | 2016-12-16/22/26 → 2017-01-09 | SA Bonus on Illustrated Xion / HD Axel / Casual Roxas | Key Art #1 6★, 2 dots (one per campaign) | yes (Deals from 2017-01) |
-| ka5-2017 | 27134 | 2017-04-06 → 04-24 | SA Bonus on Illustrated KH II Kairi / KH II Sora (one each) | Key Art #5 6★, 3 dots | **no** |
-| orgxiii-2017 | 28243 | 2017-05-12 → 05-22 | own Key Art #6 and #7, or SA Bonus on either (once) | 13 Org. XIII A-type 6★ 5 dots + Scrooge 6★ with ATK B III Max & SP GA 2 | yes (Deals) |
-| kh02tv-2017 | 28944, 28945, 28950 | 2017-05-26 → 06-08 | SA Bonus on KH 0.2 Aqua / KH 0.2 King Mickey (A) / Key Art #8 (one each) | KH 0.2 Terra & Ventus 6★, 2 dots | **no** |
-| story-q50/q600-2017 | 30249 | 2017-07-03 → 07-09 | Story Quest 50 cleared / Story Quest 600 cleared | 3 Sora & Roxas 6★ 2 dots / Magic Broom | Sora & Roxas **no**; Broom yes |
-| axelart-2017 | 30115 | 2017-07-07 → 07-20 | own Axel Art [EX] (once) | Fantasia Mickey B | yes |
-| kh02kmb-2017 | 32512 | 2017-09-22 → 10-01 | SA Bonus on every KH 0.2 Terra / KH 0.2 Sora / Lingering Will copy (no limit) | KH 0.2 King Mickey B 6★, 2 dots each | **no** |
-| annaelsa(-trait)-2018 | 47814 | 2018-12-10 → 12-23 | 5 VIP Draws of the Frozen Medals Deal (B0431) / every VIP Draw | Anna & Elsa 7★ (once) / Trait Medal #64 each | **no** / **no** |
-| sntva(-trait)-2019 | 48236 | 2019-01-01 → 01-13 | 5 traits unlocked on 3 Medals among Supernova - HD Terra / Ventus / Aqua (once) / every draw of B0442-B0444 | Supernova - Terra, Ven, Aqua 7★ / Trait Medal #72 each | **no** / **no** |
-| lux-tickets-2019 | 51531 | 2019-03-29 (LUX level read that day) | LUX level, read once (`once`: the first time the campaign is checked open; later levels add nothing) | one Draw Ticket per LUX level | (tickets; Ticket Draw B0488/B0489 that week) |
-| storage-2020 | 69125 | 2020-09-03 → 10-01 (slots counted 09-02) | Medal storage at 3,000 slots (`maxMedal()`) | 30 Draw Tickets | (tickets; Ticket Draw B0711/B0712) |
-| strelitzia-2020 | 69291, 69546 | 2020-09-14 → 10-07 | every 3 copies owned of the 9 SN++ - Illus. KH III Medals | SN++ - Strelitzia 7★ + 100 Trait Medal #256 | **no** |
-| flantastic-2020 | 69376 | 2020-09-14 → 10-07 | collect 10/20/30/40/55/70/85/100/110 Sora & Moogle B (JP 5th anniversary entry Medal) | the 7 Flans, Trait Medals #239-#246 x30, Kyroo [SAB LV 10], Power/Speed/Magic/Sun/Moon Gems, title, SN++ - Flantastic Seven (Boosted at 110) | Flans and Flantastic **no** |
-| momkairi-2020 | 71029 | 2020-11-02 → 11-30 | every 4 copies owned of SN++ - Stained Glass #10-#13 | SN++ - MoM Kairi 7★ + 100 Trait Medal #284 | **no** |
+`guiltProb.isCampaign` is 1 on the rows below the khuxwiki campaign minimum of each tier (`medal-guilt.js GUILT_RANGES.campaignMin`):
+during a Sp. Atk Bonus campaign the Special Attack Bonus never rolls below that minimum, as in the original notices («Raised SA
+Bonus roll floors», 2017-03).
 
-The tiers of `flantastic-2020` hold the **difference** between a tier and the previous one of the notice table (the
-table lists the whole package at each count); the 110 tier adds the Boosted SN++ - Flantastic Seven (row 2302025).
+## Scopes (stageType)
 
-Obtainability audit (05-11): every reward id was searched in the expanded pools, bonuses and pity gifts of all 807
-banners of `game_data/gacha_catalog.json`, in the master tables (stage rewards, missions, moogleshop, sphere boards,
-login bonus...), `game_data/special.json`, `game_data/raids.json`, `raid_config.json` and `limited_missions.tsv`.
-The condition Medals are all drawable (their Deals, also from the Banner Catalog).
+| st | stages |
+|---|---|
+| 1 | none (fusion types; the stage is not checked) |
+| 2 | the ids in `stageId[0..validStageId-1]` |
+| 3 | the same list check, on raid screens (raid enemy ids) |
+| 4 | every stage of the screen |
+| 5 | every story quest (stageKind 1) |
+| 6 | every event quest |
+| 7 | every Coliseum stage |
+| 8 | every raid boss |
+| 9-18 | story chapters 1-10 |
+| 19 | every Proud quest (stageKind 4) |
+| 20 | every co-op (Union Cross) quest |
 
-## Non-Medal rewards (user decision 05-11)
+Screens accept: story 2, 4, 5, 9-19; event 2, 4, 6; co-op 4, 20; Coliseum 2, 4, 7; raid 3, 8.
 
-The notices of the implemented campaigns were re-read for rewards other than Medals: none was dropped (Flantastic Seven
-already had its Gems and title; the Limited VIP Coins of 48236 and 69291 are a per-draw bonus of those Deals, not a
-campaign reward). A second search of the 2,604 notices for conditional rewards of titles, Jewels, tickets, Gems and items
-found the campaigns below. Pure ranking rewards (PvP, Coliseum, Union Cross, High Score, party Lux), party / community
-campaigns (recruit a new player 46205 / 49894, Chocolate Valentines 50298, FFBE new players 58199), purchase bonuses
-(Weekly Jewels Extravaganza Gold / Silver Tickets, Jewel Box 68889), sweepstakes (52165, 57269) and event quest rewards
-are out.
+## What we serve
 
-| Notice | Original | Condition | Reward | Status |
-|---|---|---|---|---|
-| 20758 | Sep 2016 | Story Quest 200 cleared | 600 Jewels | **added** (`story-q200-2016`) |
-| 51531 | Mar 2019 | LUX level on 2019-03-29 | 1 Draw Ticket per level | **added** (`lux-tickets-2019`) |
-| 69125 | Sep 2020 | 3,000 Medal slots on 2020-09-02 | 30 Draw Tickets | **added** (`storage-2020`); here also when the slots are reached later |
-| 23795 | Jan 2017 | Special Attack Bonus 100% on Classic Goofy | title Royal Captain (12048) | later: Classic Goofy came only from its event quest (in no drawable pool, mission or board) |
-| 23804 | Jan 2017 | Special Attack Bonus on a Boosted Classic Donald | title Royal Magician (12050) | later: event quest not in the game, no Boosted Classic Donald in the master |
-| 35148, 38663, 39482, 44153 | Dec 2017 - Sep 2018 | 1,000 Jewels for each Sora & Moogle / Illustrated Moogle / Toon Moogle / KH II Sora & Moogle owned at the end | Jewels | flagged: none of these Medals is in the master (only Sora & Moogle B), their Free Deals B0220 / B0274 are INCOMPLETE and the Toon Moogle login bonus is not served; an unbounded 1,000 Jewels per copy would also need a cap (the original days of the Deal) if they come back |
-| 41796 | Jun 2018 | 5 draws of the Prime 7★ Deal | 1 Silver Ticket | flagged: an apology (with 600 Jewels to all), and the Silver Ticket Draws (B0312, B0392) are PvP-ticket Deals that cannot be drawn, with no Silver balance served; for the compensation list of I-164 |
-| 67355 | 2020 | LUX level 300 / 350 | KHDR Quest Keys | out: Dark Road item |
-
-The Jewels of these campaigns (600) and the Draw Tickets count in the resource balance study (I-164).
-
-## Not implemented
-
-- **Timeless River Mickey** (17717, April 2016): clear one of the LV 140 Proud Quests of the 2016 event. Those event
-  quests are not in the game: the Medal stays unobtainable (named in the Notice).
-- **Fantasia Mickey B** for Proud Mode Quest 350 (32020, September 2017): the Medal is obtainable elsewhere.
-- **6★ Chip and Dale** for evolving Snow White / Seven Dwarfs to 6★ (18440, 2016 event Medals): obtainable elsewhere.
-- **SN++ - FF7R Aerith** (64600): a limited mission, already in `mission.json`.
-- Titles 23795 / 23804 and the per-Medal Jewels of 35148 / 38663 / 39482 / 44153: see the table above. The login
-  campaigns (special login rewards) belong to I-164.
-- High Score Challenge / ranking rewards: competitive, not a condition on the player's own box.
+- `server/make-campaigns.js`: the private calendar (kinds of the donated 2016-2021 table and of the 1.1.3 rows, with their
+  original Pacific days; notices win where they disagree) becomes evCampaign rows **96000-97999** and `campaign_days.json`
+  (server only, one list of ids per original day).
+  - Raid kinds (types 6, 9; scopes 3, 8) are dropped.
+  - AP kinds never list story or Proud quests: they cost 0 AP here, and the client could show 1.
+  - Scopes 4 and 6 become explicit lists of the stages of the events running that day. They are never served as broad
+    scopes, which would also take the Special quests.
+  - Coliseum (7) and co-op (20) scopes are not served.
+  - Each day lists its AP rows first, lowest power first.
+- `server/campaigns.js`: the ids of the story day (`weekDateAt` of the Shop week on today's Pacific weekday), the AP charged, and
+  the server-side factors.
+- Bench switch: `relogin.ps1 -Campaigns 95990,95991` (env `KHUX_CAMPAIGN_FORCE`) lists those ids and applies them, whatever the
+  day. Bench rows must be added to `master_data/evCampaign.json` by hand and removed afterwards: the generators keep every row
+  outside their own ranges.

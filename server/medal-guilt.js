@@ -36,14 +36,14 @@ const GUILT_RANGES = {
 
 // Tabella guiltProb {id, value, factor, weight, isCampaign}. Un valore ogni
 // 1% fra minimo e massimo. I pesi originali non si conoscono: ipotesi = peso uniforme.
-// isCampaign: il client moltiplica il peso di queste righe per il tasso della campagna;
-// senza campagne attive tutte 0.
+// isCampaign: il client moltiplica il peso di queste righe per il tasso della campagna: sono quelle sotto campaignMin
+// (Sp. Atk Bonus campaign, evCampaign type 17 power 0: escluse; Events Part 9a).
 function guiltProbRows(step = 100) {
   const rows = [];
   let id = 1;
   for (const [tier, r] of Object.entries(GUILT_RANGES)) {
     for (let f = r.min; f <= r.max; f += step) {
-      rows.push({ id: id++, value: Number(tier), factor: f, weight: 100, isCampaign: 0 });
+      rows.push({ id: id++, value: Number(tier), factor: f, weight: 100, isCampaign: f < r.campaignMin ? 1 : 0 });
     }
   }
   return rows;
@@ -54,8 +54,11 @@ function guiltRange(guiltProb, tier) {
   return fs.length ? { min: Math.min(...fs), max: Math.max(...fs) } : { min: 0, max: 0 };
 }
 
-function rollGuilt(guiltProb, tier, rng = Math.random) {
-  const rows = guiltProb.filter((r) => r.value === tier && r.weight > 0);
+// spAtk: power of the active Sp. Atk Bonus campaign (evCampaign type 17, campaigns.js), null = none: the weight of the
+// isCampaign rows (below campaignMin) is multiplied by power / 10000, as the client's fusion preview does (0 = left out)
+function rollGuilt(guiltProb, tier, rng = Math.random, spAtk = null) {
+  const w = (r) => (r.isCampaign && spAtk !== null && spAtk !== undefined ? (r.weight * spAtk) / 10000 : r.weight);
+  const rows = guiltProb.filter((r) => r.value === tier && w(r) > 0).map((r) => ({ ...r, weight: w(r) }));
   const tot = rows.reduce((s, r) => s + r.weight, 0);
   if (!tot) return 0;
   let x = rng() * tot;
@@ -104,7 +107,7 @@ function applyEnhance(baseRow, base, comps, opts) {
     ev.dots = Math.max(0, Math.min(maxDots, total) - s.burstUpperNumber);
     s.burstUpperNumber = Math.max(s.burstUpperNumber, Math.min(maxDots, total));
     if (sum > 0 && total > maxDots && guiltOpen && s.guiltFactor < range.max) {
-      const v = rollGuilt(opts.guiltProb, tier, opts.rng);
+      const v = rollGuilt(opts.guiltProb, tier, opts.rng, opts.spAtk);
       ev.rolls.push(v);
       if (v > s.guiltFactor) s.guiltFactor = v;
     }
