@@ -694,7 +694,20 @@ function servedMasterRows(name, realMs) {
     const open = name === 'evStage' ? hscListedIds(realMs) : null;
     const closed = (r) => (open && r.eventCategory === HSC_EVENT_CATEGORY && !open.has(r.eventStageId)
       ? { endTime: HSC_CLOSED_END, endDispTime: HSC_CLOSED_END, boardEndTime: HSC_CLOSED_END } : {});
-    return rows.map((r) => ({ ...r, bannerUrl: abs(r.bannerUrl), detailUrl: abs(r.detailUrl), ...closed(r) }));
+    const out = rows.map((r) => ({ ...r, bannerUrl: abs(r.bannerUrl), detailUrl: abs(r.detailUrl), ...closed(r) }));
+    // I-287: two or more HSC listed -> the phantom row (last, highest HSC id) whose list merges theirs, for the marks of every listed HSC
+    const listed = open ? out.filter((r) => r.eventCategory === HSC_EVENT_CATEGORY && open.has(r.eventStageId)) : [];
+    if (listed.length >= 2) {
+      const src = listed[listed.length - 1];
+      out.push({ ...src, eventStageId: HSC_PHANTOM.eventStageId, scoreMedalListId: HSC_PHANTOM.listId, mypageBanner: 0, detailUrl: '' });
+    }
+    return out;
+  }
+  // I-287: the merged score-bonus list of the phantom HSC row (above): every listed HSC's medals, the highest rate of a medal, display 0
+  // (no deck panel: the phantom has no quest of its own)
+  if (name === 'evMedalList') {
+    const merged = hscPhantomList(realMs);
+    return merged.length ? [...rows, ...merged] : rows;
   }
   // moogleshop: le offerte a tempo (display 1, «N days left») scadono ogni lunedi' come le Weekly, in ora finta
   // (make-moogleshop.js fissava endDate alla generazione: «2137 days left», I-021)
@@ -742,6 +755,24 @@ const HSC_EVENT_CATEGORY = 4, HSC_CLOSED_END = '2015-01-01 00:00:01';
 function hscListedIds(realMs) {
   try { return new Set(eventRoutes().events(realMs).map((c) => c.eventStageId)); } catch (e) { console.log(`[hsc] listed ids: ${e.message}`); return null; }
 }
+// I-287 (user 22-11, option B): the client marks the score-bonus medals (medal views, lists, «High Score» sort) from ONE open HSC row,
+// the highest eventStageId (bench 16-11); with two or more HSC listed (story week + kept event) a phantom row above every HSC id
+// carries a merged list, so the marks cover every listed HSC. The real rows keep their own lists (deck panel, battle multiplier).
+const HSC_PHANTOM = { eventStageId: 23999, listId: 19999, firstRowId: 9999000 };
+function hscListedRows(realMs) {
+  const open = hscListedIds(realMs);
+  return open ? masterRows('evStage').filter((r) => r.eventCategory === HSC_EVENT_CATEGORY && open.has(r.eventStageId)) : [];
+}
+function hscPhantomList(realMs) {
+  const listed = hscListedRows(realMs);
+  if (listed.length < 2) return [];
+  const lists = new Set(listed.map((r) => r.scoreMedalListId).filter(Boolean));
+  const best = new Map(); // medalId -> highest rate
+  for (const m of masterRows('evMedalList')) {
+    if (lists.has(m.listId) && !m.isDeleted && m.rate > (best.get(m.medalId) || 0)) best.set(m.medalId, m.rate);
+  }
+  return [...best].map(([medalId, rate], i) => ({ evMedalListId: HSC_PHANTOM.firstRowId + i, listId: HSC_PHANTOM.listId, medalId, rate, display: 0, isDeleted: 0 }));
+}
 // what the served sphere rows depend on beyond the file (masterBody cache key); an error gives a key that never repeats a stale body
 function sphereServedKey() {
   try {
@@ -761,7 +792,8 @@ function masterBody(name) {
   // real week of their countdown, and the avatar board index (servedMasterRows)
   if (name === 'sphere') key += `:${sphereServedKey()}`;
   // evStage: the HSC rows served open follow the listed cards (a keep can change mid-session)
-  if (name === 'evStage') { const ids = hscListedIds(sessionRealMs()); key += `:hsc${ids ? [...ids].sort((a, b) => a - b).join(',') : 'all'}`; }
+  // evMedalList: the phantom's merged list follows the same listed cards (I-287)
+  if (name === 'evStage' || name === 'evMedalList') { const ids = hscListedIds(sessionRealMs()); key += `:hsc${ids ? [...ids].sort((a, b) => a - b).join(',') : 'all'}`; }
   const hit = masterBodyCache.get(name);
   if (hit && hit.key === key) return hit.body;
   const json = Buffer.from(JSON.stringify(servedMasterRows(name, sessionRealMs())), 'utf8');
@@ -6110,7 +6142,7 @@ module.exports._test = {
   // server/test-mission-settle.js
   settleClock, MISSION_COUNTER, MISSION_DERIVED, missionProgress, petSubslotNow, guiltBurst,
   // server/test-master-clock.js
-  masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, respondResourceFile, masterBody, respondMaster, respondResourceSize, masterBytes, respondStatus,
+  masterRevisionNow, servedMasterRows, HSC_PHANTOM, sessionRevision, respondLogin, respondMasterFile, respondResourceFile, masterBody, respondMaster, respondResourceSize, masterBytes, respondStatus,
   // server/test-story-oltre.js (missioni 526-979)
   respondStageList, lastStoryStageId, stageNumber, stageRowOf, userDetailData, ensureUnion,
   // server/test-proud.js (Proud Mode, I-200)
