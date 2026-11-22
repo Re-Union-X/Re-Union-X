@@ -944,6 +944,29 @@ require('./make-trophy-materials').patch(OUT);
 // Missioni di storia 526-979 (I-009): 1.1.3 per 526-555, wiki + stage JP per le altre, 978 solo filmato (onlyDrama);
 // dopo la tabella enemy (obiettivi «Defeat X») e stage.json scritti sopra. KHUX_STORY_OLTRE=0 lo spegne (make-story-oltre.js)
 require('./make-story-oltre').patch(OUT);
+// First-clear items of the story quests 1-979 from the 2021 live master (ReLux extract, I-281): late service raised the
+// Jewels/munny and replaced the obsolete materials (Quest 25 Orichalcum -> Huey + Cid 10) with medals, as in the drop rows
+// (REWARD_2021); 556-979 had them from the wiki. Only the clear item fields, matched on stageId and quest number; after the
+// whole story (make-story-oltre), before Proud Mode, which sets its own. Credited to the ReLux Team.
+{
+  const STAGE_CLEAR_2021 = process.env.KHUX_STAGE_CLEAR_2021
+    || 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\stage_clear_2021.json';
+  try {
+    const by = new Map(JSON.parse(fs.readFileSync(STAGE_CLEAR_2021, 'utf8')).rows.map((r) => [r.stageId, r]));
+    const p = path.join(OUT, 'stage.json');
+    const stages = JSON.parse(fs.readFileSync(p, 'utf8'));
+    let n = 0;
+    for (const s of stages) {
+      const r = s.stageKind === 1 && by.get(s.stageId);
+      if (!r || r.id !== s.id) continue;
+      for (const f of ['validClearGetItem', 'clearGetItemType', 'clearGetItemId', 'clearGetItemNum', 'clearGetAssignSkillType',
+        'clearGetAssignSkillId', 'clearGetAssignSkillLv']) s[f] = Array.isArray(r[f]) ? [...r[f]] : r[f];
+      n++;
+    }
+    fs.writeFileSync(p, JSON.stringify(stages));
+    console.log(`stage: first-clear items of ${n} of ${by.size} story quests from the 2021 master`);
+  } catch (e) { console.warn(`stage: ${STAGE_CLEAR_2021} not applied (${e.message}), first-clear items from the 2016 master / wiki`); }
+}
 // Proud Mode (I-200): righe stageKind 4 1 000 000 + stageId della storia 1-979, dopo la storia completa (make-proud.js);
 // la 1001010 del 5.0.1 resta. KHUX_PROUD=0 lo spegne
 require('./make-proud').patch(OUT);
