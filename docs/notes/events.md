@@ -1289,6 +1289,13 @@ Design `docs/superpowers/specs/2026-11-22-events-part10-design.md`, plan `docs/s
   Held: 401 «map to generate» (Part 10b), 11 WW enemy check (one enemy more / other), 4 level shifts refused by the import check
   (EV-0310 Advanced 3/4, EV-0398 x3). EV-0178 (30 «Colossal Creatures» quests, no donor rows) is wiki-only (Part 10b).
 - **Notice.** «Events» section «Events of 2016-2018».
+- **Cards** (user 22-11: every playable event must have its original card). The 67 playable events of the period had none:
+  `make_event_banners.py --fetch` on their ids fetched the banner of each event's own notice (70 files, private
+  `reference\event_banners_ww`), then the cards were built and checked one by one (the dates printed on each banner match the
+  event). One wrong pick: the World of Final Fantasy notice 24589 opens with a 1340x924 game advert; its 640x140 «Special Avatar
+  Event» banner (3rd image) is given by `--extra` (private `private\events\event_card_extra.json` {"23018": ...}). No other card
+  came from an image of the wrong shape. The 52 entries still without a card are Avatar / Gem Boards (no quests; own catalogue).
+  Every event with quests now has a card. imgVersion 10, master revision 356.
 
 ## Part 8 summary (High Score Challenges, 16 November 2026)
 
