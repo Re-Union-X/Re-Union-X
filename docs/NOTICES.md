@@ -253,7 +253,7 @@ The **special login bonuses** are back: the blue «Welcome!» screen after the d
 
 Their dates come from the official notices, the community wiki and a donated copy of the game data whose own dates were lost; where they disagree, the notice wins.
 
-The login bonus day still starts at 08:00 UTC (see **Login Bonus**); the special login bonuses of a day are decided at your first login of that day, so a special day you miss is gone, as in the original game.
+The login bonus day still starts at 08:00 UTC (see **Login Bonus**). If your Story moves ahead by several days or weeks, the special login bonuses of the days you **passed since your last login** are not lost: they are all given, once each, at your next login, and the screen shows the first 5 of them (the others go straight to your **Presents**) (**not original**: in the original game a day you missed was gone). The Newcomer Campaign is only given on its own days.
 
 The **Total** login milestones stop at **Day 1,850**, as in the original game: the Day 1,900 to 3,200 milestones found in the donated data never existed in the original game (it closed after about 1,870 days) and are not served.
 

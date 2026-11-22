@@ -7,6 +7,8 @@
 // - premi nei Presents (commento «Daily Login Bonus Reward», reference\presents\presents_list_01.png).
 'use strict';
 
+const MAX_POPUPS = 5; // special login popups shown by one claim (user 22-11); the others only in the Presents
+
 const DAILY_COMMENT = 'Daily Login Bonus Reward';
 const TOTAL_COMMENT = 'Total Login Bonus Reward';
 
@@ -23,18 +25,23 @@ const acquirable = (state, day) => !state || state.lastDay === null || state.las
 // row its original Pacific days (make-login-specials.js); a row is due when the story day is inside them and it was never
 // paid (state.specials {"<id>": storyDay}; perDay rows, the Newcomer Campaign, once per story day: key "<id>@<day>").
 // force: bench ids (KHUX_LOGIN_SPECIAL_FORCE), due whatever the day, still once. Only ids with a master row (crash otherwise).
-function dueSpecials(state, storyDay, windows, rows, force = []) {
+// Catch-up (user 22-11): with since = the last story day seen at a claim (state.specialsSeen), a once-only row is due when its
+// window meets (since, storyDay]: the specials of the story weeks passed since the last login are paid at the next one.
+// perDay rows (Newcomer) only for storyDay itself. Order: oldest window first, then id.
+function dueSpecials(state, storyDay, windows, rows, force = [], since = null) {
   const paid = (state && state.specials) || {};
   const exists = new Set(rows.filter((r) => r.bonusType === 3 || r.bonusType === 4).map((r) => r.loginBonusId));
+  const from = since && storyDay && since < storyDay ? since : null; // exclusive lower bound of the catch-up
   const out = [];
-  for (const id of [...exists].sort((a, b) => a - b)) {
+  for (const id of exists) {
     const w = (windows || {})[id];
-    const inDay = storyDay && w && w.from <= storyDay && storyDay <= w.to;
-    if (!inDay && !force.includes(id)) continue;
+    const today = storyDay && w && w.from <= storyDay && storyDay <= w.to;
+    const passed = from && w && !w.perDay && w.to > from && w.from <= storyDay;
+    if (!today && !passed && !force.includes(id)) continue;
     const key = w && w.perDay && storyDay ? `${id}@${storyDay}` : String(id);
-    if (!(key in paid)) out.push({ id, key });
+    if (!(key in paid)) out.push({ id, key, at: (w && w.from) || '' });
   }
-  return out;
+  return out.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : a.id - b.id));
 }
 
 // Riscossione del giorno `day`: { state, rewards: [{type, id, num, comment, special?}], response } (response = loginBonus
@@ -53,14 +60,16 @@ function claim(state, day, rows, opts = {}) {
     const t = totals.find((r) => r.day === s.total);
     if (d) rewards.push({ type: d.rewardType, id: d.rewardId, num: d.rewardNum, comment: DAILY_COMMENT });
     if (t) rewards.push({ type: t.rewardType, id: t.rewardId, num: t.rewardNum, comment: TOTAL_COMMENT });
-    const due = dueSpecials(s, opts.storyDay || null, opts.windows, rows, opts.force || []);
+    const due = dueSpecials(s, opts.storyDay || null, opts.windows, rows, opts.force || [], s.specialsSeen || null);
     s.specials = { ...(s.specials || {}) };
     for (const { id, key } of due) {
       const r = byId.get(id);
       s.specials[key] = opts.storyDay || 'bench';
       rewards.push({ type: r.rewardType, id: r.rewardId, num: r.rewardNum, comment: r.comment || r.title, special: id });
     }
-    s.lastSpecials = due.map((x) => x.id);
+    // the blue popups: the first MAX_POPUPS (every reward is already in the Presents)
+    s.lastSpecials = due.slice(0, MAX_POPUPS).map((x) => x.id);
+    if (opts.storyDay && !(s.specialsSeen && s.specialsSeen > opts.storyDay)) s.specialsSeen = opts.storyDay;
   }
   const d = daily.find((r) => r.day === cycleDay(s.total));
   const t = totals.find((r) => r.day === s.total);
@@ -73,4 +82,4 @@ function claim(state, day, rows, opts = {}) {
   return { state: s, rewards, response };
 }
 
-module.exports = { DAILY_COMMENT, TOTAL_COMMENT, cycleDay, fresh, acquirable, claim, dueSpecials };
+module.exports = { DAILY_COMMENT, TOTAL_COMMENT, cycleDay, fresh, acquirable, claim, dueSpecials, MAX_POPUPS };

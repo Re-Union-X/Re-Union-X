@@ -515,6 +515,7 @@ for (const web of [false, true]) {
     check(l.includes('once') && /1,900|1900/.test(l) && l.includes('reconstructed'), 'login specials: once, Day 1,900+ not served, reconstructed named');
     check(/Monthly/.test(l) && /Story month|story month/.test(l), 'login specials: monthly missions follow the story month');
     check(n.loginSpecialLines(null).join(' ').includes('## Special login bonuses'), 'login specials: without data, generic lines');
+    check(/passed since your last login/.test(l) && /first 5/.test(l), 'login specials: catch-up of the passed weeks, 5 popups (user 22-11)');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 }
 // Events Part 9c: the Lux Boost section of the Events notice

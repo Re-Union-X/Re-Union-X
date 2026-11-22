@@ -245,7 +245,7 @@ function loginSpecialLines(f) {
       : 'The **special login bonuses** (the blue «Welcome!» screen) are not served on this server yet.',
     'Their dates come from the official notices, the community wiki and a donated copy of the game data whose own dates were lost; where they disagree, the notice wins.'
       + (f && f.reconstructed ? ` **${f.reconstructed}** of them are **reconstructed** from a notice that named the reward, with no surviving game data (**not original**).` : ''),
-    'The login bonus day still starts at 08:00 UTC (see **Login Bonus**); the special login bonuses of a day are decided at your first login of that day, so a special day you miss is gone, as in the original game.',
+    'The login bonus day still starts at 08:00 UTC (see **Login Bonus**). If your Story moves ahead by several days or weeks, the special login bonuses of the days you **passed since your last login** are not lost: they are all given, once each, at your next login, and the screen shows the first 5 of them (the others go straight to your **Presents**) (**not original**: in the original game a day you missed was gone). The Newcomer Campaign is only given on its own days.',
     'The **Total** login milestones stop at **Day 1,850**, as in the original game: the Day 1,900 to 3,200 milestones found in the donated data never existed in the original game (it closed after about 1,870 days) and are not served.',
     '**Monthly missions.** From April 2018 to February 2021 the «[Monthly]» Limited missions are those of your **Story month** (the month of your Story week), not of the real month (**not original**: the original ones followed the calendar); their counters still restart every real month. In the other months they rotate as before.'];
 }

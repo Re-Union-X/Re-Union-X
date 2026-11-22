@@ -864,6 +864,10 @@ id only on its original days (server-only `login_specials.json`, `make-login-spe
 (`player.loginBonus.specials`; the Newcomer Campaign 311 once per story day). Two rewards of one campaign are two rows and
 two popups. The story day is `weekDateAt(storyCtx(), now)` as the Bonus Times ([campaigns](campaigns.md)). Bench switch:
 `relogin.ps1 -LoginSpecials 312,334` (paid at the next login bonus whatever the day, still once).
+Catch-up (user 22-11): `player.loginBonus.specialsSeen` = the last story day seen at a claim; the next claim also pays
+every once-only special whose window meets (specialsSeen, story day], oldest first, so a player who runs ahead in the Story
+loses none. `specials` lists at most `MAX_POPUPS` 5 (the others go only to the Presents). The Newcomer Campaign (perDay) is
+never caught up; a save without `specialsSeen` starts from today (no back pay of the whole history).
 
 
 Full research in `D:\Progetto_Restauro_KH_UX\tmp\loginbonus\RESEARCH.md` (sources in `reference\login_bonus\NOTE.md`).

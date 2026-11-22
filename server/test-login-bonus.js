@@ -65,6 +65,29 @@ check(JSON.stringify(forced.response.specials) === '[313]', `bench switch: liste
 check(JSON.stringify(lb.claim(forced.state, 401, SP, { storyDay: null, windows: WIN, force: [313] }).response.specials) === '[]', 'bench switch: once too');
 check(JSON.stringify(lb.claim(undefined, 200, SP, { storyDay: '2016-06-18', windows: WIN }).response.specials) === '[312]' && !lb.claim(undefined, 200, SP, { storyDay: '2016-06-18', windows: WIN }).response.specials.includes(999), 'a window without a master row is never listed');
 check(JSON.stringify(lb.claim(undefined, 200, SP).response.specials) === '[]', 'no options: no specials (old callers)');
+// catch-up (user 22-11): specials of the story days passed since the last claim are paid once at the next login bonus;
+// at most MAX_POPUPS listed (blue popups), the others only in the Presents; perDay (Newcomer) never caught up
+{
+  const rows = [...ROWS, ...[1, 2, 3, 4, 5, 6, 7].map((k) => ({ loginBonusId: 500 + k, bonusType: 4, day: 0, comment: `c${k}`, rewardType: 2, rewardId: 0, rewardNum: 100 * k })),
+    { loginBonusId: 311, bonusType: 3, day: 0, comment: 'n', rewardType: 2, rewardId: 0, rewardNum: 50 }];
+  const win = { 311: { from: '2016-04-07', to: '2016-04-13', perDay: true } };
+  ['2016-04-08', '2016-05-01', '2016-06-10', '2016-07-04', '2016-08-01', '2016-09-01', '2016-10-31'].forEach((d, i) => { win[501 + i] = { from: d, to: d, perDay: false }; });
+  check(lb.MAX_POPUPS === 5, 'MAX_POPUPS 5');
+  const first = lb.claim(undefined, 300, rows, { storyDay: '2016-04-07', windows: win });
+  check(JSON.stringify(first.response.specials) === '[311]' && first.state.specialsSeen === '2016-04-07', `first claim: today only (${JSON.stringify(first.response.specials)}, seen ${first.state.specialsSeen})`);
+  const jump = lb.claim(first.state, 301, rows, { storyDay: '2016-11-15', windows: win });
+  const paid = jump.rewards.filter((x) => x.special).map((x) => x.special);
+  check(JSON.stringify(paid) === '[501,502,503,504,505,506,507]', `catch-up pays every passed special once: ${JSON.stringify(paid)}`);
+  check(JSON.stringify(jump.response.specials) === '[501,502,503,504,505]', `at most 5 popups, oldest first: ${JSON.stringify(jump.response.specials)}`);
+  check(jump.state.specialsSeen === '2016-11-15', 'last story day seen');
+  check(!paid.includes(311), 'Newcomer not caught up');
+  const again2 = lb.claim(jump.state, 302, rows, { storyDay: '2016-11-16', windows: win });
+  check(again2.rewards.filter((x) => x.special).length === 0, 'nothing paid twice');
+  const back = lb.claim(jump.state, 303, rows, { storyDay: '2016-06-10', windows: win });
+  check(back.rewards.filter((x) => x.special).length === 0 && back.state.specialsSeen === '2016-11-15', 'a story day earlier than the last seen: only that day (already paid), seen kept');
+  const preSave = lb.claim({ lastDay: 10, total: 3, specials: {} }, 304, rows, { storyDay: '2016-10-31', windows: win });
+  check(JSON.stringify(preSave.response.specials) === '[507]', `save without specialsSeen: today only, no back pay of history (${JSON.stringify(preSave.response.specials)})`);
+}
 
 // generatore: 5 righe Daily con i jewel dalla v2.3.1, Total intatte
 const gen = require('./make-login-bonus');
