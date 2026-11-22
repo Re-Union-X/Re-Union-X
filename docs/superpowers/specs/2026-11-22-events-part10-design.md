@@ -29,7 +29,7 @@ Verdicts on the 68 quest rows (EQ / COIN / COLLAB / SPEC): A 16, B 46, C 2, D 4.
 ## Goals
 
 1. **Quest events of the period** (verdict A and B, 62 rows) served from the donor stage rows, dated by the notices, on JP maps
-   where they exist and on generated maps elsewhere. C rows served for the part that has data (WOFF EV-0121; EV-0236 only its
+   where they exist and on generated maps elsewhere. C rows: WOFF EV-0121 on generated maps (see «Decisions taken»); EV-0236 only its
    free medal, through the login specials if a row exists, else not served).
 2. **Two Daily Challenge runs without a census row** (#12 2017-01-02, #16 2017-02-13): added to the census and served.
 3. **Seven CELEB rows that are quest events** (EV-0094, 0108, 0112, 0138, 0172, 0178, 0423).
@@ -76,8 +76,14 @@ Verdicts on the 68 quest rows (EQ / COIN / COLLAB / SPEC): A 16, B 46, C 2, D 4.
 - **Everything open for the whole event (author 22-11):** the daily quests, the Gauntlet tiers (originally released Mon / Tue /
   Thu / Sat) and the date-unlocked sets (Challenge, Corridor of Darkness, Wonderland maze) are all listed for the whole event
   period, as the 2018-2021 events (ruling of 6 Nov); the original release days are named in the Notices.
-- **WOFF EV-0121 (author 22-11):** first look for the missing enemies (JP twin maps, donor rows, footage) before deciding;
-  research running (`tmp\events\part10\woff\WOFF.md`).
+- **WOFF EV-0121 (author 22-11: look for the enemies first; research `tmp\events\part10\woff\WOFF.md`).** No original map
+  exists (WW ids 700310-330 and the JP twin JP-EVQ-23 both absent from every dump), but the khuxwiki lists are complete (the
+  «33» total is a template error) and a public WW playthrough of 2017-01-15 (`dnmFp2z1QaQ`, second one `q9CkfIV-_AU`) shows the
+  three quests fight by fight, matching khuxwiki. The quests are served on **generated maps from khuxwiki + the video**
+  (declared): Beginner 8 fixed + 3 «chance» eggs, Intermediate 12 + 4, Advanced 6 + 4 after its fight-by-fight count. Open for
+  the plan: what the «chance» Eggcognito / Shenaneggan entries are (teams with a spawn rate, or the period's random egg spawn);
+  the Gummi Hammer -> Morning Star rename for the enemy ids; the keyblade objectives (khuxwiki and video: Treasure Trove / Lady
+  Luck / Three Wishes; re-check the donor keyblade ids).
 - Damage Contests, Booster Challenges and the CELEB quest events are in Part 10.
 - 0 AP days from the notices added to the calendar.
 - Social-goal prizes paid (verified on X).
