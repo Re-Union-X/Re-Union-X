@@ -55,6 +55,14 @@ check(t.monthlySlot('2018-04-10', 7, M) === 0, 'April 2018 story month: slot 0')
 check(t.monthlySlot('2021-02-27', 7, M) === 34, 'February 2021: slot 34');
 check(t.monthlySlot('2017-12-01', 7, M) === 7, 'before the campaigns: the real-month rotation');
 check(t.monthlySlot(null, 40, M) === 40 % 35, 'no story day: the rotation');
+// final review I1: the slot follows the month of the Story WEEK (its first day), not the story day: it never changes inside a week
+{
+  const week = t.storyCtx();
+  for (let d = 0; d < 7; d++) {
+    at(new Date(Date.UTC(2026, 10, 23, 18) + d * 86400000).toISOString());
+    check(t.limitedStoryMonth() === (week.shopFrom ? String(t.storyCtx().shopFrom).slice(0, 7) : null), `day ${d}: story month ${t.limitedStoryMonth()} vs Shop week ${t.storyCtx().shopFrom}`);
+  }
+}
 t.forceLimitedStoryDay('2019-01-15');
 for (const m of [0, 5]) {
   at(new Date(Date.UTC(2026, m, 10, 12)).toISOString());

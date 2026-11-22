@@ -3366,19 +3366,24 @@ function monthlySlot(storyDayIso, realMonthIndex, months) {
   return i >= 0 ? i : realMonthIndex % months.length;
 }
 let limitedStoryDayForced; // tests only: undefined = the player's story day
-let limitedStoryMemo = { minute: null, day: null };
-function limitedStoryDay(realMs) {
-  if (limitedStoryDayForced !== undefined) return limitedStoryDayForced;
+// the Story month = the month of the first day of the Shop week (final review I1: stable for the whole week, as the notice says)
+let limitedStoryMemo = { minute: null, month: null };
+function limitedStoryMonth(realMs = realNow()) {
+  if (limitedStoryDayForced !== undefined) return limitedStoryDayForced && String(limitedStoryDayForced).slice(0, 7);
   const minute = Math.floor(realMs / 60000);
-  if (limitedStoryMemo.minute !== minute) limitedStoryMemo = { minute, day: loginSpecialStoryDay() };
-  return limitedStoryMemo.day;
+  if (limitedStoryMemo.minute !== minute) {
+    let month = null;
+    try { const c = storyCtx(); month = c && c.shopFrom ? String(c.shopFrom).slice(0, 7) : null; } catch { month = null; }
+    limitedStoryMemo = { minute, month };
+  }
+  return limitedStoryMemo.month;
 }
 function limitedActive(id, realMs = realNow()) {
   const g = LIMITED_GROUP.get(id);
   if (!g) return false;
   const n = LIMITED_ROTATION[g.kind].length;
   const slot = g.kind === 'monthly' && LIMITED_ROTATION.monthlyMonths
-    ? monthlySlot(limitedStoryDay(realMs), clock.monthIndex(realMs), LIMITED_ROTATION.monthlyMonths)
+    ? monthlySlot(limitedStoryMonth(realMs), clock.monthIndex(realMs), LIMITED_ROTATION.monthlyMonths)
     : limitedPeriod(g.kind, realMs) % n;
   return slot === g.index && limitedUnlocked(g);
 }
@@ -6246,7 +6251,7 @@ module.exports._test = {
   applySteal, stealMultiplier, respondStageStart, respondStageClear, STAGE_POI, rewardRowById, ENEMY_DROP_TYPE,
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet, limitedGroupQuest, forceStoryQuest: (q) => { storyQuestForced = q; },
-  monthlySlot, forceLimitedStoryDay: (d) => { limitedStoryDayForced = d; },
+  monthlySlot, limitedStoryMonth, forceLimitedStoryDay: (d) => { limitedStoryDayForced = d; },
   // server/test-mission-settle.js
   settleClock, MISSION_COUNTER, MISSION_DERIVED, missionProgress, petSubslotNow, guiltBurst,
   // server/test-master-clock.js
