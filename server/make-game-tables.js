@@ -497,9 +497,9 @@ if (realPlayers) {
 // CHEST_PRIZES (KHUX_CHEST_TYPE/KHUX_CHEST_CP cambiano il premio predefinito).
 const rewardRow = (rewardId, prizes) => Object.assign(blank('reward'), {
   rewardId, validReward: 1,
-  display: prizes.map(() => 1), type: prizes.map((p) => p.type), id: prizes.map((p) => p.id || 0),
+  display: prizes.map((p) => p.display || 1), type: prizes.map((p) => p.type), id: prizes.map((p) => p.id || 0),
   assignSkillType: prizes.map(() => 0), assignSkillId: prizes.map(() => 0), assignSkillLv: prizes.map(() => 0),
-  num: prizes.map((p) => p.num), odds: prizes.map(() => 10000),
+  num: prizes.map((p) => p.num), odds: prizes.map((p) => p.odds || 10000),
 });
 const CHEST_DEFAULT = { type: Number(process.env.KHUX_CHEST_TYPE || 8), num: Number(process.env.KHUX_CHEST_CP || 10000) };
 // Righe dei forzieri riconosciute confrontando le mappe con i tesori di khuxwiki
@@ -544,18 +544,38 @@ const chestRewards = new Set(Object.values(poi).flatMap((s) => s.chests.map((c) 
 const enemyRewards = new Set([1, ...Object.values(poi).flatMap((s) => s.enemies.map((e) => e.reward))
   .filter((r) => !specialRow(r))]);
 const realRewards = new Map((realTable('reward') || []).map((r) => [r.rewardId, r]));
+// The 1.1.3 rows above are the 2016 drops (Mythril Stone/Gem/Crystal, then still in use). The live master of ~mid-2021 (donated by
+// the ReLux Team, verified 22-11: 1055 rows identical to 1.1.3, the Mythril prizes replaced by Moogle 3/Moogle 5/Louie 6, community
+// sheet «Medal Farming Locations» agrees) holds the end-of-service drops: its story enemy and chest rows win (private extract,
+// KHUX_REWARD_2021; without it the 2016 rows stay). Credited to the ReLux Team.
+const REWARD_2021 = process.env.KHUX_REWARD_2021 || 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\reward_story_2021.json';
+try {
+  for (const r of JSON.parse(fs.readFileSync(REWARD_2021, 'utf8')).rows) realRewards.set(r.rewardId, r);
+} catch { console.warn(`reward: ${REWARD_2021} not readable, story drops from the 1.1.3 master (2016)`); }
 const rewards = [];
 for (const id of [...new Set([...chestRewards, ...enemyRewards])].sort((a, b) => a - b)) {
   // posizione 0 il premio del nemico, posizione 1 quello del forziere (se la riga e'
   // di entrambi, come la 1): server.js manda a ciascuno il tipo nella sua posizione
   const prizes = [];
+  // enemies: the ORIGINAL drop row when the master has one (user 22-11: 414 story rows drop medals and Mythril materials with
+  // their odds and display, e.g. 10110 = four 1-2★ medals at 1.5-3.2%); the generic material only where no row survived
+  const realEnemy = enemyRewards.has(id) && !chestRewards.has(id) && id !== 1 ? realRewards.get(id) : null;
+  const realDrops = realEnemy && realEnemy.validReward > 0
+    ? realEnemy.type.slice(0, realEnemy.validReward).map((t, i) => ({ type: t, id: realEnemy.id[i], num: realEnemy.num[i], odds: realEnemy.odds[i], display: realEnemy.display[i] }))
+    : null;
+  if (realDrops && realDrops.length && realDrops.every((p) => [3, 5].includes(p.type))) { rewards.push(rewardRow(id, realDrops)); continue; }
   if (enemyRewards.has(id)) prizes.push(ENEMY_PRIZE);
   // forzieri: la riga vera se c'e' ed e' valida (es. 80 = CP 15.000, 81 = CP 30.000,
-  // 90 = HP 1.400; la 1 non e' valida: barile vuoto), con premi di tipo 4/8/9 soltanto
+  // 90 = HP 1.400; la 1 non e' valida: barile vuoto). I-283 (tester 16-11): the original prize boxes of the story hold
+  // medals (173 rows, e.g. 120 = 1★ 90011 always, 90021 at 64.75%, Mythril Stone 15%): the whole original row is kept, with
+  // its odds and display, when it has a medal (3) or a Munny/CP/HP prize; the server rolls the odds at /stage/start and pays
+  // the medals of the opened chests (a material, type 5, stays empty in a chest: server.js chestDropTypes)
   const real = realRewards.get(id);
-  const realChest = real && real.validReward > 0 && !enemyRewards.has(id)
-    ? real.type.slice(0, real.validReward).map((t, i) => ({ type: t, id: real.id[i], num: real.num[i] }))
-      .filter((p) => [4, 8, 9].includes(p.type))
+  const realAll = real && real.validReward > 0 && !enemyRewards.has(id)
+    ? real.type.slice(0, real.validReward).map((t, i) => ({ type: t, id: real.id[i], num: real.num[i], odds: real.odds[i], display: real.display[i] }))
+    : null;
+  const realChest = realAll && realAll.some((p) => [3, 4, 8, 9].includes(p.type))
+    ? (realAll.some((p) => p.type === 3) ? realAll : realAll.filter((p) => [4, 8, 9].includes(p.type)))
     : null;
   if (chestRewards.has(id) && realChest && realChest.length) prizes.push(...realChest);
   else if (chestRewards.has(id) && CHEST_PRIZES[id] !== null) prizes.push(CHEST_PRIZES[id] || CHEST_DEFAULT);

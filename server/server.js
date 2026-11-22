@@ -1553,10 +1553,19 @@ function poiStageId(stageId) {
 }
 const poiOf = (stageId) => STAGE_POI[poiStageId(stageId)];
 
-function stageTreasures(stageId) {
+// positions rolled with the row's odds like the enemy drops (I-283: the original prize boxes hold medals with odds)
+function stageTreasures(stageId, rng = Math.random) {
   return (poiOf(stageId)?.chests || [])
-    .map((c) => ({ uniqueTreasureId: c.uid, dropItemTypeIds: chestDropTypes(c.reward) }))
+    .map((c) => ({ uniqueTreasureId: c.uid, dropItemTypeIds: rollDropTypes(c.reward, chestDropTypes(c.reward), rng) }))
     .filter((t) => t.dropItemTypeIds.some(Boolean));
+}
+
+// /stage/start: the chest contents rolled for this play, kept for /stage/clear (player.chestDrops), which pays their medals
+function startTreasures(req, rng = Math.random) {
+  const stageId = Number(req?.stageId ?? START_STAGE_ID);
+  const list = stageTreasures(stageId, rng);
+  player.chestDrops = { stageId, types: Object.fromEntries(list.map((x) => [x.uniqueTreasureId, x.dropItemTypeIds])) };
+  return list;
 }
 
 // Drop dei nemici: userEnemyDropItems[] (uniqueEnemyId, dropItemTypeIds
@@ -2367,7 +2376,7 @@ function respondStageStart(res, req) {
     },
     userRandomEnemies: [],
     userEnemyDropItems: startEnemyDrops(req),
-    userTreasures: stageTreasures(req?.stageId ?? START_STAGE_ID),
+    userTreasures: startTreasures(req),
     campaigns: raid().campaignIds(), // raid AP 0 campaign in the bonus hours (routes-raid.js)
     luxMagnifications: { campaign: 0, party: 0 },
     // l'amico scelto (supportUserId 1 = il giocatore stesso, /stage/support/list) con la medaglia condivisa:
@@ -2851,8 +2860,17 @@ function respondStageClear(res, req) {
     const types = rolled ? rolled[uid] || [] : row ? enemyDropTypes(row.rewardId) : [];
     if (row) types.forEach((t, i) => { if (t) grantItem(t, row.id[i], row.num[i] * k, { coinSet }); });
   }
+  // prize boxes (I-283): the medals of the chests the client opened (getTreasures uids), as rolled at /stage/start; Munny, CP and
+  // HP of a chest are the client's (getPoint.money, the gauge, the HP bar), a material stays empty in a chest
+  const chestRows = new Map((poiOf(playedId)?.chests || []).map((c) => [c.uid, c.reward]));
+  const chestRolled = player.chestDrops?.stageId === playedId ? player.chestDrops.types : null;
+  for (const uid of training || !chestRolled ? [] : req?.getTreasures || []) {
+    const row = rewardRowById(chestRows.get(uid));
+    if (row) (chestRolled[uid] || []).forEach((ty, i) => { if (ty === 3) grantItem(3, row.id[i], row.num[i]); });
+  }
   player.steal = null;
   player.enemyDrops = null;
+  player.chestDrops = null;
   // titoli che questa partita assegna: solo questi vanno in userTitles, il client mostra un popup per ognuno (I-220)
   const titlesBefore = new Set(player.titles || []);
   // premio del primo completamento («Quest Complete!»: es. Combat 101, 300 jewel)
@@ -6155,7 +6173,7 @@ module.exports._test = {
   // server/test-story-oltre.js (missioni 526-979)
   respondStageList, lastStoryStageId, stageNumber, stageRowOf, userDetailData, ensureUnion,
   // server/test-proud.js (Proud Mode, I-200)
-  respondProudList, proudUnlocked, lastProudNumber, poiStageId, stageTreasures, stageEnemyDrops, rollDropTypes, startEnemyDrops, enemyDropTypes,
+  respondProudList, proudUnlocked, lastProudNumber, poiStageId, stageTreasures, startTreasures, stageEnemyDrops, rollDropTypes, startEnemyDrops, enemyDropTypes,
   // server/test-achievements.js (I-037)
   respondStageAchievements, raidEventsNow: (ms) => raid().events(ms),
   // server/test-special-server.js (scheda Special)
