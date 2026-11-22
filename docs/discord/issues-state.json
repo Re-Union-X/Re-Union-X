@@ -235,8 +235,8 @@
   "I-162": {
    "thread": "1569614782858919988",
    "msg": "1569614782858919988",
-   "group": "OPEN",
-   "hash": "7eff54d6179fd182",
+   "group": "CLOSED",
+   "hash": "4b29ed25a7fc9d3e",
    "name": "I-162 · Original 6★ without evolution to the 7★"
   },
   "I-164": {
@@ -277,8 +277,8 @@
   "I-191": {
    "thread": "1569614799682150441",
    "msg": "1569614799682150441",
-   "group": "OPEN",
-   "hash": "a55334b511807fe3",
+   "group": "CLOSED",
+   "hash": "528dd7427b8661de",
    "name": "I-191 · Active banners on the home screen"
   },
   "I-192": {
@@ -459,8 +459,8 @@
   "I-264": {
    "thread": "1570465125654331394",
    "msg": "1570465125654331394",
-   "group": "OPEN",
-   "hash": "52b11ec5fc744abd",
+   "group": "CLOSED",
+   "hash": "45cba97533b95aed",
    "name": "I-264 · Titles: with both titles set to «None» the home still shows «Budding Newbie»"
   },
   "I-265": {
@@ -481,7 +481,7 @@
    "thread": "1570491112450166846",
    "msg": "1570491112450166846",
    "group": "OPEN",
-   "hash": "3d9ccfb5dfcbf630",
+   "hash": "de796f9bc24307dc",
    "name": "I-267 · Medal list: medals not yet found show as Sora A instead of the empty «?» medal"
   },
   "I-268": {
@@ -502,7 +502,7 @@
    "thread": "1570491682242166948",
    "msg": "1570491682242166948",
    "group": "OPEN",
-   "hash": "00d493815759f9d6",
+   "hash": "796ab13ac96e9f79",
    "name": "I-270 · Album: a medal's detail shows its abilities under the picture instead of its description"
   },
   "I-271": {
