@@ -119,6 +119,21 @@ const listed = () => new Set(quiet(() => t.eventRoutes().events(t.sessionRealMs(
   check(JSON.stringify(sl1) !== withKeep && !sl1.some((x) => x.listId === PH.listId), 'merged list served with one HSC listed');
 }
 
+// 4. the client downloads the master only when the global revision changes (respondMaster): a login whose listed HSC set differs
+// from the previous login raises the revision (player.hscListRev), the same set keeps it (bench 22-11: a keep left the old master)
+{
+  quiet(() => t.startSession()); const r0 = t.player.sessionRevision;
+  quiet(() => t.startSession()); check(t.player.sessionRevision === r0, `same HSC set: revision ${r0} -> ${t.player.sessionRevision}`);
+  const ids = new Set(quiet(() => t.eventRoutes().events(t.sessionRealMs())).map((c) => c.eventStageId));
+  const other = hscMaster.find((r) => !ids.has(r.eventStageId) && quiet(() => t.eventRoutes().keep(r.eventStageId))?.code === 200);
+  check(other, 'no HSC to keep for the revision check');
+  quiet(() => t.startSession()); const r1 = t.player.sessionRevision;
+  check(r1 > r0, `keep of an HSC: revision ${r0} -> ${r1}`);
+  quiet(() => t.startSession()); check(t.player.sessionRevision === r1, 'revision moved again without a change');
+  quiet(() => t.eventRoutes().unkeep());
+  quiet(() => t.startSession()); check(t.player.sessionRevision > r1, `unkeep: revision ${r1} -> ${t.player.sessionRevision} (never lower)`);
+}
+
 try { fs.unlinkSync(SAVE); } catch { /* gone */ }
 if (errors.length) { console.error(`test-hsc-served-evstage: ${errors.length} errors\n  ${errors.slice(0, 15).join('\n  ')}`); process.exit(1); }
 console.log('test-hsc-served-evstage: OK');

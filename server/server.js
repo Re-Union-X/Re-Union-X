@@ -612,13 +612,21 @@ const seasonTerm = (realMs) => 1000 * gachaSeasons.activeSeasons(realMs)
 
 // revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
 const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + storyTranche() + seasonTerm(realNow()) + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0)
-  + (BENCH_SKILL_PROB !== null ? 80000 + BENCH_SKILL_PROB + 1 : 0);
+  + (BENCH_SKILL_PROB !== null ? 80000 + BENCH_SKILL_PROB + 1 : 0) + (player.hscListRev || 0);
 // Revisione della sessione: fissata all'inizio di ogni login (POST /system/login, la prima risposta
 // con ret() della sequenza) e usata da ret(), /system/resourcesize e dal master servito per tutta la
 // sessione. Il master cambia cosi' solo al login successivo, e il contenuto servito (scadenze dei
 // gruppi) e' quello dell'istante della revisione, anche se il download scavalca una scadenza.
 // Senza login (salvataggi vecchi, test): la revisione del momento.
 function startSession() {
+  // the served evStage / evMedalList follow the listed HSC (closed unlisted rows, the I-287 phantom), but the client downloads the
+  // master only when the revision changes: a login whose listed HSC set differs from the previous one raises it (never lowers it)
+  if (player.created) {
+    const ids = hscListedIds(realNow());
+    const sig = ids ? masterRows('evStage').filter((r) => r.eventCategory === HSC_EVENT_CATEGORY && ids.has(r.eventStageId))
+      .map((r) => r.eventStageId).sort((a, b) => a - b).join(',') : null;
+    if (sig !== null && sig !== player.hscListSig) { player.hscListSig = sig; player.hscListRev = (player.hscListRev || 0) + 1; }
+  }
   player.sessionRevision = masterRevisionNow();
   player.sessionRealMs = realNow();
 }
@@ -6142,7 +6150,7 @@ module.exports._test = {
   // server/test-mission-settle.js
   settleClock, MISSION_COUNTER, MISSION_DERIVED, missionProgress, petSubslotNow, guiltBurst,
   // server/test-master-clock.js
-  masterRevisionNow, servedMasterRows, HSC_PHANTOM, sessionRevision, respondLogin, respondMasterFile, respondResourceFile, masterBody, respondMaster, respondResourceSize, masterBytes, respondStatus,
+  masterRevisionNow, servedMasterRows, HSC_PHANTOM, startSession, sessionRevision, respondLogin, respondMasterFile, respondResourceFile, masterBody, respondMaster, respondResourceSize, masterBytes, respondStatus,
   // server/test-story-oltre.js (missioni 526-979)
   respondStageList, lastStoryStageId, stageNumber, stageRowOf, userDetailData, ensureUnion,
   // server/test-proud.js (Proud Mode, I-200)
