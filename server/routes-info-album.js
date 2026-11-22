@@ -265,8 +265,10 @@ function eventHoleLines(f) {
   const out = ['## Events of 2016-2018'];
   if (!h || !h.served) out.push('The events of **November 2016 to March 2018** are listed in the Event Catalog; their quests are not served yet.');
   else {
-    out.push(`The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **${h.events} events** are served, with **${h.served} of their ${h.quests} quests**, on the dates of the original notices. Quests that came from the Japanese version are played on their **original Japanese maps**.`);
-    if (h.later) out.push(`For the other ${h.later} quests, made for the worldwide version only, no map survives in any source we hold: they wait in the **Event Catalog** until their maps are rebuilt from the community wiki and videos of the time (**not original**).`);
+    out.push(`The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **${h.events} events** are served, with **${h.served} of the ${h.quests} quests of that period**, on the dates of the original notices. Quests that came from the Japanese version are played on the **original Japanese maps** (a few on the map of their Japanese twin quest).`);
+    if (h.later) out.push(`For ${h.later} of the other quests, made for the worldwide version only, no map survives in any source we hold: they wait in the **Event Catalog** until their maps are rebuilt from the community wiki and videos of the time (**not original**).`);
+    const rest = h.quests - h.served - (h.later || 0);
+    if (rest > 0) out.push(`The other ${rest} quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.`);
   }
   out.push('The daily quests, the Gauntlet tiers and the quests that opened day by day are all open for the **whole event** (**not original**: the original released them day by day).');
   out.push('The **daily and weekly missions** are shown before November 9, 2017, the day they started in the original game (**not original**).');

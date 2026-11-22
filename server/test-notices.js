@@ -521,8 +521,25 @@ for (const web of [false, true]) {
 // Events Part 10a: the 2016-2018 events section (data-hole records), counts from events.json
 {
   const l = n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, later: 8 } }).join(' ');
-  check(l.includes('## Events of 2016-2018') && l.includes('**3 events**') && l.includes('10 of their 20 quests'), `hole section: ${l.slice(0, 200)}`);
-  check(/8 quests/.test(l) && /not original/.test(l) && /November 9, 2017/.test(l), 'hole section: maps later, open all event, missions before their start');
+  // review 22-11: «their» was the quests of every entry of the period, not of the served events; later + the rest = the unserved
+  check(l.includes('## Events of 2016-2018') && l.includes('**3 events**') && l.includes('10 of the 20 quests of that period'), `hole section: ${l.slice(0, 200)}`);
+  check(!/of their 20/.test(l), 'hole section: no «of their» total');
+  check(/8 of the other quests/.test(l) && /other 2 quests/.test(l), 'hole section: later (8) and the rest (20 - 10 - 8 = 2) both named');
+  check(!/other \d+ quests/.test(n.eventHoleLines({ hole: { events: 3, served: 12, quests: 20, later: 8 } }).join(' ')), 'hole section: no rest line when nothing else is held');
+  check(/not original/.test(l) && /November 9, 2017/.test(l), 'hole section: open all event, missions before their start');
+  {
+    const fs = require('fs'), path = require('path');
+    const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'hole-'));
+    const f = path.join(dir, 'events.json');
+    fs.writeFileSync(f, JSON.stringify({ entries: [
+      { type: 'EQ', start: '2017-01-02', available: true, quests: [{ served: true }, { served: false, why: 'map to generate (Events Part 10b)' }] },
+      { type: 'EQ', start: '2017-02-02', available: false, quests: [{ served: false, why: 'map not usable' }] },
+      { type: 'EQ', start: '2019-02-02', available: true, quests: [{ served: true }] }] }));
+    try {
+      const h = n.eventHoleFacts(f).hole;
+      check(h.events === 1 && h.served === 1 && h.quests === 3 && h.later === 1, `hole facts: ${JSON.stringify(h)}`);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
   check(n.eventHoleLines(null).join(' ').includes('## Events of 2016-2018'), 'hole section: without data');
   const ev = n.NOTICES.find((x) => x.title === 'Events');
   check(ev && ev.body.join(' ').includes('## Events of 2016-2018'), 'hole section in the Events notice');
