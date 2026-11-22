@@ -529,8 +529,8 @@
   "I-278": {
    "thread": "1573952523478241311",
    "msg": "1573952523478241311",
-   "group": "OPEN",
-   "hash": "b8f734665d5ed757",
+   "group": "CLOSED",
+   "hash": "38ddd5c107efb91f",
    "name": "I-278 · New save already owns the Moogle o' Glory keyblade"
   },
   "I-279": {
@@ -571,22 +571,22 @@
   "I-284": {
    "thread": "1573952542331637871",
    "msg": "1573952542331637871",
-   "group": "OPEN",
-   "hash": "b99fcf113e20b7e6",
+   "group": "CLOSED",
+   "hash": "e3df01ae1c2192bd",
    "name": "I-284 · Lady Luck +15 -> +16 does nothing"
   },
   "I-285": {
    "thread": "1573952544986894367",
    "msg": "1573952544986894367",
-   "group": "OPEN",
-   "hash": "d64d45125e8d81d9",
+   "group": "CLOSED",
+   "hash": "5fb116fef40c7a0f",
    "name": "I-285 · Keyblade upgrade screen shows more materials than owned"
   },
   "I-286": {
    "thread": "1573952550900596878",
    "msg": "1573952550900596878",
-   "group": "OPEN",
-   "hash": "5f34650149f36216",
+   "group": "CLOSED",
+   "hash": "df367f7a07b72959",
    "name": "I-286 · Duplicate keyblades in the test save"
   },
   "I-287": {
