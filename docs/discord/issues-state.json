@@ -595,6 +595,13 @@
    "group": "CLOSED",
    "hash": "a14c784050b65b95",
    "name": "I-287 · Medal list SCORE filter ignores some active HSCs"
+  },
+  "I-290": {
+   "thread": "1574029638198370357",
+   "msg": "1574029638198370357",
+   "group": "ON HOLD",
+   "hash": "c950296d70ba86fe",
+   "name": "I-290 · Crash on «Powerful Medals Pt. 1» after the tutorial draw"
   }
  }
 }
