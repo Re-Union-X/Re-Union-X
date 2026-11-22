@@ -775,6 +775,19 @@ const tests = {
     assert.deepStrictEqual(e.rows.map((r) => [r.start, r.end]), [['2019-04-01', '2019-04-07'], ['2019-04-01', '2019-04-01']]);
     assert.deepStrictEqual([e.start, e.end], ['2019-04-01', '2019-04-07']);
   },
+  // Events Part 10b Task 4: a data-hole record (no donor evStage row: its event type is lost) in a board set with a served board and a
+  // served quest is a board event (eventType 1), as the coin events of 2018+ whose donor rows say 1; a data-hole record without a set stays 3
+  board_entry_data_hole() {
+    const m = { ...master(), ...BOARD_MASTER() };
+    const sets = boardSets();
+    sets.sets = [{ setKey: 'hole-2017-01', censusIds: ['E-H'], boards: [JSON.parse(JSON.stringify(sets.sets[0].boards[0]))] }];
+    const hole = (cid, sid) => record(cid, [quest(sid, 1, [501])], { evStage: [], dataHole: 'no donor evStage row (census «data hole»)' });
+    const out = me.buildEvents([hole('E-H', 700050), hole('E-J', 700060)], CONFIG, m, undefined, undefined, null, sets);
+    const h = entry(out, 'E-H'), j = entry(out, 'E-J');
+    assert.deepStrictEqual([h.boardSet, h.eventType], ['hole-2017-01', 1], JSON.stringify({ boardSet: h.boardSet, eventType: h.eventType, labels: h.labels }));
+    assert.deepStrictEqual(Object.keys(out.index.boardSets), ['hole-2017-01']);
+    assert.deepStrictEqual([j.boardSet, j.eventType], [null, 3]);
+  },
   // Part 3 Task 4: an entry whose census id belongs to a board set with a served board, and that has served quests, is served as
   // eventType 1 (Event Boards button); any other entry as 3. boardSets carries only the sets handed out.
   board_entry_type1() {

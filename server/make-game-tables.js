@@ -571,6 +571,14 @@ let eventOwn = {};
 try { eventOwn = JSON.parse(fs.readFileSync(path.join(__dirname, 'game_data', 'events.json'), 'utf8')).own || {}; } catch { /* no events yet */ }
 for (const k of eventOwn.poi || []) delete poi[k];
 const eventRewardIds = new Set(eventOwn.reward || []);
+// Events Part 10b: the drop rows of the generated event maps (game_data/event_gen_maps.json member reward / targetReward, genDrops)
+// are make-events.js's too, also before its first run that serves them (the POI of a just-built map names them already)
+try {
+  for (const e of JSON.parse(fs.readFileSync(path.join(__dirname, 'game_data', 'event_gen_maps.json'), 'utf8'))) {
+    for (const m of [...(e.enemies || []).flat(), ...(e.targetWith || [])]) if (m.reward > 1) eventRewardIds.add(m.reward);
+    if (e.targetReward > 1) eventRewardIds.add(e.targetReward);
+  }
+} catch { /* no generated event maps */ }
 // rows 970000-979999 are the drops of the Special quests (enemies and the CP chests of the training map):
 // make-special.js writes them (at the end), not here; the event rows (eventRewardIds) are make-events.js's
 const specialRow = (r) => (r >= 970000 && r <= 979999) || eventRewardIds.has(r);
