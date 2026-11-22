@@ -66,6 +66,11 @@ Screens accept: story 2, 4, 5, 9-19; event 2, 4, 6; co-op 4, 20; Coliseum 2, 4, 
   - Each day lists its AP rows first, lowest power first.
 - `server/campaigns.js`: the ids of the story day (`weekDateAt` of the Shop week on today's Pacific weekday), the AP charged, and
   the server-side factors.
+- Served today (revision 352): «0 AP!» on event quests, «Lux x 3» on every story quest, Medal Fusion EXP x 2 / Half Munny
+  Cost and the Sp. Atk Bonus campaign, on 600 original days (2016-08-11 to 2019-09-16). The Half AP, 5 AP, Lux x 2 and
+  drop-boost kinds of the calendar name Special quests or events we do not serve, so no row is written for them. The Events
+  notice names only the kinds actually served (`bonusTimeFacts`).
+- Drops are rolled at `/stage/start`, so a drop boost follows the day of the start; Lux follows the day of the clear.
 - Bench switch: `relogin.ps1 -Campaigns 95990,95991` (env `KHUX_CAMPAIGN_FORCE`) lists those ids and applies them, whatever the
   day. Bench rows must be added to `master_data/evCampaign.json` by hand and removed afterwards: the generators keep every row
   outside their own ranges.

@@ -56,6 +56,8 @@ function apWith(useAp, apPower) {
 function campaignRoutes(deps) {
   const applies = deps.serverApplies || SERVER_APPLIES;
   let rowsSrc = null, rowsById = new Map(), warned = false;
+  // day ids memo per real minute: rollDropTypes asks for every roll of a quest, and storyWeek() (storyCtx) is not cheap
+  let memo = { minute: null, ids: [] };
   const byId = () => {
     const rows = deps.masterRows('evCampaign');
     if (rows !== rowsSrc && (rows.length !== (rowsSrc || []).length || rows[0] !== (rowsSrc || [])[0])) rowsById = new Map(rows.map((r) => [r.campaignId, r]));
@@ -64,6 +66,12 @@ function campaignRoutes(deps) {
   };
   // ids of the story day: the original day of the Shop week on today's Pacific weekday
   function dayIds(ms = deps.realNow()) {
+    const minute = Math.floor(ms / 60000);
+    if (memo.minute === minute) return memo.ids;
+    memo = { minute, ids: dayIdsAt(ms) };
+    return memo.ids;
+  }
+  function dayIdsAt(ms) {
     try {
       return [...activeIds(weekDateAt(deps.storyWeek() || {}, ms), deps.readDays()), ...((deps.benchIds && deps.benchIds()) || [])];
     } catch (e) {

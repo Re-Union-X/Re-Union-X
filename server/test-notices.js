@@ -492,6 +492,15 @@ for (const web of [false, true]) {
   const live = n.eventNoticeFacts();
   if (live && live.hsc && live.hsc.events) check(t.includes('## High Score Challenges') && t.includes(`**${live.hsc.events} High Score Challenges**`), 'Events: HSC section live');
 }
+// Events Part 9a final review: the Bonus Times lines name only the kinds actually served
+{
+  const l = n.bonusTimeLines({ texts: ['0 AP!', '0 AP', 'Lux x 3', 'Medal Fusion: EXP x 2'], days: 600, first: '2016-08-11', last: '2019-09-16' }).join(' ');
+  check(l.includes('**0 AP**') && l.includes('Lux x 3') && l.includes('Medal Fusion: EXP x 2'), 'Bonus Times: served kinds named');
+  check(!/Half AP|5 AP|Lux x 2|Rare items/.test(l), 'Bonus Times: unserved kinds not named');
+  check(l.includes('600'), 'Bonus Times: day count');
+  check(l.split('**0 AP**').length === 2, 'Bonus Times: one name per kind');
+  check(n.bonusTimeLines(null).join(' ').includes('## Bonus Times'), 'Bonus Times: without data, generic lines');
+}
 // Events Part 9a: the Bonus Times section (whole original day, donated master, raids keep their own, notices win)
 {
   const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';

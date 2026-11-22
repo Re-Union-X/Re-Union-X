@@ -22,7 +22,7 @@ function world(o = {}) {
   w.routes = campaignRoutes({
     masterRows: (t) => (t === 'evCampaign' ? w.evCampaign : []),
     readDays: () => { if (w.days instanceof Error) throw w.days; return w.days; },
-    storyWeek: () => w.week,
+    storyWeek: () => { w.weekCalls = (w.weekCalls || 0) + 1; return w.week; },
     realNow: () => MON,
     raidIds: () => w.raidIds,
     raidStageAp: (id) => (id === RAID_STAGE ? 90 : undefined),
@@ -58,4 +58,10 @@ assert.strictEqual(world({ days: {}, bench: [96000] }).routes.stageAp(EVENT, MON
 assert.deepStrictEqual(w.routes.effects(EVENT, MON), { apPower: 0, lux: 2, drop: 2, fusionExp: 2, fusionMunny: 0.5, spAtk: null }, 'server-side types apply once');
 assert.strictEqual(w.routes.effects(OTHER, MON).lux, 1, 'no Lux campaign on that stage');
 assert.deepStrictEqual(world({ serverApplies: new Set([7]) }).routes.effects(EVENT, MON), { apPower: 0, lux: 1, drop: 1, fusionExp: 1, fusionMunny: 1, spAtk: null }, 'types outside serverApplies stay neutral');
+// one story-week read per minute: rollDropTypes asks for every roll of a quest (final review, Minor 2)
+const m = world();
+for (let i = 0; i < 30; i++) m.routes.effects(EVENT, MON + i);
+assert.strictEqual(m.weekCalls, 1, 'the day ids of one minute are computed once');
+m.routes.effects(EVENT, MON + 60000);
+assert.strictEqual(m.weekCalls, 2, 'a new minute reads the story week again');
 console.log('test-campaign-routes: OK');

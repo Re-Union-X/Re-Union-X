@@ -205,11 +205,27 @@ function avatarBoardLines(f) {
 }
 // Events Part 9a: the Bonus Times notice (user decisions 22-11: whole original day; the donated calendar served in full, the
 // notices win; days without data get only the announced campaigns)
-const BONUS_TIME_LINES = ['## Bonus Times',
-  'The original **Bonus Times** are back on the days of your Story week: **0 AP**, **Half AP** and **5 AP** quests, **Lux x 2**, **Rare items drop rate up**, **Medal Fusion: EXP x 2** and **Half Munny Cost**, and the **Sp. Atk Bonus** campaigns (the Special Attack Bonus never rolls below the campaign minimum). The quest top shows the yellow balloon of each one, as in the original game.',
-  'Each Bonus Time is open for its **whole original day** (12:00 a.m. to 11:59 p.m. Pacific time, on the real weekday of that day in your Story week), where the original one often ran for an hour or two (**not original**).',
-  'The days come from the **original campaign calendar** (a donated copy of the game data, 2016 to 2021) and from the official notices; where a notice gives other dates, the notice wins. On days with no data, only the campaigns announced in the notices are served.',
-  'Bonus Times apply to the Story quests and to the events of the current week, not to kept events, kept raids or Special quests. Raids keep their own Bonus Time (see **Raid Bosses**). The «rare enemy» campaigns of Union Cross are not served.'];
+// facts {texts, days, first, last} of the served Bonus Time rows (make-campaigns.js 96000-97999, campaign_days.json); null without them
+function bonusTimeFacts(dir = path.join(__dirname, 'master_data')) {
+  try {
+    const rows = JSON.parse(fs.readFileSync(path.join(dir, 'evCampaign.json'), 'utf8')).filter((r) => r.campaignId >= 96000 && r.campaignId <= 97999);
+    const days = Object.keys(JSON.parse(fs.readFileSync(path.join(dir, 'campaign_days.json'), 'utf8'))).sort();
+    if (!rows.length || !days.length) return null;
+    return { texts: [...new Set(rows.map((r) => r.displayText))].sort(), days: days.length, first: days[0], last: days[days.length - 1] };
+  } catch { return null; }
+}
+// the Bonus Times section of the Events notice: only the kinds actually served (final review 22-11)
+function bonusTimeLines(f) {
+  const name = (t) => (t === 'Limited-time bonus boost!' ? 'Sp. Atk Bonus («Limited-time bonus boost!»)' : t.replace(/!$/, ''));
+  const kinds = f && f.texts.length ? [...new Set(f.texts.map(name))].map((t) => `**${t}**`).join(', ') : null;
+  return ['## Bonus Times',
+    kinds
+      ? `The original **Bonus Times** are back on the days of your Story week: ${kinds} (the Medal Fusion and Sp. Atk Bonus ones on the Level Up screen; during a Sp. Atk Bonus campaign the Special Attack Bonus never rolls below the campaign minimum). Today they fall on **${f.days} original days** (${f.first} to ${f.last}). The quest top and the Level Up screen show the yellow balloon of each one, as in the original game.`
+      : 'The original **Bonus Times** of the campaign calendar are not served on this server yet.',
+    'Each Bonus Time is open for its **whole original day** (12:00 a.m. to 11:59 p.m. Pacific time, on the real weekday of that day in your Story week), where the original one often ran for an hour or two (**not original**).',
+    'The days come from the **original campaign calendar** (a donated copy of the game data, 2016 to 2021) and from the official notices; where a notice gives other dates, the notice wins. On days with no data, only the campaigns announced in the notices are served. Bonus Times of quests that are not served (Special quests, events not built yet) are left out.',
+    'Bonus Times apply to the Story quests and to the events of the current week, not to kept events, kept raids or Special quests. Raids keep their own Bonus Time (see **Raid Bosses**). The «rare enemy» campaigns of Union Cross are not served.'];
+}
 // Events Part 4 Task 6: the census types of the challenge events, and the quiz board plan (sources of the boards)
 const CHALLENGE_TYPES = ['EQ', 'KEY', 'QUIZ'];
 function quizBoardSources(file = path.join(__dirname, '..', 'recon', 'tools', 'quiz_dramas.json')) {
@@ -603,7 +619,7 @@ const NOTICES = [
       ...eventChallengeLines(eventNoticeFacts()),
       ...eventHscLines(eventNoticeFacts()),
       // Events Part 9a (22-11): the Bonus Times of the story day (campaigns.js, docs/notes/campaigns.md)
-      ...BONUS_TIME_LINES,
+      ...bonusTimeLines(bonusTimeFacts()),
       '## Gem quests',
       'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
       'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
@@ -1012,4 +1028,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines };
+module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines };
