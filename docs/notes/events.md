@@ -1269,6 +1269,27 @@ Booster was not measured (automated taps did not trigger a special attack): the 
   Only a server restart is needed (no regen, no resources).
 - **Not benched:** a bought board in its own later week after an unkeep (needs a week change; covered by tests).
 
+## Part 10a summary (events of 2016-11..2018-03, 22 November 2026)
+
+Design `docs/superpowers/specs/2026-11-22-events-part10-design.md`, plan `docs/superpowers/plans/2026-11-22-events-part10a-records.md`, I-294.
+
+- **Data hole, smaller than assumed.** The donated WW master keeps the stage rows of almost every quest of the period (calendar-ordered id
+  blocks, one per khuxwiki run); only the evStage rows (dates: the notices) and the WW-only map files (50xxxx, 700xxx) are lost.
+- **Private input and builder.** `tmp\events\part10\hole_input.py` (census fixes, census id -> donor stage block, windows; checked by
+  `check_hole_input.py`) and `build_hole.py` (the data-hole path of the Part 5 Org XIII builder: pilot census/extract/build with `--twins`,
+  JP maps by own key or by content via `jpmatch.py`, level-shifted twins (user rule 10-11), I-251, WW enemy check with `WW_SAME` and
+  `mapEnemySwaps`, donor 2021 medal ids mapped to ours by name/rarity/attribute, boosted copies by bonus) -> `tmp\eventsecords\hole_2016_18.json`.
+  Double run identical. EV-0152 «Coliseum Challenge for Gems» pages pinned in the pilot `build.py` (P4_PAGE_PIN, «(March 2017)» pages).
+- **Server.** `make-events.js`: `map.source 'generateLater'` = held «map to generate (Events Part 10b)», never listed for generation;
+  a reward medal of the same id whose name differs only by «Ver.» is that medal (KH Sora A = KH Sora Ver. A). `event_config.json`:
+  `serve.censusIds` + 11 CELEB / SPEC / COLLAB quest events, `mapEnemySwaps` 715070 (Gummi Hammer -> Morning Star). `raid_config.json`
+  `boostedMedals`: Maleficent B 6★ +1,000 STR (copy 1300918, donor 123256). Enemies: 12 donor rows added to the private event enemy file.
+- **Served.** 153 of the 569 quests of the period (master revision 355, resources 143): the JP-map events (Maleficent, Tag Team,
+  Coliseum One-on-One, KH 3D, maze, FFRK, Time Attack, Boss Time Attack, Consecutive Battle, Flower Snuggly, 6M, Evade!).
+  Held: 401 «map to generate» (Part 10b), 11 WW enemy check (one enemy more / other), 4 level shifts refused by the import check
+  (EV-0310 Advanced 3/4, EV-0398 x3). EV-0178 (30 «Colossal Creatures» quests, no donor rows) is wiki-only (Part 10b).
+- **Notice.** «Events» section «Events of 2016-2018».
+
 ## Part 8 summary (High Score Challenges, 16 November 2026)
 
 - **Served** (master revision 340, resources 138): **67 High Score Challenges** of 2016-2021 (all 71 records built, 67 with a
