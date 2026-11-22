@@ -2674,11 +2674,12 @@ function stageRowOf(stageId) {
 const storyKeyOf = (stageId) => stageRowOf(stageId)?.stageId ?? Number(stageId);
 
 // Titolo del giocatore (tabella title: due parole + targa, il cui label sceglie
-// img/userTitle/title_%04d). Con 0 il Profilo va in crash. Di default i
-// titoli di categoria 1 («Default Title»): «Budding Newbie» sulla targa di Budding.
+// img/userTitle/title_%04d). Di default (nessuna scelta salvata) i titoli di categoria 1 («Default Title»):
+// «Budding Newbie» sulla targa di Budding. «No title» su A e B manda 0/0/0 (/user/title/update, banco 22-11): lo 0 scelto
+// resta (I-264, tester 12-11: con «None» su entrambi la home mostrava ancora «Budding Newbie»)
 function playerTitleIds() {
-  return { titleLeftId: player.titleLeftId || 1001, titleRightId: player.titleRightId || 1002,
-    titlePlateId: player.titlePlateId || 1001 };
+  return { titleLeftId: player.titleLeftId ?? 1001, titleRightId: player.titleRightId ?? 1002,
+    titlePlateId: player.titlePlateId ?? 1001 };
 }
 
 // userData.userDetail, in GET /user e POST /stage/clear.

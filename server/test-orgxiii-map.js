@@ -81,6 +81,19 @@ for (const [se, copy, robo, seven, plus6, plus7] of TABLE) {
   });
 }
 
+// I-162: the other SE 6★ evolve too (2021 master, EVOLVE_FIX_2021), with the Blue Fairy materials; only support 6★ stay without
+for (const [se, to] of [[43016, 300479], [41036, 300572], [42036, 300576], [141026, 300549]]) {
+  check(`evolve ${se}`, () => {
+    const r = byId.get(se);
+    assert.ok(r && r.validEvolve === 1 && r.evolveId === to, `evolveId ${r && r.evolveId}`);
+    assert.ok(byId.get(to)?.rare === 7 && r.validEvolveNeed > 0, 'target 7★ / materials');
+  });
+}
+check('6★ without evolve', () => {
+  const left = [...byId.values()].filter((m) => m.rare === 6 && m.medalId < 90000 && !m.validEvolve && m.isBattle !== 0);
+  assert.deepStrictEqual(left.map((m) => m.medalId), []);
+});
+
 if (fails.length) {
   console.error(`FAIL ${fails.length}:\n  ` + fails.join('\n  '));
   process.exit(1);
