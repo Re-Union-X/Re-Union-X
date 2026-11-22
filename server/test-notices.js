@@ -492,5 +492,13 @@ for (const web of [false, true]) {
   const live = n.eventNoticeFacts();
   if (live && live.hsc && live.hsc.events) check(t.includes('## High Score Challenges') && t.includes(`**${live.hsc.events} High Score Challenges**`), 'Events: HSC section live');
 }
+// Events Part 9a: the Bonus Times section (whole original day, donated master, raids keep their own, notices win)
+{
+  const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
+  check(t.includes('## Bonus Times'), 'Events: Bonus Times section');
+  check(/whole original day/.test(t.slice(t.indexOf('## Bonus Times'))), 'Bonus Times: whole original day');
+  check(/donated/.test(t.slice(t.indexOf('## Bonus Times'))), 'Bonus Times: source declared');
+  check(/Raid Bosses/.test(t.slice(t.indexOf('## Bonus Times'))), 'Bonus Times: raids keep their own');
+}
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');

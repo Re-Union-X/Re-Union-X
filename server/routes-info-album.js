@@ -203,6 +203,13 @@ function avatarBoardLines(f) {
     'One past entry at a time can be **kept** there (**not original**), apart from the kept event of the Event Catalog. Leave and re-enter **Avatar Boards**: each kept board appears with «Unlocked an Avatar Board!», at its original price and with no countdown.',
     'A kept board shows a **KEPT BOARD** tab. It is the same board as the original: its purchase, cells and rewards are shared, so nothing is paid or earned twice. If you stop keeping an entry, a board you bought keeps its KEPT BOARD tab until your next login, then shows as itself.'];
 }
+// Events Part 9a: the Bonus Times notice (user decisions 22-11: whole original day; the donated calendar served in full, the
+// notices win; days without data get only the announced campaigns)
+const BONUS_TIME_LINES = ['## Bonus Times',
+  'The original **Bonus Times** are back on the days of your Story week: **0 AP**, **Half AP** and **5 AP** quests, **Lux x 2**, **Rare items drop rate up**, **Medal Fusion: EXP x 2** and **Half Munny Cost**, and the **Sp. Atk Bonus** campaigns (the Special Attack Bonus never rolls below the campaign minimum). The quest top shows the yellow balloon of each one, as in the original game.',
+  'Each Bonus Time is open for its **whole original day** (12:00 a.m. to 11:59 p.m. Pacific time, on the real weekday of that day in your Story week), where the original one often ran for an hour or two (**not original**).',
+  'The days come from the **original campaign calendar** (a donated copy of the game data, 2016 to 2021) and from the official notices; where a notice gives other dates, the notice wins. On days with no data, only the campaigns announced in the notices are served.',
+  'Bonus Times apply to the Story quests and to the events of the current week, not to kept events, kept raids or Special quests. Raids keep their own Bonus Time (see **Raid Bosses**). The «rare enemy» campaigns of Union Cross are not served.'];
 // Events Part 4 Task 6: the census types of the challenge events, and the quiz board plan (sources of the boards)
 const CHALLENGE_TYPES = ['EQ', 'KEY', 'QUIZ'];
 function quizBoardSources(file = path.join(__dirname, '..', 'recon', 'tools', 'quiz_dramas.json')) {
@@ -595,6 +602,8 @@ const NOTICES = [
       ...eventNoticeLines(eventNoticeFacts()),
       ...eventChallengeLines(eventNoticeFacts()),
       ...eventHscLines(eventNoticeFacts()),
+      // Events Part 9a (22-11): the Bonus Times of the story day (campaigns.js, docs/notes/campaigns.md)
+      ...BONUS_TIME_LINES,
       '## Gem quests',
       'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
       'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
