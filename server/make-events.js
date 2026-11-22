@@ -1537,6 +1537,9 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
   // [unionIds whose quests are all served]; ready = every Union ready (routes-events.js pays a player of a ready Union).
   for (const b of mergeCompletion(opts.bonus, records, selected)) {
     const e = out.index.entries.find((x) => x.censusId === b.censusId);
+    // a record that exists but is not selected by `serve` (pilot / onlyCensusIds runs) has no entry: skip its bonus (I-253 (3));
+    // a census id that is no record at all is a typo and stops the run
+    if (!e && records.some((r) => r.censusId === b.censusId)) continue;
     if (!e) throw new Error(`events: community bonus ${b.censusId} is not a record`);
     const fixed = b.kind === 'completion';
     if (b.kind && !fixed) throw new Error(`events: community bonus ${b.censusId}: unknown kind ${b.kind}`);

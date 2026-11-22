@@ -925,6 +925,43 @@ if (stagesOut) fs.writeFileSync(stagePath, JSON.stringify(stagesOut));
 fs.writeFileSync(path.join(OUT, 'burst.json'), JSON.stringify(bursts));
 fs.writeFileSync(path.join(OUT, 'mypageBackground.json'), JSON.stringify(backgrounds));
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
+// I-033 / I-169 (22-11): Puppies, Sea-Salt Ice Cream and Kyroo [SAB LV 7-10] were served as battle medals (type 1, stats,
+// cost 12, a generated «Special Attack»); the 2021 live master (ReLux extract) has them as support medals: 120 type 6 (LV 1,
+// no stats, cost 0, burst 0, the real flavor text; «Puppy #a - b» is «Puppies #a - b») and the 24 Kyroo type 10, the
+// Subslot Medals of the Medal List filter. Its fields replace ours; ids, images and evolution materials stay ours
+{
+  const SUPPORT_2021 = process.env.KHUX_SUPPORT_MEDALS_2021
+    || 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\support_medals_2021.json';
+  let rows = {};
+  try { ({ rows } = JSON.parse(fs.readFileSync(SUPPORT_2021, 'utf8'))); } catch { console.warn(`medal: ${SUPPORT_2021} not readable, support medals stay generated`); }
+  let n = 0;
+  for (const m of medals) {
+    const r = rows[`${m.name}|${m.rare}`]; // keyed by our name and rarity: some ids are renumbered after this step
+    if (!r) continue;
+    const { sourceId, ...fields } = r;
+    Object.assign(m, fields);
+    n++;
+  }
+  console.log(`medal: ${n} support medals (Puppies, Sea-Salt Ice Cream, Kyroo SAB 7-10) from the 2021 master`);
+}
+// I-270 (tester 12-11, user 22-11): the Album card shows `flavor` under the picture; the medals added from Roboloid carried
+// their special attack description there (2527 rows). The 2021 live master (ReLux extract) gives the real text («KINGDOM
+// HEARTS (2002)» + the character line) by name, rarity and attribute: it replaces a flavor equal to the burst description
+{
+  const FLAVOR_2021 = process.env.KHUX_MEDAL_FLAVOR_2021
+    || 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\medal_flavor_2021.json';
+  let rows = {};
+  try { ({ rows } = JSON.parse(fs.readFileSync(FLAVOR_2021, 'utf8'))); } catch { console.warn(`medal: ${FLAVOR_2021} not readable, flavors stay`); }
+  const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  const burstDesc = new Map(bursts.map((b) => [b.burstId, norm(b.description)]));
+  let n = 0, left = 0;
+  for (const m of medals) {
+    if (!norm(m.flavor) || norm(m.flavor) !== burstDesc.get(m.burstId)) continue;
+    const f = rows[`${norm(m.name).toLowerCase()}|${m.rare}|${m.attribute}`];
+    if (f) { m.flavor = f; n++; } else left++;
+  }
+  console.log(`medal: Album flavor of ${n} medals from the 2021 master (${left} still showing their special attack text)`);
+}
 // Evolve cost of the 6★ (user 22-11): the 2021 live master (ReLux extract, by SE id) where it has the medal (Cid 5000, KH 3D
 // Sora/Riku/Meow Wow 80000), otherwise 160000 for every 6★ -> 7★ (the 2021 value of all of them); the 2017 rows had 99999
 {

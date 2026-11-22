@@ -137,7 +137,8 @@ if (fs.existsSync(file)) {
   assert.deepEqual(ev(301366), N([1, 301368, 4, [301363, 301364, 301365, 301367, 0]]), 'served: Pongo');
   for (let lv = 1; lv <= 7; lv++) assert.deepEqual(ev(301494 + lv), N([1, 301495 + lv, 5, Array(5).fill(301494 + lv)]), 'served: Blue Fairy LV ' + lv);
   assert.equal(mb.get(301502).validEvolve, 0, 'served: Blue Fairy LV 8 is the last tier');
-  const puppies = m.filter((r) => r.medalId < 1000000 && /^Puppy #/.test(r.name));
+  // «Puppies #a - b»: the 2021 name of the group rows (I-033, 22-11)
+  const puppies = m.filter((r) => r.medalId < 1000000 && /^Pupp(y|ies) #/.test(r.name));
   assert.equal(puppies.length, 99 + 17 + 3);
   assert.ok(puppies.every((r) => r.validEvolve && mb.get(r.evolveId).rare === r.rare + 1
     && r.evolveNeedId.slice(0, r.validEvolveNeed).every((x) => mb.get(x))), 'served: every Puppy step');

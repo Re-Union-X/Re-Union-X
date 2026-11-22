@@ -65,3 +65,15 @@ for name, off in todo:
     else:
         print('errore', name, r.stderr.decode(errors='replace')[-200:])
 print('testi ui importati: %d di %d mancanti' % (n, len(todo)))
+# served texts that are empty in every WW copy (4.3.1 and the 2016 bundle: one NUL) but shown by a JP original scene we serve:
+# written always (the generated pack wins). I-022: the Sell scene alternates a support medal's price with its use, JP
+# 合成用 / 売却用 / 進化用; English with the WW names of those buttons (translation, reconstructed)
+FORCE = {
+    'text/ui/101210001.txt': 'For Level Up', 'text/ui/101210002.txt': 'For Selling', 'text/ui/101210003.txt': 'For Evolution',
+}
+for name, text in FORCE.items():
+    dst = os.path.join(out, *name.split('/'))
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    with open(dst, 'w', encoding='utf-8', newline='') as fh:
+        fh.write(text)
+print('testi ui forzati: %d' % len(FORCE))

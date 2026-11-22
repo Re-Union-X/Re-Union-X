@@ -51,6 +51,10 @@ NUM = {'a': 1, 'an': 1, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 's
 
 
 # ---------- note complete dalla wiki (il TSV tronca a 500 caratteri) ----------
+# I-161: release date of the «adjusted» SN++ rows (Fantasia Mickey B evolution, 2020-09-07)
+ADJUSTED_SNPP = {mid: '2020-09-07' for mid in (302008, 302009, 302010, 302011, 302012)}
+
+
 def wiki_start(d):
     m = re.match(r'(\d\d)/(\d\d)/(\d\d)', d or '')
     return f'20{m.group(3)}-{m.group(1)}-{m.group(2)}' if m else ''
@@ -1056,6 +1060,9 @@ def build_catalog(inputs):
             if typ != 1 or vp == 1 or mid in ORIG_BOOSTED:
                 continue
             rd = o['rare_date'].get(rare) or o['rare_date'].get(str(rare)) or o['date']
+            # I-161: the «adjusted» SN++ (302008-302012) exist from the Fantasia Mickey B evolution of 2020-09-07, not with the
+            # original SN++ they share a name with (dated 2019-12 / 2020-01, so they were drawn twice in those pools)
+            rd = max(rd, ADJUSTED_SNPP.get(mid, ''))
             ids.append([mid, rare, max(rd, o['date']), tier.get(mid, 0)])
         medals[norm(o['name'])] = {'date': o['date'], 'cls': o['cls'], 'class2': o['class2'], 'ids': ids}
     # attributo (att) e origine (origin) per i filtri dei set: InfoMedal e categorie della pagina della medaglia
@@ -1302,6 +1309,11 @@ def main():
         pass
     inp = default_inputs()
     cat = build_catalog(inp)
+    # I-161: the adjusted SN++ ids keep their 2020-09-07 date whatever step added them (variants aligned to a debut, overrides)
+    for v in cat['medals'].values():
+        for i in v.get('ids', []):
+            if i[0] in ADJUSTED_SNPP and i[2] < ADJUSTED_SNPP[i[0]]:
+                i[2] = ADJUSTED_SNPP[i[0]]
     skipped = cat.pop('_skippedBonus')
     stats = cat.pop('_stats')
     bs = cat['banners']
