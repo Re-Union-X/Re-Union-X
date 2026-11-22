@@ -78,13 +78,15 @@ check(!out.some((x) => x.bonusType === 3) && !('_end' in out[0]), 'generatore: n
 const SAVE = path.join(os.tmpdir(), `khux-test-lb-${process.pid}.json`);
 try { fs.unlinkSync(SAVE); } catch { /* nuovo */ }
 process.env.KHUX_SAVE = SAVE; delete process.env.KHUX_SERVER_TIME; delete process.env.KHUX_LOGIN_BONUS;
+process.env.KHUX_LOGIN_SPECIAL_FORCE = '312'; // bench switch: the 2016 KH 2.8 trailer special (Part 9b)
 const realNowFn = Date.now; const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
 at('2026-10-20T09:00:00Z');
 const log = console.log; const quiet = (fn) => { console.log = () => {}; try { return fn(); } finally { console.log = log; } };
 const { _test: t } = quiet(() => require('./server'));
 const call = (fn, ...a) => { let b = null; quiet(() => fn({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, ...a)); return b; };
 call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
-if (t.masterRows('loginBonus').length !== 98) errors.push(`master loginBonus: ${t.masterRows('loginBonus').length} righe (lanciare node server/make-login-bonus.js)`);
+const dailyTotal = t.masterRows('loginBonus').filter((r) => r.bonusType === 1 || r.bonusType === 2).length;
+if (dailyTotal !== 98) errors.push(`master loginBonus: ${dailyTotal} Daily/Total rows (run node server/make-login-bonus.js)`);
 t.player.tutorialPhase = 0;
 check(call(t.respondKhuxLogin).gameLogin.acquirableLoginBonus === false, 'tutorial non finito: niente login bonus');
 t.player.tutorialPhase = 995;
@@ -93,10 +95,15 @@ const n0 = (t.player.presents || []).length;
 const b1 = call(t.respondLoginBonus);
 check(b1.loginBonus.continue.loginBonusId === 100 && b1.loginBonus.total.dayCount === 1 && b1.loginBonus.total.loginBonusId === 200, `risposta: ${JSON.stringify(b1.loginBonus)}`);
 const got = (t.player.presents || []).slice(n0);
-check(got.length === 2 && got[0].comment === 'Daily Login Bonus Reward' && got[0].number === 100 && got[1].number === 300, `Presents: ${JSON.stringify(got)}`);
+check(got.length === 3 && got[0].comment === 'Daily Login Bonus Reward' && got[0].number === 100 && got[1].number === 300, `Presents: ${JSON.stringify(got)}`);
+// Part 9b: the forced special (bench switch) is listed and paid with its row's comment (needs the regen with the extract)
+check(JSON.stringify(b1.loginBonus.specials) === '[312]', `specials: ${JSON.stringify(b1.loginBonus.specials)}`);
+check(got[2] && got[2].resourceType === 3 && got[2].resourceId === 23175 && got[2].comment === 'Free KH 2.8 Trailer Celebration Medal', `special present: ${JSON.stringify(got[2])}`);
+check(t.player.loginBonus.specials && '312' in t.player.loginBonus.specials, 'special recorded in the save');
+check(t.loginSpecialStoryDay() === null || /^\d{4}-\d\d-\d\d$/.test(t.loginSpecialStoryDay()), `story day: ${t.loginSpecialStoryDay()}`);
 check(call(t.respondKhuxLogin).gameLogin.acquirableLoginBonus === false, 'secondo login dello stesso giorno');
 call(t.respondLoginBonus);
-check((t.player.presents || []).length === n0 + 2, 'riscossione doppia');
+check((t.player.presents || []).length === n0 + 3, 'riscossione doppia');
 // cambio di giorno alle 08:00 UTC
 at('2026-10-21T07:59:00Z');
 check(call(t.respondKhuxLogin).gameLogin.acquirableLoginBonus === false, 'alle 07:59 e\' ancora lo stesso giorno');

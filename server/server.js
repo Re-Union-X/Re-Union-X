@@ -1182,14 +1182,33 @@ function loginBonusAcquirable() {
   return loginBonus.acquirable(player.loginBonus, clock.dayIndex(realNow()));
 }
 
+// Special logins (Events Part 9b, make-login-specials.js): {"<loginBonusId>": {from, to, perDay}} original Pacific days,
+// server only; the story day is the original day of the Shop week on today's Pacific weekday (as the Bonus Times, 9a).
+// KHUX_LOGIN_SPECIAL_FORCE (relogin.ps1 -LoginSpecials 312,333): bench ids paid whatever the day, once each.
+const BENCH_LOGIN_SPECIAL_FORCE = String(process.env.KHUX_LOGIN_SPECIAL_FORCE || '').split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0);
+let loginSpecialsCache = null;
+function readLoginSpecials() {
+  const file = path.join(MASTER_DIR, 'login_specials.json');
+  try {
+    const st = fs.statSync(file);
+    if (!loginSpecialsCache || loginSpecialsCache.mtimeMs !== st.mtimeMs || loginSpecialsCache.size !== st.size) loginSpecialsCache = { mtimeMs: st.mtimeMs, size: st.size, windows: JSON.parse(fs.readFileSync(file, 'utf8')) };
+    return loginSpecialsCache.windows;
+  } catch { return {}; }
+}
+function loginSpecialStoryDay() {
+  try { const c = storyCtx(); return (c && c.shopFrom && require('./calendar-util').weekDateAt({ shopFrom: c.shopFrom, shopTo: c.shopTo }, realNow())) || null; } catch { return null; }
+}
+
 function respondLoginBonus(res) {
   // POST /login/bonus (azione 65, corpo isTrackingEnabled/advertisingId ignorato). Risposta:
   // loginBonus {continue {loginBonusId, dayCount}, total {loginBonusId, dayCount}, specials [id]}, tutti obbligatori.
   // I premi vanno nei Presents (la risposta non porta inventario).
-  const { state, rewards, response } = loginBonus.claim(player.loginBonus, clock.dayIndex(realNow()), masterRows('loginBonus'));
+  // Part 9b: the special logins of the story day (login_specials.json windows), each paid once (player.loginBonus.specials)
+  const { state, rewards, response } = loginBonus.claim(player.loginBonus, clock.dayIndex(realNow()), masterRows('loginBonus'),
+    { storyDay: loginSpecialStoryDay(), windows: readLoginSpecials(), force: BENCH_LOGIN_SPECIAL_FORCE });
   player.loginBonus = state;
   for (const r of rewards) addPresent(r.type, r.id, r.num, r.comment);
-  if (rewards.length) console.log(`[login bonus] giorno ${state.total}: ${rewards.map((r) => `${r.type}/${r.id} x${r.num}`).join(', ')} nei Presents`);
+  if (rewards.length) console.log(`[login bonus] giorno ${state.total}: ${rewards.map((r) => `${r.type}/${r.id} x${r.num}`).join(', ')} nei Presents${response.specials.length ? `; specials ${response.specials.join(',')}` : ''}`);
   savePlayer();
   send(res, 200, { ret: ret(), loginBonus: response });
 }
@@ -6203,7 +6222,7 @@ module.exports._test = {
   // server/test-clock-server.js
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-login-bonus.js
-  respondLoginBonus, loginBonusAcquirable,
+  respondLoginBonus, loginBonusAcquirable, loginSpecialStoryDay,
   // server/test-deck-sets.js
   respondKeybladeUpdate, userDecksData, multiDecksUnlocked, activeDeck, keybladeDeckIds, respondMedalRemove,
   // server/test-pet-tricks.js
