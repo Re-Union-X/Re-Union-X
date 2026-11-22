@@ -1917,6 +1917,21 @@ const tests = {
     const again = build([...records(), hscRecord('H-1')], out.ids, CONFIG, master(), out.anchors);
     assert.deepStrictEqual(entry(again, 'H-1').hsc, h);
   },
+  // Events Part 10c Task 2: a Damage Contest (census type RANK, «Test Your Might») is a High Score run for the client (donor evStage
+  // eventCategory 4 / eventType 3); its record is type HSC with hsc.damageContest = the hsc_ranking row id: served like an HSC, the
+  // entry keeps the mark (Event Catalog / Notices) and carries the label damageContest
+  damage_contest_thresholds() {
+    const out = build([hscRecord('D-1', { damageContest: 'DC-WW-1' })]);
+    const e = entry(out, 'D-1');
+    assert.strictEqual(e.available, true, e.why);
+    assert.strictEqual(out.evStage.find((r) => r.eventStageId === e.evStageId).eventCategory, 4);
+    assert.strictEqual(e.hsc.damageContest, 'DC-WW-1');
+    assert.deepStrictEqual(e.hsc.thresholds.map((t) => t.score), [2000, 6000, 9000]);
+    assert.ok(e.labels.includes('damageContest') && e.labels.includes('hscThresholds'), JSON.stringify(e.labels));
+    assert.ok(REAL_CONFIG.reconstructedWhy.damageContest, 'phrase for the label (as hscThresholds)');
+    const plain = entry(build([hscRecord('H-1')]), 'H-1');
+    assert.ok(!('damageContest' in plain.hsc) && !plain.labels.includes('damageContest'), 'a plain HSC has no mark');
+  },
   ranking_tables_from_record() {
     const BONUS = [{ medalId: 90011, rate: 2600, display: 1, source: 'donor', name: '6★ Quest Medal' }, { medalId: 90012, rate: 2300, display: 2, source: 'donor' },
       { medalId: 90013, rate: 1500, display: 0, source: 'donor' }];

@@ -77,7 +77,7 @@ const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
   'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
-  'hscThresholds'];
+  'hscThresholds', 'damageContest'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
 // (quizBoardScreenshot)
@@ -381,7 +381,8 @@ function hscPrepare(rec, resolve, payable, aliases = null) {
   });
   if (unknown.length) return { reason: 'rewardTypeUnknown', detail: [...new Set(unknown)].join('; ') };
   if (missing.length) return { reason: 'rewardItemMissing', detail: [...new Set(missing)].join('; ') };
-  return { hsc: { era: h.era, milestones, brackets: bks, thresholds: thresholds.map((t) => Object.fromEntries(HSC_THRESHOLD_FIELDS.filter((k) => t[k] !== undefined).map((k) => [k, t[k]]))), medals, scoreBonus: h.scoreBonus || [], donorRankingId: h.donorRankingId || null } };
+  return { hsc: { era: h.era, milestones, brackets: bks, thresholds: thresholds.map((t) => Object.fromEntries(HSC_THRESHOLD_FIELDS.filter((k) => t[k] !== undefined).map((k) => [k, t[k]]))), medals, scoreBonus: h.scoreBonus || [], donorRankingId: h.donorRankingId || null,
+    ...(h.damageContest ? { damageContest: h.damageContest } : {}) } };
 }
 const hscSlots = (rs, f) => { const a = rs.map(f); while (a.length < HSC_SLOTS) a.push(0); return a; };
 const hscItems = (rs) => ({ type: hscSlots(rs, (r) => r.type), id: hscSlots(rs, (r) => r.id || 0), skillType: hscSlots(rs, (r) => (r.skillId ? 1 : 0)),
@@ -406,7 +407,8 @@ function hscRows(p, r, cfg, rows, cid) {
     unionStartRank: [...z5], unionEndRank: [...z5], validReward: rankingReward.length ? 1 : 0 }];
   const fields = { rankingId, scoreMedalListId: listId, scoreStartReward: milestones.length ? milestones[0].scoreRewardId : 0,
     scoreEndReward: milestones.length ? milestones[milestones.length - 1].scoreRewardId : 0 };
-  const block = { era: p.era, ...fields, milestones, brackets: p.brackets, thresholds: p.thresholds, bonusMedals: p.medals, scoreBonus: p.scoreBonus, donorRankingId: p.donorRankingId };
+  const block = { era: p.era, ...fields, milestones, brackets: p.brackets, thresholds: p.thresholds, bonusMedals: p.medals, scoreBonus: p.scoreBonus, donorRankingId: p.donorRankingId,
+    ...(p.damageContest ? { damageContest: p.damageContest } : {}) };
   return { fields, block, tables: { ranking, rankingReward, evScoreReward, evMedalList } };
 }
 
@@ -1134,6 +1136,8 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     const labels = new Set();
     // the score thresholds stand for the original leaderboard (spec 1): a deviation, declared
     if (hsc) labels.add('hscThresholds');
+    // a Damage Contest (Part 10c): the same High Score mode, scored on the damage of the run; the mark goes to the index
+    if (hsc && hsc.damageContest) labels.add('damageContest');
     // short windows of the donor rows: open the whole Pacific day (label wholeDay, not original). A `shortWindow` record whose rows
     // are all whole days (the Surprise events) was open that whole Pacific day in the original too: oneDay, no label
     const shortDays = new Set();
