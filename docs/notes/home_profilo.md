@@ -844,6 +844,16 @@ with a Special Trait already present: choice window), ok.
 <a id="login-bonus"></a>
 ## Login bonus (I-176, 20-10)
 
+**Special login bonuses (Events Part 9b, 22-11).** `loginBonus.specials` lists the special rows (bonusType 3/4) paid by
+this claim: the client shows one blue «Welcome!» popup per id, in list order, before the Daily/Total screen (title,
+description, the reward icon with its number; bench 22-11, rows 312, 334, 580, 568, as the original
+`reference/login_bonus/login_bonus_special_yt_03.jpg`). The row's dates are never read by the client: the server lists an
+id only on its original days (server-only `login_specials.json`, `make-login-specials.js`), once per row
+(`player.loginBonus.specials`; the Newcomer Campaign 311 once per story day). Two rewards of one campaign are two rows and
+two popups. The story day is `weekDateAt(storyCtx(), now)` as the Bonus Times ([campaigns](campaigns.md)). Bench switch:
+`relogin.ps1 -LoginSpecials 312,334` (paid at the next login bonus whatever the day, still once).
+
+
 Full research in `D:\Progetto_Restauro_KH_UX\tmp\loginbonus\RESEARCH.md` (sources in `reference\login_bonus\NOTE.md`).
 - **Protocol**: `/khux/login` (and `/user/create`) `gameLogin.acquirableLoginBonus` -> with true the client calls
   action 65 `POST /login/bonus` (body `isTrackingEnabled`, `advertisingId`, ignored) and opens the login bonus scene.

@@ -237,6 +237,28 @@ The **Supernova** forms of a 7★ Score Bonus Medal (Supernova, Supernova+ and S
 
 The original maps of some High Score Challenges did not survive. 27 of them are **rebuilt** from the community wiki, in the original rooms and with the original enemies, their levels and their paths (**reconstructed**). 3 use the map of the **Japanese** High Score Challenge with the same target, level and world. The Event Catalog marks each one.
 
+### Bonus Times
+
+The original **Bonus Times** are back on the days of your Story week: **0 AP**, **Sp. Atk Bonus («Limited-time bonus boost!»)**, **Lux x 3**, **Medal Fusion: EXP x 2**, **Medal Fusion: Half Munny Cost** (the Medal Fusion and Sp. Atk Bonus ones on the Level Up screen; during a Sp. Atk Bonus campaign the Special Attack Bonus never rolls below the campaign minimum). Today they fall on **600 original days** (2016-08-11 to 2019-09-16). The quest top and the Level Up screen show the yellow balloon of each one, as in the original game.
+
+Each Bonus Time is open for its **whole original day** (12:00 a.m. to 11:59 p.m. Pacific time, on the real weekday of that day in your Story week), where the original one often ran for an hour or two (**not original**).
+
+The days come from the **original campaign calendar** (a donated copy of the game data, 2016 to 2021) and from the official notices; where a notice gives other dates, the notice wins. On days with no data, only the campaigns announced in the notices are served. Bonus Times of quests that are not served (Special quests, events not built yet) are left out.
+
+Bonus Times apply to the Story quests and to the events of the current week, not to kept events, kept raids or Special quests. Raids keep their own Bonus Time (see **Raid Bosses**). The «rare enemy» campaigns of Union Cross are not served.
+
+### Special login bonuses
+
+The **special login bonuses** are back: the blue «Welcome!» screen after the daily login bonus, for anniversaries, film releases, holidays and campaigns. Today **161 special login bonuses** are served, from 2016-04-07 to 2021-02-22. Each one is given **once**, at the first login of a day of your Story week that falls in its original dates, and its reward goes to your **Presents**.
+
+Their dates come from the official notices, the community wiki and a donated copy of the game data whose own dates were lost; where they disagree, the notice wins.
+
+The login bonus day still starts at 08:00 UTC (see **Login Bonus**); the special login bonuses of a day are decided at your first login of that day, so a special day you miss is gone, as in the original game.
+
+The **Total** login milestones stop at **Day 1,850**, as in the original game: the Day 1,900 to 3,200 milestones found in the donated data never existed in the original game (it closed after about 1,870 days) and are not served.
+
+**Monthly missions.** From April 2018 to February 2021 the «[Monthly]» Limited missions are those of your **Story month** (the month of your Story week), not of the real month (**not original**: the original ones followed the calendar); their counters still restart every real month. In the other months they rotate as before.
+
 ### Gem quests
 
 The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).

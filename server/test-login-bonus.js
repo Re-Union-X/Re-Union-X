@@ -95,15 +95,18 @@ const n0 = (t.player.presents || []).length;
 const b1 = call(t.respondLoginBonus);
 check(b1.loginBonus.continue.loginBonusId === 100 && b1.loginBonus.total.dayCount === 1 && b1.loginBonus.total.loginBonusId === 200, `risposta: ${JSON.stringify(b1.loginBonus)}`);
 const got = (t.player.presents || []).slice(n0);
-check(got.length === 3 && got[0].comment === 'Daily Login Bonus Reward' && got[0].number === 100 && got[1].number === 300, `Presents: ${JSON.stringify(got)}`);
+check(got.length >= 3 && got[0].comment === 'Daily Login Bonus Reward' && got[0].number === 100 && got[1].number === 300, `Presents: ${JSON.stringify(got)}`);
 // Part 9b: the forced special (bench switch) is listed and paid with its row's comment (needs the regen with the extract)
-check(JSON.stringify(b1.loginBonus.specials) === '[312]', `specials: ${JSON.stringify(b1.loginBonus.specials)}`);
-check(got[2] && got[2].resourceType === 3 && got[2].resourceId === 23175 && got[2].comment === 'Free KH 2.8 Trailer Celebration Medal', `special present: ${JSON.stringify(got[2])}`);
+// a new player's story week is April 2016: the Newcomer Campaign (311, 50 Jewels a day) is due too
+check(b1.loginBonus.specials.includes(312) && b1.loginBonus.specials.every((id) => [311, 312].includes(id)), `specials: ${JSON.stringify(b1.loginBonus.specials)}`);
+const sp312 = got.find((p) => p.resourceType === 3 && p.resourceId === 23175);
+check(sp312 && sp312.comment === 'Free KH 2.8 Trailer Celebration Medal', `special present: ${JSON.stringify(sp312)}`);
+const nAfter = t.player.presents.length;
 check(t.player.loginBonus.specials && '312' in t.player.loginBonus.specials, 'special recorded in the save');
 check(t.loginSpecialStoryDay() === null || /^\d{4}-\d\d-\d\d$/.test(t.loginSpecialStoryDay()), `story day: ${t.loginSpecialStoryDay()}`);
 check(call(t.respondKhuxLogin).gameLogin.acquirableLoginBonus === false, 'secondo login dello stesso giorno');
 call(t.respondLoginBonus);
-check((t.player.presents || []).length === n0 + 3, 'riscossione doppia');
+check((t.player.presents || []).length === nAfter, 'riscossione doppia');
 // cambio di giorno alle 08:00 UTC
 at('2026-10-21T07:59:00Z');
 check(call(t.respondKhuxLogin).gameLogin.acquirableLoginBonus === false, 'alle 07:59 e\' ancora lo stesso giorno');

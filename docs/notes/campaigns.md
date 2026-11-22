@@ -74,3 +74,7 @@ Screens accept: story 2, 4, 5, 9-19; event 2, 4, 6; co-op 4, 20; Coliseum 2, 4, 
 - Bench switch: `relogin.ps1 -Campaigns 95990,95991` (env `KHUX_CAMPAIGN_FORCE`) lists those ids and applies them, whatever the
   day. Bench rows must be added to `master_data/evCampaign.json` by hand and removed afterwards: the generators keep every row
   outside their own ranges.
+
+## Part 9b
+
+Special login bonuses and the monthly Limited missions by Story month: [home_profilo «Login bonus»](home_profilo.md#login-bonus-i-176-20-10), plan [2026-11-22-events-part9b-special-logins.md](../superpowers/plans/2026-11-22-events-part9b-special-logins.md), I-292.
