@@ -487,8 +487,8 @@
   "I-268": {
    "thread": "1570491115994357838",
    "msg": "1570491115994357838",
-   "group": "OPEN",
-   "hash": "c45340f754848db5",
+   "group": "CLOSED",
+   "hash": "1ee2f2567acabee4",
    "name": "I-268 · Moogle Shop: the top corners of the Traits and Items tabs are cut off"
   },
   "I-269": {
@@ -522,8 +522,8 @@
   "I-277": {
    "thread": "1573952520521257010",
    "msg": "1573952520521257010",
-   "group": "OPEN",
-   "hash": "74a135862ffd604e",
+   "group": "IN PROGRESS",
+   "hash": "7755001b25681ff2",
    "name": "I-277 · Equipment tab: the orange SPIRIT button plate is not drawn"
   },
   "I-278": {
