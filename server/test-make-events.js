@@ -1251,6 +1251,17 @@ const tests = {
     assert.ok(ok.served);
     assert.ok(!JSON.stringify(out.stage).includes('Clear within 75'), 'the text reaches no row');
   },
+  // Events Part 10a: a data-hole quest whose map is generated later (map.source 'generateLater', Part 10b): not served, reason
+  // mapUnusable «map to generate (Events Part 10b)», not listed in event_gen_maps.json; the other quests of the record are unaffected
+  map_generate_later() {
+    const later = genQuest(702200, { map: { key: 702200, stageBinId: 0, status: 'incomplete: STG header absent', source: 'generateLater' } });
+    const out = me.buildEvents([record('E-L', [later, quest(702201, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const [lq, ok] = entry(out, 'E-L').quests;
+    assert.deepStrictEqual([lq.served, lq.reason], [false, 'mapUnusable'], JSON.stringify(lq));
+    assert.ok(/Part 10b/.test(lq.why), lq.why);
+    assert.deepStrictEqual(out.genMaps, [], 'not listed for generation');
+    assert.ok(ok.served, 'the JP-map quest of the same record is served');
+  },
   // a quest with no original map (map.source 'generate'): stageBinId = its own stage id, one event_gen_maps.json entry (the
   // gen_story_maps «special» list shape) with its level and enemy groups, label wikiRoom (map incomplete dropped: not its map)
   wiki_room_map_listed() {

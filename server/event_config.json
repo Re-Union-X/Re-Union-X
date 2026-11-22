@@ -243,7 +243,8 @@
  "mapEnemySwapsNote": "User ruling 06-11: where the JP map file names another enemy than the WW quest (khuxwiki), the WW enemy. Keyed by map key (the stage row's stageBinId); from/to are enemy ids of our master (story rows). Read by make-events.js (quest enemies, label wwEnemy) and recon/tools/import_event_stages.py (patches the same ids in the copied map file).",
  "mapEnemySwaps": {
   "734970": [{ "from": 126, "to": 99, "names": "Gummi Hammer -> Morning Star (Dark-Winged Warrior - 7/12)" }],
-  "725440": [{ "from": 32, "to": 23, "names": "Bag O' Coal -> Bag O' Jewels (Agrabah Mission #2)" }]
+  "725440": [{ "from": 32, "to": 23, "names": "Bag O' Coal -> Bag O' Jewels (Agrabah Mission #2)" }],
+  "715070": [{ "from": 126, "to": 99, "names": "Gummi Hammer -> Morning Star (Flower Snuggly #7, EV-0324, Events Part 10a)" }]
  },
  "keptTabNote": "Where the KEPT EVENT tab of make_special_banners.py --section event goes on a card: left (default) or right, by evStageId (user 10-11: all at the left, the Quiz card 20004 too).",
  "keptTab": {},

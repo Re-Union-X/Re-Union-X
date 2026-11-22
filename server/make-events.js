@@ -1210,6 +1210,8 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       // an objective known only as text (code null): held with its text, never a stopgap code (plan Global Constraints)
       const unmapped = (q.objectives || []).filter((o) => o.code === null || o.code === undefined);
       if (unmapped.length) { item.reason = 'objectiveUnmapped'; item.why = `${textOf('objectiveUnmapped')} (${unmapped.map((o) => `«${o.text || '?'}»`).join('; ')})`; continue; }
+      // Events Part 10a: a data-hole quest whose map is generated in Part 10b (map.source 'generateLater'): held, never listed for generation yet
+      if ((q0.map || {}).source === 'generateLater') { item.reason = 'mapUnusable'; item.why = 'map not usable: map to generate (Events Part 10b)'; continue; }
       let genEntry = null;
       if (gen) {
         // no world: no room to generate the map in
