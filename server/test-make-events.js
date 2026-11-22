@@ -1267,6 +1267,29 @@ const tests = {
   },
   // Events Part 10a: a data-hole quest whose map is generated later (map.source 'generateLater', Part 10b): not served, reason
   // mapUnusable «map to generate (Events Part 10b)», not listed in event_gen_maps.json; the other quests of the record are unaffected
+  // Events Part 10b: drops of a generated map (record genDrops {byName {name: rewardId}, target rewardId, rows {rewardId: rows}}):
+  // the members and the target carry those reward rows, a row not in the master is written once, label dropsCalibrated; without
+  // genDrops every member keeps reward 1 (no drop) and no label
+  gen_drops_calibrated() {
+    const rows = [{ type: 3, id: 23081, num: 1, odds: 500 }];
+    const g = genQuest(702300, { genDrops: { byName: { 'Foe B': 69300 }, target: 69301, rows: { 69300: rows, 69301: [{ type: 3, id: 23083, num: 1, odds: 250 }] },
+      why: 'KH 3D rows 69300 / 69301 (EV-0134)' } });
+    const out = me.buildEvents([record('E-D', [g, genQuest(702301)])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const [q, plain] = entry(out, 'E-D').quests;
+    assert.ok(q.served && q.labels.includes('dropsCalibrated'), JSON.stringify(q));
+    const e = out.genMaps.find((x) => x.stageId === q.stageId);
+    assert.deepStrictEqual(e.enemies.flat().map((m) => m.reward), [69300, 69300]);
+    assert.strictEqual(e.targetReward, 69301);
+    assert.deepStrictEqual(out.reward.filter((r) => [69300, 69301].includes(r.rewardId)).map((r) => [r.rewardId, r.id, r.odds]), [[69300, [23081], [500]], [69301, [23083], [250]]]);
+    const e2 = out.genMaps.find((x) => x.stageId === plain.stageId);
+    assert.ok(e2.enemies.flat().every((m) => m.reward === 1) && !e2.targetReward && !plain.labels.includes('dropsCalibrated'));
+    // a row id the master already holds with other contents: the quest is held, the master row is never overwritten
+    const m = master();
+    m.reward = [{ rewardId: 69300, type: [3], id: [99999], num: [1], odds: [1] }];
+    const out2 = me.buildEvents([record('E-D2', [genQuest(702302, { genDrops: g.genDrops })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const q2 = entry(out2, 'E-D2').quests[0];
+    assert.deepStrictEqual([q2.served, q2.reason], [false, 'rewardRowsMissing'], JSON.stringify(q2));
+  },
   map_generate_later() {
     const later = genQuest(702200, { map: { key: 702200, stageBinId: 0, status: 'incomplete: STG header absent', source: 'generateLater' } });
     const out = me.buildEvents([record('E-L', [later, quest(702201, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });

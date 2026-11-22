@@ -76,7 +76,7 @@ const RAID_SPECIAL = [970000, 989999], EGGCOGNITO = 100;
 const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
-  'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
+  'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
   'hscThresholds'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
@@ -1027,6 +1027,8 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
   const names = new Map((master.enemy || []).map((e) => [e.enemyId, e.name]));
   const masterRewards = new Set((master.reward || []).map((r) => r.rewardId));
   const ownRewards = new Map(); // rewardId -> {row, key} written by this run
+  // Events Part 10b: the master's reward rows by id with their contents key (genDrops may reuse an original row, never alter it)
+  const masterRewardKey = new Map((master.reward || []).map((r) => [r.rewardId, JSON.stringify((r.type || []).map((ty, k) => [ty, (r.id || [])[k] || 0, (r.num || [])[k], (r.odds || [])[k]]))]));
   const refs = storyRefs(master.stage);
   if (!refs.story.length) throw new Error('events: no story rows in the stage table');
   // map key -> a stage row of the master that loads it (stageBinId, or its own id when the bin is 0)
@@ -1234,6 +1236,15 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         const chests = (q.objectives || []).filter((o) => o.code === 18);
         if (chests.length) { item.reason = 'mapUnusable'; item.why = `map not usable: a generated map has no materials for «${chests[0].text}» (no treasure on the khuxwiki page)`; continue; }
         genEntry = g.entry;
+        // Events Part 10b: calibrated drops of a generated map (record genDrops {byName {name: rewardId}, target, rows {rewardId: rows}})
+        const gd = q.genDrops;
+        if (gd) {
+          const byName = gd.byName || {};
+          for (const m of [...genEntry.enemies.flat(), ...(genEntry.targetWith || [])]) if (byName[m.name]) m.reward = byName[m.name];
+          for (const e of g.enemies) e.reward = e.target ? gd.target || 1 : byName[e.name] || 1;
+          if (gd.target) genEntry.targetReward = gd.target;
+          if (!qLabels.includes('dropsCalibrated')) { qLabels.push('dropsCalibrated'); item.labels = qLabels; }
+        }
         q = { ...q, enemies: g.enemies, targets: g.targets };
       }
       // an enemy or target without an integer id cannot be looked up: on an unusable map the map is the cause, else it is listed by name
@@ -1296,6 +1307,18 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       // a generated map (genMapOf): listed in event_gen_maps.json (recon/tools/gen_story_maps.py, config key `events`), served or
       // not; with the map report (live run) served only once gen_story_maps.py has written it (maps.generated, its report): a stage
       // row never points at a map file the resources do not have. Its POI (no drops: reward row 1) is written by gen_story_maps.py
+      // calibrated drop rows (genDrops): a row the master or this run holds with other contents holds the quest (never overwritten)
+      const genRows = [];
+      if (gen && q.genDrops) {
+        const bad = [];
+        for (const [r0, rows] of Object.entries(q.genDrops.rows || {})) {
+          const r = Number(r0), key = JSON.stringify(rows.map((x) => [x.type, x.id || 0, x.num, x.odds]));
+          const prev = masterRewardKey.has(r) ? masterRewardKey.get(r) : (ownRewards.get(r) || {}).key;
+          if (prev !== undefined && prev !== key) bad.push(r);
+          else if (prev === undefined) genRows.push([r, rows, key]);
+        }
+        if (bad.length) { item.reason = 'rewardRowsMissing'; item.why = `reward rows missing: ${bad.join(', ')} (calibrated drop row id held by other contents)`; continue; }
+      }
       if (gen) {
         put(out.genMaps, { ...genEntry, censusId: rec.censusId });
         if (maps && !(maps.generated || new Set()).has(stageId)) {
@@ -1366,6 +1389,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       }
       // last, so the quiz quests held for their board are otherwise ready (the quiz boards task draws those first)
       if (quiz && !quizDrama) { item.reason = 'quizTextMissing'; item.why = textOf('quizTextMissing'); continue; }
+      for (const [r, rows, key] of genRows) { if (ownRewards.has(r)) continue; const row = rewardRowOf(r, rows); ownRewards.set(r, { row, key }); put(out.reward, row); }
       if (maps && !gen) {
         for (const [r, d] of newRewards) { const row = rewardRowOf(r, d.rows); ownRewards.set(r, { row, key: d.key }); put(out.reward, row); }
         out.poi[String(mapKey)] = maps.poi[String(mapKey)];
