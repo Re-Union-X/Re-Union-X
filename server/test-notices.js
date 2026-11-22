@@ -552,6 +552,7 @@ for (const web of [false, true]) {
   check(/\*\*3 Damage Contests\*\*/.test(l3) && /score thresholds/.test(l3), 'hole 10c damage contests');
   check(/Classic Donald/.test(l3) && /reconstructed/.test(l3) && /Classic Goofy/.test(l3) && /Bonus Time/.test(l3), 'hole 10c hours');
   check(/raid boss/.test(l3) && /\*\*10 quests\*\*/.test(l3), 'hole 10c summons');
+  check(!/restored/i.test(l3), 'hole 10c: no «restored» (project rule)');
   const l4 = n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, later: 8 } }).join(' ');
   check(!/Booster Challenge|Damage Contest|Classic Donald|raid boss/.test(l4), 'hole 10c: no line without them');
   {
