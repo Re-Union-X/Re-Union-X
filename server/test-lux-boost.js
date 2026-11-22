@@ -41,4 +41,32 @@ assert.strictEqual(lb.activate(undefined, T, today).ok, false);
 const yesterday = { createDate: Date.parse('2026-11-23T07:00:00Z') }; // Sunday 11:00 p.m. PST
 assert.strictEqual(lb.status(undefined, T, yesterday).available, true);
 assert.strictEqual(lb.pacificDay(Date.parse('2026-11-23T07:59:00Z')), '2026-11-22');
+
+// routes: GET / PUT /party/lux_up_time and the Lux factor of /stage/clear (server.js)
+{
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const SAVE = path.join(os.tmpdir(), `khux-test-luxboost-${process.pid}.json`);
+  try { fs.unlinkSync(SAVE); } catch { /* new */ }
+  process.env.KHUX_SAVE = SAVE; delete process.env.KHUX_SERVER_TIME; delete process.env.KHUX_LUXUP_SPIKE;
+  const realNow = Date.now; let now = T; Date.now = () => now;
+  const log = console.log; const quiet = (fn) => { console.log = () => {}; try { return fn(); } finally { console.log = log; } };
+  const { _test: t } = quiet(() => require('./server'));
+  const call = (fn, ...a) => { let b = null; quiet(() => fn({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, ...a)); return b; };
+  call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
+  t.player.party = party;
+  assert.deepStrictEqual(call(t.respondLuxUpTime, 'GET').luxUp, { magnification: 0, available: true, restrictionKind: 0 });
+  assert.strictEqual(t.clearLuxFactor(0), 1);
+  assert.deepStrictEqual(call(t.respondLuxUpTime, 'PUT').luxUp, { magnification: 500, available: false, restrictionKind: 0 }, 'PUT activates');
+  assert.strictEqual(t.player.luxBoost.at, T);
+  now = T + 5 * 60000;
+  assert.deepStrictEqual(call(t.respondLuxUpTime, 'PUT').luxUp, { magnification: 500, available: false, restrictionKind: 0 }, 'second PUT: same answer');
+  assert.strictEqual(t.player.luxBoost.at, T, 'not extended');
+  assert.strictEqual(t.clearLuxFactor(0), 1.05, 'Lux x 1.05 inside the hour');
+  now = T + H;
+  assert.strictEqual(t.clearLuxFactor(0), 1);
+  t.player.party = null;
+  assert.deepStrictEqual(call(t.respondLuxUpTime, 'GET').luxUp, { magnification: 0, available: false, restrictionKind: 0 }, 'no party');
+  Date.now = realNow;
+  try { fs.unlinkSync(SAVE); } catch { /* gone */ }
+}
 console.log('test-lux-boost: OK');

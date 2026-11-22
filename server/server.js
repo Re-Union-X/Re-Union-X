@@ -265,6 +265,7 @@ function route(url) {
   if (p === '/user/present') return 'userpresent';
   if (p === '/user/present/receive') return 'presentreceive';
   if (p === '/user/material') return 'usermaterial';
+  if (p === '/party/lux_up_time') return 'luxuptime'; // Lux Boost (Events Part 9c, lux-boost.js): GET status, PUT activation
   if (p === '/campaign') return 'campaign';
   if (p === '/shop/campaign') return 'shopcampaign'; // popup di «Unlock All» (Task 15)
   if (p === '/ranking/reward/check') return 'rankingrewardcheck';
@@ -1197,6 +1198,22 @@ function readLoginSpecials() {
 }
 function loginSpecialStoryDay() {
   try { const c = storyCtx(); return (c && c.shopFrom && require('./calendar-util').weekDateAt({ shopFrom: c.shopFrom, shopTo: c.shopTo }, realNow())) || null; } catch { return null; }
+}
+
+// Lux Boost (Events Part 9c, lux-boost.js): GET /party/lux_up_time (action 105) = status, PUT = activation (bench 22-11:
+// the confirmation's OK sends PUT with no parameters); both answer luxUp. Offline the party is only the player.
+const luxBoost = require('./lux-boost');
+function respondLuxUpTime(res, method) {
+  const now = realNow();
+  if (method === 'PUT') {
+    const r = luxBoost.activate(player.luxBoost, now, player.party);
+    if (r.ok) { player.luxBoost = r.state; savePlayer(); console.log(`[lux boost] on until ${new Date(now + luxBoost.DURATION_MS).toISOString()}`); }
+  }
+  send(res, 200, { ret: ret(), luxUp: luxBoost.status(player.luxBoost, now, player.party) });
+}
+// Lux factor of /stage/clear: the Bonus Time of the story day (9a) times the Lux Boost (9c), at the moment of the clear
+function clearLuxFactor(stageId, ms = realNow()) {
+  return campaigns().effects(stageId).lux * luxBoost.factor(player.luxBoost, ms);
 }
 
 function respondLoginBonus(res) {
@@ -2935,7 +2952,7 @@ function respondStageClear(res, req) {
   // le riporta: le valuta il server sui Lux della partita (getPoint.lux), che
   // restituisce in getLux (la barra Lux di RESULTS).
   // a Lux Bonus Time of the story day on this quest multiplies it (campaigns.js, type 10: the client only shows the balloon)
-  const lux = training ? 0 : Math.trunc((Number(req?.getPoint?.lux) || 0) * campaigns().effects(player.currentStageId).lux);
+  const lux = training ? 0 : Math.trunc((Number(req?.getPoint?.lux) || 0) * clearLuxFactor(player.currentStageId));
   addBattleLux(lux);
   if (!training) {
     missionCount('quest', 1);
@@ -5878,6 +5895,7 @@ function handler(scheme) {
   if (kind === 'colosseum') return respondColosseum(res);
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive): the raid AP 0 campaign in the bonus hours
       if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: servedCampaignIds() });
+      if (kind === 'luxuptime') return respondLuxUpTime(res, req.method);
       if (kind === 'shopcampaign') return respondShopCampaign(res, req.headers);
       // POST /ranking/reward/check (azione 142): il client
       // vuole tre array in radice (lastRankingResults, rankingRewardIds, openRankingIds),
@@ -6244,7 +6262,7 @@ module.exports._test = {
   // server/test-clock-server.js
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-login-bonus.js
-  respondLoginBonus, loginBonusAcquirable, loginSpecialStoryDay,
+  respondLoginBonus, loginBonusAcquirable, loginSpecialStoryDay, respondLuxUpTime, clearLuxFactor,
   // server/test-deck-sets.js
   respondKeybladeUpdate, userDecksData, multiDecksUnlocked, activeDeck, keybladeDeckIds, respondMedalRemove,
   // server/test-pet-tricks.js
