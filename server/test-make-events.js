@@ -1338,6 +1338,20 @@ const tests = {
     const bad = record('E-TB', [quest(702530, 1, [501])], { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost' }] });
     assert.throws(() => me.buildEvents([bad], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] }), /E-TB.*factor/);
   },
+  // Events Part 10c Task 6: «Collect all materials» on a multi-area generated map whose khuxwiki page lists treasures (genAreas
+  // chests > 0): the generator places those chests, so the quest is served; a page with no treasure: held as before
+  gen_areas_collect_materials() {
+    const area = (chests) => ({ areas: [
+      { label: 'Room (1)', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 7 }] }], chests },
+      { label: 'Room (2)', room: 'DG_0200_27_00', groups: [{ target: true, members: [{ name: 'Foe A', n: 1 }] }], chests: 0 }], backExits: false, source: 'p', why: 'w' });
+    const obj = [objective(18, 'Collect all materials', { type: 2, id: 0, num: 5 })];
+    const out = me.buildEvents([record('E-CM', [genQuest(702600, { genAreas: area(2), objectives: obj }), genQuest(702601, { genAreas: area(0), objectives: obj })])],
+      CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const [withT, noT] = entry(out, 'E-CM').quests;
+    assert.ok(withT.served, JSON.stringify(withT));
+    assert.strictEqual(out.genMaps.find((g) => g.stageId === withT.stageId).areas[0].chests, 2);
+    assert.deepStrictEqual([noT.served, noT.reason], [false, 'mapUnusable']);
+  },
   map_generate_later() {
     const later = genQuest(702200, { map: { key: 702200, stageBinId: 0, status: 'incomplete: STG header absent', source: 'generateLater' } });
     const out = me.buildEvents([record('E-L', [later, quest(702201, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });

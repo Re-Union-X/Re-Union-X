@@ -1249,8 +1249,10 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         }
         // «Collect all materials» needs materials on the map: the khuxwiki pages give none for a generated map, so the objective
         // could never be met as the original (nothing half-served)
+        // (Part 10c: a multi-area page that lists treasures gives its areas chests, which the generator places: served)
         const chests = (q.objectives || []).filter((o) => o.code === 18);
-        if (chests.length) { item.reason = 'mapUnusable'; item.why = `map not usable: a generated map has no materials for «${chests[0].text}» (no treasure on the khuxwiki page)`; continue; }
+        const pageChests = ((q.genAreas || {}).areas || []).reduce((n, a) => n + (Number(a.chests) || 0), 0);
+        if (chests.length && !pageChests) { item.reason = 'mapUnusable'; item.why = `map not usable: a generated map has no materials for «${chests[0].text}» (no treasure on the khuxwiki page)`; continue; }
         genEntry = g.entry;
         // Events Part 10b: calibrated drops of a generated map (record genDrops {byName {name: rewardId}, target, rows {rewardId: rows}})
         const gd = q.genDrops;
