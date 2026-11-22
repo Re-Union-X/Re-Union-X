@@ -77,7 +77,7 @@ const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
   'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
-  'hscThresholds', 'damageContest'];
+  'hscThresholds', 'damageContest', 'raidSummonLater'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
 // (quizBoardScreenshot)
@@ -1199,6 +1199,9 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       if (swapped) qLabels.push('wwEnemy');
       // AP of the khuxwiki page of this run over the surviving stage row (private builder rule, conflict recorded in the record)
       if ((q0.conflicts || []).some((c) => c.kind === 'ap' && c.resolution === 'khuxwiki')) qLabels.push('wikiAp');
+      // Events Part 10c Task 4: the original clear could summon a raid boss (record raidSummon {boss, why}); no served raid row of that
+      // boss has the HP of the period (spec: only such a row may be summoned), so the quest is served without it, declared
+      if (q0.raidSummon) ensure('raidSummonLater');
       let q = swapped || q0;
       const wiki = qLabels.includes('wikiQuest');
       const { row: donorRow, guess: rowGuess } = rowOfQuest(donorRows, q0);

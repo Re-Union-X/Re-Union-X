@@ -1312,6 +1312,16 @@ const tests = {
     const q2 = entry(out2, 'E-D2').quests[0];
     assert.deepStrictEqual([q2.served, q2.reason], [false, 'rewardRowsMissing'], JSON.stringify(q2));
   },
+  // Events Part 10c Task 4: a quest whose original clear could summon a raid boss (record raidSummon {boss, why}): no served raid row
+  // of that boss has the HP of the period, so the quest is served without the summon and labelled raidSummonLater
+  quest_raid_summon_later() {
+    const q = quest(702400, 1, [501], { raidSummon: { boss: 'Adventurer', why: 'no Jan. 2017 raid row' } });
+    const out = me.buildEvents([record('E-R', [q, quest(702401, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const [rq, plain] = entry(out, 'E-R').quests;
+    assert.ok(rq.served && rq.labels.includes('raidSummonLater'), JSON.stringify(rq));
+    assert.ok(plain.served && !plain.labels.includes('raidSummonLater'));
+    assert.ok(REAL_CONFIG.reconstructedWhy.raidSummonLater, 'phrase for the label');
+  },
   map_generate_later() {
     const later = genQuest(702200, { map: { key: 702200, stageBinId: 0, status: 'incomplete: STG header absent', source: 'generateLater' } });
     const out = me.buildEvents([record('E-L', [later, quest(702201, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
