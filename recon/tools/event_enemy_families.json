@@ -555,6 +555,12 @@
    "model": "new",
    "approved": true,
    "review": "exact model of the 13-11 import (recon/tools/extra_donors_exact.tsv: 105 rows, 80 JP 4.3.1 files + 25 pixel-identical JP twins, every texture checked against the ReLux graphics index; listed there without a render: no quest used it); user-approved 16-11 on the rendered animations of tmp/events/hsc/chipper/review (Events Part 8, EV-0395); dry run complete cat 2"
+  },
+  "26": {
+   "name": "Large Fireworks",
+   "model": "new",
+   "approved": false,
+   "review": "Events Part 10b (user 22-11): donor rows 26 / 10026 for EV-0108 and EV-0310; to render and show the user"
   }
  }
 }

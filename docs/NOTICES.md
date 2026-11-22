@@ -273,7 +273,7 @@ For 67 of the other quests, made for the worldwide version only, no map survives
 
 **289 quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (**not original**). Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **7 quests** drop it at the rates of the original KH 3D event quests of 2017 (**not original**); the others drop nothing.
 
-The **Event Coins** of the coin events go to **8 sets of Event Boards** of the original game data (Moana, Santa Sora, HD Aqua, Happi Coat, the Gem Boards and the daily Jewel boards); all boards of a set are open for the whole event (**not original**: some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.
+The **Event Coins** of the coin events go to **7 sets of Event Boards** of the original game data (the event boards, the Gem Boards and the daily Jewel boards of the period); all boards of a set are open for the whole event (**not original**: some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.
 
 The other 56 quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.
 
@@ -343,13 +343,13 @@ The **12 enemies** the challenge events still lacked are back too, built exactly
 
 ### Event coins and boards
 
-**Event Coins** are back, with the **Event Boards**: today **103 Event Boards** in **20 board sets**, for 48 events. The quest list of these events has the **Event Boards** button. Event Coins come from objectives (**once**) and from enemy drops (at every clear, also for a kept event).
+**Event Coins** are back, with the **Event Boards**: today **99 Event Boards** in **19 board sets**, for 47 events. The quest list of these events has the **Event Boards** button. Event Coins come from objectives (**once**) and from enemy drops (at every clear, also for a kept event).
 
 Each **board set** (the boards of a month, shared by its events) has **one balance**, and Event Coins **never expire** (**not original**: the original game lost them when the event ended, as the board screen still says). Each cell and each finished board gives its reward **once**.
 
 One board set is listed at a time: the set of the **last event quest you started** (only a quest of an event whose Event Boards are available counts), otherwise the newest set of your Story week, otherwise the set of your **kept event**. The Event Coins shown on the boards are that set's balance; the other sets keep theirs.
 
-In the original game every cell of an Event Board paid a reward, and here every served board pays them all, the **Booster** cells included (see **Boosters** below). A board with a cell that cannot be paid here is **not served**, nor is a board that opens after it.
+In the original game every cell of an Event Board paid a reward, and here every served board pays them all, the **Booster** cells included (see **Boosters** below). A board with a cell that cannot be paid here is **not served**, nor is a board that opens after it. The set of **Invalid Date** is not served yet (1 events): those events are served **without Event Boards**, and the Event Coins they pay are **kept** in the balance of their set, which is not shown until its boards arrive.
 
 **Raid Coins** are unchanged: raids pay and spend them as before.
 

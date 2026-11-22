@@ -787,6 +787,14 @@ const tests = {
     assert.deepStrictEqual([h.boardSet, h.eventType], ['hole-2017-01', 1], JSON.stringify({ boardSet: h.boardSet, eventType: h.eventType, labels: h.labels }));
     assert.deepStrictEqual(Object.keys(out.index.boardSets), ['hole-2017-01']);
     assert.deepStrictEqual([j.boardSet, j.eventType], [null, 3]);
+    // review 22-11: a data-hole member whose served quests pay no Event Coins (EV-0153: coins were drops) gets no boards
+    const noCoin = record('E-K', [quest(700070, 1, [501], { objectives: [objective(10, 'Complete without having to continue', { type: 2, id: 0, num: 1 })] })],
+      { evStage: [], dataHole: 'no donor evStage row' });
+    sets.sets = [{ setKey: 'hole-2017-03', censusIds: ['E-K'], boards: [JSON.parse(JSON.stringify(boardSets().sets[0].boards[0]))] }];
+    const out2 = me.buildEvents([noCoin], CONFIG, m, undefined, undefined, null, sets);
+    const k = entry(out2, 'E-K');
+    assert.deepStrictEqual([k.boardSet, k.eventType, k.labels.includes('noCoinSource')], [null, 3, true], JSON.stringify({ boardSet: k.boardSet, eventType: k.eventType, labels: k.labels }));
+    assert.deepStrictEqual(Object.keys(out2.index.boardSets), []);
   },
   // Part 3 Task 4: an entry whose census id belongs to a board set with a served board, and that has served quests, is served as
   // eventType 1 (Event Boards button); any other entry as 3. boardSets carries only the sets handed out.

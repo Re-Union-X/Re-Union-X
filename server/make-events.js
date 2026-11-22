@@ -1428,10 +1428,12 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       }
     }
     // the entry's board set: handed out when it has a built board and this entry a served quest
-    if (entry.boardSetKey && !raidish && entry.stageIds.length && builtBoards(entry.boardSetKey).length) {
+    // Events Part 10b: a data-hole record has no donor evStage row (its event type is lost): its board set makes it a board event,
+    // only when a served quest of it pays Event Coins (review 22-11: EV-0153, whose coins were drops, would show boards it cannot fill)
+    const holeBoard = !!rec.dataHole && !(rec.evStage || []).length;
+    if (entry.boardSetKey && !raidish && entry.stageIds.length && builtBoards(entry.boardSetKey).length && (!holeBoard || labels.has('eventCoins'))) {
       entry.boardSet = entry.boardSetKey;
-      // Events Part 10b: a data-hole record has no donor evStage row (its event type is lost): its board set makes it a board event
-      const boardType = [].concat(entry.origEventType).includes(config.boardEventType) || (rec.dataHole && !(rec.evStage || []).length);
+      const boardType = [].concat(entry.origEventType).includes(config.boardEventType) || holeBoard;
       entry.eventType = servedType(boardType ? config.boardEventType : null, entry.boardSet);
     }
     if (raidish) entry.why = `raid or Special ${raidish}: served by make-raid / make-special`;

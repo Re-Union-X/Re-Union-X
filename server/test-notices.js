@@ -531,6 +531,7 @@ for (const web of [false, true]) {
   const l2 = n.eventHoleLines({ hole: { events: 30, served: 700, quests: 900, later: 0, generated: 300, calibrated: 7, boards: 8 } }).join(' ');
   check(/\*\*300 quests\*\* are played on generated maps/.test(l2) && /drop rates/.test(l2) && /\*\*8 Event Boards? sets?\*\*|\*\*8 sets of Event Boards\*\*/.test(l2), `hole section 10b: ${l2.slice(0, 600)}`);
   check(!/generated maps/.test(n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, later: 8, generated: 0 } }).join(' ')), 'hole section: no generated-map line without any');
+  check(!/Moana|Happi/.test(l2), 'hole section: no hand-written board names (review 22-11: only the sets handed out are counted)');
   {
     const fs = require('fs'), path = require('path');
     const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'hole-'));

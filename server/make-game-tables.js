@@ -575,8 +575,9 @@ const eventRewardIds = new Set(eventOwn.reward || []);
 // are make-events.js's too, also before its first run that serves them (the POI of a just-built map names them already)
 try {
   for (const e of JSON.parse(fs.readFileSync(path.join(__dirname, 'game_data', 'event_gen_maps.json'), 'utf8'))) {
-    for (const m of [...(e.enemies || []).flat(), ...(e.targetWith || [])]) if (m.reward > 1) eventRewardIds.add(m.reward);
-    if (e.targetReward > 1) eventRewardIds.add(e.targetReward);
+    // only the calibrated-drop band (2316000+, build_hole.py): a story row id named there is never taken away from the story POI
+    for (const m of [...(e.enemies || []).flat(), ...(e.targetWith || [])]) if (m.reward >= 2316000) eventRewardIds.add(m.reward);
+    if (e.targetReward >= 2316000) eventRewardIds.add(e.targetReward);
   }
 } catch { /* no generated event maps */ }
 // rows 970000-979999 are the drops of the Special quests (enemies and the CP chests of the training map):
