@@ -226,6 +226,29 @@ function bonusTimeLines(f) {
     'The days come from the **original campaign calendar** (a donated copy of the game data, 2016 to 2021) and from the official notices; where a notice gives other dates, the notice wins. On days with no data, only the campaigns announced in the notices are served. Bonus Times of quests that are not served (Special quests, events not built yet) are left out.',
     'Bonus Times apply to the Story quests and to the events of the current week, not to kept events, kept raids or Special quests. Raids keep their own Bonus Time (see **Raid Bosses**). The «rare enemy» campaigns of Union Cross are not served.'];
 }
+// Events Part 9b: the special login bonuses served (login_specials.json windows with a loginBonus row; 700-799 = rebuilt
+// from a notice) and the monthly missions by story month
+function loginSpecialFacts(dir = path.join(__dirname, 'master_data')) {
+  try {
+    const win = JSON.parse(fs.readFileSync(path.join(dir, 'login_specials.json'), 'utf8'));
+    const ids = new Set(JSON.parse(fs.readFileSync(path.join(dir, 'loginBonus.json'), 'utf8')).map((r) => r.loginBonusId));
+    const served = Object.entries(win).filter(([id]) => ids.has(Number(id)));
+    if (!served.length) return null;
+    return { rows: served.length, reconstructed: served.filter(([id]) => id >= 700 && id <= 799).length,
+      first: served.map(([, w]) => w.from).sort()[0], last: served.map(([, w]) => w.to).sort().pop() };
+  } catch { return null; }
+}
+function loginSpecialLines(f) {
+  return ['## Special login bonuses',
+    f
+      ? `The **special login bonuses** are back: the blue «Welcome!» screen after the daily login bonus, for anniversaries, film releases, holidays and campaigns. Today **${f.rows} special login bonuses** are served, from ${f.first} to ${f.last}. Each one is given **once**, at the first login of a day of your Story week that falls in its original dates, and its reward goes to your **Presents**.`
+      : 'The **special login bonuses** (the blue «Welcome!» screen) are not served on this server yet.',
+    'Their dates come from the official notices, the community wiki and a donated copy of the game data whose own dates were lost; where they disagree, the notice wins.'
+      + (f && f.reconstructed ? ` **${f.reconstructed}** of them are **reconstructed** from a notice that named the reward, with no surviving game data (**not original**).` : ''),
+    'The login bonus day still starts at 08:00 UTC (see **Login Bonus**); the special login bonuses of a day are decided at your first login of that day, so a special day you miss is gone, as in the original game.',
+    'The **Total** login milestones stop at **Day 1,850**, as in the original game: the Day 1,900 to 3,200 milestones found in the donated data never existed in the original game (it closed after about 1,870 days) and are not served.',
+    '**Monthly missions.** From April 2018 to February 2021 the «[Monthly]» Limited missions are those of your **Story month** (the month of your Story week), not of the real month (**not original**: the original ones followed the calendar); their counters still restart every real month. In the other months they rotate as before.'];
+}
 // Events Part 4 Task 6: the census types of the challenge events, and the quiz board plan (sources of the boards)
 const CHALLENGE_TYPES = ['EQ', 'KEY', 'QUIZ'];
 function quizBoardSources(file = path.join(__dirname, '..', 'recon', 'tools', 'quiz_dramas.json')) {
@@ -620,6 +643,8 @@ const NOTICES = [
       ...eventHscLines(eventNoticeFacts()),
       // Events Part 9a (22-11): the Bonus Times of the story day (campaigns.js, docs/notes/campaigns.md)
       ...bonusTimeLines(bonusTimeFacts()),
+      // Events Part 9b (22-11): special login bonuses and monthly missions by story month
+      ...loginSpecialLines(loginSpecialFacts()),
       '## Gem quests',
       'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
       'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
@@ -1028,4 +1053,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines };
+module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines, loginSpecialFacts, loginSpecialLines };

@@ -501,6 +501,22 @@ for (const web of [false, true]) {
   check(l.split('**0 AP**').length === 2, 'Bonus Times: one name per kind');
   check(n.bonusTimeLines(null).join(' ').includes('## Bonus Times'), 'Bonus Times: without data, generic lines');
 }
+// Events Part 9b: the special login bonuses and the monthly missions by story month
+{
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-n9b-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'login_specials.json'), JSON.stringify({ 312: { from: '2016-06-16', to: '2016-06-22' }, 313: { from: '2016-09-01', to: '2016-09-30' }, 700: { from: '2016-05-16', to: '2016-05-23' } }));
+    fs.writeFileSync(path.join(dir, 'loginBonus.json'), JSON.stringify([{ loginBonusId: 312, bonusType: 4 }, { loginBonusId: 313, bonusType: 4 }, { loginBonusId: 700, bonusType: 4 }]));
+    const f = n.loginSpecialFacts(dir);
+    check(f && f.rows === 3 && f.reconstructed === 1 && f.first === '2016-05-16' && f.last === '2016-09-30', `login specials facts: ${JSON.stringify(f)}`);
+    const l = n.loginSpecialLines(f).join(' ');
+    check(l.includes('## Special login bonuses') && l.includes('**3 special login bonuses**'), 'login specials: section and count');
+    check(l.includes('once') && /1,900|1900/.test(l) && l.includes('reconstructed'), 'login specials: once, Day 1,900+ not served, reconstructed named');
+    check(/Monthly/.test(l) && /Story month|story month/.test(l), 'login specials: monthly missions follow the story month');
+    check(n.loginSpecialLines(null).join(' ').includes('## Special login bonuses'), 'login specials: without data, generic lines');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
 // Events Part 9a: the Bonus Times section (whole original day, donated master, raids keep their own, notices win)
 {
   const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
