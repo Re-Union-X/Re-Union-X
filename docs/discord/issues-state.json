@@ -592,8 +592,8 @@
   "I-287": {
    "thread": "1573952562196127767",
    "msg": "1573952562196127767",
-   "group": "OPEN",
-   "hash": "b930953becd4913f",
+   "group": "CLOSED",
+   "hash": "a14c784050b65b95",
    "name": "I-287 · Medal list SCORE filter ignores some active HSCs"
   }
  }
