@@ -925,6 +925,23 @@ if (stagesOut) fs.writeFileSync(stagePath, JSON.stringify(stagesOut));
 fs.writeFileSync(path.join(OUT, 'burst.json'), JSON.stringify(bursts));
 fs.writeFileSync(path.join(OUT, 'mypageBackground.json'), JSON.stringify(backgrounds));
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
+// Evolve cost of the 6★ (user 22-11): the 2021 live master (ReLux extract, by SE id) where it has the medal (Cid 5000, KH 3D
+// Sora/Riku/Meow Wow 80000), otherwise 160000 for every 6★ -> 7★ (the 2021 value of all of them); the 2017 rows had 99999
+{
+  const EVOLVE_MONEY_2021 = process.env.KHUX_EVOLVE_MONEY_2021
+    || 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\evolve_money_2021.json';
+  let money2021 = {}, byName2021 = {};
+  try { ({ rows: money2021, byName: byName2021 = {} } = JSON.parse(fs.readFileSync(EVOLVE_MONEY_2021, 'utf8'))); } catch { console.warn(`evolve: ${EVOLVE_MONEY_2021} not readable`); }
+  const rareOf = new Map(medals.map((m) => [m.medalId, m.rare]));
+  let n = 0;
+  for (const m of medals) {
+    if (m.rare !== 6 || !m.validEvolve) continue;
+    // by SE id, else by exact name (Blue Fairy chain 3000..320000, Pence/Hayner/Olette B 80000: other ids in ours), else 6★ -> 7★
+    const money = money2021[m.medalId % 1000000] ?? byName2021[m.name] ?? (rareOf.get(m.evolveId) === 7 ? 160000 : undefined);
+    if (money !== undefined && m.evolveMoney !== money) { m.evolveMoney = money; n++; }
+  }
+  console.log(`evolve: cost of ${n} 6★ rows from the 2021 master`);
+}
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 // adesivi della chat del party (stamp-table.js, I-210)
