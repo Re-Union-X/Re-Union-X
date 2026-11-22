@@ -249,6 +249,29 @@ function loginSpecialLines(f) {
     'The **Total** login milestones stop at **Day 1,850**, as in the original game: the Day 1,900 to 3,200 milestones found in the donated data never existed in the original game (it closed after about 1,870 days) and are not served.',
     '**Monthly missions.** From April 2018 to February 2021 the «[Monthly]» Limited missions are those of your **Story month** (the month of your Story week), not of the real month (**not original**: the original ones followed the calendar); their counters still restart every real month. In the other months they rotate as before.'];
 }
+// Events Part 10a: the 2016-11..2018-03 events (data-hole records hole_2016_18, private builder tmp/events/part10/build_hole.py):
+// entries of census types EQ / COIN / CELEB / SPEC / COLLAB whose start falls in the period (the Org XIII runs have their own section)
+const HOLE_TYPES = ['EQ', 'COIN', 'CELEB', 'SPEC', 'COLLAB'];
+function eventHoleFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dirname, 'game_data', 'events.json')) {
+  let x;
+  try { x = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+  const all = (x.entries || []).filter((e) => HOLE_TYPES.includes(e.type) && e.start >= '2016-11-01' && e.start <= '2018-03-31');
+  const qs = all.flatMap((e) => e.quests || []);
+  return { hole: { events: all.filter((e) => e.available).length, served: qs.filter((q) => q.served).length, quests: qs.length,
+    later: qs.filter((q) => !q.served && /Part 10b/.test(q.why || '')).length } };
+}
+function eventHoleLines(f) {
+  const h = f && f.hole;
+  const out = ['## Events of 2016-2018'];
+  if (!h || !h.served) out.push('The events of **November 2016 to March 2018** are listed in the Event Catalog; their quests are not served yet.');
+  else {
+    out.push(`The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **${h.events} events** are served, with **${h.served} of their ${h.quests} quests**, on the dates of the original notices. Quests that came from the Japanese version are played on their **original Japanese maps**.`);
+    if (h.later) out.push(`For the other ${h.later} quests, made for the worldwide version only, no map survives in any source we hold: they wait in the **Event Catalog** until their maps are rebuilt from the community wiki and videos of the time (**not original**).`);
+  }
+  out.push('The daily quests, the Gauntlet tiers and the quests that opened day by day are all open for the **whole event** (**not original**: the original released them day by day).');
+  out.push('The **daily and weekly missions** are shown before November 9, 2017, the day they started in the original game (**not original**).');
+  return out;
+}
 // Events Part 9c: the Home Lux Boost (lux-boost.js)
 function luxBoostLines() {
   return ['## Lux Boost',
@@ -653,6 +676,8 @@ const NOTICES = [
       ...loginSpecialLines(loginSpecialFacts()),
       // Events Part 9c (22-11): the Home Lux Boost
       ...luxBoostLines(),
+      // Events Part 10a (22-11): the 2016-2018 events (data-hole records)
+      ...eventHoleLines(eventHoleFacts()),
       '## Gem quests',
       'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
       'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
@@ -1061,4 +1086,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines, loginSpecialFacts, loginSpecialLines, luxBoostLines };
+module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines, loginSpecialFacts, loginSpecialLines, luxBoostLines, eventHoleFacts, eventHoleLines };
