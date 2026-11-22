@@ -1530,8 +1530,25 @@ const BENCH_DROP_LUCK = process.env.KHUX_BENCH_DROP_LUCK === '1';
 // type (docs/notes/campaigns.md). Comma-separated ids; unset = none.
 const BENCH_CAMPAIGN_FORCE = String(process.env.KHUX_CAMPAIGN_FORCE || '').split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0);
 if (BENCH_CAMPAIGN_FORCE.length) console.log(`[campaigns] bench KHUX_CAMPAIGN_FORCE: ${BENCH_CAMPAIGN_FORCE.join(',')}`);
-// campaigns of GET /campaign and /stage/start: the raid AP 0 ids (routes-raid.js) and the bench ids
-const servedCampaignIds = () => [...new Set([...raid().campaignIds(), ...BENCH_CAMPAIGN_FORCE])];
+// Bonus Times of the story day (Events Part 9a, campaigns.js): the ids of GET /campaign and /stage/start (raid AP 0 ids of
+// routes-raid.js, the day's rows of campaign_days.json, the bench ids) and the AP charged at /stage/start
+let campaignRoutesCache = null, campaignDaysCache = null;
+function readCampaignDays() {
+  const file = path.join(MASTER_DIR, 'campaign_days.json');
+  if (!fs.existsSync(file)) return {};
+  const st = fs.statSync(file);
+  if (!campaignDaysCache || campaignDaysCache.mtimeMs !== st.mtimeMs || campaignDaysCache.size !== st.size) campaignDaysCache = { mtimeMs: st.mtimeMs, size: st.size, days: JSON.parse(fs.readFileSync(file, 'utf8')) };
+  return campaignDaysCache.days;
+}
+function campaigns() {
+  return campaignRoutesCache ??= require('./campaigns').campaignRoutes({
+    masterRows, readDays: readCampaignDays, realNow, log: (m) => console.log(m), benchIds: () => BENCH_CAMPAIGN_FORCE,
+    storyWeek: () => { const c = storyCtx(); return { shopFrom: c.shopFrom, shopTo: c.shopTo }; },
+    raidIds: (ms) => raid().campaignIds(ms), raidStageAp: (id, ms) => raid().stageAp(id, ms),
+    useAp: (id) => Number(stageRowOf(id)?.useAp) || 0,
+  });
+}
+const servedCampaignIds = () => campaigns().ids();
 function rollDropTypes(rewardId, types, rng = Math.random) {
   if (BENCH_DROP_LUCK) rng = () => 0;
   const odds = rewardRowById(rewardId)?.odds || [];
@@ -2362,7 +2379,8 @@ function respondStageStart(res, req) {
   // Q978 (onlyDrama, solo filmato): useAp 0, nessun POI -> nessun drop ne' forziere; il client salta la mappa
   // (StageSkipActionMap) e manda subito /stage/clear (task-1-report D-B)
   // a raid quest's AP depends on the hour (routes-raid.js), the master row holds only the weekday value
-  const useAp = raid().stageAp(player.currentStageId) ?? (Number(stageRowOf(player.currentStageId)?.useAp) || 0);
+  // and an event quest's AP the Bonus Time of the story day (campaigns.js; the raid rule first)
+  const useAp = campaigns().stageAp(player.currentStageId);
   if (useAp) {
     const before = apState().ap;
     if (before < useAp) console.log(`[ap] stage ${player.currentStageId}: costo ${useAp} AP, disponibili ${before}`);
