@@ -177,7 +177,12 @@ for (const k of t.ownedKeyblades()) {
     check(sent && sent.deckMedals.length === Math.min(5, chain[i].validConsist), `${name} +${chain[i].lv}: deckMedals ${sent?.deckMedals.length} / slot ${chain[i].validConsist}`);
     const deck = r.userDecks.find((d) => d.userDeckId === k.userKeybladeId);
     check(deck && deck.deckMedals.length === sent.deckMedals.length, `${name} +${chain[i].lv}: userDecks diverso`);
-    for (const m of r.userMaterials) check(m.number > 0, `${name}: userMaterials con ${m.materialId} x${m.number}`);
+    // I-285: the client merges userMaterials entry by entry, so a material spent to 0 must be sent with number 0 (left out,
+    // the client kept the old count, allowed the next Strengthen and the server refused it silently: I-284)
+    for (let j = 0; j < prev.validNeedMaterial; j++) {
+      const id = prev.needMaterialId[j], m = r.userMaterials.find((x) => x.materialId === id);
+      check(m && m.number === p.materials[id], `${name} +${prev.lv}: userMaterials ${id} = ${m?.number}, owned ${p.materials[id]}`);
+    }
     if (chain[i].displayId !== prev.displayId) evolutions++;
   }
   const end = userKb(k.userKeybladeId);

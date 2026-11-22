@@ -2581,9 +2581,11 @@ function grantItem(type, id, num, ctx = {}) {
   else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
 }
 
-// userMaterials[]: userMaterialId uint64, materialId, number
+// userMaterials[]: userMaterialId uint64, materialId, number. A material spent to 0 stays in the list with number 0: the client
+// applies the list entry by entry, so a left-out entry kept its old count (Strengthen allowed, refused by the server: I-284/I-285);
+// number 0 is what Sell (action 50) and Level Up already send for a material gone
 function userMaterialsData() {
-  return Object.entries(player.materials || {}).filter(([, n]) => n > 0)
+  return Object.entries(player.materials || {}).filter(([, n]) => n >= 0)
     .map(([id, n]) => ({ userMaterialId: Number(id), materialId: Number(id), number: n }));
 }
 
