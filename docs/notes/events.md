@@ -1317,7 +1317,8 @@ Plan `docs/superpowers/plans/2026-11-22-events-part10b-generated-maps.md`, ledge
   appended as sets «hole-*» by `add_hole_boards.py`); a data-hole record in a board set is a board event (eventType 1, test
   board_entry_data_hole). 8 sets handed out; EV-0074 / EV-0090 / EV-0121 / EV-0242 noCoinSource (coins were drops, or no quest).
   Board card pictures are blank (no boardArt yet).
-- **Served.** Period 722 of 905 quests (was 430), revision 357, resources 144. Bench p10e: HD Aqua Beginner on its generated map, 30
+- **Large Fireworks (user 22-11).** Donor rows 26 / 10026 (and Festive Fireworks target 10025) added to the private event enemy file; model 26 complete in JP 4.3.1, rendered and approved by the user (`recon/tools/event_enemy_families.json` family 26), built in enemy_gen (336 models), resources 145: EV-0108 Beginner / Intermediate and EV-0310 Beginner Round 3/4 served (bench p10f: four Large Fireworks Lv 50 on the generated map).
+- **Served.** Period 725 of 905 quests (was 430), revision 359, resources 145. Bench p10e: HD Aqua Beginner on its generated map, 30
   Event Coins, HD Aqua Set 1 board.
 
 ## Part 8 summary (High Score Challenges, 16 November 2026)
