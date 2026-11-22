@@ -507,7 +507,9 @@ function itemResolver(master) {
     // the donor id is ours when it names the same medal (or the record gives no «Name N★» to compare)
     if (medalIds.has(d.id)) {
       const own = medalOf.get(d.id);
-      if (!mt || (own.name === mt[1] && String(own.rare) === mt[2])) return d.id;
+      // Events Part 10a: «KH Sora A» (donor) = «KH Sora Ver. A» (ours): the 2016 WW medal names, same medal
+      const verless = (n) => String(n).replace(/ Ver\. ([A-Z])$/, ' $1');
+      if (!mt || (verless(own.name) === verless(mt[1]) && String(own.rare) === mt[2])) return d.id;
     }
     if (!mt) return null;
     let rows = byName.get(`${mt[1]}|${mt[2]}`) || [];

@@ -457,8 +457,10 @@ const tests = {
     const old = build(recs, undefined, { ...CONFIG, onlyCensusIds: ['E-2'] });
     assert.deepStrictEqual(old.index.entries.map((e) => e.censusId), ['E-2']);
     // the real config: 13 pilot ids, the GEM type (Part 2), the COIN type (Part 3), the challenge types EQ, KEY, QUIZ (Part 4),
-    // the 35 Org XIII / Keyblade War ids (Part 5) and the High Score Challenges HSC (Part 8)
-    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35);
+    // the 35 Org XIII / Keyblade War ids (Part 5), the High Score Challenges HSC (Part 8) and the 11 CELEB / SPEC / COLLAB quest events
+    // of 2016-11..2018-03 (Part 10a)
+    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11);
+    for (const id of ['EV-0094', 'EV-0214', 'EV-0402', 'EV-0423']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     assert.strictEqual(new Set(REAL_CONFIG.serve.censusIds).size, REAL_CONFIG.serve.censusIds.length, 'no id twice');
     for (const id of ['EV-0081', 'EV-0346', 'EV-0441', 'EV-0741', 'EV-1103', 'EV-1273', 'EV-0913', 'EV-0941']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     assert.deepStrictEqual(REAL_CONFIG.serve.types, ['GEM', 'COIN', 'EQ', 'KEY', 'QUIZ', 'HSC']);
@@ -1250,6 +1252,18 @@ const tests = {
     assert.ok(!out.stage.some((s) => s.stageId === held.stageId), 'no stage row');
     assert.ok(ok.served);
     assert.ok(!JSON.stringify(out.stage).includes('Clear within 75'), 'the text reaches no row');
+  },
+  // Events Part 10a: a donor reward medal of the same id whose name differs only by «Ver.» (donor «KH Sora A 2★», ours «KH Sora Ver. A»)
+  // is that medal (WW names of the 2016 medals); another name on the same id stays missing
+  reward_medal_ver_name() {
+    const m = { ...master(), medal: [{ medalId: 12022, name: 'KH Sora Ver. A', rare: 2, imageId: 12022 }, { medalId: 90011, name: 'Quest Medal', rare: 6, imageId: 90011 }],
+      material: [], title: [], avatarParts: [], petParts: [] };
+    const ok = quest(702300, 1, [501], { objectives: [objective(10, 'Complete without having to continue', { type: 3, id: 12022, num: 1, name: 'KH Sora A 2★' })] });
+    const bad = quest(702301, 1, [501], { objectives: [objective(10, 'Complete without having to continue', { type: 3, id: 12022, num: 1, name: 'Donald A 2★' })] });
+    const out = me.buildEvents([record('E-V', [ok, bad])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const [q1, q2] = entry(out, 'E-V').quests;
+    assert.ok(q1.served, JSON.stringify(q1));
+    assert.strictEqual(q2.reason, 'rewardItemMissing', JSON.stringify(q2));
   },
   // Events Part 10a: a data-hole quest whose map is generated later (map.source 'generateLater', Part 10b): not served, reason
   // mapUnusable «map to generate (Events Part 10b)», not listed in event_gen_maps.json; the other quests of the record are unaffected

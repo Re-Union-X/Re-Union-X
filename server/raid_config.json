@@ -518,7 +518,8 @@
     "boostedMedals": [
       {"name": "Trickmaster", "rare": 6, "str": 1000, "def": 0, "source": "notice 33888 (Nov 2017 Daily Raid Event): Boosted Trickmaster: 1,000 more base Strength; khuxwiki Trickmaster (Medal)"},
       {"name": "Destroyer Behemoth", "rare": 6, "str": 1000, "def": 0, "source": "notice 34680 (Dec 2017 Monthly Raid Event): one boosted copy; khuxwiki Destroyer Behemoth: 1,000 more base strength; JP digest: atk +1000"},
-      {"name": "Twilight Thorn", "rare": 6, "str": 1000, "def": 0, "source": "JP notice 30969 (Aug 2017 monthly 30-minute raid): the Saturday Adventurer at LV 10 drops a status-boosted Twilight Zone (= Twilight Thorn), ATK +1000 (JP-RAID-29 level drop, jpCensus)"}
+      {"name": "Twilight Thorn", "rare": 6, "str": 1000, "def": 0, "source": "JP notice 30969 (Aug 2017 monthly 30-minute raid): the Saturday Adventurer at LV 10 drops a status-boosted Twilight Zone (= Twilight Thorn), ATK +1000 (JP-RAID-29 level drop, jpCensus)"},
+      {"name": "Maleficent B", "rare": 6, "str": 1000, "def": 0, "source": "Events Part 10a: donor WW row 123256 (Boosted Maleficent B, groupId 23256: attack +1,000 over 23256, defense equal), objective reward of EV-0169 Maleficent's Villainous Event Pt. 15 (Mar 2017)"}
     ],
     "unmatched": {
       "Booster [HD Vanitas (EX+)] +5%": "Event Boosters are not built yet (they come with the events, I-166): the cell is left off.",
