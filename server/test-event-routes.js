@@ -210,6 +210,17 @@ const tests = {
     assert.deepStrictEqual(w.ev.unkeep(), { code: 200, body: { ok: true } });
     assert.deepStrictEqual(w.ev.events().map((e) => e.eventStageId), [29901, 29902]);
   },
+  // Events Part 10c review I3: a kept event with «open» time windows (Classic Donald) follows them as in its own week
+  kept_time_windows() {
+    const idx = INDEX();
+    idx.entries.find((e) => e.censusId === 'E-0').timeWindows = [{ from: '12:00', to: '23:59', effect: 'open' }];
+    const w = world({ index: idx });
+    assert.deepStrictEqual(w.ev.keep(29900), { code: 200, body: { ok: true } });
+    w.now = Date.parse('2019-04-09T16:00:00Z'); // 09:00 PDT: closed
+    assert.ok(!w.ev.events().some((c) => c.eventStageId === 29900), 'closed outside the window');
+    w.now = Date.parse('2019-04-09T20:00:00Z'); // 13:00 PDT: open
+    assert.ok(w.ev.events().some((c) => c.eventStageId === 29900), 'open inside the window');
+  },
   // Events Part 4 Task 4: a Booster objective reward (make-events.js: type 0 in the stage row, the Booster named in the index
   // quest) goes to player.pendingBoosters once, for Part 6 to grant; the other rewards are paid; a replay adds nothing
   booster_reward_pending_once() {

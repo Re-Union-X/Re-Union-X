@@ -29,6 +29,7 @@
 // saves). boardCatalogCtx / keepBoard / unkeepBoard / boardKept / pruneBoardKept; migrateKept moves a BOARD entry an older save
 // kept through the shared Task 5 keep (player.events.kept) to the board keep (server.js: at login).
 'use strict';
+const timeWindows = require('./event-time-windows');
 const fs = require('fs');
 const path = require('path');
 const calendar = require('./event-calendar');
@@ -302,6 +303,8 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   // the kept event's open cards, one per built row (Part 2 Task 5): its dates are past, so `days` (row or quest) are read as real
   // weekdays (Pacific). [{row, quests}]
   function keptCards(e, realMs) {
+    // «open» time windows inside the day (Events Part 10c): a kept event follows them as in its own week (review I3)
+    if (e.timeWindows && !timeWindows.openNow(e.timeWindows, realMs)) return [];
     const wd = ptWeekday(realMs);
     const onDay = (ds) => !Array.isArray(ds) || !ds.length || ds.some((d) => weekdayOf(d) === wd);
     return calendar.builtRows(e).map((row) => {

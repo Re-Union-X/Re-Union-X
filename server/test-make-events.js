@@ -1326,7 +1326,7 @@ const tests = {
   // openWindowsReconstructed, Bonus Time hours whose factor the notice does not give -> label bonusHoursFactor
   time_windows_entry() {
     const donald = record('E-TD', [quest(702500, 1, [501])], { timeWindows: [{ from: '12:00', to: '23:59', effect: 'open', reconstructed: true }] });
-    const goofy = record('E-TG', [quest(702510, 1, [501])], { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost', factor: 2, factorAssumed: true }] });
+    const goofy = record('E-TG', [quest(702510, 1, [501], { drops: { enemies: [{ enemy: 501, rewardId: 62250, rows: [{ type: 3, id: 90011, num: 1, odds: 500 }] }], chests: [] } })], { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost', factor: 2, factorAssumed: true }] });
     const out = me.buildEvents([donald, goofy, record('E-TP', [quest(702520, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
     const d = entry(out, 'E-TD'), g = entry(out, 'E-TG'), p = entry(out, 'E-TP');
     assert.deepStrictEqual(d.timeWindows, [{ from: '12:00', to: '23:59', effect: 'open', reconstructed: true }]);
@@ -1334,12 +1334,19 @@ const tests = {
     assert.strictEqual(g.timeWindows[0].factor, 2);
     assert.ok(g.labels.includes('bonusHoursFactor') && !g.labels.includes('openWindowsReconstructed'), JSON.stringify(g.labels));
     assert.ok(!('timeWindows' in p) && !p.labels.includes('bonusHoursFactor'));
+    // review I1: Bonus Time with nothing to boost (no quest of the record drops anything below 100%): bonusHoursLater, never the
+    // «drop rates doubled» label
+    const bare = record('E-TN', [quest(702540, 1, [501], { drops: { enemies: [{ enemy: 501, rewardId: 1, rows: [{ type: 5, id: 13, num: 1, odds: 10000 }] }], chests: [] } })],
+      { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost', factor: 2, factorAssumed: true }] });
+    const nb = entry(me.buildEvents([bare], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] }), 'E-TN');
+    assert.ok(nb.labels.includes('bonusHoursLater') && !nb.labels.includes('bonusHoursFactor'), JSON.stringify(nb.labels));
+    assert.ok(REAL_CONFIG.reconstructedWhy.bonusHoursLater);
     assert.ok(REAL_CONFIG.reconstructedWhy.openWindowsReconstructed && REAL_CONFIG.reconstructedWhy.bonusHoursFactor);
     const bad = record('E-TB', [quest(702530, 1, [501])], { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost' }] });
     assert.throws(() => me.buildEvents([bad], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] }), /E-TB.*factor/);
   },
-  // Events Part 10c Task 6: «Collect all materials» on a multi-area generated map whose khuxwiki page lists treasures (genAreas
-  // chests > 0): the generator places those chests, so the quest is served; a page with no treasure: held as before
+  // Events Part 10c review I6: «Collect all materials» (objective code 18) counts the materials the enemies drop (code 17 is the
+  // chests): treasures on the khuxwiki page do not show it can be met, so a generated map stays held even with chests
   gen_areas_collect_materials() {
     const area = (chests) => ({ areas: [
       { label: 'Room (1)', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 7 }] }], chests },
@@ -1348,8 +1355,7 @@ const tests = {
     const out = me.buildEvents([record('E-CM', [genQuest(702600, { genAreas: area(2), objectives: obj }), genQuest(702601, { genAreas: area(0), objectives: obj })])],
       CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
     const [withT, noT] = entry(out, 'E-CM').quests;
-    assert.ok(withT.served, JSON.stringify(withT));
-    assert.strictEqual(out.genMaps.find((g) => g.stageId === withT.stageId).areas[0].chests, 2);
+    assert.deepStrictEqual([withT.served, withT.reason], [false, 'mapUnusable'], JSON.stringify(withT));
     assert.deepStrictEqual([noT.served, noT.reason], [false, 'mapUnusable']);
   },
   map_generate_later() {

@@ -252,6 +252,8 @@ function loginSpecialLines(f) {
 // Events Part 10a: the 2016-11..2018-03 events (data-hole records hole_2016_18, private builder tmp/events/part10/build_hole.py):
 // entries of census types EQ / COIN / CELEB / SPEC / COLLAB whose start falls in the period (the Org XIII runs have their own section)
 const HOLE_TYPES = ['EQ', 'COIN', 'CELEB', 'SPEC', 'COLLAB'];
+// «HH:MM» -> «12:00 p.m.» (Pacific time text of the notices)
+const clock12 = (hm) => { const [h, m] = String(hm).split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'a.m.' : 'p.m.'}`; };
 function eventHoleFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dirname, 'game_data', 'events.json')) {
   let x;
   try { x = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
@@ -268,11 +270,17 @@ function eventHoleFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dirna
     generated: qs.filter((q) => q.served && (q.labels || []).some((l) => l === 'wikiRoom' || l === 'wikiAreas')).length,
     calibrated: qs.filter((q) => q.served && (q.labels || []).includes('dropsCalibrated')).length,
     boards: Object.keys(x.boardSets || {}).filter((k) => k.startsWith('hole-')).length,
-    boosterEvents: live.filter((e) => e.type === 'BOOST').length,
+    // review I5: a Booster Challenge counts when one of its served quests pays a Booster
+    boosterEvents: live.filter((e) => e.type === 'BOOST' && (e.quests || []).some((q) => q.served && (q.boosterRewards || []).length)).length,
     damageContests: live.filter((e) => e.hsc && e.hsc.damageContest).length,
     openHours: live.filter((e) => hasLabel(e, 'openWindowsReconstructed')).length,
+    // review I2: the hours themselves, from the entries' open windows
+    openHoursText: [...new Set(live.filter((e) => hasLabel(e, 'openWindowsReconstructed'))
+      .flatMap((e) => (e.timeWindows || []).filter((w) => w.effect === 'open').map((w) => `${clock12(w.from)} to ${clock12(w.to)}`)))],
     bonusHours: live.filter((e) => hasLabel(e, 'bonusHoursFactor')).length,
-    summonsLater: live.flatMap((e) => e.quests || []).filter((q) => q.served && hasLabel(q, 'raidSummonLater')).length } };
+    summonsLater: live.flatMap((e) => e.quests || []).filter((q) => q.served && hasLabel(q, 'raidSummonLater')).length,
+    // review I4: the events that hold those quests, by name
+    summonNames: live.filter((e) => (e.quests || []).some((q) => q.served && hasLabel(q, 'raidSummonLater'))).map((e) => e.name).filter(Boolean) } };
 }
 function eventHoleLines(f) {
   const h = f && f.hole;
@@ -285,9 +293,9 @@ function eventHoleLines(f) {
     if (h.boards) out.push(`The **Event Coins** of the coin events go to **${h.boards} sets of Event Boards** of the original game data (the event boards, the Gem Boards and the daily Jewel boards of the period); all boards of a set are open for the whole event (**not original**: some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.`);
     if (h.boosterEvents) out.push(`**${h.boosterEvents} Booster Challenge${h.boosterEvents === 1 ? '' : 's'}** of the period ${h.boosterEvents === 1 ? 'is' : 'are'} back: their objectives pay the original **Boosters** of the donated game data (see **Boosters** below).`);
     if (h.damageContests) out.push(`**${h.damageContests} Damage Contest${h.damageContests === 1 ? '' : 's'}** («Test Your Might») ${h.damageContests === 1 ? 'is' : 'are'} back as High Score runs: the score is the damage you deal. As for the High Score Challenges, the original rank brackets became **score thresholds** (calibrated, **not original**). The July and October 2017 contests use the map of the December 2017 one, the same quest (no other map survives: **not original**).`);
-    if (h.openHours) out.push('**Classic Donald**: the original quests opened only for 12-hour periods at times never published; here they open every day at **reconstructed** hours shown on the event (**not original**).');
+    if (h.openHours) out.push(`**Classic Donald**: the original quests opened only for 12-hour periods at times never published; here they open every day${(h.openHoursText || []).length ? ` from **${h.openHoursText.join(' and ')}** (Pacific time)` : ''}, hours that are **reconstructed** (**not original**); outside them the event is not listed.`);
     if (h.bonusHours) out.push('**Classic Goofy**: in the **Bonus Time** hours of the original notice (12:00 p.m. to 1:59 p.m. and 8:00 p.m. to 9:59 p.m., Pacific time) rare Medals drop more often; the notice gave no rate, so the drop rates are **doubled** in those hours (**not original**).');
-    if (h.summonsLater) out.push(`In the original game **${h.summonsLater} quests** of the period could make a **raid boss** appear (the WORLD OF FINAL FANTASY event, the Eggcognito Daily Challenge); no raid of those bosses with their strength of the time is served yet, so here they summon none.`);
+    if (h.summonsLater) out.push(`In the original game **${h.summonsLater} quests** of the period could make a **raid boss** appear${(h.summonNames || []).length ? ` (${h.summonNames.map((x) => `«${x}»`).join(', ')})` : ''}; no raid of those bosses with their strength of the time is served yet, so here they summon none.`);
     const rest = h.quests - h.served - (h.later || 0);
     if (rest > 0) out.push(`The other ${rest} quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.`);
   }

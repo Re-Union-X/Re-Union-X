@@ -78,7 +78,7 @@ const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
   'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
-  'hscThresholds', 'damageContest', 'raidSummonLater', 'openWindowsReconstructed', 'bonusHoursFactor'];
+  'hscThresholds', 'damageContest', 'raidSummonLater', 'openWindowsReconstructed', 'bonusHoursFactor', 'bonusHoursLater'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
 // (quizBoardScreenshot)
@@ -1145,7 +1145,14 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       try { timeWindows.check(rec.timeWindows); } catch (e) { throw new Error(`events: ${rec.censusId}: ${e.message}`); }
       entry.timeWindows = rec.timeWindows.map((w) => ({ ...w }));
       if (rec.timeWindows.some((w) => w.effect === 'open' && w.reconstructed)) labels.add('openWindowsReconstructed');
-      if (rec.timeWindows.some((w) => w.effect === 'dropBoost' && w.factorAssumed)) labels.add('bonusHoursFactor');
+      // review I1: a Bonus Time boosts only drops below 100% (server.js rollDropTypes); a record with none: bonusHoursLater
+      const boostable = (rec.quests || []).some((q) => [...(((q.drops || {}).enemies) || []), ...(((q.drops || {}).chests) || [])]
+        .concat(Object.values((q.genDrops || {}).rows || {}).map((rows) => ({ rows })))
+        .some((d) => (d.rows || []).some((r) => Number(r.odds) < 10000)));
+      if (rec.timeWindows.some((w) => w.effect === 'dropBoost')) {
+        if (!boostable) labels.add('bonusHoursLater');
+        else if (rec.timeWindows.some((w) => w.effect === 'dropBoost' && w.factorAssumed)) labels.add('bonusHoursFactor');
+      }
     }
     // short windows of the donor rows: open the whole Pacific day (label wholeDay, not original). A `shortWindow` record whose rows
     // are all whole days (the Surprise events) was open that whole Pacific day in the original too: oneDay, no label
@@ -1249,10 +1256,9 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         }
         // «Collect all materials» needs materials on the map: the khuxwiki pages give none for a generated map, so the objective
         // could never be met as the original (nothing half-served)
-        // (Part 10c: a multi-area page that lists treasures gives its areas chests, which the generator places: served)
+        // (Part 10c review: code 18 counts enemy material drops, not chests: page treasures do not help)
         const chests = (q.objectives || []).filter((o) => o.code === 18);
-        const pageChests = ((q.genAreas || {}).areas || []).reduce((n, a) => n + (Number(a.chests) || 0), 0);
-        if (chests.length && !pageChests) { item.reason = 'mapUnusable'; item.why = `map not usable: a generated map has no materials for «${chests[0].text}» (no treasure on the khuxwiki page)`; continue; }
+        if (chests.length) { item.reason = 'mapUnusable'; item.why = `map not usable: a generated map has no materials for «${chests[0].text}» (no treasure on the khuxwiki page)`; continue; }
         genEntry = g.entry;
         // Events Part 10b: calibrated drops of a generated map (record genDrops {byName {name: rewardId}, target, rows {rewardId: rows}})
         const gd = q.genDrops;
