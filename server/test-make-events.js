@@ -458,8 +458,9 @@ const tests = {
     assert.deepStrictEqual(old.index.entries.map((e) => e.censusId), ['E-2']);
     // the real config: 13 pilot ids, the GEM type (Part 2), the COIN type (Part 3), the challenge types EQ, KEY, QUIZ (Part 4),
     // the 35 Org XIII / Keyblade War ids (Part 5), the High Score Challenges HSC (Part 8) and the 11 CELEB / SPEC / COLLAB quest events
-    // of 2016-11..2018-03 (Part 10a)
-    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11);
+    // of 2016-11..2018-03 (Part 10a), the 6 Booster Challenges of 2017-11..2018-03 (Part 10c)
+    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6);
+    for (const id of ['EV-0319', 'EV-0332', 'EV-0350', 'EV-0369', 'EV-0392', 'EV-0411']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     for (const id of ['EV-0094', 'EV-0214', 'EV-0402', 'EV-0423']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     assert.strictEqual(new Set(REAL_CONFIG.serve.censusIds).size, REAL_CONFIG.serve.censusIds.length, 'no id twice');
     for (const id of ['EV-0081', 'EV-0346', 'EV-0441', 'EV-0741', 'EV-1103', 'EV-1273', 'EV-0913', 'EV-0941']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
