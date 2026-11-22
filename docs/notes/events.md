@@ -1637,3 +1637,32 @@ resources 133, then two passes with stub server answers. Screenshots `t8s_*` (pr
   several rows, no evidence), EV-0874 (Ribbitoad: event rows only).
 - **Held:** EV-0395 until Chipper Chef (displayId 1513) has a model; EV-0247 needs the event enemy rows 199 / 240 (served
   models) in the master.
+
+## Part 10c summary (special mechanics, Damage Contests, Booster Challenges of 2016-2018, 22 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-22-events-part10c-special-mechanics.md`. Period 2016-11..2018-03: **751 of 905** quests served
+(725 after 10b). Resources 147, revision 360.
+
+- **Booster Challenges** (EV-0319, 0332, 0350, 0369, 0392, 0411): Part 6 code unchanged; the private Booster builder matched a
+  block's Boosters by donor stage id (it built only the first of a non-consecutive block). Quests whose Booster-paying objective is
+  held (enemy missing / ambiguous) leave the event listed without Boosters; the Notices count only challenges that pay one.
+- **Damage Contests** (EV-0238 / 0309 / 0352, «Test Your Might»): the client runs them as High Score runs (2019 donor evStage rows:
+  eventCategory 4, eventType 3). Records come from the private HSC builder (type HSC, `hsc.damageContest`), donor stages
+  703910 / 705710 / 707110 in id = date order; July / October use the December JP map 707110 (no other map survives, label
+  hscJpTwin); thresholds calibrated (group B1, interpolated). Label `damageContest`. Not benched yet (the bench save's Story week
+  is before July 2017).
+- **«chance» rows** of the khuxwiki pages (Eggcognito / Shenaneggan random spawns) are never placed as fixed enemies (private
+  builder, `genAreas.chanceLeftOut`): 26 generated maps of 10b changed.
+- **WOFF EV-0121**: Beginner / Intermediate on generated maps (the 2017 footage agrees fight by fight), Advanced held (footage not
+  countable at 480p). **EV-0423** 2nd Anniversary countdown: 7 generated maps from its pages (= the donor rows).
+- **Raid summons** (WOFF Adventurer, Daily Challenge #13 Eggcognitos): no served raid row has the strength of January 2017, so no
+  summon; quest label `raidSummonLater`; no spawn code.
+- **Time windows inside the day** (`server/event-time-windows.js`, record / entry `timeWindows`, Pacific clock, both minutes
+  inside, a window across midnight open on both sides): `open` lists the entry (and a kept copy) only inside it (Classic Donald,
+  12:00-23:59 PT, reconstructed: label `openWindowsReconstructed`); `dropBoost` multiplies drop odds below 100% in
+  `rollDropTypes` (Classic Goofy Bonus Time 12:00-13:59 / 20:00-21:59 PT, notice 23795, x2 assumed). Goofy's generated quests drop
+  nothing yet, so the label is `bonusHoursLater`.
+- «Collect all materials» (objective code 18) counts enemy material drops: generated maps with it stay held.
+- Open: contest bench on a later save; WOFF Advanced; 41 ambiguous enemy names (`tmp/events/part10/gen_held.md`); Goofy medal
+  drops; card endTime vs window end in daylight time (minor); M5 «Open all treasure chests» with 0 chests to bench.
+
