@@ -54,9 +54,10 @@ campaigns, the monthly event missions and the daily **Lux Boost** of the Home sc
 - **Donor calendar served in full (author, 22-11).** The evCampaign rows of the donated master are used even where no
   notice confirms them (only the 340 rows overlapping 1.1.3 could be cross-checked; 328 match), declared in the
   Notices as coming from the donated master; a notice still wins where it disagrees.
-- **Gap 2016-11..2018-03 (author, 22-11).** No source has evCampaign rows for these months (story quests just after 525):
-  only the Bonus Times announced in the notices are served; weeks without one stay without. No recurring pattern is
-  reconstructed.
+- **Days without rows (author, 22-11).** Where no source has evCampaign rows, only the Bonus Times announced in the notices
+  are served; weeks without one stay without. No recurring pattern is reconstructed. Correction while planning (22-11): the
+  donor table does cover 2016-09..2018-03 (100-360 rows a month, counted on startTime); the builder check had read the
+  density of evStage. The rule therefore matters only before 2016-09 (1.1.3 rows and notices).
 
 ## How the client treats campaigns (known)
 
