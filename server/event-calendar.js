@@ -14,6 +14,7 @@
 // - one card per original evStage row of an entry (Part 2 Task 5, currentCards): a row is listed in the weeks its own dates overlap.
 'use strict';
 const { weekTo, weekDateAt } = require('./calendar-util');
+const timeWindows = require('./event-time-windows');
 
 const served = (q) => q && q.served;
 const listable = (e) => !!(e && e.available && e.evStageId && (e.stageIds || []).length);
@@ -22,6 +23,8 @@ const listable = (e) => !!(e && e.available && e.evStageId && (e.stageIds || [])
 // A quest with openFrom (Part 5 fix round 1: the Pt. 2 quests of EV-0929, dated from its Pt. 1 line) only in the Shop weeks that
 // reach that date
 function openQuests(entry, week = {}, nowMs) {
+  // Events Part 10c: «open» time windows inside the day (event-time-windows.js): outside them nothing is listed
+  if (entry && entry.timeWindows && !timeWindows.openNow(entry.timeWindows, nowMs)) return [];
   const to = week.shopFrom ? weekTo(week) : null;
   const quests = ((entry && entry.quests) || []).filter(served).filter((q) => !q.openFrom || !to || q.openFrom <= to);
   const hasDays = (x) => Array.isArray(x.days) && x.days.length;
@@ -40,7 +43,7 @@ const builtRows = (e) => (Array.isArray(e.rows) && e.rows.length
 // the served quests of one row of the entry open now (its days, then the quests' own days, as openQuests)
 function rowQuests(entry, row, week = {}, nowMs) {
   const ids = new Set(row.stageIds || []);
-  return openQuests({ days: row.days, quests: ((entry && entry.quests) || []).filter((q) => ids.has(q.stageId)) }, week, nowMs);
+  return openQuests({ days: row.days, timeWindows: entry && entry.timeWindows, quests: ((entry && entry.quests) || []).filter((q) => ids.has(q.stageId)) }, week, nowMs);
 }
 
 // The cards listed in the Shop week {shopFrom, shopTo} at the real moment nowMs, in index and row order: [{entry, row, quests}]

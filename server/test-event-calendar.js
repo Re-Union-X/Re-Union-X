@@ -104,6 +104,44 @@ const tests = {
     // an entry without rows (an index before Task 5): one card, the entry itself
     assert.deepStrictEqual(cal.currentCards({ entries: [entry('E-1', '2019-04-01', '2019-04-07')] }, week('2019-04-01', '2019-04-07'), WED).map((c) => c.row.evStageId), [20001]);
   },
+  // Events Part 10c Task 5: an entry with «open» time windows (entry.timeWindows, Pacific HH:MM, both minutes inside) lists its quests
+  // only inside one of them; a window across midnight (from > to) is open on both sides of it, never closed early
+  time_window_open() {
+    const e = entry('E-9', '2019-04-01', '2019-04-07', { timeWindows: [{ from: '12:00', to: '23:59', effect: 'open' }] });
+    const w = week('2019-04-01', '2019-04-07');
+    const at = (iso) => cal.openQuests(e, w, Date.parse(iso)).map((q) => q.stageId);
+    assert.deepStrictEqual(at('2026-11-04T20:00:00Z'), [4000009], '12:00 PST: open');
+    assert.deepStrictEqual(at('2026-11-05T07:59:00Z'), [4000009], '23:59 PST: open');
+    assert.deepStrictEqual(at('2026-11-05T08:00:00Z'), [], '00:00 PST: closed');
+    assert.deepStrictEqual(at('2026-11-04T19:59:00Z'), [], '11:59 PST: closed');
+    // the card of each built row (rowQuests, the path of /stage/event) follows the entry's windows too
+    const row = { evStageId: 20009, stageIds: [4000009] };
+    assert.deepStrictEqual(cal.rowQuests(e, row, w, Date.parse('2026-11-05T08:00:00Z')), [], 'row: closed');
+    assert.deepStrictEqual(cal.rowQuests(e, row, w, Date.parse('2026-11-04T20:00:00Z')).map((q) => q.stageId), [4000009], 'row: open');
+    const night = entry('E-8', '2019-04-01', '2019-04-07', { timeWindows: [{ from: '20:00', to: '07:59', effect: 'open' }] });
+    const at2 = (iso) => cal.openQuests(night, w, Date.parse(iso)).map((q) => q.stageId);
+    assert.deepStrictEqual(at2('2026-11-05T07:30:00Z'), [4000008], '23:30 PST: open');
+    assert.deepStrictEqual(at2('2026-11-05T09:00:00Z'), [4000008], '01:00 PST, after midnight: still open');
+    assert.deepStrictEqual(at2('2026-11-05T15:59:00Z'), [4000008], '07:59 PST: open');
+    assert.deepStrictEqual(at2('2026-11-05T16:00:00Z'), [], '08:00 PST: closed');
+    // a drop-boost window never closes the quests; no clock: an entry with open windows is listed (as a plain event)
+    const boost = entry('E-7', '2019-04-01', '2019-04-07', { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost', factor: 2 }] });
+    assert.deepStrictEqual(cal.openQuests(boost, w, Date.parse('2026-11-05T08:00:00Z')).map((q) => q.stageId), [4000007]);
+    assert.deepStrictEqual(cal.openQuests(e, w).map((q) => q.stageId), [4000009]);
+  },
+  // Events Part 10c Task 5: inside a Goofy bonus hour the drop odds of the entry's quests are multiplied by the window factor
+  time_window_drop_boost() {
+    const tw = require('./event-time-windows');
+    const ws = [{ from: '12:00', to: '13:59', effect: 'dropBoost', factor: 2 }, { from: '20:00', to: '21:59', effect: 'dropBoost', factor: 2 }];
+    assert.strictEqual(tw.dropFactor(ws, Date.parse('2026-11-04T20:30:00Z')), 2, '12:30 PST');
+    assert.strictEqual(tw.dropFactor(ws, Date.parse('2026-11-05T05:59:00Z')), 2, '21:59 PST');
+    assert.strictEqual(tw.dropFactor(ws, Date.parse('2026-11-05T06:00:00Z')), 1, '22:00 PST');
+    assert.strictEqual(tw.dropFactor([{ from: '00:00', to: '23:59', effect: 'open' }], Date.parse('2026-11-04T20:30:00Z')), 1, 'an open window is no boost');
+    assert.strictEqual(tw.dropFactor(undefined, Date.parse('2026-11-04T20:30:00Z')), 1);
+    assert.throws(() => tw.check([{ from: '12:00', to: '13:59', effect: 'dropBoost' }]), /factor/);
+    assert.throws(() => tw.check([{ from: '24:00', to: '13:59', effect: 'open' }]), /HH:MM/);
+    assert.throws(() => tw.check([{ from: '12:00', to: '13:59', effect: 'other' }]), /effect/);
+  },
 };
 
 let failed = 0;

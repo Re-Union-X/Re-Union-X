@@ -1322,6 +1322,22 @@ const tests = {
     assert.ok(plain.served && !plain.labels.includes('raidSummonLater'));
     assert.ok(REAL_CONFIG.reconstructedWhy.raidSummonLater, 'phrase for the label');
   },
+  // Events Part 10c Task 5: record timeWindows go to the index entry (checked); reconstructed open windows -> label
+  // openWindowsReconstructed, Bonus Time hours whose factor the notice does not give -> label bonusHoursFactor
+  time_windows_entry() {
+    const donald = record('E-TD', [quest(702500, 1, [501])], { timeWindows: [{ from: '12:00', to: '23:59', effect: 'open', reconstructed: true }] });
+    const goofy = record('E-TG', [quest(702510, 1, [501])], { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost', factor: 2, factorAssumed: true }] });
+    const out = me.buildEvents([donald, goofy, record('E-TP', [quest(702520, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const d = entry(out, 'E-TD'), g = entry(out, 'E-TG'), p = entry(out, 'E-TP');
+    assert.deepStrictEqual(d.timeWindows, [{ from: '12:00', to: '23:59', effect: 'open', reconstructed: true }]);
+    assert.ok(d.labels.includes('openWindowsReconstructed') && !d.labels.includes('bonusHoursFactor'), JSON.stringify(d.labels));
+    assert.strictEqual(g.timeWindows[0].factor, 2);
+    assert.ok(g.labels.includes('bonusHoursFactor') && !g.labels.includes('openWindowsReconstructed'), JSON.stringify(g.labels));
+    assert.ok(!('timeWindows' in p) && !p.labels.includes('bonusHoursFactor'));
+    assert.ok(REAL_CONFIG.reconstructedWhy.openWindowsReconstructed && REAL_CONFIG.reconstructedWhy.bonusHoursFactor);
+    const bad = record('E-TB', [quest(702530, 1, [501])], { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost' }] });
+    assert.throws(() => me.buildEvents([bad], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] }), /E-TB.*factor/);
+  },
   map_generate_later() {
     const later = genQuest(702200, { map: { key: 702200, stageBinId: 0, status: 'incomplete: STG header absent', source: 'generateLater' } });
     const out = me.buildEvents([record('E-L', [later, quest(702201, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });

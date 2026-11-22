@@ -355,7 +355,8 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
         bannerUrl: `${webBase}/web/event/img/v${EVENT_IMG_VERSION}/${row.evStageId}${kept ? '-kept' : ''}.png`,
         eventType: Number.isInteger(row.eventType) ? row.eventType : Number.isInteger(e.eventType) ? e.eventType : EVENT_TYPE,
         status: 1,
-        endTime: serverTimeAt(hasDays(row) || quests.some(hasDays) ? clock.dayEnd(realMs) : clock.weekEnd(realMs)),
+        // a card with «open» time windows (Events Part 10c) also ends with the real day: the next list reads the windows again
+        endTime: serverTimeAt(hasDays(row) || quests.some(hasDays) || (e.timeWindows || []).some((w) => w.effect === 'open') ? clock.dayEnd(realMs) : clock.weekEnd(realMs)),
         newStageId: 0,
         isLock: 0,
         // crown (as the Special tab): every quest with its objectives 1..min(3, validSubmission) done

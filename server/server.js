@@ -50,6 +50,7 @@ const gacha = require('./gacha');
 const shopNoticePages = require('./shop-notice-pages'); // original notices of the Shop banners (Details)
 const homePlaza = require('./home-plaza');
 const homeBanners = require('./home-banners'); // home banner carousel, openBanners of /mypage (user 15-11)
+const eventTimeWindows = require('./event-time-windows'); // time windows inside a day of an event (Events Part 10c)
 const boostersMod = require('./boosters'); // Boosters the player owns (Events Part 6, boosters.js)
 const makeEmblems = require('./make-emblems');
 // game_data/boosters.json (make-emblems.js): the built Boosters {byId, byName}, read again when the file changes
@@ -1588,7 +1589,10 @@ const servedCampaignIds = () => campaigns().ids();
 function rollDropTypes(rewardId, types, rng = Math.random) {
   if (BENCH_DROP_LUCK) rng = () => 0;
   // «Rare items drop rate up!» of the story day on the quest being played (campaigns.js, type 1): odds x power / 10000
-  const boost = campaigns().effects(player.currentStageId).drop;
+  // Events Part 10c: the Bonus Time hours of the event of the quest (entry.timeWindows dropBoost, event-time-windows.js) on top
+  let evFactor = 1;
+  try { evFactor = eventTimeWindows.dropFactor((eventRoutes().entryOfStage(player.currentStageId) || {}).timeWindows, realNow()); } catch (e) { console.log(`[events] bonus hours ${player.currentStageId}: ${e.message}`); }
+  const boost = campaigns().effects(player.currentStageId).drop * evFactor;
   const odds = (rewardRowById(rewardId)?.odds || []).map((o) => (boost > 1 && o < ODDS_ALWAYS ? Math.min(ODDS_ALWAYS - 1, Math.trunc(o * boost)) : o));
   const out = types.map((t, i) => (t && (odds[i] ?? ODDS_ALWAYS) >= ODDS_ALWAYS ? t : t && rng() * ODDS_ALWAYS < odds[i] ? t : 0));
   while (out.length && !out[out.length - 1]) out.pop();
