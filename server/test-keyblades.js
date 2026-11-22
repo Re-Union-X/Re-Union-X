@@ -122,6 +122,19 @@ log(`KHUX_KB_ALL=1: ${ownedCats().length}/${series.length} serie`);
 // il premio di Quest 14 dopo il possesso: nessun doppione
 quiet(() => t.grantKeyblade(2000));
 check(ownedCats().length === series.length, 'grantKeyblade 2000 ha duplicato Treasure Trove');
+// I-286: a save with a series twice (tester start save 16-11) keeps the higher copy, favorite moved to it
+{
+  const tt = p.keyblades.find((k) => byId.get(k.keybladeId).category === byId.get(2000).category);
+  const saved = JSON.parse(JSON.stringify(p.keyblades));
+  const hiId = kb.filter((r) => r.category === byId.get(2000).category).sort((a, b) => b.lv - a.lv)[0].keybladeId;
+  p.keyblades.push({ userKeybladeId: 99, keybladeId: hiId, getDatetime: 0, burst: 0 });
+  p.favoriteKeybladeId = tt.userKeybladeId;
+  quiet(() => t.grantMissingKeyblades());
+  const left = p.keyblades.filter((k) => byId.get(k.keybladeId).category === byId.get(2000).category);
+  check(left.length === 1 && left[0].keybladeId === hiId, `I-286 dedupe: ${JSON.stringify(left)}`);
+  check(p.favoriteKeybladeId === 99, `I-286 favorite ${p.favoriteKeybladeId}, expected 99`);
+  p.keyblades = saved; delete p.favoriteKeybladeId;
+}
 
 // ---- 3. Strengthen di ogni keyblade fino a +60 -----------------------------------------------
 const evo = t.kbEvo();

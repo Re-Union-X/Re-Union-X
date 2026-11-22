@@ -598,6 +598,15 @@ function build(rules, catalogue, masterRows) {
     const stageDrops = quests.map((q) => (q._drops ? q._drops.map(dropRow) : entryDropIds));
     const dropRewardIds = [...new Set([...entryDropIds, ...stageDrops.flat()])];
     const stages = quests.map((q, i) => ({ ...stageRow(stageIdOf(en.evStageId, i), q, useAp[i], en.rewards), dropRewardIds: stageDrops[i] }));
+    // first-clear item of a quest (entry clearItems {quest name: {type, id, num}}): the keyblade of «A New Keyblade: Moogle
+    // O' Glory» (I-278); the client builds the BattleResult_KB popup from these stage fields
+    for (const [quest, it] of Object.entries(en.clearItems || {})) {
+      const st = stages.find((s) => s.quest === quest);
+      if (!st) throw new Error(`special: ${en.key}: clearItems quest «${quest}» not in the entry`);
+      if (it.type !== 13 || !(masterRows.keyblade || []).some((k) => k.keybladeId === it.id)) throw new Error(`special: ${en.key}: clearItems ${JSON.stringify(it)} is not a keyblade of the table`);
+      Object.assign(stageRows.find((r) => r.stageId === st.stageId), { validClearGetItem: 1, clearGetItemType: [it.type], clearGetItemId: [it.id],
+        clearGetAssignSkillType: [1], clearGetAssignSkillId: [0], clearGetAssignSkillLv: [1], clearGetItemNum: [it.num || 1] }); // as story row 1110
+    }
     const stageIds = stages.map((s) => s.stageId);
     if (stageIds.some((id) => CLIENT_DROPPED.includes(id))) throw new Error(`special: ${en.key}: stage 95100/95200`);
     evStageRows.push(evStageRow(en.evStageId, stageIds, { resetFlag: base.resetGroup ? 1 : 0 }));

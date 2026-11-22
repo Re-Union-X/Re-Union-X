@@ -5997,8 +5997,32 @@ function keybladeRewardIds() {
   return ids;
 }
 
+// I-286: tester start saves up to 16-11 owned 14 series twice (make-package-save.js matched keybladeIds, not series):
+// one keyblade per series, the higher level stays; a favorite or current keyblade on a dropped copy moves to the kept one
+function dedupeKeybladeSeries() {
+  const rows = new Map(masterRows('keyblade').map((r) => [r.keybladeId, r]));
+  const keep = new Map(); // category -> kept entry
+  const moved = new Map(); // dropped userKeybladeId -> kept userKeybladeId
+  for (const k of player.keyblades || []) {
+    const r = rows.get(k.keybladeId);
+    if (!r || r.category === rows.get(startingInventory().keybladeId)?.category) continue;
+    const own = keep.get(r.category);
+    if (!own) { keep.set(r.category, k); continue; }
+    const [hi, lo] = (r.lv > (rows.get(own.keybladeId)?.lv ?? 0)) ? [k, own] : [own, k];
+    keep.set(r.category, hi);
+    moved.set(lo.userKeybladeId, hi.userKeybladeId);
+  }
+  if (!moved.size) return 0;
+  player.keyblades = player.keyblades.filter((k) => !moved.has(k.userKeybladeId));
+  if (moved.has(player.favoriteKeybladeId)) player.favoriteKeybladeId = moved.get(player.favoriteKeybladeId);
+  if (moved.has(player.currentUserKeybladeId)) player.currentUserKeybladeId = moved.get(player.currentUserKeybladeId);
+  console.log(`[save] keyblade series owned twice: dropped userKeybladeIds ${[...moved.keys()].join(', ')} (I-286)`);
+  return moved.size;
+}
+
 function grantMissingKeyblades() {
   player.keyblades = player.keyblades || [];
+  dedupeKeybladeSeries();
   const cat = (id) => masterRows('keyblade').find((r) => r.keybladeId === id)?.category;
   const owned = () => new Set(ownedKeyblades().map((k) => cat(k.keybladeId)));
   const give = (id, why) => {
@@ -6031,9 +6055,9 @@ if (player.created) { migrateMedalMap(); if (cutinRenumbered) migrateCutinRenumb
 if (player.created) migrateSkills(); else player.skillVersion = 1; // nuovo giocatore: gia' sulla tabella completa
 
 if (player.created) {
-  const before = (player.keyblades || []).length;
+  const before = JSON.stringify(player.keyblades || []);
   grantMissingKeyblades();
-  if (player.keyblades.length !== before) savePlayer();
+  if (JSON.stringify(player.keyblades) !== before) savePlayer();
 }
 
 if (require.main === module) start();

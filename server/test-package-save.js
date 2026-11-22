@@ -23,8 +23,14 @@ check('1039159' in p.stageScores, 'Proud 979 score missing');
 const ids = (s) => new Set(s.medals.map((m) => m.medalId));
 check(ids(p).size >= ids(max).size, `distinct medals ${ids(p).size} < ${ids(max).size}`);
 check(p.medals.length === max.medals.length, 'medal list changed');
-const kb = new Set(p.keyblades.map((k) => k.keybladeId));
-for (const k of [...max.keyblades, ...proud.keyblades]) check(kb.has(k.keybladeId), `keyblade ${k.keybladeId} missing`);
+// one keyblade per series (category), as grantKeyblade: the higher level of the two saves (I-286, tester save 16-11 had
+// 14 series twice, +60 from the max-power save and the Proud save's lower copy)
+const kbRow = new Map(require('./master_data/keyblade.json').map((r) => [r.keybladeId, r]));
+const series = (s) => { const m = new Map(); for (const k of s.keyblades) { const r = kbRow.get(k.keybladeId); if (!m.has(r.category) || r.lv > m.get(r.category)) m.set(r.category, r.lv); } return m; };
+const cats = p.keyblades.map((k) => kbRow.get(k.keybladeId).category);
+check(new Set(cats).size === cats.length, `keyblade series owned twice: ${cats.filter((c, i) => cats.indexOf(c) !== i).join(', ')}`);
+const got = series(p);
+for (const [c, lv] of [...series(max), ...series(proud)]) check((got.get(c) ?? -1) >= lv, `keyblade series ${c}: lv ${got.get(c)} < ${lv}`);
 const uk = p.keyblades.map((k) => k.userKeybladeId);
 check(new Set(uk).size === uk.length, 'duplicate userKeybladeId');
 check(p.freeStone === 100000, `jewels ${p.freeStone}, expected 100000`);

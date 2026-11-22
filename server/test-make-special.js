@@ -523,7 +523,8 @@ const SRC = process.env.KHUX_SPECIAL_SRC || 'D:\\Progetto_Restauro_KH_UX\\privat
 if (fs.existsSync(path.join(MASTER, 'stage.json')) && fs.existsSync(SRC)) {
   const t = (n) => JSON.parse(fs.readFileSync(path.join(MASTER, n + '.json'), 'utf8'));
   const all = ms.build(real, JSON.parse(fs.readFileSync(SRC, 'utf8')), { stage: t('stage'), enemy: t('enemy'), medal: t('medal'),
-    material: t('material'), reward: t('reward'), skill: t('skill'), title: t('title'), avatarParts: t('avatarParts'), keyblade: t('keyblade'), enemyAttack: t('enemyAttack'),
+    // reward rows as the regen hands them to Special: master_data also holds the rows later steps add (1905xxx events)
+    material: t('material'), reward: t('reward').filter((r) => r.rewardId < 970000), skill: t('skill'), title: t('title'), avatarParts: t('avatarParts'), keyblade: t('keyblade'), enemyAttack: t('enemyAttack'),
     petParts: JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'petParts.json'), 'utf8')) });
   const live = real.entries.filter((e) => !e.removed && !e.weeklyOnly);
   const weeklyV = all.index.entries.filter((e) => e.weekOf);
@@ -705,6 +706,14 @@ if (fs.existsSync(path.join(MASTER, 'stage.json')) && fs.existsSync(SRC)) {
   check(!badLv.length, `real build: map level = catalogue Lv (${badLv.slice(0, 5).map((m) => `${m.stageId} ${m.level}`).join(', ')})`);
   check(all.maps.find((m) => m.stageId === 970100)?.level === 160 && lvOf("A New Keyblade: Moogle O' Glory") === 160,
     'real build: MOG 970100 at Lv 160');
+  // I-278: «A New Keyblade: Moogle O' Glory» gives the keyblade on the first clear (original), so the server no longer
+  // hands it out at the start as a series with no reward in the master
+  for (const id of [970100, 970700]) {
+    const r = all.stageRows.find((x) => x.stageId === id);
+    check(r && r.validClearGetItem === 1 && JSON.stringify(r.clearGetItemType) === '[13]' && JSON.stringify(r.clearGetItemId) === '[7000]'
+      && JSON.stringify(r.clearGetItemNum) === '[1]', `real build: ${id} first clear gives Moogle O' Glory 7000: ${JSON.stringify(r && [r.validClearGetItem, r.clearGetItemType, r.clearGetItemId, r.clearGetItemNum])}`);
+  }
+  check(all.stageRows.filter((r) => r.validClearGetItem).length === 2, 'real build: only the two MoG quests give a clear item');
   check(all.stageRows.every((r) => r.addLevel === 0), 'real build: addLevel 0 on every Special stage row');
   check(all.maps.find((m) => m.stageId === 970000)?.level === 1, 'real build: training at Lv 1');
   // training (bench 30-10, «Munny 131» in CONGRATULATIONS): the client adds up the enemy rows, all at 0 on path A

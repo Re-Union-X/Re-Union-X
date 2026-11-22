@@ -16,10 +16,16 @@ function merge(max, proud) {
   for (const [id, list] of Object.entries(proud.clearMissions || {})) cm[id] = [...new Set([...(cm[id] || []), ...list])].sort((a, b) => a - b);
   max.clearMissions = cm;
   max.missions = proud.missions;
-  const owned = new Set(max.keyblades.map((k) => k.keybladeId));
+  // one keyblade per series (category of the keyblade table, as the server's grantKeyblade): a series the max-power save
+  // already owns keeps its entry (decks, subslots) and takes the Proud save's level only if higher (I-286)
+  const kbRow = new Map(require('./master_data/keyblade.json').map((r) => [r.keybladeId, r]));
+  const bySeries = new Map(max.keyblades.map((k) => [kbRow.get(k.keybladeId)?.category, k]));
   let next = Math.max(0, ...max.keyblades.map((k) => k.userKeybladeId)) + 1;
   for (const k of proud.keyblades) {
-    if (!owned.has(k.keybladeId)) max.keyblades.push({ ...k, userKeybladeId: next++ });
+    const row = kbRow.get(k.keybladeId);
+    const own = bySeries.get(row?.category);
+    if (!own) { const add = { ...k, userKeybladeId: next++ }; max.keyblades.push(add); bySeries.set(row?.category, add); }
+    else if ((row?.lv ?? 0) > (kbRow.get(own.keybladeId)?.lv ?? 0)) own.keybladeId = k.keybladeId;
   }
   pruneDuplicates(max, LIVE_TARGET);
   max.medalMaxExtra = Math.max(max.medalMaxExtra || 0, MEDAL_LIMIT); // storage at the game's maximum (3000 slots)
