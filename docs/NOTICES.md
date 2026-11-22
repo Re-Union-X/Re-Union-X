@@ -873,6 +873,8 @@ The characters you can talk to in the quest maps of Quests 541-930 (and one in Q
 
 Since November 22, 2026 the **first-clear rewards**, the **prize boxes** and the **enemy drops** of all story quests 1-979 are the ones of the last version of the original game (2021), shared with their permission by the **ReLux Team** and checked against the community medal farming sheet. In that version Orichalcum and Mythril were no longer given: Quest 25, for example, gives Huey and Cid Medals. Prize boxes give again their medals, and a **gold bag** is a Moogle Medal, as in the original game. A few enemies whose drop is not recorded give a material (**reconstructed**).
 
+From the same version the story quests take their final **objectives**, **names** and details: every story quest costs **0 AP**, as in the last years of the original game, and the bonus objectives (for example "Complete within 3 turns") are the ones players last saw.
+
 Quest 555 "Inside the Clock Tower Pt. 10": you face the Master of your own Union. The two objectives "Defeat the target enemy within 2 turns" can only name one Master, so they are shown as **"Complete within 2 turns"** (same reward), which every Union can complete.
 
 The Keyblades **Stroke of Midnight**, **Fairy Stars** and **Bad Guy Breaker** are the rewards of Quests 595, 683 and 880, as in the original game, and are no longer given earlier. If you already have them, you keep them.

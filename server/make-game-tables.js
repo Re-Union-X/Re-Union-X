@@ -966,6 +966,34 @@ require('./make-story-oltre').patch(OUT);
     fs.writeFileSync(p, JSON.stringify(stages));
     console.log(`stage: first-clear items of ${n} of ${by.size} story quests from the 2021 master`);
   } catch (e) { console.warn(`stage: ${STAGE_CLEAR_2021} not applied (${e.message}), first-clear items from the 2016 master / wiki`); }
+  // The other story fields of the 2021 master (user 22-11): AP 0 on every story quest, names (Q183, Q351-362, Q434),
+  // objectives, raidBoss, addLevel (quest level - 1), world/chapter/thumbnail/map name/hideIcon, holdKeyblade (Q920), no
+  // title row on Q978 (its title is a first-clear item). Dramas: ours plus the 2021 ids our resources serve. The extract
+  // (KHUX_STAGE_STORY_2021) already keeps ours where 2021 names a thumbnail we do not serve or an enemy we lack.
+  // Worlds 9 and 109 (Cy-Bug Sector in 2021: Q941-942 and Q871-875, which we had under 13): rows copied from our row 13
+  // (same CS prefix, bg_DB1 as the other Ralph worlds); row 13 stays, used by no story quest, for the original wipe_13.
+  const STAGE_STORY_2021 = process.env.KHUX_STAGE_STORY_2021
+    || 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\stage_story_2021.json';
+  try {
+    const src = JSON.parse(fs.readFileSync(STAGE_STORY_2021, 'utf8'));
+    const by = new Map(src.rows.map((r) => [r.stageId, r]));
+    const p = path.join(OUT, 'stage.json');
+    const stages = JSON.parse(fs.readFileSync(p, 'utf8'));
+    let n = 0;
+    for (const s of stages) {
+      const r = s.stageKind === 1 && by.get(s.stageId);
+      if (!r || r.id !== s.id) continue;
+      for (const [k, v] of Object.entries(r)) if (k !== 'stageId' && k !== 'id') s[k] = Array.isArray(v) ? [...v] : v;
+      n++;
+    }
+    fs.writeFileSync(p, JSON.stringify(stages));
+    const wp = path.join(OUT, 'world.json');
+    const worlds = JSON.parse(fs.readFileSync(wp, 'utf8'));
+    const cs = worlds.find((w) => w.worldId === 13);
+    for (const id of [9, 109]) if (cs && !worlds.some((w) => w.worldId === id)) worlds.push({ ...JSON.parse(JSON.stringify(cs)), worldId: id });
+    fs.writeFileSync(wp, JSON.stringify(worlds));
+    console.log(`stage: 2021 story fields on ${n} of ${by.size} quests (${JSON.stringify(src.stats)}); world rows ${worlds.map((w) => w.worldId).join(',')}`);
+  } catch (e) { console.warn(`stage: ${STAGE_STORY_2021} not applied (${e.message})`); }
 }
 // Proud Mode (I-200): righe stageKind 4 1 000 000 + stageId della storia 1-979, dopo la storia completa (make-proud.js);
 // la 1001010 del 5.0.1 resta. KHUX_PROUD=0 lo spegne
