@@ -63,8 +63,8 @@ const listed = () => new Set(quiet(() => t.eventRoutes().events(t.sessionRealMs(
   }
 }
 
-// 3. I-287 (user 22-11, option B): the client reads the bonus marks from ONE open HSC row (the highest eventStageId on the bench), so
-// with two or more HSC listed (story week + kept) a phantom category-4 row, open, last and above every HSC id, carries a merged list
+// 3. I-287 (user 22-11, option B): the client reads the bonus marks from ONE open HSC row, the FIRST (bench 22-11: kept 22952 won over 22998), so
+// with two or more HSC listed (story week + kept) a phantom category-4 row, open, before every HSC row and below every id, carries a merged list
 // (every listed HSC's bonus medals, the highest rate of a medal, display 0); the real rows keep their own lists (deck, battle)
 {
   const PH = t.HSC_PHANTOM;
@@ -95,8 +95,8 @@ const listed = () => new Set(quiet(() => t.eventRoutes().events(t.sessionRealMs(
   check(ph.length === 1, `phantom rows ${ph.length}`);
   const row = ph[0] || {};
   const cat4 = served.filter((r) => r.eventCategory === 4);
-  check(row.eventCategory === 4 && served[served.length - 1] === row && cat4.every((r) => r.eventStageId <= row.eventStageId),
-    'phantom: category 4, last row, highest HSC id');
+  check(row.eventCategory === 4 && cat4[0] === row && served.every((r) => r === row || r.eventStageId > row.eventStageId),
+    'phantom: category 4, first HSC row, lowest evStage id');
   check(row.endTime === '2030-12-31 23:59:59' && row.scoreMedalListId === PH.listId, `phantom window/list ${row.endTime} ${row.scoreMedalListId}`);
   check(!hscMaster.some((r) => r.eventStageId === PH.eventStageId) && !master.some((r) => r.eventStageId === PH.eventStageId), 'phantom id used by a master row');
   const lists = t.masterRows('evMedalList');

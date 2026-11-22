@@ -703,11 +703,12 @@ function servedMasterRows(name, realMs) {
     const closed = (r) => (open && r.eventCategory === HSC_EVENT_CATEGORY && !open.has(r.eventStageId)
       ? { endTime: HSC_CLOSED_END, endDispTime: HSC_CLOSED_END, boardEndTime: HSC_CLOSED_END } : {});
     const out = rows.map((r) => ({ ...r, bannerUrl: abs(r.bannerUrl), detailUrl: abs(r.detailUrl), ...closed(r) }));
-    // I-287: two or more HSC listed -> the phantom row (last, highest HSC id) whose list merges theirs, for the marks of every listed HSC
+    // I-287: two or more HSC listed -> the phantom row (before every HSC row, lowest id) whose list merges theirs, for the marks of
+    // every listed HSC
     const listed = open ? out.filter((r) => r.eventCategory === HSC_EVENT_CATEGORY && open.has(r.eventStageId)) : [];
     if (listed.length >= 2) {
-      const src = listed[listed.length - 1];
-      out.push({ ...src, eventStageId: HSC_PHANTOM.eventStageId, scoreMedalListId: HSC_PHANTOM.listId, mypageBanner: 0, detailUrl: '' });
+      const at = out.findIndex((r) => r.eventCategory === HSC_EVENT_CATEGORY);
+      out.splice(at, 0, { ...listed[0], eventStageId: HSC_PHANTOM.eventStageId, scoreMedalListId: HSC_PHANTOM.listId, mypageBanner: 0, detailUrl: '' });
     }
     return out;
   }
@@ -764,9 +765,9 @@ function hscListedIds(realMs) {
   try { return new Set(eventRoutes().events(realMs).map((c) => c.eventStageId)); } catch (e) { console.log(`[hsc] listed ids: ${e.message}`); return null; }
 }
 // I-287 (user 22-11, option B): the client marks the score-bonus medals (medal views, lists, «High Score» sort) from ONE open HSC row,
-// the highest eventStageId (bench 16-11); with two or more HSC listed (story week + kept event) a phantom row above every HSC id
+// the FIRST open one (bench 22-11: kept 22952 won over 22998; the 16-11 «highest» reading had a stale master); with two or more HSC listed (story week + kept event) a phantom row before every HSC row, below every evStage id,
 // carries a merged list, so the marks cover every listed HSC. The real rows keep their own lists (deck panel, battle multiplier).
-const HSC_PHANTOM = { eventStageId: 23999, listId: 19999, firstRowId: 9999000 };
+const HSC_PHANTOM = { eventStageId: 5999, listId: 19999, firstRowId: 9999000 };
 function hscListedRows(realMs) {
   const open = hscListedIds(realMs);
   return open ? masterRows('evStage').filter((r) => r.eventCategory === HSC_EVENT_CATEGORY && open.has(r.eventStageId)) : [];
