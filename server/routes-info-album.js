@@ -258,7 +258,11 @@ function eventHoleFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dirna
   const all = (x.entries || []).filter((e) => HOLE_TYPES.includes(e.type) && e.start >= '2016-11-01' && e.start <= '2018-03-31');
   const qs = all.flatMap((e) => e.quests || []);
   return { hole: { events: all.filter((e) => e.available).length, served: qs.filter((q) => q.served).length, quests: qs.length,
-    later: qs.filter((q) => !q.served && /Part 10b/.test(q.why || '')).length } };
+    later: qs.filter((q) => !q.served && /Part 10b/.test(q.why || '')).length,
+    // Part 10b: served quests on a generated map (labels wikiRoom / wikiAreas), with calibrated drops, and the board sets of the period
+    generated: qs.filter((q) => q.served && (q.labels || []).some((l) => l === 'wikiRoom' || l === 'wikiAreas')).length,
+    calibrated: qs.filter((q) => q.served && (q.labels || []).includes('dropsCalibrated')).length,
+    boards: Object.keys(x.boardSets || {}).filter((k) => k.startsWith('hole-')).length } };
 }
 function eventHoleLines(f) {
   const h = f && f.hole;
@@ -267,6 +271,8 @@ function eventHoleLines(f) {
   else {
     out.push(`The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **${h.events} events** are served, with **${h.served} of the ${h.quests} quests of that period**, on the dates of the original notices. Quests that came from the Japanese version are played on the **original Japanese maps** (a few on the map of their Japanese twin quest).`);
     if (h.later) out.push(`For ${h.later} of the other quests, made for the worldwide version only, no map survives in any source we hold: they wait in the **Event Catalog** until their maps are rebuilt from the community wiki and videos of the time (**not original**).`);
+    if (h.generated) out.push(`**${h.generated} quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (**not original**).${h.calibrated ? ` Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **${h.calibrated} quests** drop it at the rates of the original KH 3D event quests of 2017 (**not original**); the others drop nothing.` : ''}`);
+    if (h.boards) out.push(`The **Event Coins** of the coin events go to **${h.boards} sets of Event Boards** of the original game data (Moana, Santa Sora, HD Aqua, Happi Coat, the Gem Boards and the daily Jewel boards); all boards of a set are open for the whole event (**not original**: some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.`);
     const rest = h.quests - h.served - (h.later || 0);
     if (rest > 0) out.push(`The other ${rest} quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.`);
   }

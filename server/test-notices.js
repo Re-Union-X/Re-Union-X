@@ -527,6 +527,10 @@ for (const web of [false, true]) {
   check(/8 of the other quests/.test(l) && /other 2 quests/.test(l), 'hole section: later (8) and the rest (20 - 10 - 8 = 2) both named');
   check(!/other \d+ quests/.test(n.eventHoleLines({ hole: { events: 3, served: 12, quests: 20, later: 8 } }).join(' ')), 'hole section: no rest line when nothing else is held');
   check(/not original/.test(l) && /November 9, 2017/.test(l), 'hole section: open all event, missions before their start');
+  // Part 10b: generated maps, calibrated drops and the Event Boards of the period are named with their counts
+  const l2 = n.eventHoleLines({ hole: { events: 30, served: 700, quests: 900, later: 0, generated: 300, calibrated: 7, boards: 8 } }).join(' ');
+  check(/\*\*300 quests\*\* are played on generated maps/.test(l2) && /drop rates/.test(l2) && /\*\*8 Event Boards? sets?\*\*|\*\*8 sets of Event Boards\*\*/.test(l2), `hole section 10b: ${l2.slice(0, 600)}`);
+  check(!/generated maps/.test(n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, later: 8, generated: 0 } }).join(' ')), 'hole section: no generated-map line without any');
   {
     const fs = require('fs'), path = require('path');
     const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'hole-'));
@@ -537,7 +541,7 @@ for (const web of [false, true]) {
       { type: 'EQ', start: '2019-02-02', available: true, quests: [{ served: true }] }] }));
     try {
       const h = n.eventHoleFacts(f).hole;
-      check(h.events === 1 && h.served === 1 && h.quests === 3 && h.later === 1, `hole facts: ${JSON.stringify(h)}`);
+      check(h.events === 1 && h.served === 1 && h.quests === 3 && h.later === 1 && h.generated === 0 && h.boards === 0, `hole facts: ${JSON.stringify(h)}`);
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
   check(n.eventHoleLines(null).join(' ').includes('## Events of 2016-2018'), 'hole section: without data');

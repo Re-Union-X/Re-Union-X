@@ -1278,7 +1278,8 @@ Design `docs/superpowers/specs/2026-11-22-events-part10-design.md`, plan `docs/s
 - **Private input and builder.** `tmp\events\part10\hole_input.py` (census fixes, census id -> donor stage block, windows; checked by
   `check_hole_input.py`) and `build_hole.py` (the data-hole path of the Part 5 Org XIII builder: pilot census/extract/build with `--twins`,
   JP maps by own key or by content via `jpmatch.py`, level-shifted twins (user rule 10-11), I-251, WW enemy check with `WW_SAME` and
-  `mapEnemySwaps`, donor 2021 medal ids mapped to ours by name/rarity/attribute, boosted copies by bonus) -> `tmp\eventsecords\hole_2016_18.json`.
+  `mapEnemySwaps`, donor 2021 medal ids mapped to ours by name/rarity/attribute, boosted copies by bonus) -> `tmp\events
+ecords\hole_2016_18.json`.
   Double run identical. EV-0152 «Coliseum Challenge for Gems» pages pinned in the pilot `build.py` (P4_PAGE_PIN, «(March 2017)» pages).
 - **Server.** `make-events.js`: `map.source 'generateLater'` = held «map to generate (Events Part 10b)», never listed for generation;
   a reward medal of the same id whose name differs only by «Ver.» is that medal (KH Sora A = KH Sora Ver. A). `event_config.json`:
@@ -1296,6 +1297,28 @@ Design `docs/superpowers/specs/2026-11-22-events-part10-design.md`, plan `docs/s
   Event» banner (3rd image) is given by `--extra` (private `private\events\event_card_extra.json` {"23018": ...}). No other card
   came from an image of the wrong shape. The 52 entries still without a card are Avatar / Gem Boards (no quests; own catalogue).
   Every event with quests now has a card. imgVersion 10, master revision 356.
+
+## Part 10b summary (generated maps, drops and Event Boards of 2016-2018, 22 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-22-events-part10b-generated-maps.md`, ledger `.superpowers/sdd/2026-11-22-events-part10b-generated-maps/progress.md`, I-295.
+- **Generated maps.** The private builder (`tmp/events/part10/build_hole.py`, steps 3b-3d) turns the 401 quests held in 10a into
+  generated-map quests with the Part 8 page method (`tmp/events/hsc/gen_areas.py`): areas in khuxwiki page order, one group per
+  enemy row with its LV, the target row last, rooms by name. Enemy rows only from evidence: the row the JP 4.3.1 event maps of
+  2016-11..2018-03 place for the name in at least 90 % of at least 10 placements, else the HSC base row; targets: the 1xxxx row placed
+  as target in at least 90 % of the JP maps' target placements. khuxwiki typo «RoomTarget enemy» read as room + target row.
+  Result: 334 quests generated (64 without a khuxwiki page, 2 rooms without a code, 1 target row unread stay held); make-events.js:
+  37 enemyAmbiguous, 14 page/area count mismatches, 10 «Collect all materials», 2 Large Fireworks missing; **292 served**.
+- **Drops.** Only where the event's notice names a drop (EV-0094 Christmas Sora; EV-0095 / EV-0123 the medal of the day): normal
+  enemies the 5★ at 500, the target the 6★ at 500, «random» days split; odds of the KH 3D rows 69300-69304 (EV-0134). Record field
+  `genDrops {byName, target, rows}`, reward rows 2316000+, label `dropsCalibrated` (make-events.js, test gen_drops_calibrated);
+  make-game-tables.js counts the reward ids of `event_gen_maps.json` as make-events rows. Goofy A / KH Sora A / Donald A have no
+  5★/6★ here: no drop on their days.
+- **Event Boards.** 12 sets / 41 donor boards mapped to the coin events by notice evidence (`tmp/events/part10/hole_boards.json`,
+  appended as sets «hole-*» by `add_hole_boards.py`); a data-hole record in a board set is a board event (eventType 1, test
+  board_entry_data_hole). 8 sets handed out; EV-0074 / EV-0090 / EV-0121 / EV-0242 noCoinSource (coins were drops, or no quest).
+  Board card pictures are blank (no boardArt yet).
+- **Served.** Period 722 of 905 quests (was 430), revision 357, resources 144. Bench p10e: HD Aqua Beginner on its generated map, 30
+  Event Coins, HD Aqua Set 1 board.
 
 ## Part 8 summary (High Score Challenges, 16 November 2026)
 
