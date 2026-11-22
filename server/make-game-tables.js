@@ -1025,6 +1025,8 @@ require('./medal-art').patch(OUT);
 require('./make-lux-levels').patch(OUT);
 // Login bonus (I-176): Daily 100/100/200/200/300 e Total della 1.1.3 (make-login-bonus.js)
 require('./make-login-bonus').patch(OUT);
+// Special login bonuses (Events Part 9b): dated rows of the 2021 master + server-only login_specials.json (make-login-specials.js)
+require('./make-login-specials').patch(OUT);
 // Cut-in dello speciale (I-187): righe alias id-1 per le medaglie che finiscono in 2/4 senza la riga 1★/3★ (make-cutin-alias.js)
 require('./make-cutin-alias').patch(OUT);
 // Trofei di Bad Guy Breaker (I-009): material 61-63 Trophy NI/CS/CK, premi delle 880-915 qui sotto (make-trophy-materials.js)
