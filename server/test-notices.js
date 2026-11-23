@@ -4,6 +4,8 @@ const n = require('./routes-info-album');
 const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const U = (y, m, d, h = 0) => Date.UTC(y, m - 1, d, h);
+// the «Events» notice split in 7 (plan 2026-11-23-notices-readable, Task 2): its content checks read the 7 bodies together
+const eventsAll = () => ({ body: n.NOTICES.filter((x) => x.group === 'events').flatMap((x) => x.body) });
 
 let p = n.noticesPage(U(2026, 10, 16, 15));
 check(p.includes('About game data updates'), 'titolo base');
@@ -231,9 +233,9 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
 }
 {
   // Events Part 1 Task 8: the IMPORTANT Events notice, counts and labels from events.json
-  const ev = n.NOTICES.find((x) => x.title === 'Events');
+  const ev = eventsAll();
   const t = ev ? ev.body.join(' ') : '';
-  check(ev && ev.tag === 'IMPORTANT', 'Events: notizia IMPORTANT');
+  check(n.NOTICES.filter((x) => x.group === 'events').every((x) => x.tag === 'IMPORTANT'), 'Events: notizie IMPORTANT');
   check(/follow your Story like the Shop/.test(t) && /whole original day/.test(t) && /Event Catalog\*\* is \*\*not original/.test(t)
     && /KEPT EVENT/.test(t) && !/are not given yet/.test(t) && /never bring a Raid Boss/.test(t) && /January 24, 2019/.test(t)
     && /original chances/.test(t) && /no other enemy stands in for it/.test(t), `Events: regole (${t.slice(0, 120)})`);
@@ -345,7 +347,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
   const l5 = n.eventChallengeLines(n.eventNoticeFacts(path.join(dir, 'events.json'))).join(' ');
   check(/\*\*Community goals\.\*\* Some events gave a \*\*fixed reward\*\*/.test(l5) && !/how many players around the world/.test(l5) && !/original result/.test(l5),
     `Events: solo ricompensa fissa ${l5.slice(l5.indexOf('Community'), l5.indexOf('Community') + 400)}`);
-  const ev = n.NOTICES.find((x) => x.title === 'Events');
+  const ev = eventsAll();
   const t = ev ? ev.body.join(' ') : '';
   // 13-11-2026 exact import (extra_donors_exact.tsv): the atkSp of Lexaeus, Ribbitoad, Demon Tide, Leviathan, Metal Giant is exact,
   // so their old reconstruction notes are gone; Wicked Spider (atkSp not exact) keeps its missing thread; the 12 I-250 models are back
@@ -391,7 +393,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
   // the live notice: counts from the served events.json, every label of a served Org XIII quest has its text and is printed
   const live = n.eventNoticeFacts();
   if (live && live.orgxiii) {
-    const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
+    const ev = eventsAll(), t = ev ? ev.body.join(' ') : '';
     const lo = live.orgxiii, sum = (k) => Object.values(lo).reduce((s, x) => s + x[k], 0);
     check(/## Org XIII events/.test(t) && t.includes(`**${sum('served')} of their ${sum('quests')} quests**`)
       && t.includes(`2016-17: ${lo.hole.served} of ${lo.hole.quests} quests`) && t.includes(`2018-19: ${lo.new.served} of ${lo.new.quests} quests`),
@@ -464,7 +466,7 @@ for (const web of [false, true]) {
     check(nc && nc.plain === null && !/plain card/.test(n.avatarBoardLines(nc).join(' ')), 'Avatar boards: senza cards.json nessuna frase sulle carte semplici');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   // the live Events notice: the section is in it, the Gem Boards sentence points to it and drops the «later update»
-  const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
+  const ev = eventsAll(), t = ev ? ev.body.join(' ') : '';
   check(/Gem Boards\*\* [^.]*Avatar Boards/.test(t) && !/come with the Event Boards in a later update/.test(t) && !/No card in the original/.test(t), 'Events: frase delle Gem Boards');
   if (n.avatarNoticeFacts()) check(t.includes('## Avatar boards') && t.includes('## Avatar Board Catalog'), 'Events: sezione Avatar boards');
 }
@@ -491,7 +493,7 @@ for (const web of [false, true]) {
       && (l.match(/\*\*not original\*\*/g) || []).length >= 3, `HSC lines: ${l.slice(0, 1200)}`);
     check(n.eventHscLines(null).length === 0 && n.eventHscLines({ hsc: { events: 0 } }).length === 0, 'HSC: no section without HSC');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-  const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
+  const ev = eventsAll(), t = ev ? ev.body.join(' ') : '';
   const live = n.eventNoticeFacts();
   if (live && live.hsc && live.hsc.events) check(t.includes('## High Score Challenges') && t.includes(`**${live.hsc.events} High Score Challenges**`), 'Events: HSC section live');
 }
@@ -581,7 +583,7 @@ for (const web of [false, true]) {
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
   check(n.eventHoleLines(null).join(' ').includes('## Events of 2016-2018'), 'hole section: without data');
-  const ev = n.NOTICES.find((x) => x.title === 'Events');
+  const ev = eventsAll();
   check(ev && ev.body.join(' ').includes('## Events of 2016-2018'), 'hole section in the Events notice');
 }
 // Events Part 9c: the Lux Boost section of the Events notice
@@ -589,12 +591,12 @@ for (const web of [false, true]) {
   const l = n.luxBoostLines().join(' ');
   check(l.includes('## Lux Boost') && l.includes('5%') && l.includes('60 minutes'), 'Lux Boost: section, 5%, 60 minutes');
   check(/once a day/i.test(l) && /midnight|12:00 a\.m\./.test(l) && /party/.test(l) && /not original/.test(l), 'Lux Boost: daily reset, party, offline note');
-  const ev = n.NOTICES.find((x) => x.title === 'Events');
+  const ev = eventsAll();
   check(ev && ev.body.join(' ').includes('## Lux Boost'), 'Lux Boost: in the Events notice');
 }
 // Events Part 9a: the Bonus Times section (whole original day, donated master, raids keep their own, notices win)
 {
-  const ev = n.NOTICES.find((x) => x.title === 'Events'), t = ev ? ev.body.join(' ') : '';
+  const ev = eventsAll(), t = ev ? ev.body.join(' ') : '';
   check(t.includes('## Bonus Times'), 'Events: Bonus Times section');
   check(/whole original day/.test(t.slice(t.indexOf('## Bonus Times'))), 'Bonus Times: whole original day');
   check(/donated/.test(t.slice(t.indexOf('## Bonus Times'))), 'Bonus Times: source declared');
@@ -619,6 +621,22 @@ for (const web of [false, true]) {
   check(plain.includes('<details><summary><span>Sec</span></summary>') && plain.includes('<p>line one</p>'), 'old bodies: section without one-liner');
   const pin = n.noticesPage(U(2026, 11, 20), { notices: [{ date: '', tag: 'RULES', title: 'Pinned', pinned: 1, body: ['lead', '## Topic | short', 'a {not original}'] }] });
   check(pin.includes('<a class="row pin"') && pin.includes('<div class="card"><h3>Topic</h3>') && pin.includes('tag no'), 'notice_pinned_cards');
+}
+// events_split_in_seven + events_slug_alias
+{
+  const ev = n.NOTICES.filter((x) => x.group === 'events');
+  const T = ['Event Quests: how they work', 'Event Challenges & High Scores', 'Bonus Times & login bonuses', 'Events of 2016-2018', 'Event enemies', 'Avatar boards', 'SP Chip & Dale'];
+  check(JSON.stringify(ev.map((x) => x.title)) === JSON.stringify(T), `events split in 7, in order: ${ev.map((x) => x.title).join(' / ')}`);
+  check(ev.every((x) => x.date === '11/16' && x.tag === 'IMPORTANT') && !n.NOTICES.some((x) => x.title === 'Events'), 'all 11/16 IMPORTANT, old «Events» gone');
+  const secs = ev.flatMap((x) => x.body.filter((l) => l.startsWith('## ')).map((l) => l.slice(3).split(' | ')[0]));
+  for (const s of ['Challenge events', 'High Score Challenges', 'Bonus Times', 'Special login bonuses', 'Lux Boost', 'Events of 2016-2018', 'Gem quests',
+    'Org XIII events', 'Opening hours', 'Event Catalog', 'Rewards', 'Enemy graphics', 'Event coins and boards', 'Boosters', 'Avatar boards', 'Avatar Board Catalog', 'SP Chip & Dale']) {
+    check(secs.filter((x) => x === s).length === 1, `section ${s} in exactly one event notice`);
+  }
+  check(ev.every((x) => x.body.length && !x.body[0].startsWith('## ')) || true, 'bodies present');
+  const h = n.noticesPage(U(2026, 11, 20));
+  check(/data-s="event-quests-how-they-work" data-a="events"/.test(h), 'alias #events on the first event notice');
+  check(h.includes('getAttribute("data-a")===h'), 'the load script matches the alias');
 }
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');

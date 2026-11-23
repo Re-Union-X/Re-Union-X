@@ -598,6 +598,80 @@ function updateNotice(realMs) {
 
 // Solo informazioni utili per capire come funziona il gioco (decisione dell'utente del 16-10): niente
 // elenchi di modifiche. In lista prima la notizia dinamica dei dati aggiornati (updateNotice), poi queste, dalla piu' recente.
+// The «Events» notice (Events Part 1 Task 8, 07-11, and every later part: counts and labels from events.json), split in 7 notices
+// (plan 2026-11-23-notices-readable): the body is built whole as before, then each «## » section goes to its notice (EVENT_GROUPS);
+// the lines before the first section and any section not listed go to the first one, so nothing is dropped. The first notice
+// answers the old link #events (alias).
+const EVENT_GROUPS = [
+  { title: 'Event Quests: how they work', alias: 'events', sections: ['Opening hours', 'Event Catalog', 'Rewards', 'Event coins and boards', 'Boosters', 'Event Catalog notes'] },
+  { title: 'Event Challenges & High Scores', sections: ['Challenge events', 'High Score Challenges'] },
+  { title: 'Bonus Times & login bonuses', sections: ['Bonus Times', 'Special login bonuses', 'Lux Boost'] },
+  { title: 'Events of 2016-2018', sections: ['Events of 2016-2018', 'Gem quests', 'Org XIII events'] },
+  { title: 'Event enemies', sections: ['Enemy graphics'] },
+  { title: 'Avatar boards', sections: ['Avatar boards', 'Avatar Board Catalog'] },
+  { title: 'SP Chip & Dale', sections: ['SP Chip & Dale'] },
+];
+function eventNotices() {
+  const all = [
+'The **Event Quests** are back: the limited-time events of the original game, with their original maps, enemies, objectives and rewards wherever their files survive. They are in **Quests > Events**, after the raids.',
+      'Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.',
+      ...eventNoticeLines(eventNoticeFacts()),
+      ...eventChallengeLines(eventNoticeFacts()),
+      ...eventHscLines(eventNoticeFacts()),
+      // Events Part 9a (22-11): the Bonus Times of the story day (campaigns.js, docs/notes/campaigns.md)
+      ...bonusTimeLines(bonusTimeFacts()),
+      // Events Part 9b (22-11): special login bonuses and monthly missions by story month
+      ...loginSpecialLines(loginSpecialFacts()),
+      // Events Part 9c (22-11): the Home Lux Boost
+      ...luxBoostLines(),
+      // Events Part 10a (22-11): the 2016-2018 events (data-hole records)
+      ...eventHoleLines(eventHoleFacts()),
+      '## Gem quests',
+      'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
+      'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
+      'The quest lists of the events whose Event Boards are not served yet show no **Event Boards** button (**not original**): see **Event coins and boards** below.',
+      ...eventOrgxiiiLines(eventNoticeFacts()),
+      '## Opening hours',
+      'An event that was open for only a few minutes or hours in the original game is open here for its **whole original day** (**not original**): it is listed on the real weekday (Pacific time) of that day, all day. An event with one quest a day lists **all its quests for its whole period** (**not original** where the original opened them one a day).',
+      '## Event Catalog',
+      'The **Event Catalog** is **not original**: it is an addition of this server, in the style of the Special and Raid Catalogs. Its banner in the Events tab opens the **Training Grounds** when tapped, and its **Details** button lists every event of the game with its quests.',
+      'One **past event** at a time can be **kept** in the Events tab (it shows the **KEPT EVENT** tab), beside the events of the week. Events later than your Story stay locked (**Unlocks at Story Quest N**), and events with no quest served yet are marked **Not built yet** and cannot be kept.',
+      '## Rewards',
+      'Objective rewards and first-clear items are given **once**, as in the original game. Enemy drops keep their **original chances**: an item that dropped 5% of the time still does.',
+      'For **Event Coins**, see **Event coins and boards** below. Each event\'s **Details** shows its original notice as it was.',
+      'Event quests **never bring a Raid Boss** and do not fill the raid gauge. This is the original rule from January 24, 2019, when Raid Bosses began to appear only in raid events; before that date some event quests could bring one, so for older events it is **not original**.',
+      'The story scenes before and after some event quests are not shown yet.',
+      '## Enemy graphics',
+      'The enemies of many event quests had no complete graphics in the surviving game files. **37 of them** are rebuilt from the game\'s own files and were checked against the original look, with their special attacks: the twelve members of **Organization XIII**, **Queen Bee Ω, Assault Dragon, Titan, Ramuh, Behemoth Ω, Trickmaster Ω, Adventurer, Savage Spider, Scourge Spider, Wicked Spider, Malicious Spider, Driller Mole, Ribbitoad, Poisonous Pretender, Paralysis Pretender, False Master, Rush Ghost, Shred Ghost, Trick Ghost, White Mushroom, Rare Truffle, Nightmare Chirithy, Cloudy Sunrise, Circus Clown** and the **Keyblade wielder** who fights beside you against the Iron Giant.',
+      'Most of their pieces are original pictures found elsewhere in the game files: in another animation of the same enemy, in its raid version, in a story scene or in the game\'s attack effects. Some pieces are **reconstructed**: an existing picture of the same size chosen by rule and checked against videos of the original game, a piece of a twin enemy, or an original picture resized to its slot.',
+      // 13-11-2026 exact import (docs/notes/battaglia.md «Exact animations», recon/tools/extra_donors_exact.tsv, override priority)
+      'Since November 13, 2026 many of these animations are built **exactly as the game drew them**: the **ReLux Team** shared, with their permission, their index of the enemy graphics, which names the original picture of every piece. Each animation the index covers in full now uses those original pictures and replaces the earlier rebuilt version: for example the special attacks of most **Organization XIII** members (the flames of **Lexaeus** are no longer recoloured), of **Ribbitoad, Leviathan, Demon Tide** and **Metal Giant**, and many attacks, hits and defeats of the other enemies.',
+      'One thin web thread of **Wicked Spider**\'s special attack is still missing and is left out (**not original**).',
+      '**Rush Ghost, Trick Ghost, White Mushroom** and **Rare Truffle** have no surviving defeat animation: they vanish in the **standard Heartless smoke cloud** (**reconstructed**). **Circus Clown** uses the same smoke cloud, as in the oldest game files. **Enraged Elk** has no graphics of its own in any surviving file: it uses the look of the **Enraged Elk of the Story Quests**, the same creature (**not original**).',
+      'The **Sparkler** of «Event Coins Galore Returns Once Again!» (August 2019) is rebuilt in the same way from the game\'s own files, special attack included. Two parts are **reconstructed**: it vanishes in the **Shadow\'s smoke cloud** (its own defeat animation did not survive), and its ground shadow is the **standard one** (its own file is an empty stub).',
+      // Events Part 4 Task 3 / 6 (user approvals 10-11, review rounds 1-2)
+      'The challenge events bring **15 more** enemies rebuilt in the same way and checked on their animations: **Ifrit, Leviathan, Demon Tide, Savage Vanguard, Savage Vanguard Ω, Hocus Pocus, Brilliant Opera, Sorcerous Reaper, Submarine Carp, Metal Giant, Festive Fireworks, Living Bone, Raging Reindeer, Bag O\' Gifts** and **Jack in the Box**. A few pieces of Ifrit\'s attacks come from the **Ifrit of Dark Road**, the same creature (**reconstructed**).',
+      'The special attacks of **Leviathan, Metal Giant** and **Jack in the Box** are complete: those of Leviathan and Metal Giant are built exactly from the original pictures, and **Jack in the Box**\'s fireballs come from the raid version of the same boss.',
+      // I-250 (13-11 evening): the 12 missing challenge models built exactly and approved on the rendered review; phone test pending
+      'The **12 enemies** the challenge events still lacked are back too, built exactly from the original pictures in the same way and approved on their animations: **Nimble Reaper, Loudmouth Parade, Upright Warlock, Gummi Dragon, Vile Reaper, Mysterious Sir, Weapon Master, Reversed Warlock, Circus Balloon, Jewel Princess, Raccoon Dog Rookie** and **Raccoon Dog Soldier**, and the quests that waited for them are served. Nine of them never move in the original files, so their walking pose is their standing pose (**reconstructed**). Their check in battle is still going on: please report anything that looks wrong.',
+      ...eventCoinLines(eventNoticeFacts()),
+      ...eventBoosterLines(eventNoticeFacts()),
+      ...avatarBoardLines(avatarNoticeFacts()),
+      '## SP Chip & Dale',
+      'The **SP Chip & Dale** 6★ Medal (+1,000 STR and DEF as Enhancement material), a reward of some event quests, is back. Its data comes from the community wiki; its picture is the community render of the original Medal (**reconstructed**: the original file was not found).',
+      '## Event Catalog notes | what each note means',
+      ...eventLabelLines(eventNoticeFacts())];
+  const out = EVENT_GROUPS.map((g) => ({ date: '11/16', tag: 'IMPORTANT', title: g.title, group: 'events', ...(g.alias ? { alias: g.alias } : {}), body: [] }));
+  const home = (title) => Math.max(0, EVENT_GROUPS.findIndex((g) => g.sections.includes(title)));
+  let k = 0;
+  for (const line of all) {
+    if (line.startsWith('## ')) k = home(line.slice(3).split(' | ')[0]);
+    out[k].body.push(line);
+  }
+  // the lead lines stay first in notice 1 even though some sections of notice 1 came later in the whole body
+  return out;
+}
+
 const NOTICES = [
   // conditional Present campaigns (I-234): server/campaign-gifts.js, campaign_gifts.json, docs/notes/campaigns.md
   { date: '11/05', tag: 'IMPORTANT', title: 'Campaign Rewards',
@@ -702,54 +776,8 @@ const NOTICES = [
       ...raidNoticeLines(raidNoticeFacts())] },
   // Events Part 1 Task 8 (07-11): event quests, Event Catalog, kept event, short windows, coins, no raid spawns (user decision 07-11,
   // notice 49535), counts and labels from events.json (eventNoticeFacts); docs/notes/events.md
-  { date: '11/16', tag: 'IMPORTANT', title: 'Events',
-    body: ['The **Event Quests** are back: the limited-time events of the original game, with their original maps, enemies, objectives and rewards wherever their files survive. They are in **Quests > Events**, after the raids.',
-      'Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.',
-      ...eventNoticeLines(eventNoticeFacts()),
-      ...eventChallengeLines(eventNoticeFacts()),
-      ...eventHscLines(eventNoticeFacts()),
-      // Events Part 9a (22-11): the Bonus Times of the story day (campaigns.js, docs/notes/campaigns.md)
-      ...bonusTimeLines(bonusTimeFacts()),
-      // Events Part 9b (22-11): special login bonuses and monthly missions by story month
-      ...loginSpecialLines(loginSpecialFacts()),
-      // Events Part 9c (22-11): the Home Lux Boost
-      ...luxBoostLines(),
-      // Events Part 10a (22-11): the 2016-2018 events (data-hole records)
-      ...eventHoleLines(eventHoleFacts()),
-      '## Gem quests',
-      'The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).',
-      'Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (**not original**: the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.',
-      'The quest lists of the events whose Event Boards are not served yet show no **Event Boards** button (**not original**): see **Event coins and boards** below.',
-      ...eventOrgxiiiLines(eventNoticeFacts()),
-      '## Opening hours',
-      'An event that was open for only a few minutes or hours in the original game is open here for its **whole original day** (**not original**): it is listed on the real weekday (Pacific time) of that day, all day. An event with one quest a day lists **all its quests for its whole period** (**not original** where the original opened them one a day).',
-      '## Event Catalog',
-      'The **Event Catalog** is **not original**: it is an addition of this server, in the style of the Special and Raid Catalogs. Its banner in the Events tab opens the **Training Grounds** when tapped, and its **Details** button lists every event of the game with its quests.',
-      'One **past event** at a time can be **kept** in the Events tab (it shows the **KEPT EVENT** tab), beside the events of the week. Events later than your Story stay locked (**Unlocks at Story Quest N**), and events with no quest served yet are marked **Not built yet** and cannot be kept.',
-      '## Rewards',
-      'Objective rewards and first-clear items are given **once**, as in the original game. Enemy drops keep their **original chances**: an item that dropped 5% of the time still does.',
-      'For **Event Coins**, see **Event coins and boards** below. Each event\'s **Details** shows its original notice as it was.',
-      'Event quests **never bring a Raid Boss** and do not fill the raid gauge. This is the original rule from January 24, 2019, when Raid Bosses began to appear only in raid events; before that date some event quests could bring one, so for older events it is **not original**.',
-      'The story scenes before and after some event quests are not shown yet.',
-      '## Enemy graphics',
-      'The enemies of many event quests had no complete graphics in the surviving game files. **37 of them** are rebuilt from the game\'s own files and were checked against the original look, with their special attacks: the twelve members of **Organization XIII**, **Queen Bee Ω, Assault Dragon, Titan, Ramuh, Behemoth Ω, Trickmaster Ω, Adventurer, Savage Spider, Scourge Spider, Wicked Spider, Malicious Spider, Driller Mole, Ribbitoad, Poisonous Pretender, Paralysis Pretender, False Master, Rush Ghost, Shred Ghost, Trick Ghost, White Mushroom, Rare Truffle, Nightmare Chirithy, Cloudy Sunrise, Circus Clown** and the **Keyblade wielder** who fights beside you against the Iron Giant.',
-      'Most of their pieces are original pictures found elsewhere in the game files: in another animation of the same enemy, in its raid version, in a story scene or in the game\'s attack effects. Some pieces are **reconstructed**: an existing picture of the same size chosen by rule and checked against videos of the original game, a piece of a twin enemy, or an original picture resized to its slot.',
-      // 13-11-2026 exact import (docs/notes/battaglia.md «Exact animations», recon/tools/extra_donors_exact.tsv, override priority)
-      'Since November 13, 2026 many of these animations are built **exactly as the game drew them**: the **ReLux Team** shared, with their permission, their index of the enemy graphics, which names the original picture of every piece. Each animation the index covers in full now uses those original pictures and replaces the earlier rebuilt version: for example the special attacks of most **Organization XIII** members (the flames of **Lexaeus** are no longer recoloured), of **Ribbitoad, Leviathan, Demon Tide** and **Metal Giant**, and many attacks, hits and defeats of the other enemies.',
-      'One thin web thread of **Wicked Spider**\'s special attack is still missing and is left out (**not original**).',
-      '**Rush Ghost, Trick Ghost, White Mushroom** and **Rare Truffle** have no surviving defeat animation: they vanish in the **standard Heartless smoke cloud** (**reconstructed**). **Circus Clown** uses the same smoke cloud, as in the oldest game files. **Enraged Elk** has no graphics of its own in any surviving file: it uses the look of the **Enraged Elk of the Story Quests**, the same creature (**not original**).',
-      'The **Sparkler** of «Event Coins Galore Returns Once Again!» (August 2019) is rebuilt in the same way from the game\'s own files, special attack included. Two parts are **reconstructed**: it vanishes in the **Shadow\'s smoke cloud** (its own defeat animation did not survive), and its ground shadow is the **standard one** (its own file is an empty stub).',
-      // Events Part 4 Task 3 / 6 (user approvals 10-11, review rounds 1-2)
-      'The challenge events bring **15 more** enemies rebuilt in the same way and checked on their animations: **Ifrit, Leviathan, Demon Tide, Savage Vanguard, Savage Vanguard Ω, Hocus Pocus, Brilliant Opera, Sorcerous Reaper, Submarine Carp, Metal Giant, Festive Fireworks, Living Bone, Raging Reindeer, Bag O\' Gifts** and **Jack in the Box**. A few pieces of Ifrit\'s attacks come from the **Ifrit of Dark Road**, the same creature (**reconstructed**).',
-      'The special attacks of **Leviathan, Metal Giant** and **Jack in the Box** are complete: those of Leviathan and Metal Giant are built exactly from the original pictures, and **Jack in the Box**\'s fireballs come from the raid version of the same boss.',
-      // I-250 (13-11 evening): the 12 missing challenge models built exactly and approved on the rendered review; phone test pending
-      'The **12 enemies** the challenge events still lacked are back too, built exactly from the original pictures in the same way and approved on their animations: **Nimble Reaper, Loudmouth Parade, Upright Warlock, Gummi Dragon, Vile Reaper, Mysterious Sir, Weapon Master, Reversed Warlock, Circus Balloon, Jewel Princess, Raccoon Dog Rookie** and **Raccoon Dog Soldier**, and the quests that waited for them are served. Nine of them never move in the original files, so their walking pose is their standing pose (**reconstructed**). Their check in battle is still going on: please report anything that looks wrong.',
-      ...eventCoinLines(eventNoticeFacts()),
-      ...eventBoosterLines(eventNoticeFacts()),
-      ...avatarBoardLines(avatarNoticeFacts()),
-      '## SP Chip & Dale',
-      'The **SP Chip & Dale** 6★ Medal (+1,000 STR and DEF as Enhancement material), a reward of some event quests, is back. Its data comes from the community wiki; its picture is the community render of the original Medal (**reconstructed**: the original file was not found).',
-      ...eventLabelLines(eventNoticeFacts())] },
+  // Events Part 1 Task 8 (07-11) and later parts: the event notice, split in 7 (plan 2026-11-23-notices-readable): eventNotices()
+  ...eventNotices(),
   // Medal Gallery (I-242, user requests 06-11): server/medal-gallery.js, block on the Banner Catalog page (gacha.js catalogPage)
   { date: '11/06', tag: 'INFORMATION', title: 'Medal Gallery',
     body: ['The **Medal Gallery** is **not original**: it is an addition of this server, because the Sort/Filter of the Medal List cannot get new filters. Open it from the Shop: the **Banner Catalog** banner, **Details**, then the **Medal Gallery** box under the title.',
@@ -1058,7 +1086,7 @@ function noticesPage(realMs = Date.now(), opts = {}) {
   // #<slug of the title> in the address opens that notice (e.g. /web/notices#raid-bosses from the raid notice pages, raid-pages.js
   // ruleBox); its BACK then goes back to the page that linked it
   const slug = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const details = notices.map((n, i) => `<div class="det${n.pinned === 1 ? ' pin' : n.pinned ? ' compact' : ''}" id="d${i}" data-s="${slug(n.title)}"><div class="meta"><span class="t" style="background:${TAG_COLOR[n.tag] || '#3f7fd0'}">${esc(n.tag)}</span>`
+  const details = notices.map((n, i) => `<div class="det${n.pinned === 1 ? ' pin' : n.pinned ? ' compact' : ''}" id="d${i}" data-s="${slug(n.title)}"${n.alias ? ` data-a="${esc(n.alias)}"` : ''}><div class="meta"><span class="t" style="background:${TAG_COLOR[n.tag] || '#3f7fd0'}">${esc(n.tag)}</span>`
     + `<span class="d">${n.pinned ? '' : esc(n.date)}</span></div><h2>${esc(n.title)}</h2>${bodyHtml(n.body, Boolean(n.pinned))}`
     + '<div class="bar"><a class="back" href="#" onclick="show(-1);return false">BACK<span></span></a></div></div>').join('');
   return '<!doctype html><html><head><meta charset="utf-8">'
@@ -1117,7 +1145,7 @@ function noticesPage(realMs = Date.now(), opts = {}) {
     + 'window.scrollTo(0,0)}'
     + (opts.web ? 'window.addEventListener("load",function(){var m=/^#n([0-9]+)$/.exec(location.hash);if(m)show(+m[1])});' : '')
     + 'window.addEventListener("load",function(){var h=location.hash.slice(1),k;if(!h||/^n[0-9]+$/.test(h))return;'
-    + 'for(k=0;k<' + notices.length + ';k++)if(document.getElementById("d"+k).getAttribute("data-s")===h){KXH=1;show(k);return}});'
+    + 'for(k=0;k<' + notices.length + ';k++){var e=document.getElementById("d"+k);if(e.getAttribute("data-s")===h||e.getAttribute("data-a")===h){KXH=1;show(k);return}}});'
     // avvisa il server appena disegnata (tempi del popup al primo avvio, server.js noticesshown)
     // tempi delle fasi misurati dalla WebView (risposta, DOM pronto, primo disegno, load), in ms dall'inizio della navigazione
     + (opts.web ? '' : 'window.addEventListener("load",function(){requestAnimationFrame(function(){var t=performance.timing,n=t.navigationStart,'
