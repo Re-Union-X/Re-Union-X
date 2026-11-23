@@ -1748,5 +1748,13 @@ Menace Intermediate #4 (filled corridor parts walked to the Gold Tricholoma of p
   - Room DB_0030_01_00 built by `make_jp_rooms.py --story-only` (63 files; EV-1373).
   - Left out: EV-1433 / EV-1501 (a map none of the quests owns: the Part 4 rule `map_key_shared_quest` holds it; needs the
     user), EV-0429 711610 / 711740 / 711750 (no Shadow in any part), EV-0929 (needs an enemy row import).
+- **Rules 1 and 2** (user 23-11, approved): patch 10 `tmp\events\unbuilt\patch_rules12.py` (records; report
+  `unbuilt\rules12_report.json`) and `tmp\events\part10\add_rules12_rows.py` (76 donor WW rows, all with a served model; reads
+  `unbuilt\rules12_rows.json`). Rule 1: a donor row of the name with the event's YYMM id prefix, imported and pinned, also for
+  names that are not ambiguous (label prefixVersion); several month rows with the same stats = held, never a pick. Rule 2: an
+  ambiguous name with no month row takes the row the JP 4.3.1 maps of the period (event windows starting within 183 days) place
+  in the same role (target / not target), at least 90 % of at least 10 placements (label jpPeriodVersion, reason in the Notices).
+  Quests with every name resolved get the generated map (thumbId room, else the one khuxwiki room code). A quest with any held
+  name gets no map.
 - **Still held**: EV-0941 (Union twin of 740926, sharing would merge it);
   the 18 materials pins (`pins_r2_skipped.json`); EV-0108 / EV-0417 (no source).
