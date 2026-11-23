@@ -2231,6 +2231,8 @@ const tests = {
     assert.ok(/difficulty/.test(REAL_CONFIG.reconstructedWhy.monthRowOrder || ''), 'monthRowOrder has its reason text');
     assert.deepStrictEqual(me.labelIds('original; target row by the target band', REAL_CONFIG.labelPhrases), ['targetBandVersion']);
     assert.deepStrictEqual(me.labelIds('original; worldwide donor row imported', REAL_CONFIG.labelPhrases), ['donorRowImported']);
+    assert.deepStrictEqual(me.labelIds('original; enemy version by plurality', REAL_CONFIG.labelPhrases), ['pluralityVersion']);
+    assert.ok(/most/.test(REAL_CONFIG.reconstructedWhy.pluralityVersion || ''), 'pluralityVersion has its reason text');
     assert.ok(/target/.test(REAL_CONFIG.reconstructedWhy.targetBandVersion || '') && /worldwide/.test(REAL_CONFIG.reconstructedWhy.donorRowImported || ''), 'reason texts of the two labels');
   },
   held_hsc_not_served() {

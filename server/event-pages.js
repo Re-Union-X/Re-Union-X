@@ -487,6 +487,7 @@ const EVENT_SHORT = {
   jpPeriodVersion: ['values', 'Enemy version', 'Chosen by the Japanese maps of the same period, not confirmed', 'replaced'],
   monthRowOrder: ['values', 'Enemy version', 'Chosen by the order of the event difficulty rows, not confirmed', 'replaced'],
   targetBandVersion: ['values', 'Target version', 'The row the original maps use for this target, not confirmed', 'replaced'],
+  pluralityVersion: ['values', 'Enemy version', 'The version the maps of the period use most, not confirmed', 'replaced'],
   donorRowImported: ['values', 'Enemy data', 'From the worldwide game data shared by the community', 'replaced'],
   wikiAp: ['values', 'AP', 'From the khuxwiki page of this run', 'replaced'],
   mapIncomplete: ['values', 'Map', 'Incomplete in our data: the gaps are reported', 'removed'],
@@ -506,7 +507,7 @@ const EVENT_SHORT = {
 };
 const EVENT_LABEL = { wikiAp: 'AP', donorKept: 'later game data', wikiLowConfidence: 'a wiki value', noWikiPage: 'no wiki page', otherRunWiki: 'wiki of another run', prefixVersion: 'enemy version', jpPeriodVersion: 'enemy version', monthRowOrder: 'enemy version', mapIncomplete: 'map', eventCoins: 'Event Coins',
   wholeDay: 'opening time', dramaOff: 'scenes', boardsLater: 'event boards', noCoinSource: 'event boards', boosterLater: 'Boosters', noBoardSet: 'Event Coins', quizBoard: 'quiz board',
-  communityBonus: 'community goal', completionReward: 'completion reward', hscThresholds: 'score thresholds', chanceSpawns: 'rare enemies', materialSpots: 'material spots', targetBandVersion: 'target version', donorRowImported: 'enemy data' };
+  communityBonus: 'community goal', completionReward: 'completion reward', hscThresholds: 'score thresholds', chanceSpawns: 'rare enemies', materialSpots: 'material spots', targetBandVersion: 'target version', pluralityVersion: 'enemy version', donorRowImported: 'enemy data' };
 const EVENT_GROUPS = [['values', 'Quest data', 'tleg', ''], ['rewards', 'Rewards', 'camp', ' rw'], ['rules', 'Rules', 'weekday', ' ru'], ['other', 'Other', 'replaced', ' ot']];
 // every label in use: the event's and its quests' (served or not), in the order of EVENT_SHORT, unknown ones last
 const codesOf = (e) => {
