@@ -1702,3 +1702,33 @@ Part 10 (events of 2016-11..2018-03) is complete with 10a-10d.
   calendar (docs/notes/campaigns.md «Notice-backed 0 AP days»).
 - **EV-0085 Cyber Week VIP set**: campaign C22565 (evStageId 7621, stages 976210-976214), the Chip & Dale set like C23990,
   2016-11-21..12-04; private catalogue row E22565-1 in `special_quests.json`. The Jewel sale is not served.
+
+## Unbuilt event quests, rounds 1-2 (23 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-23-events-unbuilt-round2.md`; user rulings of 23-11 (A1, A2, Hidden Menace part fill,
+month-prefix enemy ids from mid-2018, EV-0941 JP twin). Served quests 3,405 (rev 365) -> 3,804 (rev 366): 399 added, none
+lost or changed (served-quest diff on censusId + quest key: stage id, AP, level, evStage). Bench rev 366 (user played):
+EV-0921 Vs. Cloud Round 1 (A2), EV-0098 Corridor of Darkness Round 1 (JP twin), EV-0568 Swiftstriker: Power, EV-0429 Hidden
+Menace Intermediate #4 (filled corridor parts walked to the Gold Tricholoma of part 16, all objectives).
+
+- **Repo rules** (make-events.js, tests in test-make-events.js): `binShare` also outside the data hole when the map is the holder
+  quest's own map (`prior.ownKey === mapKey`); the medal resolver falls back from «Name A» to «Name»; labels `otherRunWiki`
+  (A1) and `prefixVersion` (D3) with their `reconstructedWhy` text (the Events notice lists every used label).
+- **Private record patches, outside the repo. Re-apply them, in this order, after any rerun of the record builders**
+  (`tmp\events\challenge\build_challenge.py`, `tmp\events\part10\build_hole.py`, `tmp\events\hsc\build_hsc.py`):
+  1. `tmp\events\hsc\build_hsc.py` CENSUS_ERRORS (EV-0187, EV-0685 Shop deals: not events) - in the builder itself;
+  2. `tmp\events\challenge\patch_ww_ruling.py` (A1/A2, 268 quests);
+  3. `tmp\events_p1\pilot\work\build.py` P10_PAGE_PIN + `tmp\events\unbuilt\pins_r2.json` (made by `pins_r2.py`: 52 page pins
+     of the 2016-18 hole, a pin needs the day/ordinal AND the objective match) - read by build_hole.py;
+  4. `tmp\events\unbuilt\r2_splice.py` (EV-0429 Hidden Menace, EV-0568/0615/0918/1109 Swiftstriker rebuilt from the donor
+     rows with I-251; EV-0931 + its Time Trial 741230; Hidden Menace `map.partSources` from `r2_donor\hm_partsources.json`
+     and the Shadow target id 10001 from the donor row when a filled part carries the Shadow);
+  5. `tmp\events\unbuilt\patch_prefix_ids.py` (39 quests, wikiEnemyIds / target id by the event's YYMM id prefix).
+  Enemy rows: `tmp\events\part10\add_census_rows.py`, `add_r2_rows.py`, `add_prefix_rows.py` (44 rows, all with a served model).
+- **Hidden Menace (EV-0429)**: 8 complete maps; 10 filled from the Legendary map of the same world (empty corridor parts, same part
+  index; label mapPartRebuilt); still held: 711610/711740/711750 (no Shadow in any part), 711620/630/640/660 (foreign enemy
+  parts), 711680/700/780 (no STG header). The record enemy lists predate the fill (import report `map_only`); the map files
+  carry the Shadow and the Gold Tricholoma.
+- **Still held**: the 39 month-prefix quests (EV-0744, 0853, 0856, 0861, 0872, 1005, 1293): their enemies resolve, but no JP
+  file holds their STG header (map audit 10-11: group «none»); EV-0941 (Union twin of 740926, sharing would merge it);
+  the 18 materials pins (`pins_r2_skipped.json`); EV-0108 / EV-0417 (no source).
