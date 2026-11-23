@@ -249,6 +249,14 @@ try:
     assert mapfile.parse_stg(open(files[(FL, None)], 'rb').read())['target_enemy'] == OLD, 'JP map unchanged'
     bad_lt = ies.run([dict(it_lt, enemySwaps=[{'from': 1, 'to': RUN}])], files, rooms_l2, {RUN, OLD}, rw_l2, out)['stages'][0]
     assert bad_lt['status'] == 'skipped' and not bad_lt.get('layoutTwin'), bad_lt
+    # fill_parts replace (24-11, Hidden Menace 711620/630/640/660: the JP dump holds a later map under the same file names, its
+    # first parts hide the Hidden Menace parts): a source with replace: true overwrites the part the copy already holds; without
+    # it the copy's own part wins (unchanged behaviour)
+    cp = [('jp', {(711620, None): b'S', (711620, 0): b'OWN', (711610, 0): b'LEG'})]
+    kept, _ = ies.fill_parts(711620, cp, {'0': {'key': 711610, 'part': 0}})
+    assert kept[0][1][(711620, 0)] == b'OWN', 'no replace: own part kept'
+    rep, used = ies.fill_parts(711620, cp, {'0': {'key': 711610, 'part': 0, 'replace': True, 'reconstructed': True, 'basis': 'hiddenMenaceLater'}})
+    assert rep[0][1][(711620, 0)] == b'LEG' and used and list(used.values())[0]['reconstructed'], (rep, used)
 finally:
     shutil.rmtree(t, ignore_errors=True)
 print('OK: test_import_event_stages')

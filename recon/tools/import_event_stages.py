@@ -213,7 +213,9 @@ def fill_parts(key, copies, sources):
         add = {}
         for p, src in sorted((sources or {}).items(), key=order):
             k, sk = (key, pnum(p)), (int(src['key']), pnum(src.get('part')))
-            if k not in fs and sk in fs:
+            # replace: true (24-11, Hidden Menace 711620/630/640/660): the copy's own part is a later map's part under the same file
+            # name, so the source part overwrites it
+            if (k not in fs or src.get('replace')) and sk in fs:
                 add[k] = fs[sk]
                 name = _client_name(key, k[1])
                 used.setdefault(name, {'from': _client_name(*sk), 'reconstructed': bool(src.get('reconstructed')),
