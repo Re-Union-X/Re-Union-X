@@ -266,7 +266,7 @@ try:
         E = lambda n: {'name': 'Eggcognito', 'enemyId': 80001, 'n': n, 'reward': 1}  # noqa: E731
         EVM, EVS = 4009991, 4009990
         evm = dict(base, stageId=EVM, room='Corridor (1)', roomCodes=[R27], censusId='EV-TEST', rooms=2, targetArea=1, backExits=False,
-                   layoutSource=None, enemies=[[B(1)], [E(1)], [E(1)]], targetWith=[], areas=[
+                   layoutSource=None, enemies=[[B(1)], [E(1)], [E(1)]], targetWith=[], chanceRate=0.9, areas=[
                        {'room': 'Corridor (1)', 'roomCodes': [R27], 'enemies': [[B(1)], [E(1)]], 'chance': [1], 'chests': 0,
                         'materials': [{'materialId': 101, 'n': 5}, {'materialId': 102, 'n': 2}]},
                        {'room': 'Corridor (2)', 'roomCodes': [R27], 'enemies': [[E(1)]], 'chance': [0], 'chests': 0}])
@@ -292,6 +292,7 @@ try:
             check(pm.get(str(EVM), {}).get('random') == want, 'POI random = the chance squads\' uids %s (%s)' % (want, pm.get(str(EVM))))
             check(pm.get(str(EVM), {}).get('target') == tgt[0] and tgt[0] not in want, 'POI target = the boss squad uid, not random')
             check(s['teams_total'] == 4, 'STG [8] counts the chance squads (%s)' % s['teams_total'])
+            check(pm.get(str(EVM), {}).get('randomRate') == 0.9 and 'randomRate' not in pm.get(str(EVS), {}), 'POI randomRate from the entry chanceRate only (%s)' % pm.get(str(EVM)))
             check(len(ps[1]['teams']) == 2, 'an area whose only group is a chance group keeps it (%s)' % ps[1]['teams'])
             # material_spots_split
             mats = [(m['materialId'], m['quantity']) for p in ps for m in p['materials']]

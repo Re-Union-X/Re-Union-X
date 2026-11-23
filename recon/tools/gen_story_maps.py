@@ -1242,8 +1242,10 @@ def build_multi(s, q, room_names, groups):
 POI = {}
 
 
-def poi_add(sid, part, ens, chests, random=(), target=None, mats=()):
+def poi_add(sid, part, ens, chests, random=(), target=None, mats=(), rate=None):
     d = POI.setdefault(str(sid), {'chests': [], 'enemies': []})
+    if random and rate is not None:
+        d['randomRate'] = rate                                      # chance to appear (entry chanceRate; server default 1/2)
     # chance squads (server stageRandomEnemies: removed with p 1/2), the target squad, the material spots (plan 2026-11-23)
     if random:
         d['random'] = d.get('random', []) + list(random)
@@ -1555,7 +1557,7 @@ def build_event_areas(sp):
             target_id = ens[struct.unpack_from('<i', recs[-1], 0)[0]][2]
         poi_add(sid, k, ens, chests, mats=mats)
         tot_a, tot_e, tot_c = tot_a + len(recs), tot_e + len(ens), tot_c + len(chests)
-    poi_add(sid, tk, [], [], random_uids, target_uid if random_uids else None)
+    poi_add(sid, tk, [], [], random_uids, target_uid if random_uids else None, rate=sp.get('chanceRate'))
     hdr = struct.pack('<16i', 4674643, 16, R, entry[0][0], entry[0][1], lays[0]['startFacing'] if lays[0].get('startFacing') in (0, 1, 2) else 2, target_id, 1, tot_a, tot_e,
                       0, level, tk, 0, tot_c, sum(len(p[3]) for p in placed))
     return hdr, parts, {'parts': R, 'folders': folders_, 'groups_per_room': [len(p[0]) for p in placed],
@@ -1620,7 +1622,8 @@ if generated:
                           0, sp.get('level', 1), 0, 0, len(chests), len(extra.get('mats', [])))
         open(os.path.join(out, 'mappoi_stg%05d.bin' % sid), 'wb').write(hdr)
         open(os.path.join(out, 'mappoi_stg%05d_00.bin' % sid), 'wb').write(part)
-        poi_add(sid, 0, ens, chests, extra.get('random', ()), extra.get('target') if extra.get('random') else None, extra.get('mats', ()))
+        poi_add(sid, 0, ens, chests, extra.get('random', ()), extra.get('target') if extra.get('random') else None, extra.get('mats', ()),
+                sp.get('chanceRate') if is_event else None)
         names = [m[0] for g in groups for m in g['members'] if not m[3]]
         report.append(dict({'mission': 0, 'stageId': sid, 'name': sp['name'], 'room': room_name, 'folder': folder,
                             'exact_room': bool(coded) or room_name in rooms or room_name in special_rooms, 'enemies': len(ens), 'chests': len(chests),

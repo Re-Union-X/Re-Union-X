@@ -1532,6 +1532,9 @@ const tests = {
     const Egg = { name: 'Eggcognito', enemyId: 80777, n: 1, reward: 1 };
     assert.deepStrictEqual(e.areas.map((a) => [a.enemies, a.chance, a.materials]),
       [[[[{ name: 'Foe B', enemyId: 502, n: 2, reward: 1 }], [Egg]], [1], [{ materialId: 101, n: 5 }]], [[[Egg]], [0], undefined]]);
+    assert.strictEqual(e.chanceRate, undefined, 'no chanceRate unless the record names one');
+    const rated = me.buildEvents([record('E-CHR', [genQuest(702324, { genAreas: { ...ga, chanceRate: 0.9 }, wikiEnemies: { 'Foe B': 2, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.strictEqual(rated.genMaps[0].chanceRate, 0.9, 'genAreas.chanceRate -> entry.chanceRate (user 23-11: Countdown Fireworks)');
     assert.ok(q.labels.includes('chanceSpawns') && q.labels.includes('materialSpots'), JSON.stringify(q.labels));
     assert.ok(/1 in 2/.test(out.index.reasons.chanceSpawns || '') && /totals/.test(out.index.reasons.materialSpots || ''), 'reason texts (event_config.json reconstructedWhy)');
     // one area: top-level chance (flat indexes) and materials

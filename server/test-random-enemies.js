@@ -26,6 +26,10 @@ if (typeof t.stageRandomEnemies === 'function') {
   P[990003] = { chests: [], enemies: [] };
   check(JSON.stringify(t.stageRandomEnemies(990003, () => 0)) === '[]', 'random_absent_empty: POI without random');
   check(JSON.stringify(t.stageRandomEnemies(990004, () => 0)) === '[]', 'random_absent_empty: no POI');
+  // a per-stage rate (POI randomRate = chance to APPEAR, user 23-11: the Countdown Fireworks 0.9): removed when rng() < 1 - rate
+  P[990006] = { random: [3, 4], target: 9, randomRate: 0.9 };
+  r = t.stageRandomEnemies(990006, seq(0.3, 0.05));
+  check(JSON.stringify(r) === '[{"uniqueSymbolEnemyId":4}]', `randomRate 0.9: ${JSON.stringify(r)}`);
   // Review Focus 2: a POI with random but no enemies list
   P[990005] = { random: [4] };
   check(JSON.stringify(t.stageRandomEnemies(990005, () => 0.9)) === '[]', 'random without enemies list');

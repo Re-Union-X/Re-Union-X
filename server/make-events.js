@@ -906,6 +906,9 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous,
   // one area: gen_story_maps.py builds it from the top-level list (chance indexes into entry.enemies, the same as the area's)
   if (areas.length === 1 && areas[0].chance) entry.chance = areas[0].chance;
   if (areas.length === 1 && areas[0].materials) entry.materials = areas[0].materials;
+  // the chance squads' rate to appear (server.js stageRandomEnemies, default 1/2): only where the record names one (user 23-11:
+  // the 2016 Countdown Fireworks 0.9, whose «x15» / «x7» objectives need almost every squad)
+  if (Number.isFinite(ga.chanceRate) && ga.chanceRate > 0 && ga.chanceRate <= 1) entry.chanceRate = ga.chanceRate;
   return res(entry);
 }
 

@@ -1636,7 +1636,10 @@ function stageTreasures(stageId, rng = Math.random) {
 function stageRandomEnemies(stageId, rng = Math.random) {
   const poi = poiOf(stageId);
   if (!poi || !Array.isArray(poi.random)) return [];
-  return poi.random.filter((uid) => uid !== poi.target && rng() < 0.5).map((uid) => ({ uniqueSymbolEnemyId: uid }));
+  // randomRate (optional, per stage) = the chance to APPEAR (user 23-11: the Countdown Fireworks 0.9, whose «x15» objectives need
+  // almost every squad); default 1/2
+  const rate = Number.isFinite(poi.randomRate) ? poi.randomRate : 0.5;
+  return poi.random.filter((uid) => uid !== poi.target && rng() < 1 - rate).map((uid) => ({ uniqueSymbolEnemyId: uid }));
 }
 
 function startTreasures(req, rng = Math.random) {
