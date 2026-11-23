@@ -1,1 +1,79 @@
-{}
+{
+ "742930": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1198 Event & Trait Medals. khuxwiki chance rows: khuxwiki page «Event & Trait Medals (July 2020)»: {{chance}} on ['Gold Tricholoma']; notice: notice 67064 SN++ - Aeleus Medal Event"
+ },
+ "743160": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-1232 Event & Trait Medals. khuxwiki chance rows: khuxwiki page «Event & Trait Medals (August 2020)»: {{chance}} on ['Gold Tricholoma']; notice: notice 67953 SN++ - Dilan Medal Event"
+ },
+ "736120": {
+  "uids": [
+   16
+  ],
+  "target": 20,
+  "source": "EV-0603 Event Coins Galore - Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins Galore: Intermediate»: {{chance}} on ['Shenaneggan']"
+ },
+ "740990": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0909 Event Coins plus Riku & Moogle: Beginner. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Beginner (09/03/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "740991": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0909 Event Coins plus Riku & Moogle: Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Intermediate (09/03/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "740992": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0909 Event Coins plus Riku & Moogle: Advanced. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Advanced (09/03/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "740993": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0909 Event Coins plus Riku & Moogle: Legendary. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Legendary (09/03/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "741190": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0925 Event Coins plus Riku & Moogle: Beginner. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Beginner (09/17/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "741191": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0925 Event Coins plus Riku & Moogle: Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Intermediate (09/17/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "741192": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0925 Event Coins plus Riku & Moogle: Advanced. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Advanced (09/17/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "741193": {
+  "uids": [
+   3
+  ],
+  "target": 5,
+  "source": "EV-0925 Event Coins plus Riku & Moogle: Legendary. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Legendary (09/17/2019)»: {{chance}} on ['Gold Tricholoma']"
+ }
+}
