@@ -91,7 +91,7 @@ const QUIZ_BOARD_LABELS = ['quizBoard', 'quizBoardFootage', 'quizBoardScreenshot
 // Constraints «Nothing half-served»), scheduleLine (a second notice of an event, scheduleLineOf: no row, no card, no catalogue row).
 // Part 7 Task 5: avatarBoards (a BOARD entry of the avatar board records: boards only, no quest, avatarCatalog)
 const REASONS = ['shared', 'board', 'coin', 'undated', 'wikiEmpty', 'rewardItemMissing', 'notSelected',
-  'enemyMissing', 'mapUnusable', 'mapKeyUsed', 'rewardRowsMissing', 'raidSpecial', 'worldMismatch',
+  'enemyMissing', 'mapUnusable', 'mapKeyUsed', 'rewardRowsMissing', 'rewardRowTooLong', 'raidSpecial', 'worldMismatch',
   'boosterOnly', 'rewardTypeUnknown', 'quizTextMissing', 'objectiveMismatch', 'notice', 'objectiveUnmapped', 'scheduleLine', 'enemyAmbiguous', 'avatarBoards',
   // Part 8 Task 6: a High Score Challenge with no quest / an unmapped reward (the private builder) or no score thresholds yet
   'hscNoQuest', 'hscRewardUnmapped', 'hscNoThresholds'];
@@ -1359,9 +1359,19 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         // Events Part 10b: calibrated drops of a generated map (record genDrops {byName {name: rewardId}, target, rows {rewardId: rows}})
         const gd = q.genDrops;
         if (gd) {
-          const byName = gd.byName || {};
-          for (const m of [...genEntry.enemies.flat(), ...(genEntry.targetWith || [])]) if (byName[m.name]) m.reward = byName[m.name];
-          for (const e of g.enemies) e.reward = e.target ? gd.target || 1 : byName[e.name] || 1;
+          // a byName value may be a list of rows, given in turn to the squads of that name (enemies, then targetWith): one name can
+          // carry more items than a row holds (24-11, EV-0123 Nova Fest)
+          const byName = gd.byName || {}, turn = new Map();
+          const rowOf = (name) => {
+            const v = byName[name];
+            if (!Array.isArray(v)) return v;
+            const k = turn.get(name) || 0;
+            turn.set(name, k + 1);
+            return v[k % v.length];
+          };
+          for (const m of [...genEntry.enemies.flat(), ...(genEntry.targetWith || [])]) if (byName[m.name]) m.reward = rowOf(m.name);
+          const first = (name) => (Array.isArray(byName[name]) ? byName[name][0] : byName[name]);
+          for (const e of g.enemies) e.reward = e.target ? gd.target || 1 : first(e.name) || 1;
           if (gd.target) genEntry.targetReward = gd.target;
           if (!qLabels.includes('dropsCalibrated')) { qLabels.push('dropsCalibrated'); item.labels = qLabels; }
         }
@@ -1431,6 +1441,9 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       const genRows = [];
       if (gen && q.genDrops) {
         const bad = [];
+        // the client reads a reward row as int[4]: a longer row holds the quest (one such row made the server drop the whole table)
+        const long = Object.entries(q.genDrops.rows || {}).filter(([, rows]) => rows.length > 4).map(([r0]) => r0);
+        if (long.length) { item.reason = 'rewardRowTooLong'; item.why = `calibrated reward rows over 4 items: ${long.join(', ')}`; continue; }
         for (const [r0, rows] of Object.entries(q.genDrops.rows || {})) {
           const r = Number(r0), key = JSON.stringify(rows.map((x) => [x.type, x.id || 0, x.num, x.odds]));
           const prev = masterRewardKey.has(r) ? masterRewardKey.get(r) : (ownRewards.get(r) || {}).key;

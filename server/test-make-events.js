@@ -1359,6 +1359,26 @@ const tests = {
     const q2 = entry(out2, 'E-D2').quests[0];
     assert.deepStrictEqual([q2.served, q2.reason], [false, 'rewardRowsMissing'], JSON.stringify(q2));
   },
+  // 24-11 (user): a byName value may be a list of rows, given in turn to the squads of that name (enemies then targetWith), so one
+  // name can carry more items than a row holds; a calibrated row of more than 4 items holds the quest (the client reward row is
+  // int[4]: one longer row made the server drop the whole reward table, EV-0123 Nova Fest)
+  gen_drops_rows_in_turn_and_max_four() {
+    const r = (id, odds) => [{ type: 3, id, num: 1, odds }];
+    const g = genQuest(702310, { genDrops: { byName: { 'Foe B': [69310, 69311] }, target: 69312,
+      rows: { 69310: r(23081, 214), 69311: r(23082, 214), 69312: r(23083, 83) } } });
+    const out = me.buildEvents([record('E-T', [g])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const q = entry(out, 'E-T').quests[0];
+    assert.ok(q.served, JSON.stringify(q));
+    const e = out.genMaps.find((x) => x.stageId === q.stageId);
+    assert.deepStrictEqual(e.enemies.flat().map((m) => m.reward), [69310, 69311]);
+    assert.deepStrictEqual(out.reward.filter((x) => [69310, 69311].includes(x.rewardId)).map((x) => x.rewardId).sort(), [69310, 69311]);
+    const five = [23081, 23082, 23083, 23084, 23085].map((id) => r(id, 83)[0]);
+    const g2 = genQuest(702311, { genDrops: { byName: { 'Foe B': 69313 }, target: 69312, rows: { 69313: five, 69312: r(23083, 83) } } });
+    const out2 = me.buildEvents([record('E-T2', [g2])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const q2 = entry(out2, 'E-T2').quests[0];
+    assert.deepStrictEqual([q2.served, q2.reason], [false, 'rewardRowTooLong'], JSON.stringify(q2));
+    assert.ok(!out2.reward.some((x) => x.rewardId === 69313));
+  },
   // Events Part 10c Task 4: a quest whose original clear could summon a raid boss (record raidSummon {boss, why}): no served raid row
   // of that boss has the HP of the period, so the quest is served without the summon and labelled raidSummonLater
   quest_raid_summon_later() {
