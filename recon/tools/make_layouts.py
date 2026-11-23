@@ -1699,8 +1699,6 @@ TEXTS = {
     106260102: 'Munny',
     106260101: 'Setting this trait will cost <important>${1:%d}</important> Munny.',
     # Presents
-    103500013: 'Presents can be collected here.\nOn this server presents never expire\n'
-               'and up to 500 of each kind are kept.',   # Txt_Wording (ours, user 23-11; original: limit 200, deleted when expired)
     103500002: 'Presents',      # Txt_Stock_Title
     103500003: 'Collect All',   # Txt_ReceiveAll (Button)
     106250104: 'Other',         # Txt_Stock (Dark Road: その他)
@@ -1747,7 +1745,7 @@ TEXTS.update({
 TEXTS.update({106240220 + n: str(n) for n in range(1, 8)})
 # Texts that replace an original of the IPA 4.4.0 (build-resources.ps1 does not copy the import over the ids listed in
 # stage_gen\forced_ui_texts.txt): the payType 9 button texts 106180336-341 say «Premium Ticket», the 4.4.0 name of
-# limitedDrawTicket3; in our Shop payType 9 is the Draw Points Deal (ours, declared in the Notices)
+# limitedDrawTicket3; in our Shop payType 9 is the Draw Points Deal (ours, declared in the Notices); 103500013: Present Box
 FORCED_TEXTS = {
     106180336: 'Use <important>${1:%d :#</important>Draw Point:#</important>Draw Points}\nto get <important>1 Medal</important>',
     106180337: 'Use <important>${1:%d :#</important>Draw Point:#</important>Draw Points}\nto get <important>${2:%d :#</important>Medal:#</important>Medals}',
@@ -1755,6 +1753,11 @@ FORCED_TEXTS = {
     106180339: 'Use ${1:%d :#Draw Point:#Draw Points}\nto get ${2:%d :#Medal:#Medals}',
     106180340: 'Use <important>${1:%d :#</important>Draw Point:#</important>Draw Points}\nto get <important>${2:%d :#</important>Medal:#</important>Medals}',
     106180341: 'Draw Points Held',
+    # Present Box Txt_Wording (user 23-11): presents never expire and the limit is 500 here (server.js PRESENT_MAX);
+    # the original said «Presents over the limit of 200 will be deleted, oldest first, as will those past their
+    # expiry date.» (same blank line after the first sentence)
+    103500013: 'Presents can be collected here.\n\nOn this server presents never expire\n'
+               'and up to 500 of each kind are kept.',
 }
 TEXTS.update(FORCED_TEXTS)
 
