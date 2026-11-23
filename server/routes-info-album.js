@@ -277,6 +277,7 @@ function eventHoleFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dirna
     // review I2: the hours themselves, from the entries' open windows
     openHoursText: [...new Set(live.filter((e) => hasLabel(e, 'openWindowsReconstructed'))
       .flatMap((e) => (e.timeWindows || []).filter((w) => w.effect === 'open').map((w) => `${clock12(w.from)} to ${clock12(w.to)}`)))],
+    openAllDay: live.filter((e) => hasLabel(e, 'openAllDay')).length,
     bonusHours: live.filter((e) => hasLabel(e, 'bonusHoursFactor')).length,
     summonsLater: live.flatMap((e) => e.quests || []).filter((q) => q.served && hasLabel(q, 'raidSummonLater')).length,
     // review I4: the events that hold those quests, by name
@@ -294,6 +295,7 @@ function eventHoleLines(f) {
     if (h.boosterEvents) out.push(`**${h.boosterEvents} Booster Challenge${h.boosterEvents === 1 ? '' : 's'}** of the period ${h.boosterEvents === 1 ? 'is' : 'are'} back: their objectives pay the original **Boosters** of the donated game data (see **Boosters** below).`);
     if (h.damageContests) out.push(`**${h.damageContests} Damage Contest${h.damageContests === 1 ? '' : 's'}** («Test Your Might») ${h.damageContests === 1 ? 'is' : 'are'} back as High Score runs: the score is the damage you deal. As for the High Score Challenges, the original rank brackets became **score thresholds** (calibrated, **not original**). The July and October 2017 contests use the map of the December 2017 one, the same quest (no other map survives: **not original**).`);
     if (h.openHours) out.push(`**Classic Donald**: the original quests opened only for 12-hour periods at times never published; here they open every day${(h.openHoursText || []).length ? ` from **${h.openHoursText.join(' and ')}** (Pacific time)` : ''}, hours that are **reconstructed** (**not original**); outside them the event is not listed.`);
+    if (h.openAllDay) out.push('**Classic Donald**: the original quests opened only for 12-hour periods at times never published; here they stay **open all day** (**not original**).');
     if (h.bonusHours) out.push('**Classic Goofy**: in the **Bonus Time** hours of the original notice (12:00 p.m. to 1:59 p.m. and 8:00 p.m. to 9:59 p.m., Pacific time) rare Medals drop more often; the notice gave no rate, so the drop rates are **doubled** in those hours (**not original**).');
     if (h.summonsLater) out.push(`In the original game **${h.summonsLater} quests** of the period could make a **raid boss** appear${(h.summonNames || []).length ? ` (${h.summonNames.map((x) => `«${x}»`).join(', ')})` : ''}; no raid of those bosses with their strength of the time is served yet, so here they summon none.`);
     const rest = h.quests - h.served - (h.later || 0);

@@ -555,6 +555,8 @@ for (const web of [false, true]) {
   check(/Classic Donald/.test(l3) && /reconstructed/.test(l3) && /Classic Goofy/.test(l3) && /Bonus Time/.test(l3), 'hole 10c hours');
   check(/raid boss/.test(l3) && /\*\*10 quests\*\*/.test(l3), 'hole 10c summons');
   check(!/restored/i.test(l3), 'hole 10c: no «restored» (project rule)');
+  const lAll = n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, openAllDay: 1 } }).join(' ');
+  check(/Classic Donald/.test(lAll) && /open all day/.test(lAll) && /not original/.test(lAll), 'hole: Classic Donald open all day');
   const l4 = n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, later: 8 } }).join(' ');
   check(!/Booster Challenge|Damage Contest|Classic Donald|raid boss/.test(l4), 'hole 10c: no line without them');
   {
@@ -567,10 +569,11 @@ for (const web of [false, true]) {
       { type: 'HSC', start: '2017-07-21', available: true, hsc: { damageContest: 'DC-WW-1' }, quests: [{ served: true }] },
       { type: 'HSC', start: '2017-08-21', available: true, hsc: {}, quests: [{ served: true }] },
       { type: 'EQ', start: '2017-01-08', available: true, labels: ['openWindowsReconstructed'], timeWindows: [{ from: '12:00', to: '23:59', effect: 'open' }], quests: [{ served: true, labels: [] }] },
+      { type: 'EQ', start: '2017-01-09', available: true, labels: ['openAllDay'], quests: [{ served: true, labels: [] }] },
       { type: 'EQ', start: '2017-01-01', name: 'Summon Event', available: true, labels: ['bonusHoursFactor'], quests: [{ served: true, labels: ['raidSummonLater'] }, { served: false, labels: ['raidSummonLater'] }] }] }));
     try {
       const h = n.eventHoleFacts(f).hole;
-      check(h.boosterEvents === 1 && h.damageContests === 1 && h.openHours === 1 && h.bonusHours === 1 && h.summonsLater === 1, `hole facts 10c: ${JSON.stringify(h)}`);
+      check(h.boosterEvents === 1 && h.damageContests === 1 && h.openHours === 1 && h.openAllDay === 1 && h.bonusHours === 1 && h.summonsLater === 1, `hole facts 10c: ${JSON.stringify(h)}`);
       check(JSON.stringify(h.openHoursText) === JSON.stringify(['12:00 p.m. to 11:59 p.m.']) && JSON.stringify(h.summonNames) === JSON.stringify(['Summon Event']), `hole facts 10c text: ${JSON.stringify(h)}`);
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }

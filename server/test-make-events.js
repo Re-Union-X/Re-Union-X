@@ -1344,6 +1344,10 @@ const tests = {
     assert.ok(REAL_CONFIG.reconstructedWhy.openWindowsReconstructed && REAL_CONFIG.reconstructedWhy.bonusHoursFactor);
     const bad = record('E-TB', [quest(702530, 1, [501])], { timeWindows: [{ from: '12:00', to: '13:59', effect: 'dropBoost' }] });
     assert.throws(() => me.buildEvents([bad], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] }), /E-TB.*factor/);
+    // user 23-11-2026: Classic Donald open all day (record openAllDay) -> label openAllDay, no time windows
+    const allDay = entry(me.buildEvents([record('E-TA', [quest(702550, 1, [501])], { openAllDay: 'user choice' })], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] }), 'E-TA');
+    assert.ok(allDay.labels.includes('openAllDay') && !('timeWindows' in allDay), JSON.stringify(allDay));
+    assert.ok(REAL_CONFIG.reconstructedWhy.openAllDay);
   },
   // Events Part 10c review I6: «Collect all materials» (objective code 18) counts the materials the enemies drop (code 17 is the
   // chests): treasures on the khuxwiki page do not show it can be met, so a generated map stays held even with chests

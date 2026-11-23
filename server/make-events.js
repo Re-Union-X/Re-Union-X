@@ -78,7 +78,7 @@ const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
   'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
-  'hscThresholds', 'damageContest', 'raidSummonLater', 'openWindowsReconstructed', 'bonusHoursFactor', 'bonusHoursLater'];
+  'hscThresholds', 'damageContest', 'raidSummonLater', 'openWindowsReconstructed', 'openAllDay', 'bonusHoursFactor', 'bonusHoursLater'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
 // (quizBoardScreenshot)
@@ -1154,6 +1154,8 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         else if (rec.timeWindows.some((w) => w.effect === 'dropBoost' && w.factorAssumed)) labels.add('bonusHoursFactor');
       }
     }
+    // an event whose original open hours are unknown, kept open all day (user 23-11-2026, Classic Donald): declared
+    if (rec.openAllDay) labels.add('openAllDay');
     // short windows of the donor rows: open the whole Pacific day (label wholeDay, not original). A `shortWindow` record whose rows
     // are all whole days (the Surprise events) was open that whole Pacific day in the original too: oneDay, no label
     const shortDays = new Set();
