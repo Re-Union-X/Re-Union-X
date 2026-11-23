@@ -775,6 +775,7 @@ does not restart».
   reset as before. B0770 (72828): «every 10th draw» (was pity 5).
 - B0704-B0706: end on 01-09-2020 (notice 69285, withdrawn and refunded; replaced by B0708-B0710 from 03-09).
 - B0507: excluded, duplicate of B0500 (same notice 52345, 15-19/04/2019, once per day). Catalogue: 807 banners.
+- B0009 «Zootopia Medals & Avatars are Here!» (notice 17892, 02-15/05/2016): excluded (user 23-11-2026), an avatar-board campaign (two boards at 3,000 Jewels each from the Avatar Board menu), not a draw; also out of `shop_notice_map.tsv`. Catalogue: 806 banners.
 - B0083 (24597): 3 dots on two copies (slots 0 and 1), not on all five.
 - Postponed: B0418 Blue Fairy Deal (Tier 8 guaranteed) with the drawable Blue Fairies (I-142); B0082 was already done in G5.
 - G2 (revision 139): the 7 maxed abilities («Attack Boost VI Max ... Triple Threat II») written only in the notice,

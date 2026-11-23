@@ -313,15 +313,16 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     TIER_BANNERS = 182  # + B0267 (D3); audit delle garanzie, appendice A (178) + 5 frasi SAB del 2016 - 3 a lista dal notice (2c/G4) + B0204 (2c/G9)
     cat = m.build_catalog(m.default_inputs())
     bs = cat['banners']
-    check(len(bs) == 807, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 (campo exclude)
+    check(len(bs) == 806, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 (campo exclude); B0009 campagna di avatar board (user 23-11)
+    check(not any(b['rowId'] == 'B0009' for b in bs), 'B0009 Zootopia: avatar boards a 3000 Jewel, non un banner (exclude)')
     from collections import Counter
     t = Counter(b['type'] for b in bs)
     check(t == Counter({'SN': 213, 'FEATURED': 168, 'FALLING': 129, 'SKILL': 69, 'DAILY': 64, 'SEVEN': 48, 'FREE': 36,
-                        'STANDARD': 23, 'T_TICKET': 21, 'ITEM': 19, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
+                        'STANDARD': 22, 'T_TICKET': 21, 'ITEM': 19, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
     # 85 = 78 della regola vecchia + i 7 banner della tranche 526-540 (12-01-2017 .. 08-02-2017, B0079-B0085),
     # che ora si sbloccano a 525; i 6 del lancio (B0001-B0006) passano da 200 a 0
     ub = sum(1 for b in bs if b['unlockQuest'] <= 525)
-    check(ub == 85, f'sbloccati a 525: {ub}')
+    check(ub == 84, f'sbloccati a 525: {ub}')
     check([b['rowId'] for b in bs if b['unlockQuest'] == 0] == ['B0001', 'B0002', 'B0003', 'B0004', 'B0005', 'B0006'], 'banner del lancio a 0')
     # 39 righe VIP con gemello (la ricerca e la spec 9.5 dicono 41: contavano le coppie, e B0552/B0554
     # «KH III Falling Price Deal» VIP hanno ciascuna due gemelli normali, B0551 e B0553)
@@ -335,7 +336,7 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(all(next(b for b in bs if b['rowId'] == r)['end'] == '2021-06-29' for r in ('B0811', 'B0812', 'B0794')), 'deal fino alla fine del servizio')
     check(all(b['end'] for b in bs), 'tutte le date di fine')
     inc = sum(1 for b in bs if b['catalogOnly'] == 'INCOMPLETE')  # 31 prima degli override dei notice (Task 4)
-    check(inc == 24, f'righe INCOMPLETE {inc}')
+    check(inc == 23, f'righe INCOMPLETE {inc}')
     for rid in ('B0742', 'B0765'):
         bg = next(b for b in bs if b['rowId'] == rid)['guarantee']
         check(bg['every'] == 3 and len(bg['list']) >= 15, f'{rid} garanzia every {bg}')

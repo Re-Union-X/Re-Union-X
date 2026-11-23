@@ -1756,5 +1756,14 @@ Menace Intermediate #4 (filled corridor parts walked to the Gold Tricholoma of p
   in the same role (target / not target), at least 90 % of at least 10 placements (label jpPeriodVersion, reason in the Notices).
   Quests with every name resolved get the generated map (thumbId room, else the one khuxwiki room code). A quest with any held
   name gets no map.
+- **Research 3 (A/B/C, user 23-11, approved as recommended)**, research in `tmp\events\unbuilt\research3\`. Patches 11-13, applied
+  in this order after patch 10: `patch_research_c.py` (right-run page re-pins with ordinal + objectives: EV-0683, EV-0742,
+  EV-0875, EV-1216, EV-0410; room ties by the codes the JP maps use; thumbId 0 = room XX_0000_00_00; R1 cases where the right
+  page agrees with the JP map: khuxwiki-only rows to `wikiOnlyEnemies` / `wikiOtherRunRows`), `patch_research_b.py` (rule 2 window
+  365 days, >= 90 % of >= 10 placements per quest leave-one-out, level check; the same-event ladder: one month row per quest
+  level, label monthRowOrder), `patch_research_a.py` (month rows are difficulty tiers: each row belongs to one event, the tier
+  never goes down as the level rises; only high / medium-high picks, label monthRowOrder; also re-pins 740688, 740753, 740756,
+  served before on generic rows). Rows: `tmp\events\part10\add_rules12_rows.py`, `add_research_b_rows.py`,
+  `add_research_a_rows.py` (event_enemies.json 2,096 rows).
 - **Still held**: EV-0941 (Union twin of 740926, sharing would merge it);
   the 18 materials pins (`pins_r2_skipped.json`); EV-0108 / EV-0417 (no source).

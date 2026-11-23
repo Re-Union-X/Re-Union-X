@@ -92,8 +92,10 @@ const tests = {
   real_build() {
     let d;
     try { d = ms.buildFrom(process.env.KHUX_RAID_SRC || ms.DEFAULT_SRC); } catch (e) { console.log(`  (skipped: private sources not readable, ${e.code || e.message})`); return; }
-    assert.strictEqual(d.rows.B0009.noticeId, 17892, 'Zootopia Medals & Avatars are Here!');
-    assert.strictEqual(d.notices[17892].title, 'Zootopia Medals & Avatars are Here!');
+    assert.strictEqual(d.rows.B0010.noticeId, 17978, '25% Off! Get the Big Deal for a Steal!');
+    assert.strictEqual(d.notices[17978].title, '25% Off! Get the Big Deal for a Steal!');
+    // user 23-11-2026: B0009 «Zootopia Medals & Avatars are Here!» was an avatar-board campaign, not a draw: out of the catalogue
+    assert.ok(!d.rows.B0009, 'B0009 is not a banner');
     assert.ok(Object.keys(d.rows).length >= 790, `banners with a notice: ${Object.keys(d.rows).length}`);
     for (const id of ['B0002', 'B0003', 'B0004', 'B0077']) assert.ok(d.missing[id], `${id}: no notice recovered`);
     assert.deepStrictEqual([d.rows.B0001.noticeId, d.rows.B0001.confidence], [19382, 'low'], 'DAILY DEAL!: a related notice only');
