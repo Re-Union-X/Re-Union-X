@@ -1,6 +1,6 @@
 {
-  "updated": "6 November 2026",
-  "summary": "Single player works from a new player to the end of the story (quest 979), and every worldwide raid of 2016-2021 is back (solo). Multiplayer, events and the Coliseum do not exist yet.",
+  "updated": "23 November 2026",
+  "summary": "Single player works from a new player to the end of the story (quest 979). Every worldwide raid of 2016-2021 is back (solo), and so are all 4,244 event quests. Multiplayer and the Coliseum do not exist yet.",
   "areas": [
     {
       "name": "Startup and home screen",
@@ -210,16 +210,17 @@
       }
     },
     {
+      "name": "Events",
+      "state": "done",
+      "detail": "All 4,244 event quests of 2016-2021 (552 events): Gem Quests, Event Coin and challenge events, quizzes, Organization XIII, The Keyblade War, High Score Challenges, Booster Challenges and Damage Contests. They follow your Story week like the Shop, with an Event Catalog (one past event kept), 114 Event Boards, 428 Boosters, Bonus Times and special login bonuses. The events of November 2016 - March 2018, a period with no original data left, are rebuilt on original or generated maps: every rebuilt part is labelled in the game.",
+      "done": 4244,
+      "total": 4244,
+      "unit": "quests"
+    },
+    {
       "name": "Easy installation",
       "state": "missing",
       "detail": "Today the setup is long and technical. A launcher will make it simple when the work is finished.",
-      "done": 0,
-      "total": 1
-    },
-    {
-      "name": "Events",
-      "state": "missing",
-      "detail": "Event quests, event banners and boosters.",
       "done": 0,
       "total": 1
     },
