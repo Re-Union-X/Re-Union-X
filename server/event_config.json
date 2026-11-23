@@ -276,6 +276,129 @@
  },
  "boardArtNote": "Event Board card pictures (img/sphere_incentive/<sphereBoardId>.png, user 14-11): donor board id -> jp = the JP 4.3.1 card with the same picture (identical to the khuxwiki card picture, or to the card seen on the khuxwiki screenshot of the worldwide board when the two differ: the 2019-12 boards); loc = no JP card: the khuxwiki card picture (Cherub) or the card cut from that screenshot (label boardArt), private files in --loc. make-events.js writes game_data/event_board_art.tsv, imported by build-resources.ps1.",
  "boardArt": {
+  "2310030": {
+   "loc": "img/sphere_incentive_ev/2310030.png",
+   "from": "wiki card picture"
+  },
+  "2310031": {
+   "loc": "img/sphere_incentive_ev/2310031.png",
+   "from": "wiki card picture"
+  },
+  "2310032": {
+   "jp": "img/sphere_incentive/2400035.png"
+  },
+  "2310033": {
+   "loc": "img/sphere_incentive_ev/2310033.png",
+   "from": "wiki card picture"
+  },
+  "2310034": {
+   "loc": "img/sphere_incentive_ev/2310034.png",
+   "from": "wiki card picture"
+  },
+  "2310035": {
+   "loc": "img/sphere_incentive_ev/2310035.png",
+   "from": "wiki card picture"
+  },
+  "2310036": {
+   "loc": "img/sphere_incentive_ev/2310036.png",
+   "from": "wiki card picture"
+  },
+  "2310037": {
+   "loc": "img/sphere_incentive_ev/2310037.png",
+   "from": "wiki card picture"
+  },
+  "2310042": {
+   "loc": "img/sphere_incentive_ev/2310042.png",
+   "from": "wiki card picture"
+  },
+  "2310043": {
+   "loc": "img/sphere_incentive_ev/2310043.png",
+   "from": "wiki card picture"
+  },
+  "2310045": {
+   "loc": "img/sphere_incentive_ev/2310045.png",
+   "from": "wiki card picture"
+  },
+  "2310046": {
+   "loc": "img/sphere_incentive_ev/2310046.png",
+   "from": "wiki card picture"
+  },
+  "2310047": {
+   "loc": "img/sphere_incentive_ev/2310047.png",
+   "from": "wiki card picture"
+  },
+  "2310048": {
+   "loc": "img/sphere_incentive_ev/2310048.png",
+   "from": "wiki card picture"
+  },
+  "2310049": {
+   "loc": "img/sphere_incentive_ev/2310049.png",
+   "from": "wiki card picture"
+  },
+  "2310050": {
+   "loc": "img/sphere_incentive_ev/2310050.png",
+   "from": "wiki card picture"
+  },
+  "2310051": {
+   "loc": "img/sphere_incentive_ev/2310051.png",
+   "from": "wiki card picture"
+  },
+  "2310053": {
+   "loc": "img/sphere_incentive_ev/2310053.png",
+   "from": "wiki card picture"
+  },
+  "2310054": {
+   "loc": "img/sphere_incentive_ev/2310054.png",
+   "from": "wiki card picture"
+  },
+  "2310055": {
+   "loc": "img/sphere_incentive_ev/2310055.png",
+   "from": "wiki card picture"
+  },
+  "2310056": {
+   "loc": "img/sphere_incentive_ev/2310056.png",
+   "from": "wiki card picture"
+  },
+  "2310057": {
+   "loc": "img/sphere_incentive_ev/2310057.png",
+   "from": "wiki card picture"
+  },
+  "2310058": {
+   "loc": "img/sphere_incentive_ev/2310058.png",
+   "from": "wiki card picture"
+  },
+  "2310059": {
+   "loc": "img/sphere_incentive_ev/2310059.png",
+   "from": "wiki card picture"
+  },
+  "2310061": {
+   "loc": "img/sphere_incentive_ev/2310061.png",
+   "from": "wiki card picture"
+  },
+  "2310062": {
+   "loc": "img/sphere_incentive_ev/2310062.png",
+   "from": "wiki card picture"
+  },
+  "2310063": {
+   "loc": "img/sphere_incentive_ev/2310063.png",
+   "from": "wiki card picture"
+  },
+  "2310064": {
+   "loc": "img/sphere_incentive_ev/2310064.png",
+   "from": "wiki card picture"
+  },
+  "2310065": {
+   "loc": "img/sphere_incentive_ev/2310065.png",
+   "from": "wiki card picture"
+  },
+  "2310066": {
+   "loc": "img/sphere_incentive_ev/2310066.png",
+   "from": "wiki card picture"
+  },
+  "2310067": {
+   "loc": "img/sphere_incentive_ev/2310067.png",
+   "from": "wiki card picture"
+  },
   "2310079": {
    "loc": "img/sphere_incentive_ev/2310079.png",
    "from": "wiki card picture"
