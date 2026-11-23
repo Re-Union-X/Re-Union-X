@@ -187,6 +187,7 @@ give(43056); // Illustrated Terra: one more, through GET /user/present
 const box = call(t.respondUserPresent);
 check(campaignPresents().filter((x) => x.resourceId === 22166).length === 2, 'Illustrated Terra: second Terra & Ventus & Aqua');
 check(box.userPresent.userPresentDatas.some((x) => x.resourceId === 22166 && /Campaign: /.test(x.comment)), 'present listed in the Present Box');
+check(box.userPresent.presentCountMax === 500 && box.userPresent.stonePresentCountMax === 500, `Present Box limit 500 (user 23-11): ${box.userPresent.presentCountMax}/${box.userPresent.stonePresentCountMax}`);
 // draws: 5 draws of the Frozen VIP Draw -> Anna & Elsa once + Trait Medal #64 x5
 const frozen = cat.banners.find((b) => b.rowId === 'B0431').drawMedalTypeId;
 ((p.gacha ||= {}).count ||= {})[frozen] = 5;

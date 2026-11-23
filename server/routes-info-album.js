@@ -521,6 +521,8 @@ const DIFFERENCES_BODY = [
   'The banners on the **Home** screen show the current **Shop** deals and the events, raids and Special Quests of your **Story week**, with the time left. Tap one to open it in the Shop or in Quests. The original lists of these banners did not survive, so which banners appear and in what order is chosen by this server (**not original**).',
   '## Purchases',
   'There are no purchases: Jewels and items come from quests, missions and presents.',
+  // Present Box limit (user 23-11): server.js PRESENT_MAX, text 103500013 in make_layouts.py
+  'The Present Box holds up to **500** presents and **500** Jewel presents, where the original held 200 (**not original**): campaigns that start when your Story reaches them can send many presents at once. Presents are never deleted for being over the limit; they still expire after 30 days.',
   'Spirit Training slots that were bought in the original game open in other ways (**not original**):',
   'Slot 2 ("Purchase Weekly Jewels"): open while you have the **VIP benefit** of the Weekly Missions.',
   'Slot 4 ("Purchase Jewel Box E"): open once you complete **all the monthly Limited Missions** (the month\'s Lux campaign), for the rest of that month and the whole next one, although its label says "Valid until the end of the month".',
@@ -615,7 +617,7 @@ const NOTICES = [
       '**Fantasia Mickey B**: for owning Axel Art [EX] (July 2017).',
       '**KH 0.2 King Mickey B** (2 dots): one for every KH 0.2 Terra, KH 0.2 Sora or Lingering Will with the Special Attack Bonus unlocked (September 2017).',
       '**3,000 Jewels and Fantasia Mickey B**: the retweet goals of the Halloween Screenshot Contest (November 2017).',
-      '**200 Jewels** for each **#ChirithyMini** Twitter quiz, every two weeks from January 2018 to July 2020 (62 quizzes): every goal was reached, so every player gets them, each on the Sunday its result was announced.',
+      '**200 Jewels** for each **#ChirithyMini** Twitter quiz, about every two weeks from January 2018 to July 2020 (62 quizzes): every goal was reached, so every player gets them, each on the Sunday its result was announced.',
       '**Anna & Elsa** after 5 VIP Draws of the Frozen Medals Deal, plus a **Trait Medal #64** for every VIP Draw of it (December 2018).',
       '**Supernova - Terra, Ven, Aqua**: for 3 Medals with 5 traits unlocked among Supernova - HD Terra, HD Ventus and HD Aqua, plus a **Trait Medal #72** for every draw of their Falling Price Deals (January 2019).',
       '**Draw Tickets**, one for each LUX level you have when the campaign starts for you (3rd anniversary, March 2019). The level is read once: levels gained later add nothing.',

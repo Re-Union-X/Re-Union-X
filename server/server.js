@@ -3721,7 +3721,7 @@ function respondBeginnerPage(res) {
 // comment stringa, created stringa data. La scena elenca tutte le righe e scrive presentCount/Max
 // accanto a «Other» (testo 106250104) e stonePresentCount/Max accanto a «Jewels» (106250103).
 // ---------------------------------------------------------------------------
-const PRESENT_MAX = 200; // «Presents over the limit of 200 will be deleted» (testo 103500013)
+const PRESENT_MAX = 500; // 200 nell'originale; 500 su richiesta dell'utente (23-11), testo 103500013 in make_layouts.py
 
 // KHUX_TEST_PRESENTS=1: se nella scatola non resta nessun regalo di prova se ne aggiungono
 // alcuni di tipi diversi (per provare le righe e la riscossione sul banco)

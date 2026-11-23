@@ -1699,7 +1699,7 @@ TEXTS = {
     106260102: 'Munny',
     106260101: 'Setting this trait will cost <important>${1:%d}</important> Munny.',
     # Presents
-    103500013: 'Presents can be collected here.\nPresents over the limit of 200 will be deleted,\n'
+    103500013: 'Presents can be collected here.\nPresents over the limit of 500 will be deleted,\n'
                'oldest first, as will those past their expiry date.',   # Txt_Wording
     103500002: 'Presents',      # Txt_Stock_Title
     103500003: 'Collect All',   # Txt_ReceiveAll (Button)
