@@ -1328,6 +1328,11 @@ const tests = {
     assert.strictEqual(r.reason, 'rewardItemMissing', 'a bare name with a B row is another medal: never guessed');
     const ids = JSON.stringify(out.stage.concat(out.reward || []));
     assert.ok(ids.includes('311423') && !ids.includes('2311423') && ids.includes('11046'), 'normal rows used');
+    // remaining-quests audit 23-11 (G9, EV-0123): the donor id is ours, same rarity, and the donor name is ours + « A» (WW «Hayner A»
+    // 12046 = our «Hayner» 12046): ours even when a «Hayner B» exists; another id under that name stays missing
+    const m2 = { ...m, medal: [...m.medal, { medalId: 12046, name: 'Hayner', rare: 6, imageId: 12046 }, { medalId: 12047, name: 'Hayner B', rare: 6, imageId: 12047 }] };
+    const out2 = me.buildEvents([record('E-W2', [[702501, 12046, 'Hayner A 6★'], [702502, 99004, 'Hayner A 6★'], [702503, 12046, 'Hayner A 5★']].map(([sid, id, name]) => quest(sid, 1, [501], { objectives: [objective(10, 'Complete without having to continue', { type: 3, id, num: 1, name })] })))], CONFIG, m2, undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.deepStrictEqual(entry(out2, 'E-W2').quests.map((q) => q.served || q.reason), [true, 'rewardItemMissing', 'rewardItemMissing']);
   },
   // Events Part 10a: a data-hole quest whose map is generated later (map.source 'generateLater', Part 10b): not served, reason
   // mapUnusable «map to generate (Events Part 10b)», not listed in event_gen_maps.json; the other quests of the record are unaffected
@@ -1777,6 +1782,16 @@ const tests = {
     // without that evidence (the donor stage row loads its own map) the Part 4 rule stays
     const own = record('E-H3', [quest(702820, 1, [501], { map: { key: 702800, stageBinId: 0, status: 'ok' } })], { start: '2019-06-01', end: '2019-06-07' });
     assert.strictEqual(entry(build([monthly, own]), 'E-H3').quests[0].reason, 'mapKeyUsed');
+  },
+  // remaining-quests audit 23-11 (G6, EV-0529 / EV-1237 on EV-0783's maps): a drop row's annotation (inOurMaster: the builder's
+  // note whether the enemy row was in our master when the record was built) is not a drop: two quests whose drops differ only there
+  // share the map; a real difference (another odds) still holds the later one
+  drops_annotation_not_compared() {
+    const chest = (flag, odds = 10000) => ({ drops: { enemies: [], chests: [{ room: 'R_0001', reward: 170600, rows: [{ type: 3, id: 90011, num: 1, odds }], inOurMaster: flag }] } });
+    const holder = record('E-A1', [quest(702900, 1, [501], chest(false))]);
+    const later = (extra) => record('E-A2', [quest(702910, 1, [501], { map: { key: 702900, stageBinId: 702900, status: 'ok' }, ...extra })], { start: '2019-06-01', end: '2019-06-07' });
+    assert.strictEqual(entry(build([holder, later(chest(true))]), 'E-A2').quests[0].served, true);
+    assert.strictEqual(entry(build([holder, later(chest(true, 5000))]), 'E-A2').quests[0].reason, 'mapKeyUsed');
   },
   // datesOf (EV-0913 dates EV-0929 from 2019-09-03): the target starts then and, with no end, ends on the Pacific day its donor row
   // ends; the line itself is a schedule line (no row). objectiveResolved in a record label is a note, not a label phrase

@@ -519,6 +519,9 @@ function itemResolver(master) {
       // Events Part 10a: «KH Sora A» (donor) = «KH Sora Ver. A» (ours): the 2016 WW medal names, same medal
       const verless = (n) => String(n).replace(/ Ver\. ([A-Z])$/, ' $1');
       if (!mt || (verless(own.name) === verless(mt[1]) && String(own.rare) === mt[2])) return d.id;
+      // remaining-quests audit 23-11 (EV-0123): WW «Pence A» 11046 = our «Pence» 11046: the same id and rarity, the donor name is
+      // ours + « A» (the A added once a B medal came out): the same medal even when our «Pence B» exists
+      if (`${own.name} A` === mt[1] && String(own.rare) === mt[2]) return d.id;
     }
     if (!mt) return null;
     let rows = byName.get(`${mt[1]}|${mt[2]}`) || [];
@@ -600,9 +603,13 @@ function remapItems(q, resolve, payable = null) {
 }
 // what makes two records' quests the same quest (Part 4 Task 4, map_key_shared_quest): everything the stage row and the map are
 // built from, not the name, window or labels
+// the drops without the builder's annotations (inOurMaster: whether the enemy row was in our master when the record was built; remaining-
+// quests audit 23-11, EV-0529 / EV-1237 on EV-0783's maps): two quests sharing a map compare what is paid, never a note
+const DROP_NOTES = new Set(['inOurMaster']);
+const dropsOf = (drops) => (drops ? JSON.parse(JSON.stringify(drops, (k, v) => (DROP_NOTES.has(k) ? undefined : v))) : null);
 const questSig = (q, mapKey) => JSON.stringify([mapKey, q.worldId, q.level, q.ap, q.addLevel || 0, (q.targets || []).map((t) => t.id),
   (q.objectives || []).map((o) => [o.code, o.dataType, o.idType, o.id, o.num, (o.reward || {}).type || 0, (o.reward || {}).id || 0, (o.reward || {}).num || 0]),
-  (q.firstClear || []).map((x) => [x.type, x.id || 0, x.num || 1]), (q.enemies || []).map((e) => [e.id, e.level, e.count]), q.restrictions || {}, q.drops || null,
+  (q.firstClear || []).map((x) => [x.type, x.id || 0, x.num || 1]), (q.enemies || []).map((e) => [e.id, e.level, e.count]), q.restrictions || {}, dropsOf(q.drops),
   [(q.drama || {}).beforeIds || [], (q.drama || {}).afterIds || []], q.combined ? 1 : 0]);
 // quizDramas entry of a quest key: {ids, reconstructed, label} | null (a bare list: ids). dramas: the drama ids available in our
 // resources (buildEvents opts.dramas); a listed id not among them, or no such list, stops the run (fix round 1, M2). label: the
@@ -1368,7 +1375,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       // difficulty variants of one record share a donor map (same stageBinId, map and POI written once: the POI holds only the
       // uid -> reward rows of the map file, the level of a variant is its stage row's addLevel); another record or other drops: not served
       const prior = gen ? null : builtMaps.get(mapKey);
-      const dropsKey = JSON.stringify(q.drops || null);
+      const dropsKey = JSON.stringify(dropsOf(q.drops));
       // quiz answer maps (Part 4 Task 6, coordinator ruling): every original quiz run sent its stages to the same answer maps
       // (720510 / 720520 / 720530, 740260-740262), so a quiz stage of another quiz record shares the map key when the drops are equal
       const quizShare = !!(prior && quiz && prior.quiz && prior.dropsKey === dropsKey);
