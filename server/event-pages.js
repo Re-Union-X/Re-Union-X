@@ -230,7 +230,8 @@ rows.forEach(function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el)
 // TYPE of an event: the type of its census row (index entries .type); only the kinds in the index get a chip, an unknown one by its code
 const TYPE_OPTS = [['all', 'All'], ['EQ', 'Event Quests', 'camp'], ['STORY', 'Story Events', 'avatar'], ['GEM', 'Gem Quests', 'jewel'], ['COIN', 'Event Coins', 'medal'],
   ['KEY', 'Keyblade Challenges', 'skill'], ['QUIZ', 'Quizzes', 'daily'], ['CELEB', 'Celebrations', 'lux'], ['BOARD', 'Avatar Boards', 'avatar'],
-  ['HSC', 'High Score Challenges', 'bonus']];
+  ['HSC', 'High Score Challenges', 'bonus'], ['BOOST', 'Booster Challenges', 'booster'], ['COLLAB', 'Collaborations', 'material'],
+  ['SPEC', 'Daily Presents', 'camp']];
 const typeOf = (e) => String(e.type || 'EQ');
 const SHOW_OPTS = [['all', 'All events'], ['now', 'In Events now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later'],
   ['removed', 'Not built yet', 'removed']];
@@ -777,5 +778,5 @@ function boardDetailPage(index, evStageId, ctx = {}) {
     + `<p class="n">The Avatar Board Catalog is an addition of this server: in the original game a board was sold only in its own dates.</p>${back}<script>${BOARD_KEEP_JS}</script></body></html>`;
 }
 
-module.exports = { catalogPage, detailPage, noticePage, statusOf, boardCatalogPage, boardDetailPage, boardStatusOf, whyPlain, boardWhyPlain, entriesOf, eventEntriesOf, boardEntriesOf,
+module.exports = { catalogPage, TYPE_OPTS, detailPage, noticePage, statusOf, boardCatalogPage, boardDetailPage, boardStatusOf, whyPlain, boardWhyPlain, entriesOf, eventEntriesOf, boardEntriesOf,
   boardOnly, expandCatalog, informative };

@@ -1155,6 +1155,21 @@ function wiring() {
 }
 try { wiring(); } catch (e) { failed++; console.error(`FAIL wiring: ${e.stack}`); }
 
+// user 24-11: the TYPE chips BOOST / COLLAB / SPEC showed their bare code without an icon. Every event type of the census has a
+// label and an icon key that the icon route serves; with the live index here, every type in it too
+try {
+  const { SPECIAL_ICON_KEYS } = require('./special-pages');
+  const opts = pages.TYPE_OPTS;
+  const live = (() => { try { return require('./game_data/events.json').entries.map((e) => String(e.type || 'EQ')); } catch (e) { return []; } })();
+  for (const t of new Set(['EQ', 'STORY', 'GEM', 'COIN', 'KEY', 'QUIZ', 'CELEB', 'BOARD', 'HSC', 'BOOST', 'COLLAB', 'SPEC', ...live])) {
+    const o = opts.find((x) => x[0] === t);
+    assert.ok(o && o[1] && o[1] !== t, `type ${t}: a label`);
+    assert.ok(o[2] && SPECIAL_ICON_KEYS.includes(o[2]), `type ${t}: an icon key served (${o && o[2]})`);
+  }
+  assert.deepStrictEqual(['BOOST', 'COLLAB', 'SPEC'].map((t) => opts.find((x) => x[0] === t).slice(1)),
+    [['Booster Challenges', 'booster'], ['Collaborations', 'material'], ['Daily Presents', 'camp']]);
+} catch (e) { failed++; console.error(`FAIL type chips: ${e.stack}`); }
+
 if (failed) { console.error(`test-event-pages: ${failed} FAIL`); process.exit(1); }
 console.log('test-event-pages: OK');
 process.exit(0);

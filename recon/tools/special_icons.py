@@ -21,6 +21,7 @@ BIG = SIZE * 4  # drawn at 4x, then reduced (smooth edges)
 
 # key -> path in the JP base (original icons)
 ORIGINAL = {
+    'booster': 'img/ui/emblem/Emblem_6.png',                # P Booster (Event Catalog TYPE «Booster Challenges», user 24-11)
     'vip': 'cocostudio/publish/Hs_Ico_Crown.png',            # VIP crown (also the Shop's VIP icon)
     'daily': 'img/medal/Medal_S_90076.png',                  # Cid Medal (Daily Challenge: Cid)
     'mog': 'cocostudio/publish/LoginBonus_Mog.png',          # Moogle (Moogle O' Glory, Keyblade Materials)
