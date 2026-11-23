@@ -730,6 +730,7 @@ function genMapOf(q, stageId, look) {
   };
   if (!target) missing.push('the target (no name)');
   if (target && counts.has(target)) counts.set(target, Math.max(0, counts.get(target) - 1));
+  const tPin0 = ((q.targets || [])[0] || {}).id;
   // objective enemies: name -> {id, n}
   const objOf = new Map();
   for (const o of q.objectives || []) {
@@ -740,6 +741,34 @@ function genMapOf(q, stageId, look) {
     const prev = objOf.get(k);
     objOf.set(k, { id: o.id, n: Math.max(prev ? prev.n : 0, Math.max(1, Number(o.num) || 1)) });
     if (!counts.has(k)) counts.set(k, 0);
+  }
+  // chance squads (genAreas groups chance: true, plan 2026-11-23-chance-spawns-materials): a name placed only in chance groups is
+  // not a fixed member (the page may count it: khuxwiki lists the rows); an objective on its own enemy id is met by those squads
+  // across runs (23-11, repo change b: EV-0172 Gold Tricholoma, EV-0108 Fireworks) when they are enough (+ the target when it is
+  // that row), else held
+  const chanceOf = new Map(), fixedNames = new Set();
+  for (const a of (q.genAreas || {}).areas || []) {
+    for (const g of a.groups || []) {
+      let tSeen = !g.target;
+      for (const x of g.members || []) {
+        // the target itself (first member of its name in the target group) is counted apart, not as a fixed member
+        if (!tSeen && x.name === target && (Number(x.n) || 1) === 1) { tSeen = true; continue; }
+        if (g.chance && !g.target) {
+          if (!chanceOf.has(x.name)) chanceOf.set(x.name, []);
+          for (let k = 0; k < (Number(x.n) || 1); k++) chanceOf.get(x.name).push(x.enemyId);
+        } else fixedNames.add(x.name);
+      }
+    }
+  }
+  for (const [name, ids] of chanceOf) {
+    if (fixedNames.has(name)) continue;
+    const ob = objOf.get(name) || [...objOf.entries()].find(([k]) => k.toLowerCase() === name.toLowerCase())?.[1];
+    if (ob) {
+      const have = ids.filter((i) => i === ob.id).length + (Number.isInteger(tPin0) && tPin0 === ob.id ? 1 : 0);
+      if (have < ob.n) missing.push(`chance squads of ${name} ${have} for its objective ${ob.n}`);
+      for (const k of [...objOf.keys()]) if (k.toLowerCase() === name.toLowerCase()) objOf.delete(k);
+    }
+    for (const k of [...counts.keys()]) if (k.toLowerCase() === name.toLowerCase()) counts.delete(k);
   }
   const members = [];
   // the target pinned to the objective's own enemy id is one of the members that objective counts (Larxene I / IV JP maps: «Defeat

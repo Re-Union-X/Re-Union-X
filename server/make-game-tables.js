@@ -375,6 +375,8 @@ const enemyOltre = require('./make-enemy-oltre');
 const realEnemies = realTable('enemy');
 if (realEnemies) {
   enemies = JSON.parse(fs.readFileSync(path.join(OUT, 'enemy.json'), 'utf8'));
+  // WW names of rows ours got wrong (enemy-name-fix.js: 11020 Mega-Shadow, 11021 Gigas Shadow), before any name lookup
+  require('./enemy-name-fix').applyEnemyNameFix(enemies);
   const have = new Set(enemies.map((e) => e.enemyId));
   for (const r of realEnemies) if (!have.has(r.enemyId)) enemies.push(fromReal('enemy', r));
   // buff e stati iniziali delle righe gia' presenti come la riga vera (enemy-start-state.js, I-207)
@@ -996,7 +998,7 @@ fs.writeFileSync(path.join(OUT, 'stamp.json'), JSON.stringify(require('./stamp-t
 // valore ogni 1%, peso uniforme (medal-guilt.js guiltProbRows; prima vuota)
 const guiltProb = guilt.guiltProbRows();
 fs.writeFileSync(path.join(OUT, 'guiltProb.json'), JSON.stringify(guiltProb));
-if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
+if (enemies) { require('./enemy-name-fix').applyEnemyNameFix(enemies); fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies)); }
 // Burst: medal 2, burst 11, shuffleskill 901/902 (make-guilt-burst.js)
 require('./make-guilt-burst').patch(OUT);
 // Pet: petRank, petSkill, medal.addPetPt (make-pet-tables.js)

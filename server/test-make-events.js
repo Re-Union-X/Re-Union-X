@@ -1552,6 +1552,34 @@ const tests = {
     const om = me.buildEvents([record('E-CH3', [genQuest(702323, { genAreas: badM, wikiEnemies: { 'Foe B': 2, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
     assert.match(entry(om, 'E-CH3').quests[0].why || '', /genAreas: area 0 materials/);
   },
+  // chance squads carrying the objective's own enemy id meet that objective (23-11, repo change b: EV-0172 Gold Tricholoma,
+  // EV-0108 Fireworks): no fixed member is added for it and the name leaves the page count; too few chance members: held
+  chance_objective_squads() {
+    const m = master();
+    m.enemy = [...m.enemy, { enemyId: 80777, name: 'Eggcognito', hp: [1] }];
+    const egg = { chance: true, members: [{ name: 'Eggcognito', n: 1, enemyId: 80777 }] };
+    const ga = (k) => ({ areas: [{ label: 'Room', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 1 }] }, ...Array(k).fill(egg),
+      { target: true, members: [{ name: 'Foe A', n: 1 }] }], chests: 0 }], backExits: false, source: null, why: 'w' });
+    const obj = [{ code: 1, idType: 1, id: 80777, num: 2, text: 'Defeat Eggcognito x 2' }];
+    const run = (cid, sid, k, wiki) => me.buildEvents([record(cid, [genQuest(sid, { genAreas: ga(k), objectives: obj, wikiEnemies: wiki })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const ok = run('E-CO1', 702340, 3, { 'Foe B': 1, 'Foe A': 1, Eggcognito: 3 });
+    const q = entry(ok, 'E-CO1').quests[0];
+    assert.ok(q.served, JSON.stringify(q));
+    const e = ok.genMaps[0];
+    assert.deepStrictEqual(e.enemies.map((g) => g.map((x) => [x.enemyId, x.n])), [[[502, 1]], [[80777, 1]], [[80777, 1]], [[80777, 1]]], 'no fixed Eggcognito, the 3 chance squads');
+    assert.deepStrictEqual(e.chance, [1, 2, 3]);
+    const few = entry(run('E-CO2', 702341, 1, { 'Foe B': 1, 'Foe A': 1 }), 'E-CO2').quests[0];
+    assert.deepStrictEqual([few.served, few.reason], [false, 'enemyMissing']);
+    assert.match(few.why, /chance squads.*Eggcognito 1.*2/);
+    // the Fireworks shape: the target is the same species and the objective's row; 1 target + 1 chance squad meet «x 2»
+    const tg = { areas: [{ label: 'Room', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 1 }] }, egg, { target: true, members: [{ name: 'Eggcognito', n: 1 }] }],
+      chests: 0 }], backExits: false, source: null, why: 'w' };
+    const ot = me.buildEvents([record('E-CO3', [genQuest(702342, { genAreas: tg, objectives: obj, targets: [{ id: 80777, name: 'Eggcognito', source: 'khuxwiki' }],
+      wikiEnemies: { 'Foe B': 1, Eggcognito: 15 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const q3 = entry(ot, 'E-CO3').quests[0];
+    assert.ok(q3.served, JSON.stringify(q3));
+    assert.deepStrictEqual(ot.genMaps[0].enemies.map((g) => g.map((x) => [x.enemyId, x.n])), [[[502, 1]], [[80777, 1]]], 'no fixed Eggcognito beside the target');
+  },
   // «Collect all materials» (code 18) on a generated map: held without material spots, served once genAreas gives them
   gen_materials_objective_served() {
     const obj = [{ code: 18, num: 0, text: 'Collect all materials' }];
@@ -2201,6 +2229,9 @@ const tests = {
     // research 23-11 (user): the month rows of one event are difficulty tiers; chosen by their order across the event's quests
     assert.deepStrictEqual(me.labelIds('original; enemy version from the month rows of the event', REAL_CONFIG.labelPhrases), ['monthRowOrder']);
     assert.ok(/difficulty/.test(REAL_CONFIG.reconstructedWhy.monthRowOrder || ''), 'monthRowOrder has its reason text');
+    assert.deepStrictEqual(me.labelIds('original; target row by the target band', REAL_CONFIG.labelPhrases), ['targetBandVersion']);
+    assert.deepStrictEqual(me.labelIds('original; worldwide donor row imported', REAL_CONFIG.labelPhrases), ['donorRowImported']);
+    assert.ok(/target/.test(REAL_CONFIG.reconstructedWhy.targetBandVersion || '') && /worldwide/.test(REAL_CONFIG.reconstructedWhy.donorRowImported || ''), 'reason texts of the two labels');
   },
   held_hsc_not_served() {
     const noThr = hscRecord('H-1');
