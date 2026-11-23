@@ -2058,6 +2058,9 @@ function respondGachaDraw(res, body) {
   // forma del salvataggio), cosi' non resta addebitato con meta' delle medaglie; l'addebito va per ultimo
   const undo = JSON.stringify(player);
   const userMedalIds = [], first = [];
+  // draw result overlay per medal (gacha.drawEffect: 2 rainbow ring, 1 starburst); the banner's top rarity (no rarity mix,
+  // as the tutorial draw: 7, no starburst by rarity)
+  const effects = [], topRare = Math.max(0, ...(banner.rarityMix || []).map(([r]) => r)) || 7;
   let price;
   try {
     const medalRows = new Map(masterRows('medal').map((m) => [m.medalId, m]));
@@ -2088,6 +2091,8 @@ function respondGachaDraw(res, body) {
       // medaglie del pool) da quel giorno, boosted comprese, arriva con pallini e guilt al massimo. Prima, e per le
       // altre, solo col preset.
       const rule = !!row && gachaData.maxGuiltRule(row.rare, tier, drawAt);
+      effects[i] = gacha.drawEffect({ rare: row?.rare || 0, boosted: !!x?.boostedFrom, topRare,
+        guiltMax: !!row && !packed.has(medalId) && (rule || x?.preset?.guilt === 'max') && medalGuilt.guiltRange(masterRows('guiltProb'), tier).max > 0 });
       if ((x?.preset || rule) && row && !packed.has(medalId)) {
         bursts ??= new Map(masterRows('burst').map((b) => [b.burstId, b]));
         const maxDots = row.validBurst ? bursts.get(row.burstId)?.maxEnhanceCount || 0 : 0;
@@ -2131,7 +2136,7 @@ function respondGachaDraw(res, body) {
     + `${boostedLog ? `, boosted ${boostedLog}` : ''}${draw.pityFired ? ', pity' : ''}`);
   // userPointData (livello del Nova: refresh mette in attesa le copie appena arrivate) prima di inventoryBlocks,
   // che porta guiltBurstFirst/MaxUserMedalIds (guiltBurst().lists())
-  send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) }, ...inventoryBlocks(now, snap), ...gacha.drawResultFields(userMedalIds, first) });
+  send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) }, ...inventoryBlocks(now, snap), ...gacha.drawResultFields(userMedalIds, first, effects) });
 }
 
 // Spirit Blind Box (pet draws, pet-draw.js, server/pet_draws.json; 03-11). On only with the Spirit (KHUX_PET) and

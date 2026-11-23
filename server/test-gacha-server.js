@@ -103,7 +103,8 @@ setQuest(200);
 const ids = (l) => l.gachaList.map((x) => x.drawMedalTypeId);
 const plate = (l, id) => l.gachaList.find((x) => x.drawMedalTypeId === id);
 const inMedals = (r) => r.userMedalIds.every((id) => r.userMedals.some((m) => m.userMedalId === id));
-const neutral = (r) => r.effectNumbers.every((x) => x === 0) && r.effectNumbers.length === r.userMedalIds.length
+// effectNumbers: one per medal, 0 / 1 / 2 (gacha.drawEffect, plan 2026-11-23 draw-rare-effects; was all 0 before resources 160)
+const neutral = (r) => r.effectNumbers.every((x) => [0, 1, 2].includes(x)) && r.effectNumbers.length === r.userMedalIds.length
   && JSON.stringify(r.gachaBonus) === '{"addType":1,"number":0,"userMedalIds":[]}' && r.userMedalIds.length <= 10;
 
 const missing = ['gachaCatalog', 'sanitizeBanners', 'reloadGachaBanners'].filter((k) => typeof t[k] !== 'function');

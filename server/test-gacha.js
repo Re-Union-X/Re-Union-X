@@ -195,6 +195,18 @@ check(q.limitedDrawTicket1 === 2, 'biglietto Platinum scalato');
 // campi del risultato
 const r = g.drawResultFields([501, 502], [501]);
 check(JSON.stringify(r) === JSON.stringify({ gachaBonus: { addType: 1, number: 0, userMedalIds: [] }, firstGetUserMedalIds: [501], userMedalIds: [501, 502], effectNumbers: [0, 0] }), 'campi del risultato');
+// draw result overlays (plan 2026-11-23 draw-rare-effects; research tmp/gacha_re/rare_effect/report.txt): 2 = rainbow ring
+// (Draw_LimitRareMedal) on a 7-star that arrives with its guilt at the tier maximum; 1 = starburst (Draw_RareMedal), our
+// approximation (user 23-11): BOOSTED copies, and on banners whose top rarity is 6 or less every 5-star or better; else 0
+const fx = (o) => g.drawEffect({ rare: 5, guiltMax: false, boosted: false, topRare: 7, ...o });
+check(fx({ rare: 7, guiltMax: true }) === 2, 'effect 2: 7-star at max guilt');
+check(fx({ rare: 7, guiltMax: true, boosted: true }) === 2, 'effect 2 wins over boosted');
+check(fx({ rare: 6, guiltMax: true }) === 0 && fx({ rare: 7 }) === 0, 'no ring below 7-star or without max guilt (7-star at +100%: none)');
+check(fx({ rare: 6, boosted: true }) === 1, 'effect 1: boosted copy');
+check(fx({ rare: 5, topRare: 5 }) === 1 && fx({ rare: 6, topRare: 6 }) === 1 && fx({ rare: 5, topRare: 6 }) === 1, 'effect 1: 5-star+ on a banner topping at 5/6');
+check(fx({ rare: 4, topRare: 5 }) === 0 && fx({ rare: 5, topRare: 7 }) === 0, 'no starburst on 4-star nor on 5-star filler of a 7-star banner');
+const r2 = g.drawResultFields([501, 502, 503], [501], [2, 1]);
+check(JSON.stringify(r2.effectNumbers) === '[2,1,0]', `effectNumbers from the effects, 0 when missing: ${JSON.stringify(r2.effectNumbers)}`);
 check(g.catalogRow().drawMedalTypeId === 9001 && g.catalogRow().payType === 3 && g.CATALOG_PAY_TYPE === 3 && g.catalogPlate('http://h').payType === 3 && g.catalogPlate('http://h').price === 1, 'piastra Catalog');
 check(g.catalogRow().bannerUrl === `/web/gacha/img/9001-v${g.CATALOG_PLATE_STYLE}.png` && g.catalogPlate('http://h').bannerUrl === `http://h/web/gacha/img/9001-v${g.CATALOG_PLATE_STYLE}.png`, 'piastra Catalog: immagine versionata (il client la riscarica)');
 
@@ -242,6 +254,7 @@ check(cp.includes('(end date reconstructed)') && (cp.match(/end date reconstruct
 const exA = { pool: { 5: [1], 4: [2, 3] }, featuredIds: [1], listIds: [1], listNames: [['Alpha', 2, { 5: [1] }]], featuredNames: [['Alpha', 1, { 5: [1] }]], weighted: [] };
 const bA = sb({ rarityMix: [[5, 1], [4, 2]], lotCount: 3, guarantee: { list: ['Alpha'], count: 1, pity: 7, every: 3 } });
 const dp = g.detailPage(bA, exA, medalNames, sctx);
+check(/rainbow ring/.test(dp) && /starburst[^<]*reconstructed/.test(dp), 'draw page declares the result effects (rainbow original, starburst reconstructed)');
 check(dp.includes('Draw rates') && /reconstructed/.test(dp), 'dettagli: Draw rates e reconstructed');
 check(dp.includes('Medal rarities of each draw: original'), 'dettagli: composizione original');
 check(dp.includes('Featured Medal guaranteed within 7 draws (original)'), 'dettagli: pity');

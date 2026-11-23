@@ -382,10 +382,23 @@ function payDraw(banner, player, realMs, gotFeatured) {
 
 const drawState = (player, b) => ({ draws: drawCount(player, b), sinceFeatured: gstate(player).sinceFeatured?.[b.drawMedalTypeId] || 0 });
 
+// Draw result overlay of one drawn medal (effectNumbers, plan 2026-11-23 draw-rare-effects; research
+// tmp/gacha_re/rare_effect/report.txt; the client reads only this number, FUN_00c6f68c): 2 = Draw_LimitRareMedal (rainbow ring),
+// a 7-star that arrives with its guilt at the tier maximum (about 9 original videos, none against); 1 = Draw_RareMedal
+// (starburst), rule not recovered: our approximation (user 23-11, declared in the Notices) = a BOOSTED copy, or a 5-star or
+// better on a banner whose top rarity is 6 or less (2016: every 5-star; Nov 2017 All Epics: every tile); else 0.
+const EFFECTS_TEXT = 'Result effects: the rainbow ring on a 7★ Medal that arrives with its Special Attack Bonus at the maximum is original; '
+  + 'the gold starburst is reconstructed (its original rule is lost): BOOSTED Medals, and 5★ or better on draws whose top rarity is 6★ or less.';
+function drawEffect({ rare, guiltMax, boosted, topRare }) {
+  if (rare === 7 && guiltMax) return 2;
+  if (boosted || (topRare <= 6 && rare >= 5)) return 1;
+  return 0;
+}
+
 // gachaBonus addType 1 = nessun bonus (con altri valori la scena apre MedalInfo_DrowBonus, assente);
-// effectNumbers 0 = nessun effetto (1/2 aprono Draw_RareMedal/Draw_LimitRareMedal: findings.md §3)
-function drawResultFields(userMedalIds, firstIds) {
-  return { gachaBonus: { addType: 1, number: 0, userMedalIds: [] }, firstGetUserMedalIds: firstIds, userMedalIds, effectNumbers: userMedalIds.map(() => 0) };
+// effectNumbers: drawEffect of each medal (1/2 open Draw_RareMedal / Draw_LimitRareMedal, served since resources 160), 0 missing
+function drawResultFields(userMedalIds, firstIds, effects = []) {
+  return { gachaBonus: { addType: 1, number: 0, userMedalIds: [] }, firstGetUserMedalIds: firstIds, userMedalIds, effectNumbers: userMedalIds.map((_, i) => effects[i] || 0) };
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -698,6 +711,7 @@ function detailPage(banner, ex, medalNames, ctx) {
   const legend = attr ? '<p class="n">Names: <span class="p">Power</span>, <span class="g">Speed</span>, <span class="m">Magic</span>'
     + `${featured.size ? ', <span class="f">guaranteed Medal</span>' : ''}.</p>` : '';
   const rates = rated ? '<h2>Draw rates</h2><p class="n">Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.</p>'
+    + `<p class="n">${esc(EFFECTS_TEXT)}</p>`
     + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
   const vip = (banner.vipDraw ? `<p class="k">★ ${esc(VIP_DRAW_TEXT)}</p>` : '') + (isFreeDaily(banner) ? `<p class="k">★ ${esc(FREE_DAILY_TEXT)}</p>` : '');
   const back = ctx?.fromCatalog ? `<div class="bar"><a class="back" href="/web/gacha/catalog#c${banner.drawMedalTypeId}">BACK<span></span></a></div>` : '';
@@ -942,5 +956,5 @@ module.exports = {
   KIND_OPTS, niceRange, PAY_ICON, MEDAL_GALLERY_HREF,
   KEPT_STYLE, CATALOG_PLATE_STYLE, CATALOG_PAY_TYPE, PAY_ICON_KEYS, page, PIN_JS, esc,
   TUTORIAL_BANNER, tutorialOpen, tutorialRow, SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketCurrency, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, listedCurrency, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, GAME_YEARS, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, isFreeDaily, pinnable, pinnedBanner,
+  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawEffect, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, GAME_YEARS, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, isFreeDaily, pinnable, pinnedBanner,
 };
