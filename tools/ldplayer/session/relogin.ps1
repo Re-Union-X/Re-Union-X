@@ -11,7 +11,7 @@
 # -DropLuck: every enemy/chest drop roll wins (only bench, run-server.ps1; to see rare prizes and gold bags)
 # -StealUid N: lo Steal del pet ruba sempre dal nemico N (solo banco, run-server.ps1)
 # [string[]]: senza virgolette PowerShell passa B0306,B0456 come lista, qui riunita con le virgole)
-param([string]$Tag = 'rl', [int]$Revision = 372, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [switch]$PetDraw, [string]$RealNow, [string[]]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1, [string]$Save, [int]$StealUid = 0, [string]$Vip, [switch]$DropLuck, [string]$Campaigns, [string]$LoginSpecials)
+param([string]$Tag = 'rl', [int]$Revision = 373, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [switch]$PetDraw, [string]$RealNow, [string[]]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1, [string]$Save, [int]$StealUid = 0, [string]$Vip, [switch]$DropLuck, [string]$Campaigns, [string]$LoginSpecials)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $log = 'D:\Progetto_Restauro_KH_UX\logs\server.log'
 Set-Location $repo

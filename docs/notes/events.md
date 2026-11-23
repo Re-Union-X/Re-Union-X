@@ -1773,3 +1773,38 @@ Menace Intermediate #4 (filled corridor parts walked to the Gold Tricholoma of p
   (official notice «can appear»), Collect-all-materials spots with the khuxwiki unit totals (declared rebuilt).
 - **Still held**: EV-0941 (Union twin of 740926, sharing would merge it);
   the 18 materials pins (`pins_r2_skipped.json`); EV-0108 / EV-0417 (no source).
+
+## Chance spawns and material spots (23 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-23-chance-spawns-materials.md`, design
+`docs/superpowers/specs/2026-11-23-chance-spawns-materials-design.md`.
+
+### How the original worked
+
+The client reverse-engineering (WW 4.3.1) shows how the original handled these enemies:
+
+- **The removal list.** `POST /stage/start` `userRandomEnemies` is `[{uniqueSymbolEnemyId}]`, the list of squads the client **removes** for this play.
+  - The id is the squad uid (squad int [5]).
+  - The client lowers STG [8]/[9] itself (`FUN_007a1690` parser, `FUN_00e60610` loader, `FUN_00e5e1f4` counters).
+  - The stage file does not say which squads were random: the original server decided.
+- **Our server.** `server.js` `stageRandomEnemies` sends each uid of the stage POI `random` list with probability 1/2 (our rate). It never sends the POI `target`.
+- **Generated maps.** A genAreas group `chance: true` (members with their own `enemyId`) is written as a normal squad, and its uid goes into POI `random`.
+  - Material spots: `areas[].materials [{materialId, n}]`, written into the MAP `materials` section as `ceil(n/2)` spots per material, split evenly; STG [15] is the spot count.
+  - The rule matches the 04/11/2017 footage: 4 units in 2 spots, 2 in 1, 5 in 3.
+  - Labels: `chanceSpawns`, `materialSpots`.
+- **Original maps.** `server/random_squads.json` `{stageBinId: {uids, target, source}}` lists only the squads a public source says «can appear». At present that is 11 maps, from khuxwiki chance rows and notices 67064 / 67953.
+- **Collect all materials.** The 20 served original maps with this objective already hold spots equal to STG [15] and to the infobox totals. Generated quests with code 18 are now served when their genAreas has materials.
+
+### Private patch 15
+
+`tmp\events\unbuilt\patch_chance_materials.py`, run after patch 14. It is idempotent (backup `r2_bak/*.pre15`) and reads the census `tmp\events\unbuilt\chance_materials\census.json`. It does three things:
+
+- moves `genAreas.chanceLeftOut` back into the areas as chance groups;
+- adds the census materials to the census area, or to the first area;
+- writes `server/random_squads.json`.
+
+### Left out and listed
+
+- **No genAreas.** EV-1007 x4, EV-0080, EV-0172, EV-0108 (records without genAreas) and EV-0182 (materials).
+- **Guessed rows.** The Power-attribute Gold Tricholoma of EV-0090 501860, whose row would be a guess.
+- **Census rows for a later decision.** 83 `noSource` rows, among them the HSC 0x80 Gold Tricholoma squads 300660-300770, and 80 `otherSpeciesOriginal` rows (Gift Shadow, Prize Egg, Pretenders).
