@@ -522,7 +522,7 @@ const DIFFERENCES_BODY = [
   '## Purchases',
   'There are no purchases: Jewels and items come from quests, missions and presents.',
   // Present Box limit (user 23-11): server.js PRESENT_MAX, text 103500013 in make_layouts.py
-  'The Present Box holds up to **500** presents and **500** Jewel presents, where the original held 200 (**not original**): campaigns that start when your Story reaches them can send many presents at once. Presents are never deleted for being over the limit; they still expire after 30 days.',
+  'The Present Box holds up to **500** presents and **500** Jewel presents, where the original held 200 (**not original**): campaigns that start when your Story reaches them can send many presents at once. Presents are never deleted: not for being over the limit, and **they never expire**, where the original deleted them after 30 days (**not original**). The expiry date shown on each present is only a placeholder far in the future.',
   'Spirit Training slots that were bought in the original game open in other ways (**not original**):',
   'Slot 2 ("Purchase Weekly Jewels"): open while you have the **VIP benefit** of the Weekly Missions.',
   'Slot 4 ("Purchase Jewel Box E"): open once you complete **all the monthly Limited Missions** (the month\'s Lux campaign), for the rest of that month and the whole next one, although its label says "Valid until the end of the month".',
@@ -627,7 +627,7 @@ const NOTICES = [
       '**SN++ - MoM Kairi** and 100 Trait Medals #284: one set for every 4 SN++ - Stained Glass #10-#13 you own (November 2020).',
       'Draw Tickets are spent on the **Ticket Draw** Deals, when the Shop shows one.',
       '## How they work',
-      'A campaign starts when your **Story** reaches the week it began in the original game, like the Shop, and then **never ends**: the original deadlines would make these Medals impossible to get later (**differs from the original**). Medals you already own count. The rewards arrive in the Present Box when you open the Home screen or the Present Box, each reward **only once** (not again for duplicates of the same Medal, except where a campaign counted every copy). Present Box items expire after 30 days, as usual.',
+      'A campaign starts when your **Story** reaches the week it began in the original game, like the Shop, and then **never ends**: the original deadlines would make these Medals impossible to get later (**differs from the original**). Medals you already own count. The rewards arrive in the Present Box when you open the Home screen or the Present Box, each reward **only once** (not again for duplicates of the same Medal, except where a campaign counted every copy). Presents never expire on this server.',
       'The original game sent these rewards some days after the campaign ended; here they arrive as soon as the condition is met.',
       '## Not here yet',
       'The Timeless River Mickey of the 2016 Proud Quest event and the Royal Captain and Royal Magician titles of the January 2017 Classic Goofy and Classic Donald events: those event quests are not in the game, so their Medals (Classic Goofy, Boosted Classic Donald) cannot be obtained. The campaigns that gave 1,000 Jewels for each Sora & Moogle, Illustrated Moogle, Toon Moogle or KH II Sora & Moogle Medal you owned (2017-2018): those Medals are not in the game data.'] },

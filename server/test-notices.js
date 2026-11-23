@@ -30,7 +30,7 @@ check(n.NOTICES.some((x) => x.title === 'Missions' && /are given once/.test(x.bo
 check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /draw rates are reconstructed/.test(x.body.join(' '))), 'probabilita nelle differenze');
 check(n.NOTICES.some((x) => x.title === 'Campaign Rewards' && /#ChirithyMini/.test(x.body.join(' ')) && /80,000 followers/.test(x.body.join(' ')) && /Halloween Screenshot Contest/.test(x.body.join(' ')) && /goal reached by the players on Twitter/.test(x.body.join(' '))), 'Campaign Rewards: social-goal prizes (Part 10d)');
 check(n.NOTICES.some((x) => x.title === 'Campaign Rewards' && /about every two weeks/.test(x.body.join(' '))), 'Campaign Rewards: #ChirithyMini about every two weeks (review 23-11)');
-check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /Present Box holds up to \*\*500\*\*/.test(x.body.join(' '))), 'Differences: Present Box limit 500 (user 23-11)');
+check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /Present Box holds up to \*\*500\*\*/.test(x.body.join(' ')) && /\*\*they never expire\*\*/.test(x.body.join(' '))), 'Differences: Present Box limit 500 (user 23-11)');
 // Part 7 Task 7: player-facing text never says «restored» (project rule); the catalogue labels are «Not built yet»
 check(!/restored/i.test(p), 'niente «restored» nelle notizie');
 check(p.includes('Differences from the original game') && p.includes('Limited Missions rotate'), 'notizia differenze');

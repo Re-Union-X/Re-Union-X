@@ -188,6 +188,14 @@ const box = call(t.respondUserPresent);
 check(campaignPresents().filter((x) => x.resourceId === 22166).length === 2, 'Illustrated Terra: second Terra & Ventus & Aqua');
 check(box.userPresent.userPresentDatas.some((x) => x.resourceId === 22166 && /Campaign: /.test(x.comment)), 'present listed in the Present Box');
 check(box.userPresent.presentCountMax === 500 && box.userPresent.stonePresentCountMax === 500, `Present Box limit 500 (user 23-11): ${box.userPresent.presentCountMax}/${box.userPresent.stonePresentCountMax}`);
+{ // presents never expire (user 23-11): an old present past its 30 days stays, shown with a far expiry
+  p.presents.push({ userPresentId: 999999, resourceType: 2, resourceId: 0, number: 7, limitDatetime: t.realNow() - 86400000, comment: 'old', created: t.realNow() - 40 * 86400000 });
+  const b2 = call(t.respondUserPresent).userPresent.userPresentDatas, old = b2.find((x) => x.userPresentId === 999999);
+  check(!!old, 'present past its old 30-day limit is still in the box');
+  const yr = (x) => Number(String(x).slice(0, 4));
+  check(old && b2.every((x) => yr(x.limitDatetime) - yr(x.created || old.created) >= 9 && yr(x.limitDatetime) <= 2037), `presents shown with a far expiry, before 2038: ${old && old.limitDatetime}`);
+  p.presents = p.presents.filter((x) => x.userPresentId !== 999999);
+}
 // draws: 5 draws of the Frozen VIP Draw -> Anna & Elsa once + Trait Medal #64 x5
 const frozen = cat.banners.find((b) => b.rowId === 'B0431').drawMedalTypeId;
 ((p.gacha ||= {}).count ||= {})[frozen] = 5;

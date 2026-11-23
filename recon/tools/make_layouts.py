@@ -1699,8 +1699,8 @@ TEXTS = {
     106260102: 'Munny',
     106260101: 'Setting this trait will cost <important>${1:%d}</important> Munny.',
     # Presents
-    103500013: 'Presents can be collected here.\nPresents over the limit of 500 will be deleted,\n'
-               'oldest first, as will those past their expiry date.',   # Txt_Wording
+    103500013: 'Presents can be collected here.\nOn this server presents never expire\n'
+               'and up to 500 of each kind are kept.',   # Txt_Wording (ours, user 23-11; original: limit 200, deleted when expired)
     103500002: 'Presents',      # Txt_Stock_Title
     103500003: 'Collect All',   # Txt_ReceiveAll (Button)
     106250104: 'Other',         # Txt_Stock (Dark Road: その他)

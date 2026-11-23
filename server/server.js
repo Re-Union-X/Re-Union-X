@@ -3756,7 +3756,7 @@ function seedTestPresents() {
   savePlayer();
 }
 
-// un regalo nella scatola (id progressivi mai riusati), valido 30 giorni come gli originali
+// un regalo nella scatola (id progressivi mai riusati); limitDatetime storico (30 giorni), non piu' usato per toglierlo
 // skillId: medaglia con quella skill al livello massimo (Scrooge dei Skills to Thrill, catalogo bonus[3])
 let noticesServedAt = 0;
 
@@ -3811,14 +3811,12 @@ function checkCampaignGifts() {
   return n;
 }
 
-// regali ancora validi: quelli scaduti (limitDatetime passato, ora del server) si tolgono
+// Regali: non scadono mai (utente 23-11; nell'originale 30 giorni). limitDatetime resta nel salvataggio (migrazioni)
+// ma non toglie piu' nulla; al client va una scadenza lontana (PRESENT_SHOWN_DAYS da oggi, prima del 2038 dell'ora finta).
+const PRESENT_SHOWN_DAYS = 3650;
 function livePresents() {
   seedTestPresents();
-  const now = realNow();
-  const all = player.presents || [];
-  const live = all.filter((p) => (typeof p.limitDatetime === 'number' ? p.limitDatetime : Infinity) > now);
-  if (live.length !== all.length) { player.presents = live; savePlayer(); }
-  return live;
+  return player.presents || [];
 }
 
 const isStonePresent = (p) => p.resourceType === 1 || p.resourceType === 2;
@@ -3826,11 +3824,13 @@ const isStonePresent = (p) => p.resourceType === 1 || p.resourceType === 2;
 function userPresentData() {
   const list = livePresents();
   const stones = list.filter(isStonePresent).length;
+  // ora finta di adesso + PRESENT_SHOWN_DAYS (fakeString blocca a giugno 2021: qui si somma dopo)
+  const shownLimit = new Date(clock.fake(realNow(), clockOffset()) + PRESENT_SHOWN_DAYS * 86400000).toISOString().slice(0, 19).replace('T', ' ');
   return {
     // i piu' recenti in alto
     userPresentDatas: list.slice().reverse().map((p) => ({
       userPresentId: p.userPresentId, resourceType: p.resourceType, resourceId: p.resourceId || 0,
-      number: p.number, limitDatetime: outTime(p.limitDatetime), comment: p.comment || '', created: outTime(p.created),
+      number: p.number, limitDatetime: shownLimit, comment: p.comment || '', created: outTime(p.created),
     })),
     presentCount: list.length - stones, presentCountMax: PRESENT_MAX,
     stonePresentCount: stones, stonePresentCountMax: PRESENT_MAX,
