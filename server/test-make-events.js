@@ -2120,6 +2120,9 @@ const tests = {
     // round 2 (user 23-11): the enemy version chosen by the event's year+month id prefix
     assert.deepStrictEqual(me.labelIds('original; enemy version from the id month', REAL_CONFIG.labelPhrases), ['prefixVersion']);
     assert.ok(/year and month/.test(REAL_CONFIG.reconstructedWhy.prefixVersion || ''), 'prefixVersion has its reason text');
+    // rule R8 (user 23-11-2026): an ambiguous name with no month row takes the row the JP maps of the same period place in that role
+    assert.deepStrictEqual(me.labelIds('original; enemy version from the JP maps of the period', REAL_CONFIG.labelPhrases), ['jpPeriodVersion']);
+    assert.ok(/Japanese maps of the same period/.test(REAL_CONFIG.reconstructedWhy.jpPeriodVersion || ''), 'jpPeriodVersion has its reason text');
   },
   held_hsc_not_served() {
     const noThr = hscRecord('H-1');
