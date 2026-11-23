@@ -123,7 +123,7 @@ const tests = {
     assert(cat.indexOf('class="mgx"') < cat.indexOf('GAME YEAR'), 'above the GAME YEAR tabs');
     const notice = require('./routes-info-album').NOTICES.find((x) => x.title === 'Medal Gallery');
     const t = notice ? notice.body.join(' ') : '';
-    assert(notice && notice.tag === 'INFORMATION' && /\*\*not original\*\*/.test(t) && /addition of this server/.test(t) && /Variants/.test(t) && /Play/.test(t), 'Notice');
+    assert(notice && notice.tag === 'INFORMATION' && /\{not original\}/.test(t) && /addition of this server/.test(t) && /Variants/.test(t) && /Play/.test(t), 'Notice');
     const src = fs.readFileSync(path.join(__dirname, 'server.js'), 'utf8');
     assert(src.includes("p.startsWith('/web/medals/')") && src.includes('medalGallery.galleryPage(') && src.includes('medalGallery.mediaFile(p)') && src.includes("'Content-Range'"), 'server routes');
   },

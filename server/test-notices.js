@@ -54,12 +54,12 @@ check(p.includes('Next update: in less than an hour'), 'meno di un ora');
 {
   const ms = n.NOTICES.find((x) => x.tag === 'IMPORTANT' && x.title === 'Medal skills');
   const t = ms ? ms.body.join(' ') : '';
-  check(ms && /reconstructed/.test(t) && /163/.test(t) && /Skill EXP/.test(t) && /every Medal in your deck/.test(t), 'notizia Medal skills');
+  check(ms && /reconstructed|\{rebuilt\}/.test(t) && /163/.test(t) && /Skill EXP/.test(t) && /every Medal in your deck/.test(t), 'notizia Medal skills');
 }
 check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /no purchases/.test(x.body.join(' '))), 'acquisti nelle differenze');
 check(n.NOTICES.some((x) => x.title === 'Differences in detail' && ((t) => /## Raid Boards/.test(t) && /Sora & Moogle B/.test(t)
-  && /6★ Fantasia Mickey A\*\* gives the \*\*5★/.test(t) && /Starlight Ears\*\* and \*\*Dazzling Disco\*\* Spirit parts \(Raid Board rewards\) each have one \*\*reconstructed\*\* texture/.test(t))(x.body.join('\n'))), 'Raid Boards nelle differenze');
-check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV is \*\*999\*\*/.test(x.body.join(' ')) && /from LV 305 it is \*\*reconstructed\*\*/.test(x.body.join(' '))), 'livelli Lux ricostruiti nelle differenze');
+  && /6★ Fantasia Mickey A\*\* gives the \*\*5★/.test(t) && /Starlight Ears\*\* and \*\*Dazzling Disco\*\* Spirit parts \(Raid Board rewards\) each have one \{rebuilt\} texture/.test(t))(x.body.join('\n'))), 'Raid Boards nelle differenze');
+check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV is \*\*999\*\*/.test(x.body.join(' ')) && /from LV 305 it is \{rebuilt\}/.test(x.body.join(' '))), 'livelli Lux ricostruiti nelle differenze');
 {
   const diff = n.NOTICES.find((x) => x.title === 'Differences in detail').body;
   const shop = n.NOTICES.find((x) => x.title === 'Shop').body;
@@ -126,7 +126,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV i
   check(diff.some((s) => /Keep in the Shop/.test(s) && /did not exist in the original/.test(s)), 'differenze: banner fissato');
   check(diff.some((s) => /Platinum Tickets or Draw Tickets/.test(s) && /only after a banner that uses them/.test(s)), 'differenze: Limited coi biglietti');
   // home banner carousel (user 15-11): Shop deals and events of the Story week, chosen by the server, not original
-  check(diff.includes('## Home banners') && diff.some((s) => /\*\*Home\*\* screen/.test(s) && /Story week/.test(s) && /did not survive/.test(s) && /\(\*\*not original\*\*\)/.test(s) && !/restored/i.test(s)), 'differenze: banner della Home');
+  check(diff.includes('## Home banners') && diff.some((s) => /\*\*Home\*\* screen/.test(s) && /Story week/.test(s) && /did not survive/.test(s) && /\{not original\}/.test(s) && !/restored/i.test(s)), 'differenze: banner della Home');
 }
 // Special Quests (Special tab, 30-10)
 {
@@ -141,7 +141,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV i
   check(/training/.test(t) && /Give Up/.test(t), 'Special: allenamento');
   check(/no Lux and no drops/.test(t) && /three objectives give a little Munny, once/.test(t) && !/no Lux and no rewards/.test(t), 'Special: allenamento, munny degli obiettivi una volta (31-10)');
   check(/VIP: all Special Quests open/.test(t) && /time left/.test(t), 'Special: VIP bar wording');
-  check(/reconstructed/.test(t), 'Special: drop ricostruiti');
+  check(/reconstructed|\{rebuilt\}/.test(t), 'Special: drop ricostruiti');
   check(/\*\*For now VIP cannot be earned\*\*/.test(t) && /rest of that week and the whole next week/.test(t), 'Special: VIP not earnable yet, its duration');
   check(/given \*\*once\*\*/.test(t) && /reset the following week/.test(t), 'Special: rewards once, Cid reset');
   check(/every \*\*Monday\*\*/i.test(t) && /go on with the Story/.test(t), 'Special: how the weeks and periods move');
@@ -172,13 +172,13 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
     /The 18 bosses above/.test(t), 'Raid Bosses: Jewel Sorceress, Circus Crab, Crabby Cake ricostruiti (grafiche, banner, mosse)');
   // render10 (user decision 4 Nov): Enraged Arachnid served, JP demos with the English subtitle and copies, banner from its card
   check(/\*\*Enraged Arachnid\*\* now appears in the Story raids/.test(t) && /original Japanese ones with the English subtitle/.test(t) &&
-    /copies of identical files/.test(t) && /Its list banner is \*\*reconstructed\*\* from its original Japanese boss card/.test(t) &&
+    /copies of identical files/.test(t) && /Its list banner is \{rebuilt\} from its original Japanese boss card/.test(t) &&
     !/Arachnid[^.]*(do not|does not|never) spawn/.test(t), 'Raid Bosses: Enraged Arachnid servito (demo JP inglesi, copie, banner)');
   check(/Enraged Arachnid/.test(t) && /Egg Master/.test(t) && /Trickmaster/.test(t) && /Spinneret/.test(t) && /900 of 24,000/.test(t), 'Raid Bosses: modelli e ragni');
   check(/Queen Bee, Queen Bee Ω/.test(t) && /Lion Headliner/.test(t) && /older version of their animations/.test(t), 'Raid Bosses: api e Lion Headliner');
   check(/moves, part HP shares and rarity/.test(t) && /all their weak points/.test(t) && /Closehanded Captain\*\* keep/.test(t), 'Raid Bosses: modelli dei 15 e parti complete');
   check(!n.NOTICES.some((x) => /Raid Bosses and Union Cross, which are not available yet/.test(x.body.join(' '))), 'VIP/Special: i raid sono tornati');
-  check(/4 weak points/.test(t) && /spiderlings/.test(t) && /\*\*not original\*\* here/.test(t), 'Raid Bosses: ragni con 4 parti dichiarati');
+  check(/4 weak points/.test(t) && /spiderlings/.test(t) && /\{not original\} here/.test(t), 'Raid Bosses: ragni con 4 parti dichiarati');
   // Raids Part 2 Task 12: solo play, kept damage, reconstructed values, story and event raids, what is not back yet
   check(/\*\*solo for now\*\*/.test(t) && /keeps the damage/.test(t), 'Raid Bosses: solo, il boss tiene il danno');
   check(/8,600/.test(t) && /6,000/.test(t) && /about 80/.test(t), 'Raid Bosses: soglia di comparsa');
@@ -188,7 +188,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
   check(/weekend-only/.test(t) && /daily showdown/.test(t) && /not their hours/.test(t), 'Raid Bosses: raid evento 2016-2018');
   const has = (s) => t.includes(s);
   // I-228 (06-11, weekday / weekend, no exceptions): one rule for every raid, not original; free originals 5 AP on weekdays; June 2020 not served
-  check(has('## Raid AP and Bonus Time') && has('**one rule applies to every raid**') && has('(**not original**)') && has('**Monday to Friday**') && has('**original AP**')
+  check(has('## Raid AP and Bonus Time') && has('**one rule applies to every raid**') && has('{not original}') && has('**Monday to Friday**') && has('**original AP**')
     && has('**Saturday and Sunday** raid quests cost **0 AP**') && has('**doubled**') && has('**no exceptions**') && has('costs **5 AP** from Monday to Friday') && has('Bonus Time came four times a day') && has('daily windows'), 'Raid Bosses: regola giorni feriali / weekend (I-228)');
   check(has('24-hour Bonus Time of June 2020 is not served') && !has('outside them the raid stays open') && !has('## Raid hours') && !has('**90 AP**'), 'Raid Bosses: niente finestre, niente giugno 2020');
   check(!has('Daily raids stay open all day'), 'Raid Bosses: la vecchia riga «open all day» non c\'è più');
@@ -236,7 +236,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
   const ev = eventsAll();
   const t = ev ? ev.body.join(' ') : '';
   check(n.NOTICES.filter((x) => x.group === 'events').every((x) => x.tag === 'IMPORTANT'), 'Events: notizie IMPORTANT');
-  check(/follow your Story like the Shop/.test(t) && /whole original day/.test(t) && /Event Catalog\*\* is \*\*not original/.test(t)
+  check(/follow your Story like the Shop/.test(t) && /whole original day/.test(t) && /Event Catalog\*\* is \{not original/.test(t)
     && /KEPT EVENT/.test(t) && !/are not given yet/.test(t) && /never bring a Raid Boss/.test(t) && /January 24, 2019/.test(t)
     && /original chances/.test(t) && /no other enemy stands in for it/.test(t), `Events: regole (${t.slice(0, 120)})`);
   const f = n.eventNoticeFacts();
@@ -253,7 +253,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
     const b = f.boosters;
     check(b && b.count > 0 && t.includes('## Boosters') && t.includes(`**${b.count} Boosters**`) && t.includes(`${b.eventCells} Event Board cells`)
       && t.includes(`**${b.minDays} to ${b.maxDays} days**`) && /from the moment you get it/.test(t) && /rebuilt from the Booster's original description/.test(t)
-      && /\*\*not original\*\*: in the original a Booster obtained late/.test(t) && /\*\*once\*\*, ever/.test(t) && /first login after this update/.test(t)
+      && /\{not original\} \(in the original a Booster obtained late/.test(t) && /\*\*once\*\*, ever/.test(t) && /first login after this update/.test(t)
       && !/Boosters (do not exist|come in a later update)/.test(t) && !/with the Boosters in a later update/.test(t), `Events: Boosters ${JSON.stringify(b)}`);
     if (c && c.heldEvents) check(/not shown until/.test(t) && t.includes(`(${c.heldEvents} events)`) && c.heldMonths.length && c.heldMonths.every((m) => t.includes(m)), `Events: set trattenuti ${JSON.stringify(c)}`);
   }
@@ -383,7 +383,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
   check(/## Org XIII events/.test(l) && l.includes('**5 events**') && l.includes('**8 of their 12 quests**')
     && l.includes('2016-17: 4 of 5 quests') && l.includes('2018-19: 2 of 3 quests') && l.includes('2020: 1 of 2 quests') && l.includes('part 3: 1 of 2 quests')
     && l.includes('November 2016 to December 2017') && l.includes('2 of them are played on the **original Japanese map**')
-    && l.includes('For the other 2 no original map') && l.includes('1 of them spanned several areas') && /\*\*reconstructed\*\*/.test(l) && /\*\*not original\*\*/.test(l)
+    && l.includes('For the other 2 no original map') && l.includes('1 of them spanned several areas') && /\{rebuilt\}/.test(l) && /\{not original\}/.test(l)
     && /for each Union/.test(l) && l.includes('The other 4 quests of these events wait') && !/restored/i.test(l), `Org XIII: righe ${l.slice(0, 600)}`);
   // no Keyblade War served: no Union line
   fx.entries.find((e) => e.censusId === groups.keybladeWar[0]).quests = [q(false)];
@@ -459,7 +459,7 @@ for (const web of [false, true]) {
     check(l.startsWith('## Avatar boards') && l.includes('**3 boards on sale for Jewels**') && l.includes('**2 free boards**') && /Start-Up Boost Board/.test(l) && /100 Jewels/.test(l)
       && /Medal Fusion Set 1/.test(l) && /2 skills/.test(l) && /description is empty/.test(l) && !/plain card/.test(l)
       && /## Avatar Board Catalog/.test(l) && /Special/.test(l) && /KEPT BOARD/.test(l) && /Unlocked an Avatar Board!/.test(l) && /next login/.test(l)
-      && /never charged twice|nothing is paid or earned twice/.test(l) && /Bought/.test(l) && (l.match(/\*\*not original\*\*/g) || []).length >= 3
+      && /never charged twice|nothing is paid or earned twice/.test(l) && /Bought/.test(l) && (l.match(/\{not original\}/g) || []).length >= 3
       && !/restored/i.test(l), `Avatar boards: righe ${l.slice(0, 900)}`);
     check(n.avatarNoticeFacts(path.join(dir, 'nope.json'), cf) === null && n.avatarBoardLines(null).length === 0, 'Avatar boards: senza avatar_boards.json nessuna sezione');
     const nc = n.avatarNoticeFacts(af, path.join(dir, 'nope.json'));
@@ -490,7 +490,7 @@ for (const web of [false, true]) {
     check(/## High Score Challenges/.test(l) && /\*\*2 High Score Challenges\*\*/.test(l) && /2016 to 2021/.test(l) && /score threshold/.test(l)
       && /\*\*once\*\*/.test(l) && /difference/.test(l) && /rank 1,000/.test(l) && /Original:/.test(l) && /Score Ranking Results/.test(l)
       && /Supernova/.test(l) && /SCORE BONUS MEDAL/.test(l) && /1 of them/.test(l) && /Japanese/.test(l) && /waits/.test(l)
-      && (l.match(/\*\*not original\*\*/g) || []).length >= 3, `HSC lines: ${l.slice(0, 1200)}`);
+      && (l.match(/\{not original\}/g) || []).length >= 3, `HSC lines: ${l.slice(0, 1200)}`);
     check(n.eventHscLines(null).length === 0 && n.eventHscLines({ hsc: { events: 0 } }).length === 0, 'HSC: no section without HSC');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   const ev = eventsAll(), t = ev ? ev.body.join(' ') : '';
@@ -517,7 +517,7 @@ for (const web of [false, true]) {
     check(f && f.rows === 3 && f.reconstructed === 1 && f.first === '2016-05-16' && f.last === '2016-09-30', `login specials facts: ${JSON.stringify(f)}`);
     const l = n.loginSpecialLines(f).join(' ');
     check(l.includes('## Special login bonuses') && l.includes('**3 special login bonuses**'), 'login specials: section and count');
-    check(l.includes('once') && /1,900|1900/.test(l) && l.includes('reconstructed'), 'login specials: once, Day 1,900+ not served, reconstructed named');
+    check(l.includes('once') && /1,900|1900/.test(l) && /reconstructed|\{rebuilt\}/.test(l), 'login specials: once, Day 1,900+ not served, reconstructed named');
     check(/Monthly/.test(l) && /Story month|story month/.test(l), 'login specials: monthly missions follow the story month');
     check(n.loginSpecialLines(null).join(' ').includes('## Special login bonuses'), 'login specials: without data, generic lines');
     check(/passed since your last login/.test(l) && /first 5/.test(l), 'login specials: catch-up of the passed weeks, 5 popups (user 22-11)');
@@ -557,7 +557,7 @@ for (const web of [false, true]) {
   check(/12:00 p\.m\. to 11:59 p\.m\./.test(l3) && /A Hard-Boiled Daily Challenge Event!/.test(l3) && !/WORLD OF FINAL FANTASY/.test(l3), 'hole 10c: hours and summon names from the index (review I2, I4)');
   check(/\*\*3 Booster Challenges\*\*/.test(l3), `hole 10c boosters: ${l3}`);
   check(/\*\*3 Damage Contests\*\*/.test(l3) && /score thresholds/.test(l3), 'hole 10c damage contests');
-  check(/Classic Donald/.test(l3) && /reconstructed/.test(l3) && /Classic Goofy/.test(l3) && /Bonus Time/.test(l3), 'hole 10c hours');
+  check(/Classic Donald/.test(l3) && /reconstructed|\{rebuilt\}/.test(l3) && /Classic Goofy/.test(l3) && /Bonus Time/.test(l3), 'hole 10c hours');
   check(/raid boss/.test(l3) && /\*\*10 quests\*\*/.test(l3), 'hole 10c summons');
   check(!/restored/i.test(l3), 'hole 10c: no «restored» (project rule)');
   const lAll = n.eventHoleLines({ hole: { events: 3, served: 10, quests: 20, openAllDay: 1 } }).join(' ');
