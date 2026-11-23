@@ -10,7 +10,7 @@ battaglia», «Il Prologue giocato», «Il Prologue completato», «Missione 2»
   `userAvatar`). Before «Begin»: `userDetail.maxMedal` > 0 (otherwise `PopupNormal_MedalOver`,
   missing) and `maxDeckCost` > 0 (`PopupNormal_Cost_Over`).
 - `POST /stage/start` (113): `userData.userPoint`, `startStageData`,
-  `userRandomEnemies[]`, `userEnemyDropItems[]` (`uniqueEnemyId`, `dropItemTypeIds`
+  `userRandomEnemies[]` ({`uniqueSymbolEnemyId`} = squad uid, squad int [5]: the squads the client REMOVES for this play; it lowers STG [8]/[9] itself; WW 4.3.1 FUN_007a1690 / FUN_00e60610; served from the POI «random» list, server.js stageRandomEnemies), `userEnemyDropItems[]` (`uniqueEnemyId`, `dropItemTypeIds`
   int[] <= 4/5, `stealType`), `userTreasures[]`, `campaigns[]`,
   `luxMagnifications`, `supportUsers[]`. `GET /user/keyblade` (11) gives `userKeybladeId`,
   `GET /user/deck` (12) the deck.

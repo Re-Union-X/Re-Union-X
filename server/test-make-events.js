@@ -1532,6 +1532,8 @@ const tests = {
     const Egg = { name: 'Eggcognito', enemyId: 80777, n: 1, reward: 1 };
     assert.deepStrictEqual(e.areas.map((a) => [a.enemies, a.chance, a.materials]),
       [[[[{ name: 'Foe B', enemyId: 502, n: 2, reward: 1 }], [Egg]], [1], [{ materialId: 101, n: 5 }]], [[[Egg]], [0], undefined]]);
+    assert.ok(q.labels.includes('chanceSpawns') && q.labels.includes('materialSpots'), JSON.stringify(q.labels));
+    assert.ok(/1 in 2/.test(out.index.reasons.chanceSpawns || '') && /totals/.test(out.index.reasons.materialSpots || ''), 'reason texts (event_config.json reconstructedWhy)');
     // one area: top-level chance (flat indexes) and materials
     const one = { areas: [{ label: 'Room', room: 'DG_0200_27_00', groups: [egg, { members: [{ name: 'Foe B', n: 1 }] }, { target: true, members: [{ name: 'Foe A', n: 1 }] }],
       chests: 0, materials: [{ materialId: 103, n: 4 }] }], backExits: false, source: null, why: 'w' };
@@ -1561,6 +1563,7 @@ const tests = {
         { randomSquads: { 700001: { uids: [1, 3, 5], target: 5, source: 'test' }, 799999: { uids: [2], target: 9, source: 'not served' } } });
     } finally { console.warn = warn; }
     assert.deepStrictEqual([out.poi['700001'].random, out.poi['700001'].target], [[1, 3], 5]);
+    assert.ok(out.index.entries.flatMap((e) => e.quests).find((q) => q.mapKey === 700001).labels.includes('chanceSpawns'), 'label on the original-map quest');
     assert.ok(said.some((s) => /700001.*uid 5 is the target/.test(s)), said.join('\n'));
     assert.ok(!('799999' in out.poi));
     assert.ok(!('random' in poi), 'the import POI object is not changed in place');

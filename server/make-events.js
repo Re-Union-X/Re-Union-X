@@ -78,7 +78,7 @@ const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
   'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
-  'hscThresholds', 'damageContest', 'raidSummonLater', 'openWindowsReconstructed', 'openAllDay', 'bonusHoursFactor', 'bonusHoursLater'];
+  'hscThresholds', 'damageContest', 'chanceSpawns', 'materialSpots', 'raidSummonLater', 'openWindowsReconstructed', 'openAllDay', 'bonusHoursFactor', 'bonusHoursLater'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
 // (quizBoardScreenshot)
@@ -1260,6 +1260,10 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       if (gen) { ensure('wikiRoom'); const k = qLabels.indexOf('mapIncomplete'); if (k >= 0) qLabels.splice(k, 1); }
       // several areas from the khuxwiki page, laid out on original maps of the same rooms where they survive (genAreasOf)
       if (gen && q0.genAreas) ensure('wikiAreas');
+      // chance squads (removed at random at /stage/start) and rebuilt material spots (plan 2026-11-23-chance-spawns-materials)
+      const gAreas = (gen && q0.genAreas && q0.genAreas.areas) || [];
+      if (gAreas.some((a) => (a.groups || []).some((g) => g.chance && !g.target)) || (!gen && maps && (opts.randomSquads || {})[String(mapKey)])) ensure('chanceSpawns');
+      if (gAreas.some((a) => Array.isArray(a.materials) && a.materials.length)) ensure('materialSpots');
       if (srcMap === 'jpTwin') ensure('jpTwinMap');
       if ((q0.map || {}).levelShifted) ensure('levelShifted');
       // a same-series layout twin (Events Part 5, user decision 7, 10-11-2026; map.layoutTwin {fromKey, swaps [{from, to}], why}): the

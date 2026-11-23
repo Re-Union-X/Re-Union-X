@@ -499,10 +499,12 @@ const EVENT_SHORT = {
   wholeDay: ['rules', 'Opening time', 'Its whole original day (was a short window)', 'bonus'],
   dramaOff: ['rules', 'Scenes', 'The original scenes are not shown yet', 'later'],
   hscThresholds: ['rewards', 'Score thresholds', 'Ranking rewards by your own best score, not by a leaderboard', 'bonus'],
+  chanceSpawns: ['rules', 'Rare enemies', 'They appear at random, 1 run in 2 (our rate), as in the original', 'replaced'],
+  materialSpots: ['values', 'Material spots', 'Rebuilt: the totals match the original results, not the positions', 'replaced'],
 };
 const EVENT_LABEL = { wikiAp: 'AP', donorKept: 'later game data', wikiLowConfidence: 'a wiki value', noWikiPage: 'no wiki page', otherRunWiki: 'wiki of another run', prefixVersion: 'enemy version', jpPeriodVersion: 'enemy version', monthRowOrder: 'enemy version', mapIncomplete: 'map', eventCoins: 'Event Coins',
   wholeDay: 'opening time', dramaOff: 'scenes', boardsLater: 'event boards', noCoinSource: 'event boards', boosterLater: 'Boosters', noBoardSet: 'Event Coins', quizBoard: 'quiz board',
-  communityBonus: 'community goal', completionReward: 'completion reward', hscThresholds: 'score thresholds' };
+  communityBonus: 'community goal', completionReward: 'completion reward', hscThresholds: 'score thresholds', chanceSpawns: 'rare enemies', materialSpots: 'material spots' };
 const EVENT_GROUPS = [['values', 'Quest data', 'tleg', ''], ['rewards', 'Rewards', 'camp', ' rw'], ['rules', 'Rules', 'weekday', ' ru'], ['other', 'Other', 'replaced', ' ot']];
 // every label in use: the event's and its quests' (served or not), in the order of EVENT_SHORT, unknown ones last
 const codesOf = (e) => {
