@@ -206,7 +206,7 @@
             "detail": "Values lost in the original data (for example ATK and DEF after 2016, time limits, Raid Coin odds) are rebuilt from the surviving sources and declared on each raid's Details page."
           }
         ],
-        "note": "Raid Board cells follow one path: the original grid layout of the boards is not restored. Japan-only raids are not served: this server keeps to the worldwide game. Later additions will come with the events (the event Boosters)."
+        "note": "Raid Board cells follow one path: the original grid layout of the boards is not restored. Japan-only raids are not served: this server keeps to the worldwide game."
       }
     },
     {
@@ -215,7 +215,76 @@
       "detail": "All 4,244 event quests of 2016-2021 (552 events): Gem Quests, Event Coin and challenge events, quizzes, Organization XIII, The Keyblade War, High Score Challenges, Booster Challenges and Damage Contests. They follow your Story week like the Shop, with an Event Catalog (one past event kept), 114 Event Boards, 428 Boosters, Bonus Times and special login bonuses. The events of November 2016 - March 2018, a period with no original data left, are rebuilt on original or generated maps: every rebuilt part is labelled in the game.",
       "done": 4244,
       "total": 4244,
-      "unit": "quests"
+      "unit": "quests",
+      "breakdown": {
+        "title": "What is original and what is not",
+        "parts": [
+          {
+            "tag": "ORIGINAL",
+            "kind": "t-update",
+            "count": "3,337",
+            "label": "Quests on their original map",
+            "detail": "The map, enemies, objectives, rewards and drop chances of the original quest, from the game's own data."
+          },
+          {
+            "tag": "RESTORED",
+            "kind": "t-event",
+            "count": 165,
+            "label": "Original maps with missing parts",
+            "detail": "The original map survives but some of its parts were lost: those parts are rebuilt from the twin maps of the same series or from the rooms the quest used."
+          },
+          {
+            "tag": "REBUILT",
+            "kind": "t-info",
+            "count": 742,
+            "label": "Generated maps",
+            "detail": "No map file of these quests survives: the map is generated on the original rooms, with the enemies, areas and objectives listed by the community wiki, notices and videos."
+          },
+          {
+            "tag": "REBUILT",
+            "kind": "t-info",
+            "count": 909,
+            "label": "Events of November 2016 - March 2018",
+            "detail": "A period with no original event data left: the quests are rebuilt from the original maps of the time, or generated maps where none survives, with their original cards and Event Boards."
+          },
+          {
+            "tag": "RESTORED",
+            "kind": "t-event",
+            "count": 92,
+            "label": "Enemy families of events",
+            "detail": "Enemies that only appeared in events (the Organization XIII members, Fireworks, the Pretenders, Greedy Grouch...), added from the original game data and approved one by one in their animations."
+          },
+          {
+            "tag": "ORIGINAL",
+            "kind": "t-update",
+            "count": 114,
+            "label": "Event Boards",
+            "detail": "In 22 board sets, with their original card pictures; Event Coins never expire, one balance per board set."
+          },
+          {
+            "tag": "REBUILT",
+            "kind": "t-info",
+            "count": 428,
+            "label": "Boosters",
+            "detail": "With their original icons; each effect is rebuilt from its description and lasts its original span from when you get it."
+          },
+          {
+            "tag": "NEW",
+            "kind": "t-campaign",
+            "count": 1,
+            "label": "Event Catalog",
+            "detail": "Every event with its quests, sorted by game year; one past event can be kept."
+          },
+          {
+            "tag": "NOT ORIGINAL",
+            "kind": "t-important",
+            "count": "-",
+            "label": "Schedule and a few rules",
+            "detail": "Events follow your Story week instead of the real calendar. High Score and ranking rewards become score thresholds calibrated on the original scores. Enemies that only sometimes appeared show up about one run in two (the 2016 Countdown Fireworks 9 in 10)."
+          }
+        ],
+        "note": "1,642 of the 4,244 quests carry a label in the game that names what was rebuilt or differs from the original; the in-game Notices explain every label. Raid summons from event quests and the Coliseum, Union Cross and PvP events will come later."
+      }
     },
     {
       "name": "Easy installation",
