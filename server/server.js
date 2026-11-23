@@ -4998,9 +4998,8 @@ function respondSpecialWeb(res, url) {
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
   const page = (html) => { const b = Buffer.from(html, 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (p === '/web/special/catalog') {
-    // avatarBoardCatalog: the Avatar Board Catalog block (Task 5b), when the event index has avatar boards
-    return page(specialPages.catalogPage(specialIndex(), { ...specialCtx(), names: specialPages.buildNames(masterRows), unlockQuestOf: specialUnlockQuest, stageDone: catalogStageDone, // names: search box (drop and objective rewards)
-      avatarBoardCatalog: hasAvatarBoardCatalog() }));
+    // no Avatar Board Catalog block at the top (user 23-11: it is reached from its own banner in the Special tab)
+    return page(specialPages.catalogPage(specialIndex(), { ...specialCtx(), names: specialPages.buildNames(masterRows), unlockQuestOf: specialUnlockQuest, stageDone: catalogStageDone })); // names: search box (drop and objective rewards)
   }
   const det = /^\/web\/special\/(?:quest|detail)\/(\d+)$/i.exec(p); // round 13: /quest/<id>; /detail/<id> (vecchi link) e' la stessa pagina
   if (det) {
@@ -5365,9 +5364,6 @@ function respondEventWeb(res, url) {
 // GET /web/avatar/catalog[?from=special|event] (BACK to that catalogue; an older keep moved and a lost one cleared first),
 // /web/avatar/board/<evStageId> (?from=catalog&cat=<origin of the catalogue> or ?from=event[&cat=catalog]: BACK); the cards are those of /web/event/img. POST /web/avatar/keep/<evStageId> and
 // /web/avatar/unkeep: routes-events.js keepBoard / unkeepBoard, JSON {ok, why?}.
-function hasAvatarBoardCatalog() {
-  try { return (eventIndex().entries || []).some((e) => e && (e.boards || []).length > 0); } catch { return false; }
-}
 const avatarPageCtx = (extra = {}) => ({ ...eventRoutes().boardCatalogCtx(), imgVersion: routesEvents.EVENT_IMG_VERSION,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...boardCardCtx(), ...extra });

@@ -587,7 +587,8 @@ const tests = {
     for (const id of [29900, 29901, 29903, 29909]) assert.ok(ev.includes(`id="q${id}"`), `event ${id} in the Event Catalog`);
     assert.ok(!ev.includes('data-b="1"') && !/data-type="BOARD"/.test(ev), 'no BOARD row');
     assert.ok(!ev.includes('Draw Ticket Board 1'), 'the undated boards are in the Avatar Board Catalog');
-    assert.ok(/Avatar Board Catalog/.test(ev), 'the Event Catalog says where the boards went');
+    // user 23-11: no reference to the Avatar Board Catalog at the top of the Event Catalog (reached from its own banner)
+    assert.ok(!/Avatar Board Catalog/.test(ev) && !ev.includes('/web/avatar/catalog'), 'no Avatar Board Catalog reference in the Event Catalog');
     assert.strictEqual(pages.detailPage(ix, 29920, ctx()), null, 'no Event Catalog page for a BOARD entry');
     const bc = boardCatalog(ix, ctx({ current: new Set(['B-1']) }));
     for (const id of [29900, 29920, 29921, 29922, 29929]) assert.ok(bc.includes(`id="q${id}"`), `entry ${id} in the Avatar Board Catalog`);
@@ -731,10 +732,9 @@ const tests = {
     assert.ok(/Leave and re-enter Avatar Boards/.test(d) && !/re-enter Events/.test(d));
     // the Event Catalog keeps its own words
     assert.ok(/Leave and re-enter Events/.test(pages.catalogPage(ix, ctx())));
-    // the entry block on the Special Catalog page (the Special section), as the Medal Gallery block of the Banner Catalog
+    // user 23-11: no Avatar Board Catalog block at the top of the Special Catalog either (reached from its own banner)
     const sp = require('./special-pages').catalogPage({ entries: [] }, { avatarBoardCatalog: true });
-    assert.ok(sp.includes('href="/web/avatar/catalog?from=special"') && /Avatar Board Catalog/.test(sp), 'reached from the Special Catalog');
-    assert.ok(!require('./special-pages').catalogPage({ entries: [] }, {}).includes('/web/avatar/catalog'), 'only when the server has boards');
+    assert.ok(!sp.includes('/web/avatar/catalog') && !/Avatar Board Catalog/.test(sp), 'no Avatar Board Catalog block in the Special Catalog');
   },
   // the SHOW filter of the Avatar Board Catalog still selects the «Not built yet» rows; the page script writes the board pills
   // after a keep (Task 5 fix round 1)
@@ -1141,7 +1141,7 @@ function wiring() {
     assert.deepStrictEqual(sp.map((e) => e.eventStageId), [7000, 20704, 7101]);
     assert.ok(sp[1].bannerUrl.endsWith('/web/event/img/v' + routesEvents.EVENT_IMG_VERSION + '/20704.png'), sp[1].bannerUrl);
     // the Special Catalog page carries the entry block
-    assert.ok(web(t.respondSpecialWeb, '/web/special/catalog').body.includes('/web/avatar/catalog?from=special'));
+    assert.ok(!web(t.respondSpecialWeb, '/web/special/catalog').body.includes('/web/avatar/catalog'), 'no Avatar Board Catalog block (user 23-11)');
     assert.deepStrictEqual(JSON.parse(web(t.respondAvatarPost, '/web/avatar/unkeep').body), { ok: true });
     assert.deepStrictEqual([t.player.events.kept, t.player.avatarBoards.kept], ['E-0', null]);
     // an old save with the BOARD entry in the shared keep: moved at login (migrateKept), the event keep cleared

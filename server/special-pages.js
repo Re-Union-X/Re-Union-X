@@ -514,20 +514,6 @@ function statusTools(ctx, data) {
   return { statusFor, bestOf, keepFor };
 }
 
-// The Avatar Board Catalog block under the intro (Events Part 7 Task 5b, user 15-11: the boards have their own catalogue in the
-// Special section, next to the Special Catalog; built as the Medal Gallery block of the Banner Catalog, medal-gallery.js
-// entryHtml, no client change). ctx.avatarBoardCatalog (server.js: the event index has avatar boards). No picture: the board
-// cards are client resources, not served on the web, and no original picture fits (plain block, never a drawn one).
-const AVATAR_CATALOG_HREF = '/web/avatar/catalog?from=special';
-const AVATAR_ENTRY_CSS = '.abx{display:flex;align-items:center;gap:12px;margin:6px 0 12px;padding:10px 12px;border:2px solid #39a7cf;border-radius:12px;'
-  + 'background:linear-gradient(100deg,#0d5f86,#083a5a 60%,#06283e);color:#fff;text-decoration:none;box-shadow:0 3px 8px rgba(0,0,0,.45)}.abx:active{background:#0b4466}'
-  + '.abt{flex:1 1 auto;min-width:0;line-height:1.35}.abt b{display:block;font-size:19px;color:#fff;letter-spacing:.5px}.abt small{display:block;font-size:13.5px;color:#cfe4f0}'
-  + '.abb{flex:0 0 auto;border:0;color:#fff;background:linear-gradient(#f08a3a,#d4541c);border-radius:18px;padding:5px 14px;font:bold 15px sans-serif;box-shadow:0 2px 0 #8a3510;white-space:nowrap}'
-  + '@media (max-width:700px){.abx{flex-wrap:wrap;gap:10px}.abt small{font-size:15px}.abb{flex:1 1 100%;box-sizing:border-box;min-height:44px;line-height:34px;text-align:center;font-size:17px;border-radius:12px}}';
-const avatarEntryHtml = () => `<a class="abx" href="${AVATAR_CATALOG_HREF}"><span class="abt"><b>Avatar Board Catalog</b>`
-  + '<small>Every limited avatar board, by its dates. A past entry can be kept: its boards are listed in Avatar Boards again. An addition of this server.</small></span>'
-  + '<span class="abb">Open ›</span></a>';
-
 function catalogPage(index, ctx = {}) {
   const periods = ctx.periods || special.PERIODS, cur = ctx.period;
   const names = { drop: () => [], objective: () => [], dropTypes: () => [], objectiveTypes: () => [], ...(ctx.names || {}) };
@@ -601,10 +587,9 @@ function catalogPage(index, ctx = {}) {
     .replace('__PILL__', JSON.stringify({ kept: pillJs('kept'), can: pillJs('can') }))
     .replace('__RANK__', () => RANK_JS).replace('__MATCH__', () => MATCH_JS);
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + `<title>Special Catalog</title><style>${CSS}${NARROW_CSS}${ctx.avatarBoardCatalog ? AVATAR_ENTRY_CSS : ''}</style></head><body>`
+    + `<title>Special Catalog</title><style>${CSS}${NARROW_CSS}</style></head><body>`
     + '<div class="hdr"><h1>Special Catalog</h1><button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button></div>'
     + '<p class="n">Every Special quest of the game. Tap a quest for its versions, days and rewards. Old quests can be kept in Special, one at a time.</p>'
-    + (ctx.avatarBoardCatalog ? avatarEntryHtml() : '')
     + `<div class="tabs" id="tabs">${tab('all', 'All years', YEAR_SPAN, fams.length)}${GAME_YEARS.map((g, i) => (count(i) ? tab(i, g.name, g.sub, count(i)) : '')).join('')}</div><div class="tabline"></div>`
     + `<div class="sum" id="sum"><span class="n1">${plural(quests.length, 'quest')}</span> · ${plural(camps.length, 'campaign')} · all years, no filters</div>`
     + '<div id="none" class="none" style="display:none"></div>'

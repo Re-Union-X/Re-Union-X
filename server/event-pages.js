@@ -386,8 +386,7 @@ const MODES = {
     eventBoards: true,
     hint: 'Matches the start of words in event and quest names and in the rewards of the quests and Event Boards (e.g. Halloween, Marluxia, Dewey).',
     count: (e) => { const served = servedOf(e).length, all = (e.quests || []).length; return served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`; },
-    intro: () => '<p class="n">Every event of the game, by date. Tap an event for its quests. A past event can be kept in the Events tab, one at a time. The Event Catalog is an addition of this server.</p>'
-      + `<p class="n">Avatar boards on sale are in the <a href="${BOARD_BASE}/catalog?from=event">Avatar Board Catalog ›</a>, also reached from the Special Catalog.</p>`,
+    intro: () => '<p class="n">Every event of the game, by date. Tap an event for its quests. A past event can be kept in the Events tab, one at a time. The Event Catalog is an addition of this server.</p>',
     end: () => '' },
   board: { base: BOARD_BASE, title: 'Avatar Board Catalog', noun: 'entry', entries: boardEntriesOf, status: boardStatusOf, pills: BOARD_PILLS, keepJs: BOARD_KEEP_JS,
     href: boardDetailHref, button: boardKeepButton, typeOf: boardTypeOf, typeOpts: BOARD_TYPE_OPTS, showOpts: BOARD_SHOW_OPTS, placeholder: 'Board, character or outfit name',
