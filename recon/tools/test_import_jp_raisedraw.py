@@ -105,6 +105,19 @@ check('lwf/raisedraw/Medal/Medal_D_Up1' in WANTED0, 'Medal_D con lwf/raisedraw')
 check(all(w.startswith('lwf/') for w in WANTED0), 'tutte le voci iniziano con lwf/')
 check(set(STATIC0) == {'img/ui/Minfo_Def12_SB.png', 'img/ui/Deck_Panel_SB.png'}, 'STATIC img/ui/*_SB.png')
 check(os.path.basename(JP0) == 'jp_final_4.3.1', f'radice JP: {JP0}')
+# draw result overlays (effectNumbers 1/2, plan 2026-11-23 draw-rare-effects): Draw_RareMedal (own textures) and
+# Draw_LimitRareMedal (no textures in its JP folder: the same original name and size in the sibling JP folders LR_FROM)
+for rel in ('lwf/raisedraw/demo/Draw_RareMedal', 'lwf/raisedraw/demo/Draw_LimitRareMedal'):
+    check(rel in WANTED0, f'WANTED contiene {rel}')
+if os.path.isdir(JP0):
+    lr = 'lwf/raisedraw/demo/Draw_LimitRareMedal'
+    d = os.path.join(JP0, *lr.split('/'))
+    texs = m.lwf_textures(m.latest(d, 'Draw_LimitRareMedal', '.lwf'))
+    check(len(texs) == 7, f'Draw_LimitRareMedal: 7 texture dichiarate ({len(texs)})')
+    for k, wh, _sig in texs:
+        src = m.lr_source(m.orig_name('Draw_LimitRareMedal', k), wh)
+        check(src and src[0][0] == 'jp' and tuple(m.img_size(open(src[0][1], 'rb').read())) == tuple(wh),
+              f'Draw_LimitRareMedal {m.orig_name("Draw_LimitRareMedal", k)} {wh}: fonte {src}')
 
 
 # --- LWF sintetica con una texture (formato letto da lwf_textures)

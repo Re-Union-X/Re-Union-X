@@ -150,6 +150,8 @@ WANTED = ([f'{RD}demo/raidgacha_result_display_{n:02d}' for n in range(1, 11)]
           + [GB + 'GuiltBonus_BurstLvup', GB + 'GuiltBonus_BurstLvup_num']
           + [f'{GB}GuiltBonus_Wfix{n}' for n in range(10)]
           + [RD + 'demo/Draw_StatusBonus']
+          # draw result overlays effectNumbers 1 / 2 (plan 2026-11-23 draw-rare-effects); missing = crash on a non-zero value
+          + [RD + 'demo/Draw_RareMedal', RD + 'demo/Draw_LimitRareMedal']
           # animazioni della guilt nel Level Up (sblocco/rilancio, risultato, massimo; cifre gialle e
           # rosse), al posto delle nostre di make_guilt_bonus_lwf.py (19-10): solo fonte (1)
           + [GB + n for n in ('GuiltBonus', 'GuiltBonus_result', 'GuiltBonus_max')]
@@ -188,6 +190,24 @@ PD_BLANK = {'ビットマップ 5.png': (64, 60), 'ビットマップ 6.png': (8
 DR_TWIN = {DR + 'Draw_PetGet': DR + 'Draw_MedalGet'}
 DR_LETTER = {'sprit_3.png': 'sprit_5.png', 'sprit_4.png': 'sprit_9.png', 'sprit_10.png': 'sprit_6.png'}
 BLANK_DIR = os.path.join(tempfile.gettempdir(), 'khux_pd_blank')
+# Draw result overlays (effectNumbers 1 / 2 of /gacha/draw, plan 2026-11-23 draw-rare-effects): Draw_RareMedal has its 3
+# textures; the JP export of Draw_LimitRareMedal (the rainbow ring) saved none of its 7: each is the texture of the SAME
+# original name and declared size in the sibling JP folders below, searched in this order (23-11: png_eff3/4/5 = the
+# Draw_RareMedal starburst set, ef10 + 進化_KeyBlade_ef3-1 (+ «のコピー») = the rare Spirit draw, 進化_KeyBlade_ef2 = the
+# Colosseum opening; every name found, one size match each)
+LR = RD + 'demo/Draw_LimitRareMedal'
+LR_FROM = [RD + 'demo/Draw_RareMedal', PD + 'demo/Draw_RarePet', PD + 'Pet/Pet_Rare002', 'lwf/adventure/Colosseum_Open']
+
+
+def lr_source(name, wh):
+    """((kind, path), class) of a Draw_LimitRareMedal texture: same original name and size in LR_FROM, else None."""
+    for sib in LR_FROM:
+        sdir = os.path.join(JP, *sib.split('/'))
+        sbase = sib.split('/')[-1]
+        for f in sorted(os.listdir(sdir)) if os.path.isdir(sdir) else []:
+            if f.endswith('.png') and orig_name(sbase, f) == name and tuple(img_size(open(os.path.join(sdir, f), 'rb').read()) or ()) == tuple(wh):
+                return ('jp', os.path.join(sdir, f)), 'sibling-jp'
+    return None
 
 
 def pd_source(rel, name, wh, sig):
@@ -483,6 +503,8 @@ def main(argv=None):
             elif rel in PD_FROM and (src := pd_source(rel, name, wh, _sig)):
                 cand, cls = src
             elif rel in DR_TWIN and (src := dr_source(a.ww, rel, folder, name, wh, _sig)):
+                cand, cls = src
+            elif rel == LR and (src := lr_source(name, wh)):
                 cand, cls = src
             else:
                 missing.append(name)
