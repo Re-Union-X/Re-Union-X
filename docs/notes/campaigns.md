@@ -75,6 +75,16 @@ Screens accept: story 2, 4, 5, 9-19; event 2, 4, 6; co-op 4, 20; Coliseum 2, 4, 
   day. Bench rows must be added to `master_data/evCampaign.json` by hand and removed afterwards: the generators keep every row
   outside their own ranges.
 
+## Notice-backed 0 AP days (Part 10d, 23-11-2026)
+
+The seven 0 AP campaigns of 2016-2017 announced by the notices (23537, 23798, 24842, 26485, 26837, 27764, 30118: EV-0093,
+0110, 0129, 0150, 0168, 0197, 0230) are already in the Part 9a calendar, February 2017 included. The «calendar holes» of the
+Part 10 research were an error of that check: it read the census end dates, which are exclusive, while every notice ends at
+23:59 PT of the day before. Checked against the served tables: 70 days, each with a «0 AP!» row on its event quests, except
+2016-12-09..11, when no event quest is served (EV-0090 and EV-0091 are still held: their maps are not generated yet).
+Raid bosses keep the weekend rule of this server. EV-0150 also made the VIP (Special) quests free: the event-quest scope
+does not reach the Special tab, so those keep their cost (declared in the Bonus Times notice).
+
 ## Part 9b
 
 Special login bonuses and the monthly Limited missions by Story month: [home_profilo «Login bonus»](home_profilo.md#login-bonus-i-176-20-10), plan [2026-11-22-events-part9b-special-logins.md](../superpowers/plans/2026-11-22-events-part9b-special-logins.md), I-292.
