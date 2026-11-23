@@ -2102,6 +2102,9 @@ const tests = {
     assert.deepStrictEqual(me.labelIds('original; no khuxwiki page', REAL_CONFIG.labelPhrases), ['noWikiPage']);
     assert.ok(/another run/.test(REAL_CONFIG.reconstructedWhy.otherRunWiki || ''), 'otherRunWiki has its reason text');
     assert.ok(REAL_CONFIG.reconstructedWhy.noWikiPage, 'noWikiPage has its reason text');
+    // round 2 (user 23-11): the enemy version chosen by the event's year+month id prefix
+    assert.deepStrictEqual(me.labelIds('original; enemy version from the id month', REAL_CONFIG.labelPhrases), ['prefixVersion']);
+    assert.ok(/year and month/.test(REAL_CONFIG.reconstructedWhy.prefixVersion || ''), 'prefixVersion has its reason text');
   },
   held_hsc_not_served() {
     const noThr = hscRecord('H-1');
