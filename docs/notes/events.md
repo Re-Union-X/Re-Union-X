@@ -1729,6 +1729,10 @@ Menace Intermediate #4 (filled corridor parts walked to the Gold Tricholoma of p
   index; label mapPartRebuilt); still held: 711610/711740/711750 (no Shadow in any part), 711620/630/640/660 (foreign enemy
   parts), 711680/700/780 (no STG header). The record enemy lists predate the fill (import report `map_only`); the map files
   carry the Shadow and the Gold Tricholoma.
-- **Still held**: the 39 month-prefix quests (EV-0744, 0853, 0856, 0861, 0872, 1005, 1293): their enemies resolve, but no JP
-  file holds their STG header (map audit 10-11: group «none»); EV-0941 (Union twin of 740926, sharing would merge it);
+- **Month-prefix quests on generated maps** (user 23-11, option 1; rev **368**, resources 154, 3,843 served): no JP file holds
+  their STG header (map audit 10-11: group «none»), so `tmp\events\unbuilt\patch_prefix_gen.py` (patch 6, after
+  patch_prefix_ids.py) sets `map.source: generate` and the room of the donor stage row's thumbId (build_hole.py thumb_room
+  rule: exactly one served room); label wikiRoom. 31 served; held: EV-1005 Day 4/5 (thumbId 0 / two served rooms), EV-0872
+  Beach Fun 6/10 and 9/10 (Watermelon rows with no month prefix).
+- **Still held**: EV-0941 (Union twin of 740926, sharing would merge it);
   the 18 materials pins (`pins_r2_skipped.json`); EV-0108 / EV-0417 (no source).
