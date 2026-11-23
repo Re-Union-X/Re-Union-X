@@ -7,8 +7,8 @@ Controlli (dati veri: catalog\\files servito, names_v4.tsv, JP 4.3.1 locale):
 - StartDeckProudScene_ver260.json e' una radice attiva di jp_coco_layouts.txt;
 - ogni sotto-layout e texture della sua chiusura (scena servita, sotto-layout serviti e JP) e' servito o c'e' nel JP,
   le texture col 9-slice comprese (crash 0x2c, I-049); le armature non servite stanno in JP_ARM;
-- ogni slot di JP_ARM e' un plist servito, ogni armatura JP_ARM esiste nel JP e nessuno slot e' condiviso da
-  armature con fotogrammi diversi. Gli slot non devono piu' essere liberi: i fotogrammi JP si uniscono all'atlante
+- ogni slot di JP_ARM e' un plist servito, ogni armatura JP_ARM esiste nel JP e le sorgenti JP di uno slot condiviso
+  non hanno fotogrammi con lo stesso nome. Gli slot non devono piu' essere liberi: i fotogrammi JP si uniscono all'atlante
   servito (atlas_merge.py, I-222), controllato da test_jp_arm_atlas.py.
 """
 import ast
@@ -121,13 +121,19 @@ for arm, (slot, jp_src) in JP_ARM.items():
     check(jp_has(arm + '.ExportJson') and jp_has(jp_src + '.plist') and jp_has(jp_src + '.png'),
           '%s: file JP assenti (%s)' % (arm, jp_src))
     if jp_has(jp_src + '.plist'):
-        frames.setdefault(slot, set()).add(tuple(sorted(re.findall(r'<key>([^<]+\.png)</key>',
-                                                              open(os.path.join(JP_PUB, jp_src + '.plist'),
-                                                                   encoding='utf-8').read()))))
+        frames.setdefault(slot, {})[jp_src] = set(re.findall(r'<key>([^<]+\.png)</key>',
+                                                         open(os.path.join(JP_PUB, jp_src + '.plist'),
+                                                              encoding='utf-8').read()))
     # Slots need not be free any more: import_jp_coco.py merges the JP frames into the served atlas (atlas_merge.py,
     # I-222: MyPageAnime0 is the atlas of the home WARNING bar). test_jp_arm_atlas.py checks the merged atlases.
-for slot, fs in frames.items():
-    check(len(fs) == 1, 'slot %s condiviso da armature con fotogrammi diversi: %s' % (slot, sorted(fs)))
+# Several JP sources may share a slot (ActMapTreasureBoxAnim0: Cursor_Anim_Chat0 I-210 + MedalArtAnim0 I-237), each merged in
+# turn; atlas_merge keeps a frame name already in the atlas, so two sources must not carry the same frame name.
+for slot, by_src in frames.items():
+    srcs = sorted(by_src)
+    for i, a in enumerate(srcs):
+        for b in srcs[i + 1:]:
+            both = by_src[a] & by_src[b]
+            check(not both, 'slot %s: fotogrammi con lo stesso nome in %s e %s: %s' % (slot, a, b, sorted(both)))
 
 if errori:
     print('ERRORI (%d)' % len(errori))

@@ -1409,6 +1409,7 @@ function wiring() {
   process.env.KHUX_RAID_MODELS = path.join(dir, 'raid_models.json');
   process.env.KHUX_RAID_IMG = path.join(dir, 'img');
   process.env.KHUX_RAID_NOTICES = path.join(dir, 'raid_notices.json');
+  process.env.KHUX_EVENT_INDEX = path.join(dir, 'events.json'); // absent: no Event Catalog banner nor event cards (test-event-routes.js covers them)
   delete process.env.KHUX_REAL_NOW;
   delete process.env.KHUX_SERVER_TIME;
   const FAKE = 989999; // far from any generated row

@@ -30,6 +30,12 @@ const stages = t.masterRows('stage');
 const sid = (q) => stages.find((r) => r.stageKind === 1 && r.id === q).stageId;
 const ev = (cat) => call(t.respondStageEvent, { eventCategory: cat });
 const byId = (list, id) => list.find((e) => e.eventStageId === id);
+// Event Catalog (Events Part 1 Task 5, evStage 20000) and Avatar Board Catalog (Part 7 Task 5b, user 15-11: gold banner in the
+// Special tab right after the Special Catalog banner, both open the Training Grounds 970000) of game_data/events.json; null without them
+const evCatalogId = (t.eventIndex()?.catalog || {}).evStageId || null;
+const avatarCatId = t.eventRoutes().avatarCatalogId();
+// the KEPT card of the Special tab: after the Special Catalog banner and the Avatar Board Catalog banner
+const KEPT_AT = avatarCatId ? 2 : 1;
 
 // 1. sblocco dopo la missione 6 (misc 122): prima nessun evento Special
 p.stageScores = {}; p.clearMissions = {};
@@ -48,7 +54,8 @@ let list = ev(1).events;
 check(list[0] && list[0].eventStageId === 7000, `primo evento ${list[0] && list[0].eventStageId}`);
 check(byId(list, 7012) && byId(list, 7012).isLock === 0, `EXP & Evolve Power (martedi'): isLock ${byId(list, 7012)?.isLock}`);
 check(byId(list, 7011) && byId(list, 7011).isLock === 1, `Evolve Legendary (lunedi'): isLock ${byId(list, 7011)?.isLock}`);
-check(list.every((e) => e.bannerUrl.startsWith(t.WEB_BASE + '/web/special/img/')), 'bannerUrl senza WEB_BASE');
+check(list.every((e) => e.bannerUrl.startsWith(t.WEB_BASE + (e.eventStageId === avatarCatId ? '/web/event/img/' : '/web/special/img/'))), 'bannerUrl senza WEB_BASE');
+check(!avatarCatId || (list[1]?.eventStageId === avatarCatId && list[1].eventType === 0), `Avatar Board Catalog dopo il catalogo Special: ${list[1]?.eventStageId}`);
 process.env.KHUX_VIP = '1';
 list = ev(1).events;
 // VIP apre anche la quest del lunedi': isLock 2 (piastra «Available», regola del Task 2), il martedi' resta 0
@@ -57,8 +64,11 @@ delete process.env.KHUX_VIP;
 
 // 3. functionFlags bit 4 (letto una volta al login) e la scheda Events vuota
 check(t.ret().functionFlags === 4, `functionFlags ${t.ret().functionFlags}`);
-// raid events, plus the Raid Catalog banner (evStage 8000, eventType 0, raids Part 2 Task 9) when the raid index has it; no Special banner
-check(ev(2).events.every((e) => e.eventType === 2 || (e.eventStageId === 8000 && e.eventType === 0)), 'Events (eventCategory 2): only raid events and the Raid Catalog banner');
+// raid events (eventType 2), event quests (eventType 3, Events Part 1), the Raid Catalog banner (evStage 8000, raids Part 2 Task 9)
+// and the Event Catalog banner (eventType 0) when the indexes have them; no Special banner (nor the Avatar Board Catalog)
+check(ev(2).events.every((e) => !e.bannerUrl.includes('/web/special/') && e.eventStageId !== avatarCatId
+  && (e.eventType === 2 || e.eventType === 3 || (e.eventType === 0 && (e.eventStageId === 8000 || e.eventStageId === evCatalogId)))),
+  'Events (eventCategory 2): only raid and event quests, the Raid and Event Catalog banners');
 
 // 4. drop dei nemici: tipi per posizione della riga del POI; uid e conteggi attesi si ricavano dal POI e dalle righe
 // reward lette qui (non dalla disposizione della mappa generata)
@@ -125,14 +135,17 @@ const evRows = t.servedMasterRows('evStage', Date.now());
 check(evRows.length > 0 && evRows.every((r) => r.bannerUrl.startsWith(t.WEB_BASE + '/')), 'evStage.bannerUrl non assoluto');
 check(evRows.find((r) => r.eventStageId === 7000)?.detailUrl === t.WEB_BASE + '/web/special/catalog', 'evStage 7000 detailUrl');
 const isRaidEv = (id) => id >= 8001 && id <= 8999; // raid banners: Details = the original notice (make-raid.js, ce87672)
-check(evRows.filter((r) => r.eventStageId !== 7000 && r.eventStageId !== 8000 && !isRaidEv(r.eventStageId)).every((r) => r.detailUrl === ''), 'detailUrl vuoti cambiati');
+const isEventEv = (id) => id >= 20000; // event banners (make-events.js): Details = the original notice, or a catalogue page
+check(evRows.filter((r) => r.eventStageId !== 7000 && r.eventStageId !== 8000 && !isRaidEv(r.eventStageId) && !isEventEv(r.eventStageId)).every((r) => r.detailUrl === ''), 'detailUrl vuoti cambiati');
+check(evRows.filter((r) => isEventEv(r.eventStageId)).every((r) => r.detailUrl === (r.eventStageId === evCatalogId ? t.WEB_BASE + '/web/event/catalog'
+  : r.eventStageId === avatarCatId ? t.WEB_BASE + '/web/avatar/catalog' : r.detailUrl && `${t.WEB_BASE}/web/event/notice/${r.eventStageId}`)), 'evStage event detailUrl: vuoto, la notizia o il catalogo, assoluto');
 check(evRows.filter((r) => isRaidEv(r.eventStageId)).every((r) => r.detailUrl === '' || r.detailUrl === `${t.WEB_BASE}/web/raid/notice/${r.eventStageId}`), 'evStage raid detailUrl: vuoto o la notizia, assoluto');
 // Raid Catalog banner (raids Part 2, Task 9), present once make-raid.js has run on this master
 { const rc = evRows.find((r) => r.eventStageId === 8000); check(!rc || rc.detailUrl === t.WEB_BASE + '/web/raid/catalog', 'evStage 8000 detailUrl'); }
 
 // 8. Progress della scheda Special: obiettivi / 3 x stage delle quest aperte (senza l'allenamento)
 // mercoledi' senza VIP: cid-wed (1 stage), MOG (5), EXP & Evolve Magic (1) = 7 stage
-const special = t.specialEvents(Date.now()).filter((e) => e.eventStageId !== 7000 && e.isLock !== 1);
+const special = t.specialEvents(Date.now()).filter((e) => e.eventStageId !== 7000 && e.eventStageId !== avatarCatId && e.isLock !== 1);
 const nStages = special.reduce((a, e) => a + e.stages.length, 0);
 p.clearMissions[970030] = [1, 2]; p.clearMissions[970100] = [3]; p.clearMissions[970000] = [1, 2, 3];
 let a = call(t.respondStageAchievements).stageAchievement;
@@ -175,7 +188,7 @@ const vImg = raw(t.respondSpecialWeb, '/web/special/img/v2/7012.png');
 check(vImg.code === 200 && Buffer.compare(vImg.body, fs.readFileSync(file)) === 0, 'versioned img served');
 check(raw(t.respondSpecialWeb, '/web/special/img/v9/7012-kept.png').code === 200, 'any version, kept');
 check(raw(t.respondSpecialWeb, '/web/special/img/vx/7012.png').code === 404, 'bad version: 404');
-check(list.every((e) => e.eventStageId === 7000 || e.bannerUrl.includes('/img/v' + require('./special').SPECIAL_IMG_VERSION + '/')), 'bannerUrl versioned');
+check(list.every((e) => e.eventStageId === 7000 || e.eventStageId === avatarCatId || e.bannerUrl.includes('/img/v' + require('./special').SPECIAL_IMG_VERSION + '/')), 'bannerUrl versioned');
 check(raw(t.respondSpecialWeb, '/web/special/img/99999.png').code === 404, 'img mancante: non 404');
 check(raw(t.respondSpecialWeb, '/web/special/img/7000-kept.png').code === 404, 'img 7000-kept: non 404');
 check(raw(t.respondSpecialWeb, '/web/special/img/../special.json').code === 404, 'percorso fuori dalla cartella: non 404');
@@ -247,7 +260,7 @@ p.special = p.special || {}; delete p.special.pinned;
 let r = post('/web/special/pin/7060');
 check(r.code === 200 && r.body.ok === true && p.special.pinned === 'km-olympia', `pin Olympia: ${r.code} ${p.special.pinned}`);
 list = ev(1).events;
-check(list[1]?.eventStageId === 7060 && list[1].bannerUrl.endsWith('/7060-kept.png') && list[1].isLock === 2, `KEPT secondo: ${list[1]?.eventStageId} isLock ${list[1]?.isLock}`);
+check(list[KEPT_AT]?.eventStageId === 7060 && list[KEPT_AT].bannerUrl.endsWith('/7060-kept.png') && list[KEPT_AT].isLock === 2, `KEPT dopo i cataloghi: ${list[KEPT_AT]?.eventStageId} isLock ${list[KEPT_AT]?.isLock}`);
 r = post('/web/special/pin/7011'); // quest corrente (periodo 4): non fissabile
 check(r.code === 409 && r.body.ok === false && r.body.why && p.special.pinned === 'km-olympia', `pin corrente: ${r.code}`);
 r = post('/web/special/pin/7056'); // sostituita da evolve-legendary
@@ -255,11 +268,11 @@ check(r.code === 409 && p.special.pinned === 'km-olympia', `pin sostituita: ${r.
 r = post('/web/special/pin/7064');
 check(r.code === 200 && p.special.pinned === 'km-lady-luck', `secondo pin sostituisce: ${p.special.pinned}`);
 list = ev(1).events;
-check(list.filter((e) => e.bannerUrl.includes('-kept')).length === 1 && list[1].eventStageId === 7064, 'un solo KEPT, il nuovo');
+check(list.filter((e) => e.bannerUrl.includes('-kept')).length === 1 && list[KEPT_AT].eventStageId === 7064, 'un solo KEPT, il nuovo');
 check(post('/web/special/pin/99999').code === 404, 'id sconosciuto: non 404');
 // un pin gia' fissato diventa la quest del giorno: lunedi' Olympia e' aperta di suo (isLock 0)
 at('2026-11-12T09:00:00Z'); // giovedi': Lady Luck e' il suo giorno
-check(ev(1).events[1].isLock === 0, 'KEPT nel suo giorno: isLock 0');
+check(ev(1).events[KEPT_AT].isLock === 0, 'KEPT nel suo giorno: isLock 0');
 at('2026-11-10T09:00:00Z');
 r = post('/web/special/unpin');
 check(r.code === 200 && r.body.ok === true && !p.special.pinned, 'unpin');
@@ -270,7 +283,7 @@ check(!ev(1).events.some((e) => e.bannerUrl.includes('-kept')), 'chiave fuori in
 const vipPast = t.specialIndex().entries.find((en) => en.vip && Math.max(...en.periods) < 4 && !en.replacedBy && !en.removed);
 if (vipPast) {
   p.special.pinned = vipPast.key;
-  const k = ev(1).events[1];
+  const k = ev(1).events[KEPT_AT];
   check(k.eventStageId === vipPast.evStageId && k.bannerUrl.includes('-kept') && k.isLock === 1, `VIP fissata senza VIP: ${k.eventStageId} isLock ${k.isLock}`);
 } else errors.push('nessuna quest VIP passata nell\'indice per il test');
 delete p.special.pinned;
