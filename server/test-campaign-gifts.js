@@ -93,6 +93,13 @@ const total = (rows) => rows.reduce((s, r) => s + r.num, 0);
   check(cg.openCampaigns(c, '2017-01-01', g).length === 1, 'open on the start');
   check(cg.openCampaigns(c, '2016-05-01', g).length === 1, 'stays open (rotation went back)');
 }
+{ // date (Part 10d social prizes): paid once when open, closed before its start
+  const c = comp(mk({ kind: 'date' }, [{ jewels: 200 }], { start: '2018-01-28' })), g = {};
+  check(cg.openCampaigns(c, '2017-12-31', {}).length === 0, 'date: closed before the start');
+  check(cg.openCampaigns(c, '2018-01-28', {}).length === 1, 'date: open on the start');
+  check(JSON.stringify(sent(c, st([]), g)) === '[{"type":2,"id":0,"num":200}]', 'date: 200 Jewels once');
+  check(sent(c, st([]), g).length === 0, 'date: never twice');
+}
 { // unknown names are reported and drop only that campaign
   const r = cg.compile([mk({ kind: 'each', test: 'own', medals: ['Nope'] }), mk({ kind: 'story', quest: 1 }, undefined, { id: 'ok' })], { medals: M });
   check(r.errors.length === 1 && r.campaigns.length === 1 && r.campaigns[0].id === 'ok', 'compile errors');
@@ -122,6 +129,16 @@ check(JSON.stringify(byId.get('story-q200-2016')?.reward) === '[{"type":2,"id":0
 check(JSON.stringify(byId.get('lux-tickets-2019')?.reward) === '[{"type":41,"id":0,"num":1}]' && byId.get('lux-tickets-2019').condition.once, 'LUX campaign: one Draw Ticket per level, once');
 check(JSON.stringify(byId.get('storage-2020')?.reward) === '[{"type":41,"id":0,"num":30}]', 'storage campaign: 30 Draw Tickets');
 check(byId.get('annaelsa-2018').condition.drawIds[0] > 0 && byId.get('sntva-trait-2019').condition.drawIds.length === 3, 'Deal ids resolved');
+const social = real.campaigns.filter((c) => c.condition.kind === 'date');
+const fmb = (id) => (byId.get(id)?.reward || []).some((r) => r.type === 3 && r.num === 1 && rd('medal').find((m) => m.medalId === r.id)?.name === 'Fantasia Mickey B');
+const socialJewels = (id) => (byId.get(id)?.reward || []).filter((r) => r.type === 2).reduce((s, r) => s + r.num, 0);
+check(fmb('follower80k-2017') && socialJewels('follower80k-2017') === 2000 && byId.get('follower80k-2017').start === '2017-05-05', 'social: 80k followers = Fantasia Mickey B + 2,000 Jewels on 2017-05-05');
+check(fmb('halloween-rt-2017') && socialJewels('halloween-rt-2017') === 3000 && byId.get('halloween-rt-2017').start === '2017-11-03', 'social: Halloween retweets = 3,000 Jewels + Fantasia Mickey B on 2017-11-03');
+const mini = social.filter((c) => /^chirithymini-/.test(c.id));
+check(mini.length === 62 && mini.every((c) => JSON.stringify(c.reward) === '[{"type":2,"id":0,"num":200}]'), `social: 62 #ChirithyMini quizzes of 200 Jewels (${mini.length})`);
+check(mini.every((c, i) => i === 0 || c.start > mini[i - 1].start), 'social: #ChirithyMini starts increasing');
+check(social.length === 64 && !real.campaigns.some((c) => /retweet-2017-08/.test(c.id)), 'social: 64 rows, August 2017 retweets not paid twice');
+check(new Set(cg.due(social, st([]), {}).map((d) => d.campaign.id)).size === 64, 'social: all open -> 64 presents, one per campaign');
 
 // --- server: Home/Present Box check, once, collection with dots ---------------------------------------------------
 const { _test: t } = quiet(() => require('./server'));
@@ -141,8 +158,11 @@ const tva = campaignPresents().filter((x) => x.resourceId === 22166);
 check(tva.length === 1 && tva[0].number === 1 && tva[0].dots === 3, 'Q979: one Terra & Ventus & Aqua with 3 dots');
 check(campaignPresents().some((x) => x.resourceId === 300943 && x.number === 3), 'Story Quest 50 campaign: 3 Sora & Roxas');
 check(campaignPresents().some((x) => x.resourceId === 300948), 'Story Quest 600 campaign: Magic Broom');
-const jw = campaignPresents().filter((x) => x.resourceType === 2);
+const jw = campaignPresents().filter((x) => x.resourceType === 2 && /Story Quest Progress/.test(x.comment));
 check(jw.length === 1 && jw[0].number === 600, 'Story Quest 200 campaign: 600 Jewels');
+const soc = campaignPresents().filter((x) => /Twitter Follower|Halloween Screenshot|#ChirithyMini/.test(x.comment));
+check(soc.filter((x) => /Twitter Follower/.test(x.comment)).length === 2 && soc.filter((x) => /Halloween Screenshot/.test(x.comment)).length === 2,
+  'Q979: social prizes in the Present Box (Fantasia Mickey B + Jewels, twice)');
 const lx = campaignPresents().filter((x) => x.resourceType === 41);
 check(lx.length === 1 && lx[0].resourceId === 0 && lx[0].number >= 1, 'LUX campaign: Draw Tickets = LUX level');
 check(!campaignPresents().some((x) => x.resourceType === 41 && x.number === 30), 'storage campaign: not below 3,000 slots');
@@ -155,8 +175,9 @@ check(campaignPresents().filter((x) => x.resourceType === 41).length === 2 && ca
   const stones = p.freeStone || 0, draw = require('./gacha').ticketsOf(p).draw || 0;
   const ids = campaignPresents().filter((x) => x.resourceType === 2 || x.resourceType === 41).map((x) => x.userPresentId);
   const nTk = campaignPresents().filter((x) => x.resourceType === 41).reduce((s, x) => s + x.number, 0);
+  const nJw = campaignPresents().filter((x) => x.resourceType === 2).reduce((s, x) => s + x.number, 0);
   call(t.respondPresentReceive, { receivePresentIds: ids });
-  check((p.freeStone || 0) === stones + 600, 'collected: +600 Jewels');
+  check((p.freeStone || 0) === stones + nJw && nJw >= 600 + 2000 + 3000, 'collected: +600 Jewels and the social Jewels');
   check((require('./gacha').ticketsOf(p).draw || 0) === draw + nTk, 'collected: Draw Tickets in the payType 8 draw currency');
 }
 const n0 = campaignPresents().length;

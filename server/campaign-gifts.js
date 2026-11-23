@@ -18,6 +18,8 @@
 // - lux:      one unit per LUX level (51531: one Draw Ticket per level); with once: true the level is read only the
 //             first time the campaign is checked open (the original read it on a fixed date), never topped up later
 // - storage:  one unit once the Medal storage reaches `slots` (69125: 3,000 slots)
+// - date:     one unit once the campaign is open: all-player prizes of the social goals reached on X (Part 10d,
+//             source "x" instead of a notice id; start = payout date)
 // Rewards: {medal, rare, num, dots?, skill?, boosted?} type 3, {material} 5, {title} 7, {jewels: n} 2,
 // {ticket: currency, num} 41 (payType 8 Shop currency, index in `tickets` = gacha.TICKET_CURRENCIES; Bronze/Silver/Gold
 // Tickets have no Shop currency here and are rejected, docs/notes/campaigns.md).
@@ -136,6 +138,7 @@ function earned(c, state) {
     case 'story': return { units: (state.storyQuest || 0) >= cond.quest ? 1 : 0 };
     case 'lux': return { units: Math.max(0, Number(state.luxLevel) || 0) };
     case 'storage': return { units: (state.medalSlots || 0) >= cond.slots ? 1 : 0 };
+    case 'date': return { units: 1 };
     default: return { units: 0 };
   }
 }

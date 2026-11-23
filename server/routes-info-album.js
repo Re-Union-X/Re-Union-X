@@ -599,7 +599,7 @@ function updateNotice(realMs) {
 const NOTICES = [
   // conditional Present campaigns (I-234): server/campaign-gifts.js, campaign_gifts.json, docs/notes/campaigns.md
   { date: '11/05', tag: 'IMPORTANT', title: 'Campaign Rewards',
-    body: ['Some campaigns of the original game sent rewards to the **Present Box** when you met a condition: owning certain Medals, unlocking their Special Attack Bonus or their traits, drawing a Deal a number of times, clearing a Story Quest, your LUX level or your Medal storage. They are back, so their Medals, titles, Gems, Jewels and Draw Tickets can be obtained again.',
+    body: ['Some campaigns of the original game sent rewards to the **Present Box** when you met a condition: owning certain Medals, unlocking their Special Attack Bonus or their traits, drawing a Deal a number of times, clearing a Story Quest, your LUX level or your Medal storage, or a goal reached by the players on Twitter. They are back, so their Medals, titles, Gems, Jewels and Draw Tickets can be obtained again.',
       '## The campaigns',
       '**600 Jewels**: for clearing Story Quest 200 (September 2016).',
       '**Terra & Ventus & Aqua** (3 dots): one for each of Illustrated Terra, Illustrated Ventus and Illustrated Aqua you own (from September 2016).',
@@ -609,10 +609,13 @@ const NOTICES = [
       '**Key Art #1** (2 dots): for Illustrated Xion, for HD Axel and for Casual Roxas with the Special Attack Bonus unlocked (December 2016).',
       '**Key Art #5** (3 dots): for Illustrated KH II Kairi and for Illustrated KH II Sora with the Special Attack Bonus unlocked (April 2017).',
       '**13 Organization XIII A Medals** (5 dots) and a **Scrooge** with ATK B III Max & SP GA 2: for owning both Key Art #6 and Key Art #7, or one of them with the Special Attack Bonus unlocked (May 2017).',
+      '**Fantasia Mickey B and 2,000 Jewels**: the 80,000 followers goal of the official Twitter account (May 2017).',
       '**KH 0.2 Terra & Ventus** (2 dots): one for each of KH 0.2 Aqua, KH 0.2 King Mickey A and Key Art #8 with the Special Attack Bonus unlocked (May-June 2017).',
       '**3 Sora & Roxas** (2 dots) for clearing Story Quest 50 and a **Magic Broom** for Story Quest 600 (July 2017).',
       '**Fantasia Mickey B**: for owning Axel Art [EX] (July 2017).',
       '**KH 0.2 King Mickey B** (2 dots): one for every KH 0.2 Terra, KH 0.2 Sora or Lingering Will with the Special Attack Bonus unlocked (September 2017).',
+      '**3,000 Jewels and Fantasia Mickey B**: the retweet goals of the Halloween Screenshot Contest (November 2017).',
+      '**200 Jewels** for each **#ChirithyMini** Twitter quiz, every two weeks from January 2018 to July 2020 (62 quizzes): every goal was reached, so every player gets them, each on the Sunday its result was announced.',
       '**Anna & Elsa** after 5 VIP Draws of the Frozen Medals Deal, plus a **Trait Medal #64** for every VIP Draw of it (December 2018).',
       '**Supernova - Terra, Ven, Aqua**: for 3 Medals with 5 traits unlocked among Supernova - HD Terra, HD Ventus and HD Aqua, plus a **Trait Medal #72** for every draw of their Falling Price Deals (January 2019).',
       '**Draw Tickets**, one for each LUX level you have when the campaign starts for you (3rd anniversary, March 2019). The level is read once: levels gained later add nothing.',
