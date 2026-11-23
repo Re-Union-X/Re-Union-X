@@ -658,7 +658,7 @@ const tests = {
     const kw = Object.keys(REAL_CONFIG.worldExceptions).filter((k) => !['360010', '360030'].includes(k));
     assert.deepStrictEqual(Object.keys(REAL_CONFIG.worldExceptions).filter((k) => ['360010', '360030'].includes(k)).sort(), ['360010', '360030'], 'EV-0282 and EV-0293 (ruling 07-11)');
     // The Keyblade War Pt. 3 (user decision 3, 10-11-2026): the donor stage rows say world 13 on KG_0000_01_00 (donor world 13 = KG)
-    assert.deepStrictEqual(kw.map(Number).sort(), [...Array(20).keys()].map((i) => 740911 + i).filter((k) => k !== 740927), 'KW 19 maps (740927 has no STG)');
+    assert.deepStrictEqual(kw.map(Number).sort(), [...Array(20).keys()].map((i) => 740911 + i), 'KW 20 maps (740927 = the copy of 740926 under its own key, user 24-11)');
     assert.ok(kw.every((k) => /donor stage row 7409\d\d worldId 13/.test(REAL_CONFIG.worldExceptions[k])), 'evidence noted');
     // the catalogue says it in plain words
     assert.match(require('./event-pages').whyPlain(q[0].why), /another world/);
