@@ -108,7 +108,7 @@ Raid, Thundaga, Heaven's Sword) (ISSUES I-033).
 - Where: `make-game-tables.js` renumbers medal.json before the boosted rows (the later patches see the new ids) and maps
   the medal rewards of the reward tables at the end (`REWARD_PAIRS`, reward type 3); the sources keep the Roboloid ids:
   the banner catalogue is mapped when read (`mapCatalog` in `gacha-data.loadCatalog`, `make-boosted-medals.js`,
-  `make-nova-rows.js`), `trait_medals.json` in `make-trait-medals.js`. `shuffleSkillGroupId` (lowest medalId of the
+  `make-nova-rows.js`), `trait_medals.json` in `make-trait-medals.js`. The generated banner catalogue (`make_banner_catalog.py`) is built from the served master, so it already carries the new ids; `mapCatalog` maps only old ids and lets the new ones through. `shuffleSkillGroupId` (lowest medalId of the
   family) is recomputed by `make-trait-groups.js` (equality only). Standalone in place: `node server/medal-renumber.js`.
 - Saves: `server.js migrateCutinRenumber()` (`medalMapVersion` 3): `medals[]`, `medalState[]`, medal presents, Nova
   record (`guiltBurst.first/max`, new id only if not already there); everything per userMedalId stays.

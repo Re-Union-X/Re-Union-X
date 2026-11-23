@@ -520,7 +520,7 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     # fix 1, punto 6: date dal notice -> fine originale, fonte in datesSource
     check(all(B[r]['endSource'] == 'original' and B[r]['end'] == '2017-12-04' and 'notice 34475' in B[r]['datesSource']
               for r in ('B0199', 'B0200', 'B0201', 'B0202', 'B0203')), 'B0199-B0203 fine originale dal notice')
-    check(sum(1 for b in bs if b['datesSource']) == 10, 'datesSource solo per le date lette dai notice')  # + B0704-B0706 (2c), B0811-B0812 (fine del servizio, 03-11)
+    check(sum(1 for b in bs if b['datesSource']) == 12, 'datesSource solo per le date lette dai notice')  # + B0704-B0706 (2c), B0811-B0812 (fine del servizio, 03-11), B0087-B0088 (notice 26296, d35b1c6, 06-11)
     # fix 1, punto 8: senza stella scritta, pityStar = stella dello slot finale
     import banner_guarantees as _bgm  # `bg` qui sopra e' una garanzia
     PITY_OV = {o['row_id'] for o in m.default_inputs()['overrides'] if o.get('field') == 'pity'}  # stella dal notice
@@ -609,9 +609,13 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
             'xaldin': (301601, '2018-09-24'), 'luxord': (301616, '2018-10-13'), 'marluxia': (301634, '2018-11-13'),
             'larxene': (301658, '2018-12-13'), 'xemnas': (301680, '2019-01-13'), 'xigbar': (301745, '2019-02-13'),
             'roxas': (301782, '2019-03-13')}
+    # I-225: il catalogo nasce dal master servito, gia' rinumerato (medal_renumber.json: Roboloid -> old + 10001)
+    with open(os.path.join(m.REPO, 'server', 'medal_renumber.json'), encoding='utf-8') as f:
+        RENUM = {int(k): v for k, v in json.load(f)['renumber'].items()}
+    nid = lambda i: RENUM.get(i, i)  # noqa: E731
     for x, (i6, d) in PLUS.items():
         ids = med.get(x + ' [+]', {}).get('ids', [])
-        check([i6, 6, d, 8] in ids, f'{x} [+]: 6★ {i6} alla data {d} {ids}')
+        check([nid(i6), 6, d, 8] in ids, f'{x} [+]: 6★ {i6} alla data {d} {ids}')
         check(all(i[2] >= cat['firstRarity']['7'] for i in ids if i[1] == 7), f'{x} [+]: 7★ prima del 25/05/2018 {ids}')
     SE = [31176, 31196, 31206, 31226, 32186, 32196, 32216, 32236, 33176, 33186, 33206, 33216, 33236]
     tier_of = {i[0]: i[3] for v in med.values() for i in v['ids']}
@@ -629,7 +633,7 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check([32236, 6, '2016-09-16', 3] in med['axel a']['ids'] and [33236, 6, '2016-09-16', 3] in med['roxas a']['ids'],
           f"axel a / roxas a {med['axel a']['ids']} {med['roxas a']['ids']}")
     for n, i in (('sn++ - axel b', 302074), ('sn++ - roxas', 302075)):
-        check(med[n]['date'] == '2021-01-01' and med[n]['ids'][0][:3] == [i, 7, '2021-01-01'], f'{n} {med[n]}')
+        check(med[n]['date'] == '2021-01-01' and med[n]['ids'][0][:3] == [nid(i), 7, '2021-01-01'], f'{n} {med[n]}')
     # pool dei banner (expandPool di server/gacha-data.js alla data d'inizio)
     import json as _json
     import subprocess
