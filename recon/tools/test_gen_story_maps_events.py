@@ -319,6 +319,22 @@ try:
         vmr = json.load(open(os.path.join(tmp, 'vm.json'), encoding='utf-8')) if os.path.exists(os.path.join(tmp, 'vm.json')) else {}
         for sid in (EVM, EVS):
             check(vmr.get(str(sid), {}).get('errors') == [], 'validate_maps %d: no errors (%s)' % (sid, vmr.get(str(sid)) or vm.stderr[-400:]))
+    # a room code whose collision file has no walkable area (generated room DB_0023_00_00 of rooms_gen, 23-11: the build stopped
+    # on EV-0139 +60) is skipped like a code without a collision file: the next code is the room
+    EXTRA = 'D:/Progetto_Restauro_KH_UX/rooms_gen/files'
+    if os.path.exists(os.path.join(EXTRA, 'map', 'DB_0023_00_00', 'DB_0023_00_00_cls.bin')):
+        EVW = 4009989
+        evw = dict(base, stageId=EVW, roomCodes=['DB_0023_00_00', coded_room], censusId='EV-TEST')
+        outw = os.path.join(tmp, 'stagew')
+        json.dump([evw], open(os.path.join(tmp, 'eventsw.json'), 'w'))
+        cfgw = dict(cfg, out=outw, report=os.path.join(tmp, 'reportw.json'), events=os.path.join(tmp, 'eventsw.json'), extra_cls_dir=EXTRA)
+        cfgw.pop('special', None)
+        json.dump(cfgw, open(os.path.join(tmp, 'cfgw.json'), 'w'))
+        rw = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'gen_story_maps.py'), os.path.join(tmp, 'cfgw.json')],
+                            capture_output=True, text=True, encoding='utf-8', errors='replace')
+        check(rw.returncode == 0, 'unwalkable room code: exit %d: %s' % (rw.returncode, rw.stderr[-500:]))
+        fw = os.path.join(outw, 'mappoi_stg%d_00.bin' % EVW)
+        check(os.path.exists(fw) and mapfile.parse_map(open(fw, 'rb').read())['room'] == coded_room, 'unwalkable room code skipped, next code used')
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 

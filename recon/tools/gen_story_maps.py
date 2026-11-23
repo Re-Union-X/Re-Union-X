@@ -207,6 +207,18 @@ def pixel_comp(cls, W, H, stride):
     return comp
 
 
+def usable_room(folder):
+    """a room code an event entry can be built in: a collision file with a walkable area (23-11: the generated room DB_0023_00_00
+    has a collision file with none, the build stopped on EV-0139 +60); otherwise the next code of the list is tried"""
+    if folder in EXCL or not os.path.exists(cls_path(folder)):
+        return False
+    try:
+        walk_grid(folder)
+        return True
+    except ValueError:
+        return False
+
+
 def walk_grid(folder):
     if folder in _cls_cache:
         return _cls_cache[folder]
@@ -1358,7 +1370,7 @@ def build_event_areas(sp):
     assert not (back and branched), 'stage %s: backExits on a branched map' % sid
     folders_ = []
     for a in areas:
-        f = next((c for c in a.get('roomCodes', []) if c not in EXCL and os.path.exists(cls_path(c))), None)
+        f = next((c for c in a.get('roomCodes', []) if usable_room(c)), None)
         assert f, 'stage %s: area «%s» has no room with a collision file (%s)' % (sid, a.get('room'), a.get('roomCodes'))
         folders_.append(f)
     lays = [a.get('layout') or {} for a in areas]
@@ -1588,7 +1600,7 @@ if generated:
             continue
         # «Underground Waterway x4» (rooms played several times in the catalogue) -> the room name
         room_name = re.sub(r'\s+x\d+$', '', sp.get('room') or sp['name'])
-        coded = next((c for c in sp.get('roomCodes', []) if c not in EXCL and os.path.exists(cls_path(c))), None) if is_event else None
+        coded = next((c for c in sp.get('roomCodes', []) if usable_room(c)), None) if is_event else None
         folder = coded or special_rooms.get(room_name) or room_folder(room_name, sp['world'])
         groups = [{'members': [(x['name'], x.get('n', 1), x.get('reward', 1), x.get('enemyId'))
                                for x in (g if isinstance(g, list) else [g])], 'target': False, 'room': room_name}
