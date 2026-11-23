@@ -76,7 +76,7 @@ function eventNoticeFacts(file = process.env.KHUX_EVENT_INDEX || path.join(__dir
   const held = on.filter((e) => e.boardSetKey && !sets[e.boardSetKey]);
   const coins = { sets: Object.keys(sets).length, boards: Object.values(sets).reduce((n, s) => n + (s.boardIds || []).length, 0),
     withBoards: on.filter((e) => e.boardSet && sets[e.boardSet]).length, heldEvents: held.length,
-    heldMonths: [...new Set(held.map((e) => e.boardSetKey.slice(0, 7)))].sort().map((k) => usMonth(k)) };
+    heldMonths: [...new Set(held.map((e) => monthOfKey(e.boardSetKey)).filter(Boolean))].sort().map((k) => usMonth(k)) };
   // Events Part 4 Task 6: the challenge, keyblade and quiz events (census EQ, KEY, QUIZ): served events and quests, quiz quests
   // served with their board, served quests with a Booster reward recorded for later (any event type)
   const chAll = all.filter((e) => CHALLENGE_TYPES.includes(e.type)), chOn = chAll.filter((e) => e.available);
@@ -426,6 +426,12 @@ function raidNoticeLines(f) {
     out.push(`The Japanese weekly raids from September 2018${n.sameEvents ? ` and ${n.sameEvents} Japanese raid event${n.sameEvents === 1 ? '' : 's'} of 2018` : ''} were the same raids as the worldwide ones, on the same dates: the Raid Catalog lists them once, as worldwide raids.`);
   }
   return out;
+}
+// the YYYY-MM inside a board set key («2019-04», «hole-2016-11-shadow»), null when there is none: a key is not always a date
+// (23-11: the 2016-2018 sets printed «Invalid Date»; on a Node without ICU an invalid date can throw)
+function monthOfKey(key) {
+  const m = /(\d{4})-(\d{2})/.exec(String(key || ''));
+  return m ? `${m[1]}-${m[2]}` : null;
 }
 // 2016-12-25 -> December 25, 2016
 const usDay = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -1210,4 +1216,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines, loginSpecialFacts, loginSpecialLines, luxBoostLines, eventHoleFacts, eventHoleLines };
+module.exports = { NOTICES, monthOfKey, byDate, boosterFacts, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData, raidNoticeFacts, raidNoticeLines, raidJpLines, eventNoticeFacts, eventChallengeLines, eventHscLines, eventOrgxiiiLines, avatarNoticeFacts, avatarBoardLines, eventBoosterLines, bonusTimeFacts, bonusTimeLines, loginSpecialFacts, loginSpecialLines, luxBoostLines, eventHoleFacts, eventHoleLines };

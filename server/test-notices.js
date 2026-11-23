@@ -29,6 +29,11 @@ check(p.indexOf('<a class="row pin" href="#n0"') >= 0, 'rules notice is row 0 wi
   check(p.includes('<div class="card"><h3>'), 'topics drawn as cards'); }
 // since 22-10 the list is newest first (byDate): Shop (10/20) comes before Missions (10/16)
 check(pos('Shop') < pos('Missions'), 'newest first: Shop (10/20) before Missions (10/16)');
+// a date built from a key that is not a date (the 2016-2018 board sets «hole-2016-11-shadow», 23-11) printed «Invalid Date», and
+// and on a Node without ICU toLocaleDateString of an invalid date can throw at server start
+check(!n.NOTICES.some((x) => /Invalid Date|NaN/.test(x.body.join(' '))), 'no notice prints Invalid Date / NaN');
+check(n.monthOfKey('hole-2016-11-shadow') === '2016-11' && n.monthOfKey('2019-04') === '2019-04' && n.monthOfKey('coin-x') === null,
+  'monthOfKey reads the YYYY-MM inside a board set key');
 check(n.NOTICES.some((x) => x.title === 'Missions' && /joins the rotation only once your Story reaches the date/.test(x.body.join(' '))), 'Missions: campagne con medaglia legate alla storia');
 check(n.NOTICES.some((x) => x.title === 'Missions' && /are given once/.test(x.body.join(' ')) && /did not finish in time come back/.test(x.body.join(' '))), 'Missions: premi unici una volta sola');
 check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /draw rates are reconstructed/.test(x.body.join(' '))), 'probabilita nelle differenze');
