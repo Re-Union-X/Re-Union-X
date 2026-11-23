@@ -291,6 +291,13 @@ const jpFixture = (more = null) => eventFixture([
 const jpEntry = (out, key) => out.index.entries.find((e) => e.key === key);
 
 const tests = {
+  // the stage row copies a story row of the world (storyRefs): its hideIcon (a story boss quest's hidden target) must not reach
+  // the raid quests, whose card would show the target as «???» (bench 23-11-2026); a donor stage row keeps its own value
+  raid_stage_hide_icon() {
+    const out = build((f) => { for (const r of f.master.stage) r.hideIcon = 1; });
+    assert.ok(out.stageRows.length);
+    for (const s of out.stageRows) assert.strictEqual(s.hideIcon, 0, `stage ${s.stageId} hideIcon ${s.hideIcon}`);
+  },
   jp_rows_catalog_only() {
     const out = build(jpFixture());
     const jp = out.index.entries.filter((e) => e.jp);

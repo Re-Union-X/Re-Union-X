@@ -1166,6 +1166,8 @@ function buildRaid({ census, values, rewards, orig2016, boards, eventRewards, ma
       // a JP raid reuses the map file of its donor's stage (stageBinId; server.js poiStageId follows it): no new map
       const stage = { ...JSON.parse(JSON.stringify(ref)), stageId: entry.stageId, stageBinId: donor ? donor.stageId : entry.stageId, id: entry.stageId, name: questKey, mapName: map,
         useAp: raidWindows.stageUseAp(entry, config), chapterId: Math.floor(entry.stageId / 1000), worldId: stageWorld, onlyDrama: 0, stageKind: STAGE_KIND,
+        // the donor's own hideIcon, never the story row's (a story boss quest hides its target: «???» on the card, bench 23-11)
+        hideIcon: donor && donor.hideIcon ? donor.hideIcon : 0,
         validBeforeDrama: 0, beforeDramaId: [], beforeDramaType: [], validAfterDrama: 0, afterDramaId: [], afterDramaType: [], branchType: 0, disableContinue: 0, addLevel: 0, holdKeyblade: 0,
         validClearGetTitle: 0, clearGetTitle: 0, validClearGetSphere: 0, clearGetSphere: 0, resetClearGet: 0, validClearGetItem: 0, clearGetItemType: [], clearGetItemId: [],
         clearGetAssignSkillType: [], clearGetAssignSkillId: [], clearGetAssignSkillLv: [], clearGetItemNum: [], resetSubMission: 0, combinedSubmissionFlag: 0, raidBoss: entry.settingId,

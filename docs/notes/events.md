@@ -46,7 +46,7 @@ Same row shape as a raid fight stage ([raid.md](raid.md), «Fight stages»), `st
 
 - **Cost**: `useAp` (5 on the pilot rows; the cost of an event stage is changed by `evCampaign`, as for raids).
 - **Continue**: `disableContinue` 1 forbids continue (popup text 103000017, as on Proud). Set on High Score and the Org XIII challenge.
-- **Level add**: `addLevel` (+N to the enemy level, shown in the raid popup only; no battle use found on the story rows). Set on boss-style quests (Titan, Shiva, Ramuh: 499 / 1999 / 4999).
+- **Level add**: `addLevel` (+N to the enemy level; the client adds it to the map's enemy levels, also on the event card TARGET panel: bench 23-11-2026). Set on boss-style quests (Titan, Shiva, Ramuh: 499 / 1999 / 4999).
 - **Keyblade held**: `holdKeyblade` = a keyblade **series id**; without it the popup says «You need this Keyblade» and Start is disabled (no crash), see [mappe_storia.md](mappe_storia.md). The pilot COIN event uses series 1000..10000 (five stages).
 - **Conditions**: `hardmodeRequire` (+ `hardmodeName`, `hardmodeComparison`, `hardmodeNum`): the codes are those of the Proud conditions (2 attribute, 3 darklight, 5 rarity, 6 guilt tier, 7 level, 8 STR, 9 DEF ...). Values on the pilot: 0 and 1 (no limit) on most, 10 on the Titan and Shiva hard stages. This is where an **attribute** restriction lives. **Deck cost** has no field in `stage`: the player's deck cost is checked by the client against `maxDeckCost` of the user data (`/stage/start`).
 - **Turn limit, time limit, no-continue, chests, keyblade**: not stage fields but **objectives** (`submission*`). The codes seen on the pilot are the ones `make-story-oltre.js` already knows: 3 defeat N enemies, 4 defeat an enemy N times (id type 1), 5 / 6 special attacks at least / at most, 7 turn limit, 8 battle limit, 9 no damage, 10 no continue, 12 defeat the target in N turns, 13 single-hit damage, 17 chests, 25 equip a keyblade (id type 5), 28 clear in 1 turn, 29 Lux, 32 hits at most, 33 hits at least, 37 time limit in seconds. `combinedSubmissionFlag` 1 (all together) on the countdown, quiz and Egg Hunt.
@@ -1675,3 +1675,14 @@ Plan `docs/superpowers/plans/2026-11-22-events-part10c-special-mechanics.md`. Pe
 - The client clears it only for the exact skill id: «ATK B XIV Max & Poison» (1168) does not count for «Poison» (1104).
   The original rows use the same ids (7 rows on 1104, 44 on 1101 Attack Boost II), so this is original behaviour.
   The objective is reported in `clearMissionIds` of `/stage/clear`; the `14_0` condition stays 0 even when it is met.
+
+### Stage row fields copied from the story reference row (bench 23-11-2026)
+
+- Event and raid stage rows start from a story row of the world (`storyRefs`). Its `hideIcon` leaked: the reference rows of
+  worlds 5 and 6 («A Job for Two Heroes», «A Frosty Monstrosity») hide their boss, so 1303 event quests and 793 raid quests
+  showed the TARGET as «???». `make-events.js` now writes `hideIcon` 0 (the records carry none; the donor rows seen have 0),
+  `make-raid.js` the donor stage's own value or 0 (tests `stage_hide_icon_not_inherited`, `raid_stage_hide_icon`).
+- Generated maps (Part 10b) place the enemies at the quest's own level (khuxwiki), which already includes the donor's
+  `addLevel`: the stage row now has `addLevel` 0 on them (49 quests showed e.g. LV 400 + 390 = 790; test `gen_map_no_add_level`).
+- Event cards of Part 10c (evStage 23074-23082) built from the original notice banners (`make_event_banners.py --fetch --ids`),
+  checked one by one; KEPT copies by `make_special_banners.py --section event`.

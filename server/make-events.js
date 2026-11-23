@@ -1434,8 +1434,12 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       const before = quizDrama ? quizDrama.ids : [];
       put(out.stage, { ...JSON.parse(JSON.stringify(ref)), stageId, stageBinId: mapKey, id: stageId, name: ordinalName(q.name, donorRow, q0.stageId), mapName: room.name || ref.mapName, useAp: q.ap,
         chapterId: Math.floor(stageId / 1000), worldId: q.worldId, onlyDrama: 0, stageKind: STAGE_KIND, noPartner: r.noPartner || 0,
+        // not the story row's hideIcon (a story boss quest hides its target: «???» on every event card of that world, bench 23-11)
+        hideIcon: 0,
         validBeforeDrama: before.length, beforeDramaId: [...before], beforeDramaType: before.map(() => 0), validAfterDrama: 0, afterDramaId: [], afterDramaType: [], branchType: 0,
-        disableContinue: r.disableContinue || 0, addLevel: q.addLevel || 0, holdKeyblade: r.holdKeyblade || 0, hardmodeRequire: r.hardmodeRequire || 0,
+        disableContinue: r.disableContinue || 0,
+        // a generated map already holds the quest's own level: no addLevel on top (LV 400 + 390 shown as 790, bench 23-11)
+        addLevel: genEntry ? 0 : q.addLevel || 0, holdKeyblade: r.holdKeyblade || 0, hardmodeRequire: r.hardmodeRequire || 0,
         hardmodeName: r.hardmodeName || 'strDummy', hardmodeComparison: r.hardmodeComparison === undefined ? 1 : r.hardmodeComparison, hardmodeNum: r.hardmodeNum || 0,
         validClearGetTitle: 0, clearGetTitle: 0, validClearGetSphere: 0, clearGetSphere: 0, resetClearGet: 0, ...firstClearOf(q), resetSubMission: 0,
         ...questSubs(q, key), combinedSubmissionFlag: q.combined ? 1 : 0, raidBoss: 0, ...questMusic(q0, bgmOver) });

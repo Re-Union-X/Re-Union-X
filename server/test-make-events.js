@@ -227,6 +227,25 @@ const tests = {
     const names = build(recs).stage.flatMap((s) => s.submissionName);
     assert.ok(names.includes('Trigger the skill %s') && !names.some((n) => /skill \d/.test(n)), names.join(' | '));
   },
+  // the stage row copies a story row of the world (storyRefs): a story boss quest's hideIcon must not hide the target of the
+  // event quests («???» on the card, bench 23-11-2026: Booster Challenge #2, world 6 «A Frosty Monstrosity»)
+  stage_hide_icon_not_inherited() {
+    const m = master(); for (const r of m.stage) r.hideIcon = 1;
+    const out = build(records(), undefined, CONFIG, m);
+    assert.ok(out.stage.length);
+    for (const s of out.stage) assert.strictEqual(s.hideIcon, 0, `stage ${s.stageId} hideIcon ${s.hideIcon}`);
+  },
+  // a generated map places its enemies at the quest's own level (the khuxwiki level, already with the donor's addLevel): the
+  // stage row must not add addLevel again (bench 23-11-2026: Booster Challenge #2 map LV 400 + addLevel 390 shown as LV 790);
+  // a quest on an original map keeps its addLevel (the map holds the base level)
+  gen_map_no_add_level() {
+    const out = me.buildEvents([record('E-AL', [genQuest(702310, { addLevel: 25, level: 50 }), quest(702311, 1, [501], { addLevel: 25 })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const [g, o] = entry(out, 'E-AL').quests;
+    assert.ok(g.served && o.served, JSON.stringify([g, o]));
+    assert.ok(out.genMaps.some((x) => x.stageId === g.stageId && x.level === 50));
+    assert.strictEqual(out.stage.find((s) => s.stageId === g.stageId).addLevel, 0);
+    assert.strictEqual(out.stage.find((s) => s.stageId === o.stageId).addLevel, 25);
+  },
   missing_enemy_skips_quest() {
     const recs = records();
     recs[0].quests[1] = quest(700002, 2, [501, 777]);
