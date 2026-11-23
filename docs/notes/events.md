@@ -1795,6 +1795,20 @@ The client reverse-engineering (WW 4.3.1) shows how the original handled these e
 - **Original maps.** `server/random_squads.json` `{stageBinId: {uids, target, source}}` lists only the squads a public source says «can appear». At present that is 11 maps, from khuxwiki chance rows and notices 67064 / 67953.
 - **Collect all materials.** The 20 served original maps with this objective already hold spots equal to STG [15] and to the infobox totals. Generated quests with code 18 are now served when their genAreas has materials.
 
+### Other species on original maps (24 November 2026)
+
+The user approved (24-11) making the khuxwiki {{chance}} squads of the other species random too (Gift Shadow, Prize Egg, the
+Pretenders, Sparkler, Icy Beast, Iron Giant, Gold Hammer Frame, Martial Monkey), at the same rate 1/2.
+
+- Private patch 18 `tmp\events\unbuilt\patch_chance_other_species.py`, run after patch 15 (which rewrites `random_squads.json`
+  from the GT/Fireworks rows only). It adds 64 maps (68 quests): the census rows whose {{chance}} members equal, name for name,
+  the candidate squads of the original map, none of them the target squad. `random_squads.json` now lists 75 maps.
+- No objective of those quests names a chance species.
+- Left as they are (12): EV-0546 and EV-0994 (maps generated from the page list, no genAreas: a chance squad would be invented),
+  EV-0999 (its Adventurer is already a chance group), EV-1131 742540 (the page's Gold Hammer Frame has no squad of its own on the
+  original map).
+- The 83 census rows with no source naming the random squad stay fixed (user 24-11: never guessed).
+
 ### Private patch 15
 
 `tmp\events\unbuilt\patch_chance_materials.py`, run after patch 14. It is idempotent (backup `r2_bak/*.pre15`) and reads the census `tmp\events\unbuilt\chance_materials\census.json`. It does three things:
