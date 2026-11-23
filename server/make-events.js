@@ -692,6 +692,7 @@ function genMapOf(q, stageId, look) {
   const ownIds = new Map();
   for (const a of (q.genAreas || {}).areas || []) {
     for (const g of a.groups || []) {
+      if (g.chance && !g.target) continue; // chance squads (genAreasOf): own ids, outside the page counts
       for (const x of g.members || []) {
         if (!ownIds.has(x.name)) ownIds.set(x.name, []);
         ownIds.get(x.name).push(Number.isInteger(x.enemyId) ? x.enemyId : null);
@@ -759,7 +760,7 @@ function genMapOf(q, stageId, look) {
   const tId = target ? mapId(target, true) : 0;
   const targetId = tId > 0 ? tId : 0;
   if (target && !tId) missing.push(target);
-  if (q.genAreas) return genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous });
+  if (q.genAreas) return genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous, look });
   // genLayout (Part 5 Task 4 follow-up 2, user 10-11-2026): the start and the placement read on an original map of the same room or
   // on the original footage ({room, start, groups, target, arena, targetWith {name: n}, source, why}). targetWith: members that
   // fight in the target's own team (taken out of the normal groups, entry.targetWith); the rest goes to gen_story_maps.py as
@@ -815,7 +816,7 @@ function genMapOf(q, stageId, look) {
 // = the number of areas (recon/tools/gen_story_maps.py build_event_areas: one MAP part per area). A group's (or member's) level
 // (the page's «LV n», HSC 16-11-2026) is written on each member of the entry ({..., level}) and on the record-shape enemies; members
 // of one id at two levels are not merged; without it the quest level, as before.
-function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous }) {
+function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous, look }) {
   const ga = q.genAreas;
   const queue = new Map();
   for (const m of members) { if (!queue.has(m.name)) queue.set(m.name, []); queue.get(m.name).push(m.enemyId); }
@@ -832,6 +833,7 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
   const inAreas = new Map();
   const tGroups = [];
   ga.areas.forEach((a, k) => (a.groups || []).forEach((g) => {
+    if (g.chance && !g.target) return; // chance squads: not in the page counts (khuxwiki «chance» rows, plan 2026-11-23)
     if (g.target) tGroups.push(k);
     let tSeen = !g.target;
     for (const x of g.members || []) {
@@ -859,6 +861,16 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
   for (const n of new Set([...page.keys(), ...inAreas.keys()])) {
     if ((page.get(n) || 0) !== (inAreas.get(n) || 0)) missing.push(`genAreas: ${n} ${inAreas.get(n) || 0} in the areas, ${page.get(n) || 0} on the page`);
   }
+  // chance squads (plan 2026-11-23-chance-spawns-materials): every member names its own row; material spots [{materialId, n}]
+  ga.areas.forEach((a, k) => {
+    for (const g of a.groups || []) {
+      if (!g.chance || g.target) continue;
+      for (const x of g.members || []) if (!Number.isInteger(x.enemyId) || !look.nameOf(x.enemyId)) missing.push(`genAreas: chance member ${x.name} without enemyId (a master row)`);
+    }
+    if (a.materials !== undefined && (!Array.isArray(a.materials) || a.materials.some((m) => !(Number.isInteger(m.materialId) && m.materialId > 0 && Number.isInteger(m.n) && m.n > 0)))) {
+      missing.push(`genAreas: area ${k} materials ${JSON.stringify(a.materials)} (materialId and n > 0 expected)`);
+    }
+  });
   if (missing.length) return res(null);
   // a group's level (khuxwiki «LV n» of its enemy row, HSC 16-11-2026) goes to each of its members; none: the quest level
   // a member's own enemyId (see ownIds in genMapOf) replaces the name's id; the name's queue is still consumed (same counts)
@@ -868,8 +880,13 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
   });
   let targetWith = [];
   const areas = ga.areas.map((a) => {
-    const groups = [];
+    const groups = [], chance = [];
     for (const g of a.groups || []) {
+      if (g.chance && !g.target) {
+        chance.push(groups.length);
+        groups.push(merge((g.members || []).map((x) => ({ name: x.name, enemyId: x.enemyId, n: Number(x.n) || 1, level: Number(x.level || g.level) || 0 }))));
+        continue;
+      }
       let list = [];
       let tSeen = !g.target;
       for (const x of g.members || []) {
@@ -881,12 +898,29 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous 
       else if (list.length) groups.push(merge(list));
     }
     return { room: a.label, roomCodes: [a.room], enemies: groups, chests: Number(a.chests) || 0, ...(a.layout ? { layout: a.layout } : {}),
-      ...(Array.isArray(a.next) ? { next: a.next } : {}) };
+      ...(Array.isArray(a.next) ? { next: a.next } : {}), ...(chance.length ? { chance } : {}), ...(a.materials ? { materials: a.materials } : {}) };
   });
   const entry = { stageId, world: q.worldId, name: q.name, room: areas[0].room, roomCodes: areas[0].roomCodes, target, targetId, level: q.level || 1,
     enemies: areas.flatMap((a) => a.enemies), treasures: [], rooms: areas.length, areas, targetArea: tGroups[0], targetWith,
     backExits: !!ga.backExits, layoutSource: ga.source || null };
+  // one area: gen_story_maps.py builds it from the top-level list (chance indexes into entry.enemies, the same as the area's)
+  if (areas.length === 1 && areas[0].chance) entry.chance = areas[0].chance;
+  if (areas.length === 1 && areas[0].materials) entry.materials = areas[0].materials;
   return res(entry);
+}
+
+// Chance squads of an original map (server/random_squads.json {stageBinId: {uids, target, source}}, plan 2026-11-23-chance-spawns-
+// materials): only squads a source says «can appear»; the served POI gets random (the uids, the target's dropped with a warning) and
+// target, read by server.js stageRandomEnemies (removed with p 1/2 at /stage/start). A copy: the import POI object stays as it is.
+function withRandomSquads(mapKey, poi, rs) {
+  if (!rs || !poi) return poi;
+  const target = Number.isInteger(rs.target) ? rs.target : null;
+  const uids = (rs.uids || []).filter((u) => {
+    if (u !== target) return true;
+    console.warn(`events: random_squads.json ${mapKey}: uid ${u} is the target squad, never random (dropped)`);
+    return false;
+  });
+  return { ...poi, random: uids, ...(target !== null ? { target } : {}) };
 }
 
 // Completion rewards of the records (Part 5 Task 3: EV-0941 completionReward, The Keyblade War Challenge Campaign, notice 61226):
@@ -1442,7 +1476,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       for (const [r, rows, key] of genRows) { if (ownRewards.has(r)) continue; const row = rewardRowOf(r, rows); ownRewards.set(r, { row, key }); put(out.reward, row); }
       if (maps && !gen) {
         for (const [r, d] of newRewards) { const row = rewardRowOf(r, d.rows); ownRewards.set(r, { row, key: d.key }); put(out.reward, row); }
-        out.poi[String(mapKey)] = maps.poi[String(mapKey)];
+        out.poi[String(mapKey)] = withRandomSquads(mapKey, maps.poi[String(mapKey)], (opts.randomSquads || {})[String(mapKey)]);
       }
       mapItem.served = true;
 
@@ -1840,7 +1874,7 @@ function patch(masterDir, opts = {}) {
   let avatarBoards = opts.avatarBoards;
   if (avatarBoards === undefined) avatarBoards = process.env.KHUX_AVATAR_BOARDS ? readJson(process.env.KHUX_AVATAR_BOARDS) : null;
   if (!avatarBoards && !opts.records) console.warn('events: KHUX_AVATAR_BOARDS not set (the private avatar board records): no BOARD entry in the Event Catalog');
-  const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters, avatarBoards });
+  const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters, avatarBoards, randomSquads: readJson(path.join(__dirname, 'random_squads.json'), {}) });
   const added = { stage: out.stage, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...(out.avatarCatalogEvStage ? [out.avatarCatalogEvStage] : []), ...out.evStage], reward: out.reward,
     sphere: out.sphere, sphereArray: out.sphereArray, sphereMasu: out.sphereMasu, ...Object.fromEntries(Object.keys(HSC_TABLES).map((t) => [t, out[t]])) };
   const clashR = out.reward.find((r) => master.reward.some((m) => m.rewardId === r.rewardId));

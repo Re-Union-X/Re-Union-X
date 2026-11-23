@@ -1513,6 +1513,61 @@ const tests = {
     const amb = me.buildEvents([record('E-A4', [genQuest(702303, { genAreas: ga })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
     assert.deepStrictEqual([entry(amb, 'E-A4').quests[0].reason, amb.genMaps.length], ['enemyAmbiguous', 0]);
   },
+  // chance squads and material spots (plan 2026-11-23-chance-spawns-materials, Task 3): a genAreas group with chance: true (khuxwiki
+  // «chance» rows, a random spawn) is left out of the page counts, keeps its members' own enemyId and is listed by its index in
+  // area.chance (gen_story_maps.py puts its squad uid in POI «random»); area.materials [{materialId, n}] passes verbatim; one area:
+  // the same at the top level of the entry
+  gen_chance_group_passed() {
+    const egg = { chance: true, members: [{ name: 'Eggcognito', n: 1, enemyId: 80777 }] };
+    const ga = { areas: [
+      { label: 'Room (1)', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 2 }] }, egg], chests: 0, materials: [{ materialId: 101, n: 5 }] },
+      { label: 'Room (2)', room: 'DG_0200_27_00', groups: [egg, { target: true, members: [{ name: 'Foe A', n: 1 }] }], chests: 0 }],
+    backExits: false, source: null, why: 'w' };
+    const m = master();
+    m.enemy = [...m.enemy, { enemyId: 80777, name: 'Eggcognito', hp: [1] }];
+    const out = me.buildEvents([record('E-CH', [genQuest(702320, { genAreas: ga, wikiEnemies: { 'Foe B': 2, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const q = entry(out, 'E-CH').quests[0];
+    assert.ok(q.served, JSON.stringify(q));
+    const e = out.genMaps[0];
+    const Egg = { name: 'Eggcognito', enemyId: 80777, n: 1, reward: 1 };
+    assert.deepStrictEqual(e.areas.map((a) => [a.enemies, a.chance, a.materials]),
+      [[[[{ name: 'Foe B', enemyId: 502, n: 2, reward: 1 }], [Egg]], [1], [{ materialId: 101, n: 5 }]], [[[Egg]], [0], undefined]]);
+    // one area: top-level chance (flat indexes) and materials
+    const one = { areas: [{ label: 'Room', room: 'DG_0200_27_00', groups: [egg, { members: [{ name: 'Foe B', n: 1 }] }, { target: true, members: [{ name: 'Foe A', n: 1 }] }],
+      chests: 0, materials: [{ materialId: 103, n: 4 }] }], backExits: false, source: null, why: 'w' };
+    const o1 = me.buildEvents([record('E-CH1', [genQuest(702321, { genAreas: one, wikiEnemies: { 'Foe B': 1, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const e1 = o1.genMaps[0];
+    assert.ok(e1, JSON.stringify(entry(o1, 'E-CH1').quests[0]));
+    assert.deepStrictEqual([e1.chance, e1.materials], [[0], [{ materialId: 103, n: 4 }]]);
+    // a chance member without its own enemyId, or a bad material: held
+    const bad = { ...ga, areas: [{ ...ga.areas[0], groups: [ga.areas[0].groups[0], { chance: true, members: [{ name: 'Eggcognito', n: 1 }] }] }, ga.areas[1]] };
+    const ob = me.buildEvents([record('E-CH2', [genQuest(702322, { genAreas: bad, wikiEnemies: { 'Foe B': 2, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.match(entry(ob, 'E-CH2').quests[0].why || '', /chance member Eggcognito without enemyId/);
+    const badM = { ...ga, areas: [{ ...ga.areas[0], materials: [{ materialId: 0, n: 2 }] }, ga.areas[1]] };
+    const om = me.buildEvents([record('E-CH3', [genQuest(702323, { genAreas: badM, wikiEnemies: { 'Foe B': 2, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.match(entry(om, 'E-CH3').quests[0].why || '', /genAreas: area 0 materials/);
+  },
+  // random squads of the original maps (server/random_squads.json {stageBinId: {uids, target, source}}, opts.randomSquads): put on
+  // the served map's POI as random / target; a uid equal to the target is dropped with a warning; maps not served get nothing
+  random_squads_merged() {
+    const poi = { enemies: [{ uid: 2, enemyId: 501, reward: 1, map: 0 }], chests: [] };
+    const maps = { status: new Map([[700001, { status: 'imported' }]]), poi: { 700001: poi } };
+    const mm = { ...master(), reward: [{ rewardId: 1 }] };
+    const warn = console.warn; const said = [];
+    console.warn = (s) => said.push(String(s));
+    let out;
+    try {
+      out = me.buildEvents(records(), CONFIG, mm, undefined, undefined, maps, null,
+        { randomSquads: { 700001: { uids: [1, 3, 5], target: 5, source: 'test' }, 799999: { uids: [2], target: 9, source: 'not served' } } });
+    } finally { console.warn = warn; }
+    assert.deepStrictEqual([out.poi['700001'].random, out.poi['700001'].target], [[1, 3], 5]);
+    assert.ok(said.some((s) => /700001.*uid 5 is the target/.test(s)), said.join('\n'));
+    assert.ok(!('799999' in out.poi));
+    assert.ok(!('random' in poi), 'the import POI object is not changed in place');
+    // poi_random_survives_regen: a second run gives the same POI
+    const again = me.buildEvents(records(), CONFIG, mm, undefined, undefined, maps, null, { randomSquads: { 700001: { uids: [1, 3], target: 5, source: 'test' } } });
+    assert.deepStrictEqual(again.poi['700001'], out.poi['700001']);
+  },
   // per-group levels of a multi-area map (HSC pages: «LV 25» ... «LV 400» per enemy row, user 16-11-2026): a genAreas group's
   // `level` goes to each of its members (entry.areas[].enemies, targetWith) and to the record-shape enemies; members of the same
   // id at different levels stay apart; a group without level keeps the quest level (no `level` key, the entry shape of before)
