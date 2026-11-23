@@ -141,6 +141,12 @@
    "approved": true,
    "review": "user-approved 07-11 (rendered animations, Events Part 2 review rounds 1-5; recipe in extra_donors_events2.tsv)"
   },
+  "1551": {
+   "name": "Greedy Grouch",
+   "model": "new",
+   "approved": true,
+   "review": "user-approved 24-11 (rendered animations, tmp/enemy_x/greedy_grouch/review; same rig as raid boss 0024)"
+  },
   "1553": {
    "name": "Pink Agaricus",
    "model": "new",
