@@ -75,5 +75,460 @@
   ],
   "target": 5,
   "source": "EV-0925 Event Coins plus Riku & Moogle: Legendary. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Legendary (09/17/2019)»: {{chance}} on ['Gold Tricholoma']"
+ },
+ "732010": {
+  "uids": [
+   11
+  ],
+  "target": 15,
+  "source": "EV-0531 Subslot Support: Beginner. khuxwiki chance rows: khuxwiki page «Subslot Support: Beginner»: {{chance}} on ['Prize Egg']"
+ },
+ "732020": {
+  "uids": [
+   1
+  ],
+  "target": 14,
+  "source": "EV-0531 Subslot Support: Intermediate. khuxwiki chance rows: khuxwiki page «Subslot Support: Intermediate»: {{chance}} on ['Prize Egg']"
+ },
+ "732030": {
+  "uids": [
+   13
+  ],
+  "target": 1,
+  "source": "EV-0531 Subslot Support: Advanced. khuxwiki chance rows: khuxwiki page «Subslot Support: Advanced»: {{chance}} on ['Prize Egg']"
+ },
+ "732040": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0531 Subslot Support: Legendary. khuxwiki chance rows: khuxwiki page «Subslot Support: Legendary»: {{chance}} on ['Prize Egg']"
+ },
+ "738730": {
+  "uids": [
+   24
+  ],
+  "target": 26,
+  "source": "EV-0654 KH III King Mickey [EX]: Advanced. khuxwiki chance rows: khuxwiki page «KH III King Mickey (EX): Advanced»: {{chance}} on ['Martial Monkey']"
+ },
+ "739870": {
+  "uids": [
+   18,
+   34
+  ],
+  "target": 30,
+  "source": "EV-0703 Event Coins Galore - Beginner. khuxwiki chance rows: khuxwiki page «Event Coins Galore: Beginner (February 2019)»: {{chance}} on ['Prize Egg']"
+ },
+ "739871": {
+  "uids": [
+   13,
+   33
+  ],
+  "target": 29,
+  "source": "EV-0703 Event Coins Galore - Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins Galore: Intermediate (February 2019)»: {{chance}} on ['Prize Egg']"
+ },
+ "739872": {
+  "uids": [
+   17,
+   32
+  ],
+  "target": 20,
+  "source": "EV-0703 Event Coins Galore - Advanced. khuxwiki chance rows: khuxwiki page «Event Coins Galore: Advanced (February 2019)»: {{chance}} on ['Prize Egg']"
+ },
+ "740500": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0828 Event Coins Galore - Beginner. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Beginner (June 2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "740501": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0828 Event Coins Galore - Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Intermediate (June 2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "740502": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0828 Event Coins Galore - Advanced. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Advanced (June 2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "740830": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0885 Event Coins plus Riku & Moogle: Beginner. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Beginner»: {{chance}} on ['Gift Shadow']"
+ },
+ "740831": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0885 Event Coins plus Riku & Moogle: Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Intermediate»: {{chance}} on ['Gift Shadow']"
+ },
+ "740832": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0885 Event Coins plus Riku & Moogle: Advanced. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Advanced»: {{chance}} on ['Gift Shadow']"
+ },
+ "740833": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0885 Event Coins plus Riku & Moogle: Legendary. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Legendary»: {{chance}} on ['Gift Shadow']"
+ },
+ "740840": {
+  "uids": [
+   3,
+   5
+  ],
+  "target": 1,
+  "source": "EV-0894 Event Coins plus Riku & Moogle: Beginner. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Beginner (08/16/2019)»: {{chance}} on ['Gift Shadow', 'Sparkler']"
+ },
+ "740841": {
+  "uids": [
+   1,
+   3
+  ],
+  "target": 5,
+  "source": "EV-0894 Event Coins plus Riku & Moogle: Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Intermediate (08/16/2019)»: {{chance}} on ['Gift Shadow', 'Sparkler']"
+ },
+ "740842": {
+  "uids": [
+   1,
+   3
+  ],
+  "target": 5,
+  "source": "EV-0894 Event Coins plus Riku & Moogle: Advanced. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Advanced (08/16/2019)»: {{chance}} on ['Gift Shadow', 'Sparkler']"
+ },
+ "740843": {
+  "uids": [
+   1,
+   3
+  ],
+  "target": 5,
+  "source": "EV-0894 Event Coins plus Riku & Moogle: Legendary. khuxwiki chance rows: khuxwiki page «Event Coins plus Riku & Moogle: Legendary (08/16/2019)»: {{chance}} on ['Gift Shadow', 'Sparkler']"
+ },
+ "741320": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0955 Event Coins Galore - Beginner. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Beginner (11/01/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741321": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0955 Event Coins Galore - Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Intermediate (11/01/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741322": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0955 Event Coins Galore - Advanced. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Advanced (11/01/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741323": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0955 Event Coins Galore - Legendary. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Legendary (11/01/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741370": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0965 Event Coins Galore - Beginner. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Beginner (11/16/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741371": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0965 Event Coins Galore - Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Intermediate (11/16/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741372": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0965 Event Coins Galore - Advanced. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Advanced (11/16/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741373": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0965 Event Coins Galore - Legendary. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Legendary (11/16/2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741430": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0973 Event Coins Galore - Beginner. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Beginner (December 2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741431": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0973 Event Coins Galore - Intermediate. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Intermediate (December 2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741432": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0973 Event Coins Galore - Advanced. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Advanced (December 2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741433": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-0973 Event Coins Galore - Legendary. khuxwiki chance rows: khuxwiki page «Event Coins Galore - Legendary (December 2019)»: {{chance}} on ['Gift Shadow']"
+ },
+ "741440": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0975 Magic Gem: Beginner. khuxwiki chance rows: khuxwiki page «Magic Gem: Beginner»: {{chance}} on ['Icy Beast']"
+ },
+ "741441": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0975 Magic Gem: Intermediate. khuxwiki chance rows: khuxwiki page «Magic Gem: Intermediate»: {{chance}} on ['Icy Beast']"
+ },
+ "741442": {
+  "uids": [
+   4
+  ],
+  "target": 1,
+  "source": "EV-0975 Magic Gem: Advanced. khuxwiki chance rows: khuxwiki page «Magic Gem: Advanced»: {{chance}} on ['Icy Beast']"
+ },
+ "741443": {
+  "uids": [
+   4
+  ],
+  "target": 1,
+  "source": "EV-0975 Magic Gem: Legendary. khuxwiki chance rows: khuxwiki page «Magic Gem: Legendary»: {{chance}} on ['Icy Beast']"
+ },
+ "741450": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0983 Power Gem: Beginner. khuxwiki chance rows: khuxwiki page «Power Gem: Beginner»: {{chance}} on ['Iron Giant']"
+ },
+ "741451": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0983 Power Gem: Intermediate. khuxwiki chance rows: khuxwiki page «Power Gem: Intermediate»: {{chance}} on ['Iron Giant']"
+ },
+ "741452": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0983 Power Gem: Advanced. khuxwiki chance rows: khuxwiki page «Power Gem: Advanced»: {{chance}} on ['Iron Giant']"
+ },
+ "741453": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0983 Power Gem: Legendary. khuxwiki chance rows: khuxwiki page «Power Gem: Legendary»: {{chance}} on ['Iron Giant']"
+ },
+ "741470": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0988b Speed Gem: Beginner. khuxwiki chance rows: khuxwiki page «Speed Gem: Beginner»: {{chance}} on ['Gold Hammer Frame']"
+ },
+ "741471": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0988b Speed Gem: Intermediate. khuxwiki chance rows: khuxwiki page «Speed Gem: Intermediate»: {{chance}} on ['Gold Hammer Frame']"
+ },
+ "741472": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0988b Speed Gem: Advanced. khuxwiki chance rows: khuxwiki page «Speed Gem: Advanced»: {{chance}} on ['Gold Hammer Frame']"
+ },
+ "741473": {
+  "uids": [
+   3
+  ],
+  "target": 1,
+  "source": "EV-0988b Speed Gem: Legendary. khuxwiki chance rows: khuxwiki page «Speed Gem: Legendary»: {{chance}} on ['Gold Hammer Frame']"
+ },
+ "741680": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1019 Power Gem: Beginner. khuxwiki chance rows: khuxwiki page «Power Gem: Beginner (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741681": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1019 Power Gem: Intermediate. khuxwiki chance rows: khuxwiki page «Power Gem: Intermediate (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741682": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1019 Power Gem: Advanced. khuxwiki chance rows: khuxwiki page «Power Gem: Advanced (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741683": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1019 Power Gem: Legendary. khuxwiki chance rows: khuxwiki page «Power Gem: Legendary (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741850": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1031 Magic Gem: Beginner. khuxwiki chance rows: khuxwiki page «Magic Gem: Beginner (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741851": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1031 Magic Gem: Intermediate. khuxwiki chance rows: khuxwiki page «Magic Gem: Intermediate (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741852": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1031 Magic Gem: Advanced. khuxwiki chance rows: khuxwiki page «Magic Gem: Advanced (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741853": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1031 Magic Gem: Legendary. khuxwiki chance rows: khuxwiki page «Magic Gem: Legendary (February 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741960": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1050 Power, Speed, and Magic Gems: Beginner. khuxwiki chance rows: khuxwiki page «Power, Speed, and Magic Gems: Beginner (March 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741961": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1050 Power, Speed, and Magic Gems: Intermediate. khuxwiki chance rows: khuxwiki page «Power, Speed, and Magic Gems: Intermediate (March 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741962": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1050 Power, Speed, and Magic Gems: Advanced. khuxwiki chance rows: khuxwiki page «Power, Speed, and Magic Gems: Advanced (March 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741963": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1050 Power, Speed, and Magic Gems: Legendary. khuxwiki chance rows: khuxwiki page «Power, Speed, and Magic Gems: Legendary (March 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741911": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1131 Speed Gem: Intermediate. khuxwiki chance rows: khuxwiki page «Speed Gem: Intermediate (May 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741912": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1131 Speed Gem: Advanced. khuxwiki chance rows: khuxwiki page «Speed Gem: Advanced (May 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "741913": {
+  "uids": [
+   1
+  ],
+  "target": 3,
+  "source": "EV-1131 Speed Gem: Legendary. khuxwiki chance rows: khuxwiki page «Speed Gem: Legendary (May 2020)»: {{chance}} on ['Royal Pretender']"
+ },
+ "64010": {
+  "uids": [
+   25
+  ],
+  "target": 1,
+  "source": "EV-0131 The Cat's Meow Pt. 1. khuxwiki chance rows: khuxwiki page «The Cat's Meow Pt. 1»: {{chance}} on ['Pretender']"
+ },
+ "64020": {
+  "uids": [
+   21
+  ],
+  "target": 6,
+  "source": "EV-0131 The Cat's Meow Pt. 2. khuxwiki chance rows: khuxwiki page «The Cat's Meow Pt. 2»: {{chance}} on ['Pretender']"
+ },
+ "63710": {
+  "uids": [
+   1
+  ],
+  "target": 12,
+  "source": "EV-0134 Another KH 2.8 Release Event: Beginner. khuxwiki chance rows: khuxwiki page «Another KH 2.8 Release Event: Beginner»: {{chance}} on ['Pretender']"
+ },
+ "63720": {
+  "uids": [
+   17
+  ],
+  "target": 23,
+  "source": "EV-0134 Another KH 2.8 Release Event: Intermediate. khuxwiki chance rows: khuxwiki page «Another KH 2.8 Release Event: Intermediate»: {{chance}} on ['Great Pretender']"
+ },
+ "63730": {
+  "uids": [
+   16
+  ],
+  "target": 1,
+  "source": "EV-0134 Another KH 2.8 Release Event: Advanced. khuxwiki chance rows: khuxwiki page «Another KH 2.8 Release Event: Advanced»: {{chance}} on ['King Pretender']"
+ },
+ "63740": {
+  "uids": [
+   1
+  ],
+  "target": 16,
+  "source": "EV-0134 Another KH 2.8 Release Event: Legendary. khuxwiki chance rows: khuxwiki page «Another KH 2.8 Release Event: Legendary»: {{chance}} on ['King Pretender']"
  }
 }
