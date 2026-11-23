@@ -1629,6 +1629,16 @@ function stageTreasures(stageId, rng = Math.random) {
 }
 
 // /stage/start: the chest contents rolled for this play, kept for /stage/clear (player.chestDrops), which pays their medals
+// Chance spawns (plan 2026-11-23-chance-spawns-materials): userRandomEnemies [{uniqueSymbolEnemyId}] names the squads the client
+// REMOVES from the map for this play (WW 4.3.1 FUN_007a1690 / FUN_00e60610: squad int [5] = uid; the client lowers STG [8]/[9]
+// itself). The POI «random» list (gen_story_maps.py for generated maps, random_squads.json for original ones) holds the squads a
+// source says «can appear»: each is removed with probability 1/2 (our rate, the original one is unknown); the target never.
+function stageRandomEnemies(stageId, rng = Math.random) {
+  const poi = poiOf(stageId);
+  if (!poi || !Array.isArray(poi.random)) return [];
+  return poi.random.filter((uid) => uid !== poi.target && rng() < 0.5).map((uid) => ({ uniqueSymbolEnemyId: uid }));
+}
+
 function startTreasures(req, rng = Math.random) {
   const stageId = Number(req?.stageId ?? START_STAGE_ID);
   const list = stageTreasures(stageId, rng);
@@ -2443,7 +2453,7 @@ function respondStageStart(res, req) {
       eventId: req?.eventId ?? 0,
       highScore: hscStartScore(player.currentStageId), // the HSC best (routes-hsc.js), 0 for any other quest
     },
-    userRandomEnemies: [],
+    userRandomEnemies: stageRandomEnemies(player.currentStageId),
     userEnemyDropItems: startEnemyDrops(req),
     userTreasures: startTreasures(req),
     campaigns: servedCampaignIds(), // raid AP 0 campaign in the bonus hours (routes-raid.js), bench ids
@@ -6266,7 +6276,7 @@ module.exports._test = {
   // server/test-deck-sets.js
   respondKeybladeUpdate, userDecksData, multiDecksUnlocked, activeDeck, keybladeDeckIds, respondMedalRemove,
   // server/test-pet-tricks.js
-  applySteal, stealMultiplier, respondStageStart, respondStageClear, STAGE_POI, rewardRowById, ENEMY_DROP_TYPE,
+  applySteal, stealMultiplier, stageRandomEnemies, respondStageStart, respondStageClear, STAGE_POI, rewardRowById, ENEMY_DROP_TYPE,
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet, limitedGroupQuest, forceStoryQuest: (q) => { storyQuestForced = q; },
   monthlySlot, limitedStoryMonth, forceLimitedStoryDay: (d) => { limitedStoryDayForced = d; },
