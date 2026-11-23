@@ -56,7 +56,9 @@ const row = (id) => rows.find((r) => r.drawMedalTypeId === id);
 check(row(19016).validComment === 0 && row(19016).warrantDisplayOfTime === 3, 'masterRows 881 byte: validComment 0');
 check(row(19017).validComment === 1 && row(19017).warrantDisplayOfTime === 3 && row(19017).comment === mb.categoryComment('boosted SN++ Medal'), `masterRows 936 byte: categoria ${row(19017).comment}`);
 check(row(19018).validComment === 1 && logs.some((l) => /B9018.*pity_label/.test(l)) && !logs.some((l) => /B9017/.test(l)), `masterRows senza pity_label: log (${logs.join(' | ')})`);
-check(mb.masterRows(cat).every((r) => r.drawMedalTypeId === 9001 || r.validComment === 0), 'masterRows senza nameOf: come prima');
+// righe fisse senza pity (validComment 1): piastra Catalog 9001 e Jewel Draw del tutorial (I-266, id 10)
+const fixed = [gd.CATALOG_ID, gacha.TUTORIAL_BANNER.drawMedalTypeId];
+check(mb.masterRows(cat).every((r) => fixed.includes(r.drawMedalTypeId) || r.validComment === 0), 'masterRows senza nameOf: come prima');
 
 // --- guardWarrant
 const ids20 = [...synNameOf.keys()]; // 20 nomi: J 1105 > 963

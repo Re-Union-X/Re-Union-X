@@ -42,10 +42,14 @@ function lesserAttack(model) {
   return out;
 }
 
-function traitMedalRow(e, med) {
+// prev: the row of a previous run (finished master), whose Booster codes it keeps (see patch)
+function traitMedalRow(e, med, prev = null) {
   const id = traitMedalId(e.n);
   return {
     ...med, medalId: id, imageId: id, thumbId: id, cutinId: id, artId: id, displayId: 0,
+    // own pictures, no Art button: imageCategory 0 even when the line already has the full artwork (medal-art.js runs
+    // later in make-game-tables; a second run on a finished master must not copy its imageCategory 2)
+    imageCategory: 0,
     name: `Trait Medal #${e.n}`,
     flavor: `A Trait Medal for ${med.name}.\n\nFuse it into ${med.name} to give it\na new trait and one Special Attack dot.`,
     advantage: `Fuse into ${med.name}:\n+1 trait and +1 Special Attack dot.`,
@@ -57,6 +61,9 @@ function traitMedalRow(e, med) {
     sellJewel: 0, sellTicket: 0, enhanceAttack: 0, enhanceDefense: 0, enhanceCost: 0, enhanceGuilt: 0,
     shuffleSkillGroupId: med.shuffleSkillGroupId, burstLvGroupId: 0, validEvolve: 0, evolveId: 0, evolveMoney: 0,
     validEvolveNeed: 0, evolveNeedId: [0, 0, 0, 0, 0], voice: 0, bgm: 0,
+    // make-emblems.js (run later) appends the Booster group codes to the line's source only: a second run on a finished
+    // master keeps the source of the row already there instead of copying them
+    ...(prev ? { source: prev.source, validSource: prev.validSource } : {}),
   };
 }
 
@@ -68,6 +75,7 @@ function patch(masterDir, list = JSON.parse(fs.readFileSync(path.join(__dirname,
   // a second run on a finished master leaves medal.json unchanged
   const at = all.findIndex(isTraitMedal); // = number of other rows before the first Trait Medal row
   const medals = all.filter((r) => !isTraitMedal(r));
+  const prevRows = new Map(all.filter(isTraitMedal).map((r) => [r.medalId, r]));
   const bursts = JSON.parse(fs.readFileSync(burstFile, 'utf8'));
   const byId = new Map(medals.map((r) => [r.medalId, r]));
   const model = bursts.find((b) => b.burstId === byId.get(10095)?.burstId) || bursts.find((b) => b.target === 1);
@@ -85,7 +93,7 @@ function patch(masterDir, list = JSON.parse(fs.readFileSync(path.join(__dirname,
   for (const e of list) {
     const med = byId.get(newMedalId(e.affected)); // trait_medals.json keeps the Roboloid ids (I-225)
     if (!med || !med.shuffleSkillGroupId) continue;
-    rows.push(traitMedalRow(e, med));
+    rows.push(traitMedalRow(e, med, prevRows.get(traitMedalId(e.n))));
     const l = links.get(med.shuffleSkillGroupId) || links.set(med.shuffleSkillGroupId, []).get(med.shuffleSkillGroupId);
     if (l.length < 2) l.push(traitMedalId(e.n));
   }

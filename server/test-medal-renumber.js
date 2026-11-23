@@ -72,10 +72,13 @@ if (fs.existsSync(path.join(MASTER, 'medal.json'))) {
     'every medal of ours with a special reads its own cut-in row (new conflicts: extend medal_renumber.json and the migration)');
   const left = medals.filter((r) => r.medalId < 9000000 && LIST[r.medalId % 1000000]).map((r) => r.medalId);
   assert.deepStrictEqual(left, [], 'no row keeps an old id');
+  // artId: the old id, or the JP full artwork of its family (I-237, medal-art.js, applied after the renumbering)
+  const fam = require('./medal-art').familyArt();
   for (const o of OLD) {
     const r = byId.get(LIST[o]);
     assert.ok(r, `${o} -> ${LIST[o]} in the master`);
-    assert.deepStrictEqual([r.imageId, r.thumbId, r.cutinId, r.artId], [o, o, o, o], `${LIST[o]}: images of the old id (no new resources)`);
+    const art = fam.get(r.medalId) || (r.groupId && r.groupId !== r.medalId && fam.get(r.groupId)) || o;
+    assert.deepStrictEqual([r.imageId, r.thumbId, r.cutinId, r.artId], [o, o, o, art], `${LIST[o]}: images of the old id (no new resources)`);
   }
   const refs = medals.flatMap((r) => [r.evolveId, r.groupId, ...(r.evolveNeedId || [])]).filter((v) => v && v < 9000000 && LIST[v % 1000000]);
   assert.deepStrictEqual(refs, [], 'Evolve, materials and normal of a copy point to the new ids');
