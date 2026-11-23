@@ -1734,5 +1734,19 @@ Menace Intermediate #4 (filled corridor parts walked to the Gold Tricholoma of p
   patch_prefix_ids.py) sets `map.source: generate` and the room of the donor stage row's thumbId (build_hole.py thumb_room
   rule: exactly one served room); label wikiRoom. 31 served; held: EV-1005 Day 4/5 (thumbId 0 / two served rooms), EV-0872
   Beach Fun 6/10 and 9/10 (Watermelon rows with no month prefix).
+- **Remaining-quests audit, no-ruling fixes** (user 23-11 «vai con le 90»; rev **369**, resources 155, 3,925 served: +82, none
+  lost or changed). Audit: `tmp\events\unbuilt\remaining\remaining.json` (one row per unserved quest: blocker, fix, evidence).
+  - Patch 7 `patch_g1_annotations.py`: 58 quests whose complete JP map was never imported because no-id annotation rows («(no WW
+    enemy) JP X», «(no WW enemy list)», khuxwiki count/name variants) made make-events hold them before listing the map; the
+    rows move to `wikiOnlyEnemies`.
+  - Patch 8 `patch_thumb_gen.py`: generated maps in the thumbId room for EV-0744 ×2, EV-1001 ×5, EV-0392 (EV-0080 / EV-0172 now
+    stop on the Gold Tricholoma versions: ruling).
+  - Patch 9 `patch_levelshift_addlevel.py`: EV-0310 / EV-0398 ×3 levelShifted from/to in map-file levels (build_hole.py wrote
+    them with addLevel; rerun the patch after it).
+  - make-events.js: shared-map drops compared without the builder note `inOurMaster` (EV-0529 ×6, EV-1237 ×2 on EV-0783's maps);
+    a donor «X A» medal is our «X» when id and rarity match (EV-0123 Pence/Hayner/Olette A).
+  - Room DB_0030_01_00 built by `make_jp_rooms.py --story-only` (63 files; EV-1373).
+  - Left out: EV-1433 / EV-1501 (a map none of the quests owns: the Part 4 rule `map_key_shared_quest` holds it; needs the
+    user), EV-0429 711610 / 711740 / 711750 (no Shadow in any part), EV-0929 (needs an enemy row import).
 - **Still held**: EV-0941 (Union twin of 740926, sharing would merge it);
   the 18 materials pins (`pins_r2_skipped.json`); EV-0108 / EV-0417 (no source).
