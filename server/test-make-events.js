@@ -219,6 +219,14 @@ const tests = {
     assert.ok(names.includes('Use 5 or less Medals (No borrowed Medals)'), names.join(' | '));
     assert.ok(!names.some((n) => /<br/i.test(n)));
   },
+  // «Trigger the skill N» (code 14, idType 6): the original rows write «Trigger the skill %s» and the client fills in the skill
+  // name; a record text with the bare id showed «Trigger the skill 1104» on the bench (WoFF Avatar Quest: Beginner, 23-11)
+  objective_text_skill_id() {
+    const recs = records();
+    recs[0].quests[0].objectives[1] = { code: 14, text: 'Trigger the skill 1104', dataType: 3, idType: 6, id: 1104, num: 0, reward: { type: 15, id: 0, num: 50 } };
+    const names = build(recs).stage.flatMap((s) => s.submissionName);
+    assert.ok(names.includes('Trigger the skill %s') && !names.some((n) => /skill \d/.test(n)), names.join(' | '));
+  },
   missing_enemy_skips_quest() {
     const recs = records();
     recs[0].quests[1] = quest(700002, 2, [501, 777]);

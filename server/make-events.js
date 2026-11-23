@@ -423,14 +423,20 @@ const enemyIdsOf = (q) => [...new Set([...(q.enemies || []).map((e) => e.id), ..
 
 // Objective text as the client shows it: the wiki writes «<br>» before «(No borrowed Medals)», which the client prints
 // literally (user, 13-11: Critical Event objectives); the original rows put a space there
-const objText = (s) => (typeof s === 'string' ? s.replace(/\s*<br\s*\/?>\s*/gi, ' ') : s);
+// «Trigger the skill N» (code 14, idType 6): the original rows write «Trigger the skill %s» and the client fills in the skill name;
+// a record text with the bare id printed «Trigger the skill 1104» (bench 23-11, WoFF Avatar Quest: Beginner)
+const objText = (s, o = {}) => {
+  if (typeof s !== 'string') return s;
+  const t = s.replace(/\s*<br\s*\/?>\s*/gi, ' ');
+  return o.code === 14 && o.idType === 6 && o.id && t === `Trigger the skill ${o.id}` ? 'Trigger the skill %s' : t;
+};
 // Objectives of the record, in the submission field layout of the stage table
 function questSubs(q, where) {
   const list = q.objectives || [];
   if (list.length > 3) throw new Error(`events: ${where}: ${list.length} objectives`);
   const each = (f) => list.map(f);
   const rw = (o) => o.reward || {};
-  return { validSubmission: list.length, submissionRequire: each((o) => o.code), submissionName: each((o) => objText(o.text)), submissionDataType: each((o) => o.dataType),
+  return { validSubmission: list.length, submissionRequire: each((o) => o.code), submissionName: each((o) => objText(o.text, o)), submissionDataType: each((o) => o.dataType),
     submissionIdType: each((o) => o.idType), submissionId: each((o) => o.id), submissionNum: each((o) => o.num), submissionRewardType: each((o) => rw(o).type || 0),
     submissionItemId: each((o) => rw(o).id || 0), submissionSkillType: each(() => 0), submissionSkillId: each(() => 0), submissionSkillLv: each(() => 0),
     submissionItemNum: each((o) => rw(o).num || 0) };
