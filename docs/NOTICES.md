@@ -225,7 +225,7 @@ Rewards are given once, drops keep their original chances, and **Event Coins** n
 
 The **Event Catalog** lists every event; keep one past event at a time.
 
-539 events · 4,089 of 4,239 quests · 108 Event Boards
+546 events · 4,162 of 4,239 quests · 108 Event Boards
 
 ### Overview — past events following your Story week
 
@@ -233,11 +233,11 @@ The **Event Quests** are back: the limited-time events of the original game, wit
 
 Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.
 
-Today **539 events** are served, with **4089 of their 4239 quests** (583 events are in the data so far, from July 2016 to February 2021). The others follow in later updates: the **Event Catalog** lists every event and, for each quest not served yet, the reason (a map or an enemy whose original files are still missing). A quest whose enemy is missing is not served: no other enemy stands in for it.
+Today **546 events** are served, with **4162 of their 4239 quests** (583 events are in the data so far, from July 2016 to February 2021). The others follow in later updates: the **Event Catalog** lists every event and, for each quest not served yet, the reason (a map or an enemy whose original files are still missing). A quest whose enemy is missing is not served: no other enemy stands in for it.
 
 ### Opening hours — open for the whole original day
 
-An event that was open for only a few minutes or hours in the original game is open here for its **whole original day** (not original): it is listed on the real weekday (Pacific time) of that day, all day. An event with one quest a day lists **all its quests for its whole period** ((not original) where the original opened them one a day).
+An event that was open for only a few minutes or hours in the original game is open here for its **whole original day** (not original): it is listed on the real weekday (Pacific time) of that day, all day. An event with one quest a day lists **all its quests for its whole period** (not original, where the original opened them one a day).
 
 ### Event Catalog — list every event, keep one past event
 
@@ -273,11 +273,11 @@ The **Riku & Moogle** 6★ Medal, a drop of the August and September 2019 coin e
 
 ### Boosters — rebuilt effects, timed from pickup
 
-The **Boosters** are back: **422 Boosters**, paid by 43 event quests, 267 Event Board cells, 3 Raid Board cells and 79 Avatar Board cells. As in the original game, a Booster raises the damage of the Medals it names, or the slot multipliers of the Keyblade it names, until it expires: you see it in your profile (**Boosters**, with its expiry), as the light-blue **+N%** plate on the Medal Details screen, and in battle. Different Boosters add up.
+The **Boosters** are back: **425 Boosters**, paid by 46 event quests, 267 Event Board cells, 3 Raid Board cells and 79 Avatar Board cells. As in the original game, a Booster raises the damage of the Medals it names, or the slot multipliers of the Keyblade it names, until it expires: you see it in your profile (**Boosters**, with its expiry), as the light-blue **+N%** plate on the Medal Details screen, and in battle. Different Boosters add up.
 
 No original Booster record with its effect values survives: each effect is **rebuilt from the Booster's original description** (the attribute, Upright or Reversed, the group of Medals or the Keyblade it names, and its value). The Medals of a group are the ones the original game data assigns to that Booster.
 
-In the original every Booster expired on a fixed date. Here a Booster lasts, **from the moment you get it**, as many days as it lasted in the original from the start of its event to its expiry (**8 to 32 days**) (not original) (in the original a Booster obtained late in its event lasted less). So a Booster from a past event, a kept event or an older board set works for its full time too. For 150 Boosters whose expiry notice did not survive, the end of their event or board is used as the expiry.
+In the original every Booster expired on a fixed date. Here a Booster lasts, **from the moment you get it**, as many days as it lasted in the original from the start of its event to its expiry (**8 to 32 days**) (not original) (in the original a Booster obtained late in its event lasted less). So a Booster from a past event, a kept event or an older board set works for its full time too. For 153 Boosters whose expiry notice did not survive, the end of their event or board is used as the expiry.
 
 Each quest objective and each board cell gives its Booster **once**, ever: a replay does not give it again, not even after it expired. The same Booster from another quest or cell extends the one you have.
 
@@ -287,11 +287,13 @@ A Booster reward recorded before the Boosters arrived (a quest you cleared earli
 
 Where a quest or event is not exactly as in the original game, the Event Catalog marks it with one of these notes:
 
-- The original scenes before or after this quest are not shown yet.
-
 - One part of this quest's map (the empty lobby before the fight) is missing from the surviving Japanese files, which kept only one copy of the parts the game shared between quests. It was taken from another quest of the same event that starts the player at the same point in the same room; several nearly identical lobbies fit, and the nearest one was used. The fight itself is on the original map. Rebuilt, not original.
 
 - The map file of this quest is incomplete in the data we have: the missing parts are reported, never invented.
+
+- The original scenes before or after this quest are not shown yet.
+
+- The header of this quest's map (start point, target and the list of its parts) is missing from the surviving Japanese files, which kept only one copy of the data the game shared between quests. Five headers of the same event fit; they differ only in one running counter, so the first one was used. The map parts themselves are original. Rebuilt, not original.
 
 - One file of this quest's map (a part or its header) is missing from the surviving Japanese files, which kept only one copy of the map data the game shared between quests. It was taken from that shared copy, byte for byte: the map is the original one.
 
@@ -309,6 +311,8 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - AP from the khuxwiki page of this run: the surviving game data (a later snapshot) gives another AP.
 
+- Our game data holds several versions of an enemy of this quest, with different strength, and no source says which one the worldwide quest used. From mid-2018 the worldwide event enemies carry the year and month of their event at the start of their id (88% of the event enemies on the Japanese maps follow it), and exactly one version of this enemy has the year and month of this event: that version is used. Chosen by rule, not confirmed (ruling of 23-11-2026).
+
 - A reward of this quest is a Booster. Its effect is rebuilt from its original description (the original Booster data lost its effect values): which Medals or keyblade slots it strengthens and by how much are those of the description. It lasts as many days as in the original, counted from when you obtain it.
 
 - Map enemy changed to the WW enemy (khuxwiki): the Japanese map file of this quest places a different enemy than the worldwide quest had, so that one enemy was replaced by the worldwide one (same place, count, level and drops).
@@ -319,7 +323,7 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - The worldwide event enemies of this month come in several rows with the same base strength but rising difficulty (defense buffs, countdowns), one per difficulty tier, and no source says which tier this quest used. Within an event the tier never goes down as the quest level rises and each row belongs to one event only (measured on the surviving maps: 95-99 %): the row is chosen by that order. Chosen by rule, not confirmed (ruling of 23-11-2026).
 
-- Our game data holds several versions of an enemy of this quest, with different strength, and no source says which one the worldwide quest used. From mid-2018 the worldwide event enemies carry the year and month of their event at the start of their id (88% of the event enemies on the Japanese maps follow it), and exactly one version of this enemy has the year and month of this event: that version is used. Chosen by rule, not confirmed (ruling of 23-11-2026).
+- Our game data holds several rows for the target of this quest and no source gives the one of this run: the target is the row our game data keeps for that enemy as a quest target (the 1xxxx target rows), the one the original maps use for it. Chosen by that rule, not confirmed.
 
 - The original question board of this quiz is not in the surviving game files: it comes from a screenshot of the original game (khuxwiki), scaled to the game screen, with the SKIP button of the screenshot removed.
 
@@ -331,7 +335,7 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - The map file of this quest is lost. The same quest series ran again in another month on a map that survives (the same room, the same single enemy and target, every difficulty on the same map): that layout is used, with the enemy of this run, the original enemy row of these quests (its own strength at each difficulty). Layout reconstructed, enemy original.
 
-- The header of this quest's map (start point, target and the list of its parts) is missing from the surviving Japanese files, which kept only one copy of the data the game shared between quests. Five headers of the same event fit; they differ only in one running counter, so the first one was used. The map parts themselves are original. Rebuilt, not original.
+- The map of this quest is the Japanese map of the same quest, found by its content (the same enemies, counts, target and rooms at the quest's level): the worldwide map file of this run is lost.
 
 - The event boards of this event are not handed out yet: none of the quests that paid their Event Coins can be served yet, so the boards could not be filled.
 
@@ -343,8 +347,6 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - The drop rates of this quest are lost with its map. Its enemies drop what the event's notice named, at the rates of the original drop rows of a quest of the same kind (the KH 3D medal quests of 2017 or the event's own surviving maps). Reconstructed, not original.
 
-- The map of this quest is the Japanese map of the same quest, found by its content (the same enemies, counts, target and rooms at the quest's level): the worldwide map file of this run is lost.
-
 - The map of this quest is a Japanese map with the same layout used at another level in the original; here its enemies fight at this quest's own level (khuxwiki), every enemy shifted by the same amount. The original map of this level is lost.
 
 - The material spots of this quest's map are lost with the map. They were rebuilt along the way: the totals of each material match the original results (khuxwiki, checked on footage of the original), the number of spots follows the footage (about one spot for every two units), their positions are not the original ones. Rebuilt, not original.
@@ -355,9 +357,9 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - In the original game clearing this quest could make a raid boss appear (the notice or the khuxwiki page names it). No raid of that boss with the strength it had at that time is served yet, so here the quest summons no raid boss.
 
-- In the original game the ranking rewards of a High Score Challenge went to the players by leaderboard position. This server has one player, so each original rank bracket became a score threshold: reach it with your best run and you receive that bracket's original rewards (only the highest bracket reached is paid; a better run later pays the difference, once per event). The thresholds are calibrated on the original scores where known, scaled from them or interpolated, as each one is marked. The rank shown is the best rank of the bracket you reached. The point milestones are the original ones.
-
 - The khuxwiki page of this High Score Challenge names its enemies but not which version of each (our game data holds several, with different strength). The Japanese High Score maps of the same years place the base version for nearly all their enemies (2,204 of 2,424), so the base version of each name is used. Inferred, not original.
+
+- In the original game the ranking rewards of a High Score Challenge went to the players by leaderboard position. This server has one player, so each original rank bracket became a score threshold: reach it with your best run and you receive that bracket's original rewards (only the highest bracket reached is paid; a better run later pays the difference, once per event). The thresholds are calibrated on the original scores where known, scaled from them or interpolated, as each one is marked. The rank shown is the best rank of the bracket you reached. The point milestones are the original ones.
 
 - The worldwide map file of this High Score Challenge is lost: it is in none of the game files or donated data we hold. The Japanese version ran a High Score Challenge with the same target, level and world on a map that survives; that map is used here. Layout reconstructed.
 
@@ -379,8 +381,6 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - In the original this event was open for a short window (minutes to hours); here it is open for its whole original day.
 
-- Our game data holds several rows for the target of this quest and no source gives the one of this run: the target is the row our game data keeps for that enemy as a quest target (the 1xxxx target rows), the one the original maps use for it. Chosen by that rule, not confirmed.
-
 - An enemy of this quest is missing from our game data: its row was taken from the worldwide game data shared by the community (the same name, strength and level curve as in the original game).
 
 ## Event Challenges & High Scores
@@ -393,7 +393,7 @@ Challenge, battle, quiz, Surprise and Time Missions events are back from 2016 to
 
 ### Challenge events — battle, quiz and Surprise events
 
-The **challenge and battle events** are back (Defeat events, Big Bonus Challenges, daily quests, time trials, **Keyblade Challenges** and **quizzes**): today **320 events** of 2016 to 2021 are served, with **2727 of their 2832 quests** (by year: 2016: 8 events, 86 quests; 2017: 39 events, 352 quests; 2018: 58 events, 693 quests; 2019: 60 events, 584 quests; 2020: 133 events, 915 quests; 2021: 22 events, 97 quests). The Event Catalog lists the others with the reason they are not here yet.
+The **challenge and battle events** are back (Defeat events, Big Bonus Challenges, daily quests, time trials, **Keyblade Challenges** and **quizzes**): today **326 events** of 2016 to 2021 are served, with **2779 of their 2832 quests** (by year: 2016: 8 events, 87 quests; 2017: 39 events, 366 quests; 2018: 61 events, 711 quests; 2019: 63 events, 601 quests; 2020: 133 events, 915 quests; 2021: 22 events, 99 quests). The Event Catalog lists the others with the reason they are not here yet.
 
 **Surprise events** and **Time Missions** are back: today 52 Surprise events and 6 Time Missions events (**175 quests**). As in the original game, each Surprise event is open for **one whole day** (12:00 a.m. to 11:59 p.m. Pacific time, on the real weekday of that day in your Story week) and is gone the next day. In the original game each target of a Time Missions event appeared only at four set hours a day; here every quest of a Time Missions event is open for its **whole original day** (not original), and the event lists all its quests on each of its days.
 
@@ -401,7 +401,7 @@ The **challenge and battle events** are back (Defeat events, Big Bonus Challenge
 
 The **quiz** events asked their question on a picture board before the quest, and no original board survives in the game files, so every board is (rebuilt): 65 are redrawn in the original style from the question text recorded on the community wiki (obvious typing errors of the wiki corrected), 5 come from screenshots of the original boards and 5 are redrawn from videos of the original game. Today **85 quiz quests** are served with their board; the others wait, mostly for a map file that is incomplete.
 
-**43** served quests pay a **Booster** among their rewards: see **Boosters** below.
+**46** served quests pay a **Booster** among their rewards: see **Boosters** in the **Event Quests: how they work** notice.
 
 A **Spirit part** reward earned while your Spirit cannot receive it is **kept**, once, and given at a later login.
 
@@ -419,7 +419,7 @@ In the original game one High Score Challenge ran at a time. Here the week's Hig
 
 The **Supernova** forms of a 7★ Score Bonus Medal (Supernova, Supernova+ and Supernova++) count as that Medal, as in the original game. The Score Bonus Medal panel of the Keyblade screen uses the **Japanese version** of its logo, which reads **SCORE BONUS MEDAL** (not original) (the worldwide one, ASSIST MEDALS, is not in the surviving game data).
 
-The original maps of some High Score Challenges did not survive. 27 of them are (rebuilt) from the community wiki, in the original rooms and with the original enemies, their levels and their paths ((rebuilt)). 5 use the map of the **Japanese** High Score Challenge with the same target, level and world. The Event Catalog marks each one.
+The original maps of some High Score Challenges did not survive. 27 of them are (rebuilt) from the community wiki, in the original rooms and with the original enemies, their levels and their paths (rebuilt). 5 use the map of the **Japanese** High Score Challenge with the same target, level and world. The Event Catalog marks each one.
 
 ## Bonus Times & login bonuses
 
@@ -471,15 +471,15 @@ Gem Quests and the **Organization XIII** events are back too.
 
 ### Events of 2016-2018 — old events on original or rebuilt maps
 
-The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **63 events** are served, with **537 of the 565 quests of that period**, on the dates of the original notices. Quests that came from the Japanese version are played on the **original Japanese maps** (a few on the map of their Japanese twin quest).
+The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **65 events** are served, with **563 of the 565 quests of that period**, on the dates of the original notices. Quests that came from the Japanese version are played on the **original Japanese maps** (a few on the map of their Japanese twin quest).
 
 For 1 of the other quests, made for the worldwide version only, no map survives in any source we hold: they wait in the **Event Catalog** until their maps are rebuilt from the community wiki and videos of the time (not original).
 
-**349 quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (not original). Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **12 quests** drop it at the rates of the original KH 3D event quests of 2017 (not original); the others drop nothing.
+**375 quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (not original). Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **12 quests** drop it at the rates of the original KH 3D event quests of 2017 (not original); the others drop nothing.
 
 The **Event Coins** of the coin events go to **8 sets of Event Boards** of the original game data (the event boards, the Gem Boards and the daily Jewel boards of the period); all boards of a set are open for the whole event (not original) (some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.
 
-**5 Booster Challenges** of the period are back: their objectives pay the original **Boosters** of the donated game data (see **Boosters** below).
+**5 Booster Challenges** of the period are back: their objectives pay the original **Boosters** of the donated game data (see **Boosters** in the **Event Quests: how they work** notice).
 
 **3 Damage Contests** («Test Your Might») are back as High Score runs: the score is the damage you deal. As for the High Score Challenges, the original rank brackets became **score thresholds** (calibrated, (not original)). The July and October 2017 contests use the map of the December 2017 one, the same quest (no other map survives: (not original)).
 
@@ -487,7 +487,7 @@ The **Event Coins** of the coin events go to **8 sets of Event Boards** of the o
 
 In the original game **10 quests** of the period could make a **raid boss** appear («A Hard-Boiled Daily Challenge Event!», «WORLD OF FINAL FANTASY Event!»); no raid of those bosses with their strength of the time is served yet, so here they summon none.
 
-The other 27 quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.
+The other 1 quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.
 
 The daily quests, the Gauntlet tiers and the quests that opened day by day are all open for the **whole event** (not original) (the original released them day by day).
 
@@ -495,23 +495,23 @@ The **daily and weekly missions** are shown before November 9, 2017, the day the
 
 ### Gem quests — weekly, monthly and daily Gem quests
 
-The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** below).
+The **Gem Quests** are back: the **Weekly Gem Quests** of 2017 and 2018, the **Monthly Gem Quests**, the **Gem Drop** and **Daily Gem** events, each one with its own card and dates. Where an original quest record did not survive, the quest is rebuilt from the community wiki and from the same quest of a later run (marked in the Event Catalog). The **Gem Boards** were played on the Avatar Boards, and they are back there (see **Avatar boards** in the **Avatar boards** notice).
 
 Quests that must be played with one Keyblade open their start screen with the Keyblade locked and the quest **rules** at the right. That screen uses the **Japanese version** of its panels (not original) (the worldwide ones are not in the surviving game data), so the rules box reads **RULE** instead of **CONDITION** and the **Cannot change** plate is red instead of orange.
 
-The quest lists of the events whose Event Boards are not served yet show no **Event Boards** button (not original): see **Event coins and boards** below.
+The quest lists of the events whose Event Boards are not served yet show no **Event Boards** button (not original): see **Event coins and boards** in the **Event Quests: how they work** notice.
 
 ### Org XIII events — the Organization XIII events, per Union
 
-The **Organization XIII events** are back: today **33 events** are served, with **496 of their 504 quests** (the monthly XIII Events of 2016-17: 235 of 242 quests; the NEW XIII Events of 2018-19: 198 of 198 quests; Challenge Organization XIII of 2020: 38 of 38 quests; The Keyblade War part 3: 25 of 26 quests).
+The **Organization XIII events** are back: today **33 events** are served, with **503 of their 504 quests** (the monthly XIII Events of 2016-17: 242 of 242 quests; the NEW XIII Events of 2018-19: 198 of 198 quests; Challenge Organization XIII of 2020: 38 of 38 quests; The Keyblade War part 3: 25 of 26 quests).
 
-The monthly **XIII Events** of November 2016 to December 2017 have **no surviving quest record**: their quests are (rebuilt) from the community wiki and from the Japanese tables of their 13 stages (levels, enemies, objectives and rewards). 185 of them are played on the **original Japanese map** of the same quest, found by its content (the same enemies, counts, target and rooms). For the other 50 no original map survives in any source we hold: their map is (rebuilt) in the quest's original room, with the enemies and the target recorded on the community wiki (not original); 16 of them spanned several areas, which are rebuilt in their order and joined by exits.
+The monthly **XIII Events** of November 2016 to December 2017 have **no surviving quest record**: their quests are (rebuilt) from the community wiki and from the Japanese tables of their 13 stages (levels, enemies, objectives and rewards). 185 of them are played on the **original Japanese map** of the same quest, found by its content (the same enemies, counts, target and rooms). For the other 57 no original map survives in any source we hold: their map is (rebuilt) in the quest's original room, with the enemies and the target recorded on the community wiki (not original); 18 of them spanned several areas, which are rebuilt in their order and joined by exits.
 
 The **NEW XIII Events** of 2018-19, the **Organization XIII SP Challenge** and **Challenge Organization XIII** (2020) use their **original quest records**: maps, enemies, objectives and rewards as in the original game. Where a small part of a map was missing from the surviving files, it is completed from the copy the game shared between quests or from another quest of the same event, as the Event Catalog notes.
 
-**The Keyblade War** part 3, **The Ultimate Test**, is back **for each Union**: in the original each Union played its own version of these quests, and only one version survives in the game data, so the versions of the other Unions are (rebuilt) from it with the target of their own map. You see only your own Union's version, and only it counts for the **Keyblade War Challenge Campaign** reward (see **Community goals** above).
+**The Keyblade War** part 3, **The Ultimate Test**, is back **for each Union**: in the original each Union played its own version of these quests, and only one version survives in the game data, so the versions of the other Unions are (rebuilt) from it with the target of their own map. You see only your own Union's version, and only it counts for the **Keyblade War Challenge Campaign** reward (see **Community goals** in the **Event Challenges & High Scores** notice).
 
-The other 8 quests of these events wait in the **Event Catalog**, each with the reason it is not here yet.
+The other 1 quests of these events wait in the **Event Catalog**, each with the reason it is not here yet.
 
 ## Event enemies
 
@@ -531,15 +531,15 @@ Since November 13, 2026 many of these animations are built **exactly as the game
 
 One thin web thread of **Wicked Spider**'s special attack is still missing and is left out (not original).
 
-**Rush Ghost, Trick Ghost, White Mushroom** and **Rare Truffle** have no surviving defeat animation: they vanish in the **standard Heartless smoke cloud** ((rebuilt)). **Circus Clown** uses the same smoke cloud, as in the oldest game files. **Enraged Elk** has no graphics of its own in any surviving file: it uses the look of the **Enraged Elk of the Story Quests**, the same creature (not original).
+**Rush Ghost, Trick Ghost, White Mushroom** and **Rare Truffle** have no surviving defeat animation: they vanish in the **standard Heartless smoke cloud** (rebuilt). **Circus Clown** uses the same smoke cloud, as in the oldest game files. **Enraged Elk** has no graphics of its own in any surviving file: it uses the look of the **Enraged Elk of the Story Quests**, the same creature (not original).
 
 The **Sparkler** of «Event Coins Galore Returns Once Again!» (August 2019) is rebuilt in the same way from the game's own files, special attack included. Two parts are (rebuilt): it vanishes in the **Shadow's smoke cloud** (its own defeat animation did not survive), and its ground shadow is the **standard one** (its own file is an empty stub).
 
-The challenge events bring **15 more** enemies rebuilt in the same way and checked on their animations: **Ifrit, Leviathan, Demon Tide, Savage Vanguard, Savage Vanguard Ω, Hocus Pocus, Brilliant Opera, Sorcerous Reaper, Submarine Carp, Metal Giant, Festive Fireworks, Living Bone, Raging Reindeer, Bag O' Gifts** and **Jack in the Box**. A few pieces of Ifrit's attacks come from the **Ifrit of Dark Road**, the same creature ((rebuilt)).
+The challenge events bring **15 more** enemies rebuilt in the same way and checked on their animations: **Ifrit, Leviathan, Demon Tide, Savage Vanguard, Savage Vanguard Ω, Hocus Pocus, Brilliant Opera, Sorcerous Reaper, Submarine Carp, Metal Giant, Festive Fireworks, Living Bone, Raging Reindeer, Bag O' Gifts** and **Jack in the Box**. A few pieces of Ifrit's attacks come from the **Ifrit of Dark Road**, the same creature (rebuilt).
 
 The special attacks of **Leviathan, Metal Giant** and **Jack in the Box** are complete: those of Leviathan and Metal Giant are built exactly from the original pictures, and **Jack in the Box**'s fireballs come from the raid version of the same boss.
 
-The **12 enemies** the challenge events still lacked are back too, built exactly from the original pictures in the same way and approved on their animations: **Nimble Reaper, Loudmouth Parade, Upright Warlock, Gummi Dragon, Vile Reaper, Mysterious Sir, Weapon Master, Reversed Warlock, Circus Balloon, Jewel Princess, Raccoon Dog Rookie** and **Raccoon Dog Soldier**, and the quests that waited for them are served. Nine of them never move in the original files, so their walking pose is their standing pose ((rebuilt)). Their check in battle is still going on: please report anything that looks wrong.
+The **12 enemies** the challenge events still lacked are back too, built exactly from the original pictures in the same way and approved on their animations: **Nimble Reaper, Loudmouth Parade, Upright Warlock, Gummi Dragon, Vile Reaper, Mysterious Sir, Weapon Master, Reversed Warlock, Circus Balloon, Jewel Princess, Raccoon Dog Rookie** and **Raccoon Dog Soldier**, and the quests that waited for them are served. Nine of them never move in the original files, so their walking pose is their standing pose (rebuilt). Their check in battle is still going on: please report anything that looks wrong.
 
 ## Avatar boards
 
@@ -555,13 +555,13 @@ The limited boards of **Avatar Boards** are back: **343 boards on sale for Jewel
 
 A board you buy is **yours for good**: it stays in Avatar Boards after its week, with its progress, and is never charged twice.
 
-The **Start-Up Boost Board** (100 Jewels) is on sale in every Story week, with no countdown: the community wiki says it stayed on sale for good from version 2.3.1, whose date is not known ((not original) before that version).
+The **Start-Up Boost Board** (100 Jewels) is on sale in every Story week, with no countdown: the community wiki says it stayed on sale for good from version 2.3.1, whose date is not known (not original, before that version).
 
 29 boards are not here yet: no surviving notice gives their dates (the later monthly Enhancement Set+ sets and the Draw Ticket boards). **Medal Fusion Set 1** is left out: no worldwide source names it.
 
 6 skills of the skill boards were missing from the surviving game data and come from another copy of the original data: they work as in the original game, but their description is empty, because no text for them survives.
 
-Most board cards are the original pictures. 42 cards whose files did not survive are cut from screenshots of the original game and from the community wiki, with their corners cleaned and lightly sharpened ((rebuilt)).
+Most board cards are the original pictures. 42 cards whose files did not survive are cut from screenshots of the original game and from the community wiki, with their corners cleaned and lightly sharpened (rebuilt).
 
 ### Avatar Board Catalog — list past boards, keep one
 
@@ -579,7 +579,7 @@ The **SP Chip & Dale** 6★ Medal, an event reward, is back with a community ren
 
 ### SP Chip & Dale — 6★ enhancement Medal, rebuilt picture
 
-The **SP Chip & Dale** 6★ Medal (+1,000 STR and DEF as Enhancement material), a reward of some event quests, is back. Its data comes from the community wiki; its picture is the community render of the original Medal ((rebuilt): the original file was not found).
+The **SP Chip & Dale** 6★ Medal (+1,000 STR and DEF as Enhancement material), a reward of some event quests, is back. Its data comes from the community wiki; its picture is the community render of the original Medal (rebuilt: the original file was not found).
 
 ## Raid Bosses
 
@@ -601,7 +601,7 @@ Each Raid Boss has its own level: it rises by 1 for every defeat (some event rai
 
 On this server **one rule applies to every raid**, worldwide and Japanese alike, kept raids included, and every raid is open **all day** (not original). From **Monday to Friday** (Pacific time) each raid quest costs its **original AP** and there is **no Bonus Time**. On **Saturday and Sunday** raid quests cost **0 AP** and it is **Bonus Time all day**: the Lux of raid bosses is **doubled**, **6,000** points of the raid gauge bring a boss, and the bosses that gained more levels in Bonus Time do so on the weekend.
 
-There are **no exceptions**: a raid quest that was free in the original game (a free week or an AP 0 campaign) costs **5 AP** from Monday to Friday ((rebuilt): the usual price of a raid quest of the time), and the 24-hour Bonus Time of June 2020 is not served, since the weekends are free for every raid.
+There are **no exceptions**: a raid quest that was free in the original game (a free week or an AP 0 campaign) costs **5 AP** from Monday to Friday (rebuilt: the usual price of a raid quest of the time), and the 24-hour Bonus Time of June 2020 is not served, since the weekends are free for every raid.
 
 In the original game the hours were different and changed over the years: Bonus Time came four times a day (raid quests at 0 AP or less, double Lux), the Daily Raid Events and the Japanese monthly 30-minute raids opened only in their daily windows, and some weekly raids only in the Bonus Time hours. The original notices behind a raid's **Details** button show those hours and costs as they were, with a note that the rule above applies here. Each boss keeps its own level rules (a daily raid boss still starts again at LV 1 every Pacific day).
 
@@ -613,7 +613,7 @@ Raids are **solo for now**: no other player joins your fight, and nobody is simu
 
 A boss you do not defeat **keeps the damage** you dealt: it stays on the field with the HP it has left until you defeat it or its timer runs out and it escapes. The first fight costs 0 AP; each further attempt costs the AP shown.
 
-Weak points you break stay down for **3 minutes** from the end of your latest fight, then come back with **half of their HP** ((rebuilt): the sources only say weak points came back with part of their HP).
+Weak points you break stay down for **3 minutes** from the end of your latest fight, then come back with **half of their HP** (rebuilt: the sources only say weak points came back with part of their HP).
 
 Each Raid Boss you defeat counts for the Daily, Weekly and Beginner raid missions. VIP still cannot be earned, because the Weekly Missions also include Union Cross (see the VIP Draws notice).
 
@@ -623,11 +623,11 @@ Raid bosses appear again in the Story, from Quest 4 to **Quest 825** (822 quests
 
 Their HP, moves and rewards are the original **2016** ones (for example Behemoth has 8,000 HP at LV 1), so they are weak for late quests: no later values survive. They give Medals and Mythril materials, not Raid Coins.
 
-The sources do not name the raid boss of **89 Story Quests** (between Quest 614 and Quest 825): each takes the boss of the nearest quest with a known boss ((rebuilt)). For 24 quests the sources disagree: the community wiki's boss is used.
+The sources do not name the raid boss of **89 Story Quests** (between Quest 614 and Quest 825): each takes the boss of the nearest quest with a known boss (rebuilt). For 24 quests the sources disagree: the community wiki's boss is used.
 
-Some Story Quests always bring their boss when cleared, and here they do so **at every replay** ((rebuilt): the sources do not say whether a replay brought it again).
+Some Story Quests always bring their boss when cleared, and here they do so **at every replay** (rebuilt: the sources do not say whether a replay brought it again).
 
-The chance of meeting a rare (Ω) boss is read from the 2016 data up to Quest 555; from Quest 556 each boss keeps its most common 2016 chance ((rebuilt)). In two worlds whose raid background is incomplete, the fight shows the background of Daybreak Town.
+The chance of meeting a rare (Ω) boss is read from the 2016 data up to Quest 555; from Quest 556 each boss keeps its most common 2016 chance (rebuilt). In two worlds whose raid background is incomplete, the fight shows the background of Daybreak Town.
 
 ### Event raids of 2016-2018 — older raid events, open all day
 
@@ -635,9 +635,9 @@ The older raid events are back too: one-off, weekend-only, monthly, daily and da
 
 The Daily Raid Events keep their boss and their level rules, but not their hours: they are open all day, like every raid here (see **Raid AP and Bonus Time** above). Where an event had a male and a female Raid Board, both are open (not original) (the original showed only the one of your avatar).
 
-Where no original value survives, the HP of these raids is the boss's 2016 HP scaled by date up to the few readings of 2018, and the three tiers of 2018 (Beginner, Intermediate, Advanced) are inferred from one reading each ((rebuilt)). Timers and AP of further attempts come from the same boss's 2016 rows, or from the weekend rule (3 hours, 1 hour from May 2018).
+Where no original value survives, the HP of these raids is the boss's 2016 HP scaled by date up to the few readings of 2018, and the three tiers of 2018 (Beginner, Intermediate, Advanced) are inferred from one reading each (rebuilt). Timers and AP of further attempts come from the same boss's 2016 rows, or from the weekend rule (3 hours, 1 hour from May 2018).
 
-Level rewards named in an event's notice reach your Presents when you defeat its boss at that level; rewards the notice does not detail are not given. Where an event's notice gives another level rule, it is followed: in the Daily Raid Events of December 2016 and in the Mysterious Sir raid of March 2018 the boss rises by **5 levels** at every defeat; in the Gear Golem raid of July 2018 and the Gummi Hound raid of August 2018 by 5 in Bonus Time. Three raid events of spring 2018 (Queen Bee, Crabby Cake, Gear Golem) only said that bosses level faster in Bonus Time: they rise by 5 too, and the Closehanded Captain week of September 10, 2018 by 2 like the next weeks ((rebuilt): the amount is not stated). Bonus Time is on Saturday and Sunday here (see above). In the Daily Raid Events of July 2017 to January 2018 coins come every **5 levels**, up to LV 55 (LV 50 from November 2017), as their notices said; the coin amounts are (rebuilt).
+Level rewards named in an event's notice reach your Presents when you defeat its boss at that level; rewards the notice does not detail are not given. Where an event's notice gives another level rule, it is followed: in the Daily Raid Events of December 2016 and in the Mysterious Sir raid of March 2018 the boss rises by **5 levels** at every defeat; in the Gear Golem raid of July 2018 and the Gummi Hound raid of August 2018 by 5 in Bonus Time. Three raid events of spring 2018 (Queen Bee, Crabby Cake, Gear Golem) only said that bosses level faster in Bonus Time: they rise by 5 too, and the Closehanded Captain week of September 10, 2018 by 2 like the next weeks (rebuilt: the amount is not stated). Bonus Time is on Saturday and Sunday here (see above). In the Daily Raid Events of July 2017 to January 2018 coins come every **5 levels**, up to LV 55 (LV 50 from November 2017), as their notices said; the coin amounts are (rebuilt).
 
 ### Graphics — rebuilt bosses and list banners
 
@@ -659,19 +659,19 @@ The 18 bosses above have no surviving data either: their **moves, part HP shares
 
 **Assault Dragon, Adventurer, Jewel Princess, Gear Golem** and **Closehanded Captain** keep **all their weak points** in every week (not original): in some later weekly raids they had fewer (for example Assault Dragon only its Head), but every surviving version of their animations has the full set, and the game cannot start the fight if a weak point has no HP bar.
 
-The spiders have **4 weak points**: the **Spinneret** and the three **spiderlings**, as from 2016 to July 2018. In the weekly raids from September 2018 only the Spinneret was a target ((not original) here): the only surviving spider animations that have the Spinneret also mark the spiderlings as weak points, and the game cannot start the fight if a weak point has no HP bar. The HP shares are the 2016 ones (Spinneret 900 of 24,000, each spiderling a quarter).
+The spiders have **4 weak points**: the **Spinneret** and the three **spiderlings**, as from 2016 to July 2018. In the weekly raids from September 2018 only the Spinneret was a target (not original, here): the only surviving spider animations that have the Spinneret also mark the spiderlings as weak points, and the game cannot start the fight if a weak point has no HP bar. The HP shares are the 2016 ones (Spinneret 900 of 24,000, each spiderling a quarter).
 
 Raid **ATK and DEF** after 2016 are not known and are (rebuilt): ATK follows the story enemies of the same period, DEF is 1,000 (50,000 on Epic, from a player report).
 
-From August 2019 HP depends on tier and period and comes from recordings of the original game; a boss, tier or week that was not recorded takes the value of its tier and period, and a change of HP is placed at the midpoint between two recordings ((rebuilt)). Before August 2019 HP grew with level up to a cap: the curve below the cap is (rebuilt). The share of HP of each weak point is (rebuilt) where no screenshot shows it.
+From August 2019 HP depends on tier and period and comes from recordings of the original game; a boss, tier or week that was not recorded takes the value of its tier and period, and a change of HP is placed at the midpoint between two recordings (rebuilt). Before August 2019 HP grew with level up to a cap: the curve below the cap is (rebuilt). The share of HP of each weak point is (rebuilt) where no screenshot shows it.
 
-Weekly raid timers are about **20 minutes**, from timers seen in videos ((rebuilt)). Raid Coin amounts come from the community wiki tables; the chance of the higher amount and of Gems has no source ((rebuilt)).
+Weekly raid timers are about **20 minutes**, from timers seen in videos (rebuilt). Raid Coin amounts come from the community wiki tables; the chance of the higher amount and of Gems has no source (rebuilt).
 
 ### Raid Boards — original boards, dated titles
 
 Each **Raid Board** has its original name and card picture, so the boards of a week can be told apart by their picture, as in the original game (two boards of a week can share a name, such as **Enhancement Board**). Raid Coins have their original coin.
 
-The **week’s date is added to each Raid Board title** ((not original), an addition of this server), for example **Enhancement Board 10/14/19**, so the boards of a kept raid can be told apart from those of the current week.
+The **week’s date is added to each Raid Board title** (not original, an addition of this server), for example **Enhancement Board 10/14/19**, so the boards of a kept raid can be told apart from those of the current week.
 
 The card pictures of 4 Raid Boards are **cut from screenshots** of the original game, because the picture files were not found: the **Enhancement Board** of March 11-17, 2019 and the **Radiant Rewards Boards** of July 8-14, 2019, October 14-20, 2019 and January 6-12, 2020.
 
@@ -765,7 +765,7 @@ Some campaigns of the original game sent rewards to the **Present Box** when you
 
 **Draw Tickets**, one for each LUX level you have when the campaign starts for you (3rd anniversary, March 2019). The level is read once: levels gained later add nothing.
 
-**30 Draw Tickets**: for a Medal storage of 3,000 slots (September 2020). In the original only players who already had 3,000 slots on the collection date got them; here they arrive whenever you reach 3,000 slots (**differs from the original**).
+**30 Draw Tickets**: for a Medal storage of 3,000 slots (September 2020). In the original only players who already had 3,000 slots on the collection date got them; here they arrive whenever you reach 3,000 slots (not original).
 
 **SN++ - Strelitzia** and 100 Trait Medals #256: one set for every 3 of the September 2020 SN++ - Illus. KH III Medals you own (copies count).
 
@@ -777,7 +777,7 @@ Draw Tickets are spent on the **Ticket Draw** Deals, when the Shop shows one.
 
 ### How they work — start with your Story, never end
 
-A campaign starts when your **Story** reaches the week it began in the original game, like the Shop, and then **never ends**: the original deadlines would make these Medals impossible to get later (**differs from the original**). Medals you already own count. The rewards arrive in the Present Box when you open the Home screen or the Present Box, each reward **only once** (not again for duplicates of the same Medal, except where a campaign counted every copy). Presents never expire on this server.
+A campaign starts when your **Story** reaches the week it began in the original game, like the Shop, and then **never ends**: the original deadlines would make these Medals impossible to get later (not original). Medals you already own count. The rewards arrive in the Present Box when you open the Home screen or the Present Box, each reward **only once** (not again for duplicates of the same Medal, except where a campaign counted every copy). Presents never expire on this server.
 
 The original game sent these rewards some days after the campaign ended; here they arrive as soon as the condition is met.
 
@@ -907,7 +907,7 @@ While VIP is active, every weekday quest is open on any day, with an **Available
 
 The **limited VIP campaigns** of the original game return as VIP quests in the week of your Story that matches their original dates.
 
-The **recurring VIP quests** (VIP! Medal Quest, VIP! Gems, VIP! Draw Ticket, VIP! Skill and the others) **change every week** with their original rewards (some weeks had two); in the weeks whose contents are not known they show the rewards of one known week ((rebuilt)).
+The **recurring VIP quests** (VIP! Medal Quest, VIP! Gems, VIP! Draw Ticket, VIP! Skill and the others) **change every week** with their original rewards (some weeks had two); in the weeks whose contents are not known they show the rewards of one known week (rebuilt).
 
 **VIP! Skill** gives its skill medals as in the original game: a **Scrooge 6★** that carries the skill of its week at the **maximum level** (for example ATK B X Max & Lux++ at LV 20). All its skills exist in this version, so none is replaced. VIP! Skill appears **only in its original weeks** (2019 and from September 2020): in the other weeks it is not offered.
 
@@ -931,7 +931,7 @@ Tapping the Special Catalog banner starts a **training** quest: it costs no AP a
 
 ### Maps — original rooms, rebuilt enemy spots
 
-The rooms are the original ones, but the **enemies on the maps are placed by this restoration** ((rebuilt)), because the original quest files are lost: their number and positions differ from the original, and some enemies are added to carry the drops. For example, the original VIP! Mirror, Mirror had two enemies; here it has more. VIP! Skill of 2019 has its two original enemies.
+The rooms are the original ones, but the **enemies on the maps are placed by this restoration** (rebuilt), because the original quest files are lost: their number and positions differ from the original, and some enemies are added to carry the drops. For example, the original VIP! Mirror, Mirror had two enemies; here it has more. VIP! Skill of 2019 has its two original enemies.
 
 The chests and the materials listed for the original quests are **not included**, because their exact contents are not known. The small picture on a quest card may show another room of the same world.
 
@@ -985,7 +985,7 @@ The **Chat** button at the top of the home screen opens your party chat again, a
 
 Your party has only you as a member, so the chat shows only your own messages and stickers (up to 40 characters per message, the last 1000 messages are kept). It works like a notepad for now.
 
-Stickers: 7 of the original stickers are available. The others had Japanese text drawn in them and are not shown ((rebuilt) list).
+Stickers: 7 of the original stickers are available. The others had Japanese text drawn in them and are not shown (rebuilt, list).
 
 ## Proud Mode
 
@@ -1037,7 +1037,7 @@ Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in t
 
 250 enemies of the later quests have no surviving stats: they use the abilities and **attack** of the most similar original enemy (same family and role). 62 other enemies are exact copies of their base enemy, as in the original game data.
 
-Enemy **HP above level 999** follows the original scale, measured on recordings of the original game: from Quest 851 enemies get much tougher, and the final quests reach hundreds of billions of HP (Quest 979, Ephemer & Skuld: about 650 billion). Up to level 999, and in Quests 1-525, nothing changes. Where no recording exists the HP is **estimated** from the nearest measured quests, and kept on the low side ((rebuilt)). Quest 960 is now level 1900, as in the original game.
+Enemy **HP above level 999** follows the original scale, measured on recordings of the original game: from Quest 851 enemies get much tougher, and the final quests reach hundreds of billions of HP (Quest 979, Ephemer & Skuld: about 650 billion). Up to level 999, and in Quests 1-525, nothing changes. Where no recording exists the HP is **estimated** from the nearest measured quests, and kept on the low side (rebuilt). Quest 960 is now level 1900, as in the original game.
 
 Quests 876-979: the original quest files do not say the level of each enemy (the original server gave it), so every enemy fights at the level of the quest: there are no weaker enemies mixed in.
 
@@ -1067,15 +1067,15 @@ Eliminator, Emerald Sonata, Poison Archer, Paralysis Archer and Wight Knight had
 
 In some quests a character fights **at your side** (Hercules, Aladdin, Mog, Phillip, Ephemer, Calhoun, Ralph, the Union leaders and other Keyblade wielders): as in the original game, they join the battle against the boss, attack after your turn and cannot be targeted. Their attacks are the original ally attacks.
 
-The allies show their original look; their original files have no hit or defeat animation, which an ally never uses, so those show the standing pose ((rebuilt)). All the Ralph allies share the same pieces, as in the original files.
+The allies show their original look; their original files have no hit or defeat animation, which an ally never uses, so those show the standing pose (rebuilt). All the Ralph allies share the same pieces, as in the original files.
 
 The characters standing in the quest maps of Quests 601-974 are back with their original look, except one character in Quests 918, 919 and 927 whose original graphics have not been found (it stays invisible).
 
-The characters you can talk to in the quest maps of Quests 541-930 (and one in Quest 151) had their lines only on the original download server, and only the Japanese version survives: they now speak an English **translation** of the Japanese line ((rebuilt)). One line comes from the original English text of the same scene and one from the community wiki.
+The characters you can talk to in the quest maps of Quests 541-930 (and one in Quest 151) had their lines only on the original download server, and only the Japanese version survives: they now speak an English **translation** of the Japanese line (rebuilt). One line comes from the original English text of the same scene and one from the community wiki.
 
 ### Objectives and rewards — final 2021 rewards and objectives
 
-Since November 22, 2026 the **first-clear rewards**, the **prize boxes** and the **enemy drops** of all story quests 1-979 are the ones of the last version of the original game (2021), shared with their permission by the **ReLux Team** and checked against the community medal farming sheet. In that version Orichalcum and Mythril were no longer given: Quest 25, for example, gives Huey and Cid Medals. Prize boxes give again their medals, and a **gold bag** is a Moogle Medal, as in the original game. A few enemies whose drop is not recorded give a material ((rebuilt)).
+Since November 22, 2026 the **first-clear rewards**, the **prize boxes** and the **enemy drops** of all story quests 1-979 are the ones of the last version of the original game (2021), shared with their permission by the **ReLux Team** and checked against the community medal farming sheet. In that version Orichalcum and Mythril were no longer given: Quest 25, for example, gives Huey and Cid Medals. Prize boxes give again their medals, and a **gold bag** is a Moogle Medal, as in the original game. A few enemies whose drop is not recorded give a material (rebuilt).
 
 From the same version the story quests take their final **objectives**, **names** and details: every story quest costs **0 AP**, as in the last years of the original game, and the bonus objectives (for example "Complete within 3 turns") are the ones players last saw.
 
@@ -1093,7 +1093,7 @@ Castle of Dreams, Enchanted Dominion and the Wreck-It Ralph worlds play their ow
 
 Special Attacks whose damage depends on a condition (for example "Inflicts more damage the higher your HP") show their **damage range** again, as in the original game: the Medal details show "x7.12 - 8.64" instead of a single value, and in battle the damage follows the condition.
 
-For 65 Special Attacks the original values are known and are used as they were. The other 642 condition-based Special Attacks of later Medals have their damage range too ((rebuilt)): the lowest and highest damage come from the community Medal list, and the way damage grows between them follows the battle formula of the original game.
+For 65 Special Attacks the original values are known and are used as they were. The other 642 condition-based Special Attacks of later Medals have their damage range too (rebuilt): the lowest and highest damage come from the community Medal list, and the way damage grows between them follows the battle formula of the original game.
 
 The conditions are: HP, HP or defense paid, turns passed, attacks in succession, gauges full or used, gauges of the previous or next Medal, enemies defeated, Lux, a single enemy left, skills triggered, slot number, party size, and poisoned, asleep or paralyzed targets.
 
@@ -1111,7 +1111,7 @@ Spirit points of each Medal, the points needed for each Spirit rank and the mult
 
 Your Spirit rank may be lower than before: the earlier values were estimates.
 
-Medals without a Special Attack Bonus level (below 6★) give 15 points ((rebuilt): the original value is not documented).
+Medals without a Special Attack Bonus level (below 6★) give 15 points (rebuilt: the original value is not documented).
 
 ## Enemy attacks
 
@@ -1129,11 +1129,11 @@ Special Attacks use their **original animations** again, and the number of hits 
 
 For about 700 Special Attacks the original animation is known: it is used as it was. Some later Medals (for example "Ars Solum EX") use the animation of the original attack with the same name.
 
-For the other Special Attacks the original animation is lost: they use the original animation of **another** Special Attack with the same number of hits ((rebuilt)). Support Special Attacks (healing, boosts) use the original support animations.
+For the other Special Attacks the original animation is lost: they use the original animation of **another** Special Attack with the same number of hits (rebuilt). Support Special Attacks (healing, boosts) use the original support animations.
 
 A few Special Attacks still use a simple animation, because their only copy is incomplete.
 
-Supernovas deal 1 hit (4 for "Reversed Strike All M"), as in the original game. Which Supernova animation each Medal used is not known: each Supernova uses one of the original Supernova animations with that number of hits ((rebuilt)).
+Supernovas deal 1 hit (4 for "Reversed Strike All M"), as in the original game. Which Supernova animation each Medal used is not known: each Supernova uses one of the original Supernova animations with that number of hits (rebuilt).
 
 ## Spirit Tricks
 

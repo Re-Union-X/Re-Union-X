@@ -23,7 +23,8 @@ const update = { date: '10/16', tag: 'IMPORTANT', title: 'About game data update
 
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-const mdLine = (p) => p.replace(/\{(not original|rebuilt|later)\}/g, '($1)');
+const mdLine = (p) => p.replace(/\(\{(not original|rebuilt|later)\}\)/g, '($1)').replace(/\(\{(not original|rebuilt|later)\} /g, '($1, ')
+  .replace(/\(\{(not original|rebuilt|later)\}/g, '($1')  .replace(/\{(not original|rebuilt|later)\}/g, '($1)');
 
 function render() {
   const all = byDate([update, ...NOTICES]);

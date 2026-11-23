@@ -668,7 +668,16 @@ function eventNotices() {
     if (line.startsWith('## ')) k = home(line.slice(3).split(' | ')[0]);
     out[k].body.push(line);
   }
-  // the lead lines stay first in notice 1 even though some sections of notice 1 came later in the whole body
+  // «see **X** below / above» written for the single notice: when X is now a section of another event notice, name that notice
+  // (final review of the split)
+  const where = new Map(out.flatMap((x) => x.body.flatMap((l) => {
+    if (l.startsWith('## ')) return [[l.slice(3).split(' | ')[0], x.title]];
+    const b = /^\*\*([^*]+?)\.\*\*/.exec(l); // a bold paragraph title («**Community goals.** ...»)
+    return b ? [[b[1], x.title]] : [];
+  })));
+  for (const x of out) {
+    x.body = x.body.map((l) => l.replace(/see \*\*([^*]+)\*\* (below|above)/g, (m, t) => (where.has(t) && where.get(t) !== x.title ? `see **${t}** in the **${where.get(t)}** notice` : m)));
+  }
   return out;
 }
 
@@ -695,13 +704,13 @@ const RAW_NOTICES = [
       '**Anna & Elsa** after 5 VIP Draws of the Frozen Medals Deal, plus a **Trait Medal #64** for every VIP Draw of it (December 2018).',
       '**Supernova - Terra, Ven, Aqua**: for 3 Medals with 5 traits unlocked among Supernova - HD Terra, HD Ventus and HD Aqua, plus a **Trait Medal #72** for every draw of their Falling Price Deals (January 2019).',
       '**Draw Tickets**, one for each LUX level you have when the campaign starts for you (3rd anniversary, March 2019). The level is read once: levels gained later add nothing.',
-      '**30 Draw Tickets**: for a Medal storage of 3,000 slots (September 2020). In the original only players who already had 3,000 slots on the collection date got them; here they arrive whenever you reach 3,000 slots (**differs from the original**).',
+      '**30 Draw Tickets**: for a Medal storage of 3,000 slots (September 2020). In the original only players who already had 3,000 slots on the collection date got them; here they arrive whenever you reach 3,000 slots {not original}.',
       '**SN++ - Strelitzia** and 100 Trait Medals #256: one set for every 3 of the September 2020 SN++ - Illus. KH III Medals you own (copies count).',
       '**Flantastic Seven**: the Flan Medals, their Trait Medals, Kyroo Medals, Gems, the title and SN++ - Flantastic Seven (Boosted at 110) as you collect 10 to 110 **Sora & Moogle B** Medals (September 2020).',
       '**SN++ - MoM Kairi** and 100 Trait Medals #284: one set for every 4 SN++ - Stained Glass #10-#13 you own (November 2020).',
       'Draw Tickets are spent on the **Ticket Draw** Deals, when the Shop shows one.',
       '## How they work',
-      'A campaign starts when your **Story** reaches the week it began in the original game, like the Shop, and then **never ends**: the original deadlines would make these Medals impossible to get later (**differs from the original**). Medals you already own count. The rewards arrive in the Present Box when you open the Home screen or the Present Box, each reward **only once** (not again for duplicates of the same Medal, except where a campaign counted every copy). Presents never expire on this server.',
+      'A campaign starts when your **Story** reaches the week it began in the original game, like the Shop, and then **never ends**: the original deadlines would make these Medals impossible to get later {not original}. Medals you already own count. The rewards arrive in the Present Box when you open the Home screen or the Present Box, each reward **only once** (not again for duplicates of the same Medal, except where a campaign counted every copy). Presents never expire on this server.',
       'The original game sent these rewards some days after the campaign ended; here they arrive as soon as the condition is met.',
       '## Not here yet',
       'The Timeless River Mickey of the 2016 Proud Quest event and the Royal Captain and Royal Magician titles of the January 2017 Classic Goofy and Classic Donald events: those event quests are not in the game, so their Medals (Classic Goofy, Boosted Classic Donald) cannot be obtained. The campaigns that gave 1,000 Jewels for each Sora & Moogle, Illustrated Moogle, Toon Moogle or KH II Sora & Moogle Medal you owned (2017-2018): those Medals are not in the game data.'] },
@@ -1129,10 +1138,10 @@ function noticesPage(realMs = Date.now(), opts = {}) {
     // readable notices (mockup v2): «in short» box, closed sections with a one-liner, status tags
     + '.brief{background:#123f5e;border-left:4px solid #ffd65a;border-radius:4px;padding:8px 12px;margin:0 0 12px;line-height:1.5}'
     + '.brief p{margin:0 0 4px}.brief p:last-child{margin:0}.nums{color:#9fc3d6;font-size:15px;margin-top:6px}.nums b{color:#ffd65a;font-size:17px}'
-    + 'details{border-bottom:1px solid #1a4a68}summary{list-style:none;display:flex;align-items:center;gap:8px;padding:10px 2px;color:#5fe0f0;font-weight:bold;line-height:1.3}'
+    + 'details{border-bottom:1px solid #1a4a68}summary{list-style:none;display:flex;align-items:center;padding:10px 2px;color:#5fe0f0;font-weight:bold;line-height:1.3}'
     + 'summary::-webkit-details-marker{display:none}summary:before{content:"";flex:none;border-style:solid;border-width:6px 0 6px 9px;'
-    + 'border-color:transparent transparent transparent #2fd0e8}details[open] summary:before{transform:rotate(90deg)}'
-    + 'summary span{flex:1}summary i{font-style:normal;font-weight:normal;color:#9fc3d6;font-size:14px;text-align:right;max-width:45%}'
+    + 'border-color:transparent transparent transparent #2fd0e8;margin-right:8px}details[open] summary:before{transform:rotate(90deg)}'
+    + 'summary span{flex:1}summary i{margin-left:8px;font-style:normal;font-weight:normal;color:#9fc3d6;font-size:14px;text-align:right;max-width:45%}'
     + '.body{padding:0 2px 8px 17px;line-height:1.55}.body p{margin:0 0 8px}'
     + '.tag{display:inline-block;font-size:11px;font-weight:bold;color:#fff;padding:0 5px;border-radius:3px;vertical-align:1px;line-height:17px;letter-spacing:.5px}'
     + '.tag.no{background:#8a4fc2}.tag.rb{background:#d07a12}.tag.la{background:#5c6b75}'

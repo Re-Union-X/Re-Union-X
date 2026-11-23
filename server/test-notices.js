@@ -666,5 +666,18 @@ for (const web of [false, true]) {
   check(!/^### .* \| /m.test(md), 'markdown: no raw « | » in headings');
   check(/\(not original\)/.test(md) && /^### Rewards — once, original drop chances$/m.test(md), 'markdown: tags and one-liners as text');
 }
+// final review fixes (plan 2026-11-23-notices-readable)
+{
+  const md = require('./export-notices').render();
+  check(!/\(\(/.test(md), 'markdown: no double brackets «((rebuilt))»');
+  // a «see **X** below/above» must point to a section of the same notice (the Events split moved sections apart)
+  for (const x of n.NOTICES.filter((y) => y.group === 'events')) {
+    const secs = new Set(x.body.filter((l) => l.startsWith('## ')).map((l) => l.slice(3).split(' | ')[0]));
+    for (const m of x.body.join(' ').matchAll(/see \*\*([^*]+)\*\* (below|above)/g)) check(secs.has(m[1]), `${x.title}: «see ${m[1]} ${m[2]}» points into another notice`);
+  }
+  const h = n.noticesPage(U(2026, 11, 20));
+  check(/summary:before\{[^}]*margin-right:8px/.test(h) && /summary i\{[^}]*margin-left:8px/.test(h), 'summary spacing without flex gap (Chrome 70 WebView)');
+  check(!n.NOTICES.some((x) => x.body.some((l) => l.includes('**differs from the original**'))), 'no bold «differs from the original» left');
+}
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');
