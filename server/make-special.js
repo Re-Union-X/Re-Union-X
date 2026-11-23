@@ -6,13 +6,13 @@
 //   rewards? (objective rewards that replace the catalogue ones, e.g. the «(See table)» VIP quests), objectives?
 //   ({quest: reconstructed «text -> reward» lines} for a catalogue quest without any or with a typo), from? / to?
 //   (days inside the periods, copied into the index), drops);
-//   plus campaignSets / campaigns: the content of the 120 WW week-limited VIP campaigns (Task 12, campaignEntries below);
+//   plus campaignSets / campaigns: the content of the 121 WW week-limited VIP campaigns (Task 12, campaignEntries below);
 //   plus weekly: the week versions of the recurring VIP sets (round 17, weeklyEntries below; catalogue
 //   `vip_recurring_weekly`, evStage ids from 7700);
 // - the private catalogue of the original Special quests (KHUX_SPECIAL_SRC, default
 //   D:\Progetto_Restauro_KH_UX\private\events\special\special_quests.json; never copied into the repo): per quest world,
 //   room, AP, level, target and the three objectives «text -> reward».
-//   Its `vip_limited_campaigns_ww` rows (id, notice, title, start, end) give the campaign entries 7501-7620.
+//   Its `vip_limited_campaigns_ww` rows (id, notice, title, start, end) give the campaign entries 7501-7621.
 // Output (idempotent: own rows are dropped first):
 // - stage rows 970000-979999 with stageKind 2 (bench 30-10: a stageKind 2 row with id = stageId works as a Special
 //   quest; Begin sends eventId = the evStage id). Stage ids: 970000 + (evStageId - 7000) * 10 + position (max 5).
@@ -257,7 +257,7 @@ function evStageRow(evStageId, stageIds, { resetFlag = 0, detailUrl = '' } = {})
 }
 
 // WW week-limited VIP campaigns (Task 12, spec 5.3): one entry per row of the catalogue's `vip_limited_campaigns_ww`
-// (catalogue order), key C<notice>, evStageId frozen in rules.campaigns[key].evStageId (7501-7620 for the 120 rows, the
+// (catalogue order), key C<notice>, evStageId frozen in rules.campaigns[key].evStageId (7501-7620 for the 120 rows of 30-10, 7621 for C22565 of Part 10d, the
 // catalogue order of 30-10; a campaign without one: next free id after the highest frozen one), VIP, every
 // day, period of the start day, campaign window {start, end} in days, end inclusive (the catalogue end is the next
 // Monday, exclusive; a row without dates takes start / end from the rules). Content (rules.campaigns[key].parts, at

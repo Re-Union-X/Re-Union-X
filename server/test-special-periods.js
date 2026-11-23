@@ -138,7 +138,11 @@ check(CAMP.filter(([, c]) => c.reconstruct).map(([k]) => k).join() === RECON.joi
 check(CAMP.every(([, c]) => !c.banner || BANNER_RE.test(c.banner) || NOTICE_RE.test(c.banner)), 'campaign banners are khuxwiki or notice image names');
 check(rules.campaigns.C71999?.banner === 'Notice 71999 Limited Winter VIP Board banner (notice image).png'
   && rules.campaigns.C72714?.banner === 'Notice 72714 New Year Limited VIP Boards banner (notice image).png', 'Limited VIP Boards: notice images');
-check(CAMP.filter(([, c]) => c.banner).length === 118, `campaigns with an original: ${CAMP.filter(([, c]) => c.banner).length} (118)`);
+check(CAMP.filter(([, c]) => c.banner).length === 119, `campaigns with an original: ${CAMP.filter(([, c]) => c.banner).length} (119)`);
+// Part 10d: EV-0085 Cyber Week VIP set, frozen id after the 120 of Task 12; the others keep theirs
+check(rules.campaigns.C22565?.evStageId === 7621 && JSON.stringify(rules.campaigns.C22565.parts) === '[{"set":"chip-dale"}]', 'C22565 (EV-0085 Cyber Week): evStageId 7621, Chip & Dale set');
+check(rules.campaigns.C21829?.evStageId === 7505 && rules.campaigns.C23990?.evStageId === 7506, 'C21829 / C23990 keep 7505 / 7506');
+check(new Set(CAMP.map(([, c]) => c.evStageId)).size === CAMP.length, 'campaign evStageIds unique');
 // round 17: recurring VIP sets follow the weekly rotation (rules.weekly, make-special.js weeklyEntries)
 const WK = rules.weekly || {};
 const WV = Object.entries(WK.versions || {}).filter(([k]) => !k.startsWith('_'));
