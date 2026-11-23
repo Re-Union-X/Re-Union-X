@@ -21615,22 +21615,22 @@ lwf/character/enemy/hit_effect_fla/eff_2222/eff_2222_e38393e38383e38388e3839ee38
 #     emblem, make-emblems.js), shown in the profile «Boosters» list and as a type-34 reward. The WW resources lack them: the JP
 #     4.3.1 files; imageId 30 and 52 are not in the JP data: a community archive copy of the original icon (private, in --loc).
 img/ui/emblem/Emblem_1.png	jp
-img/ui/emblem/Emblem_2.png	jp
-img/ui/emblem/Emblem_3.png	jp
-img/ui/emblem/Emblem_4.png	jp
-img/ui/emblem/Emblem_5.png	jp
-img/ui/emblem/Emblem_6.png	jp
-img/ui/emblem/Emblem_7.png	jp
-img/ui/emblem/Emblem_8.png	jp
 img/ui/emblem/Emblem_11.png	jp
+img/ui/emblem/Emblem_12.png	jp
 img/ui/emblem/Emblem_15.png	jp
+img/ui/emblem/Emblem_16.png	jp
+img/ui/emblem/Emblem_18.png	jp
+img/ui/emblem/Emblem_2.png	jp
+img/ui/emblem/Emblem_20.png	jp
 img/ui/emblem/Emblem_27.png	jp
 img/ui/emblem/Emblem_28.png	jp
+img/ui/emblem/Emblem_3.png	jp
 img/ui/emblem/Emblem_30.png	loc	=img/ui/emblem/Emblem_30.png	# original icon, community archive copy (not in JP 4.3.1)
 img/ui/emblem/Emblem_31.png	jp
 img/ui/emblem/Emblem_32.png	jp
 img/ui/emblem/Emblem_33.png	jp
 img/ui/emblem/Emblem_34.png	jp
+img/ui/emblem/Emblem_4.png	jp
 img/ui/emblem/Emblem_42.png	jp
 img/ui/emblem/Emblem_43.png	jp
 img/ui/emblem/Emblem_44.png	jp
@@ -21638,8 +21638,13 @@ img/ui/emblem/Emblem_46.png	jp
 img/ui/emblem/Emblem_47.png	jp
 img/ui/emblem/Emblem_48.png	jp
 img/ui/emblem/Emblem_49.png	jp
+img/ui/emblem/Emblem_5.png	jp
 img/ui/emblem/Emblem_50.png	jp
+img/ui/emblem/Emblem_51.png	jp
 img/ui/emblem/Emblem_52.png	loc	=img/ui/emblem/Emblem_52.png	# original icon, community archive copy (not in JP 4.3.1)
+img/ui/emblem/Emblem_6.png	jp
+img/ui/emblem/Emblem_7.png	jp
+img/ui/emblem/Emblem_8.png	jp
 # 56. Avatar board cards (Events Part 7, Task 6, 15-11): img/sphere_incentive/<sphereBoardId>.png of the limited / returning
 #     avatar boards 5000001+ (server/avatar-boards.js; ids frozen in server/event_ids.json avatarBoards). The card is never drawn:
 #     jp = the JP 4.3.1 card with the same picture as the khuxwiki card of that board (or of that run); loc = the worldwide card

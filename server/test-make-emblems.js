@@ -55,6 +55,20 @@ const tests = {
     assert.strictEqual(out.find((r) => r.emblemId === 1811007).endTime, clock.fakeString(t + 14 * 86400000, off));
     assert.strictEqual(out.find((r) => r.emblemId === 1811001).endTime, me.FAR);
   },
+  // the Booster icons the served rows need and originals.tsv does not import (user 23-11: Booster [Donald] showed the Jewel icon)
+  missing_icons_from_originals() {
+    const rows = [{ imageId: 6 }, { imageId: 12 }, { imageId: 6 }, { imageId: 51 }];
+    const tsv = '# 55. Booster icons\nimg/ui/emblem/Emblem_6.png\tjp\nimg/ui/emblem/Emblem_51.png\tloc\t=x\n';
+    assert.deepStrictEqual(me.missingIcons(rows, tsv), [12]);
+  },
+  // the live master (when built here): every served Booster has its icon in originals.tsv section 55
+  live_master_icons_imported() {
+    const fs = require('fs'), path = require('path');
+    const m = path.join(__dirname, 'master_data', 'emblem.json');
+    if (!fs.existsSync(m)) return;
+    const tsv = fs.readFileSync(path.join(__dirname, '..', 'recon', 'tools', 'originals.tsv'), 'utf8');
+    assert.deepStrictEqual(me.missingIcons(JSON.parse(fs.readFileSync(m, 'utf8')), tsv), []);
+  },
 };
 let failed = 0;
 for (const [n, f] of Object.entries(tests)) { try { f(); console.log('ok', n); } catch (e) { failed++; console.log('FAIL', n, e.message); } }

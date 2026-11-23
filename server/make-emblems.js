@@ -86,4 +86,15 @@ function patch(masterDir, file = process.env.KHUX_BOOSTERS || DEFAULT, gameData 
   return r;
 }
 
-module.exports = { makeEmblems, addGroupCodes, servedRows, rowOf, patch, FAR, FIELDS };
+// emblem rows + the text of recon/tools/originals.tsv -> the imageIds whose icon img/ui/emblem/Emblem_<imageId>.png no line
+// imports (sorted, once each): the client then draws the Jewel icon in its place (user 23-11, Booster [Donald])
+function missingIcons(rows, originalsTsv) {
+  const have = new Set();
+  for (const line of String(originalsTsv).split(/\r?\n/)) {
+    const m = line.match(/^img\/ui\/emblem\/Emblem_(\d+)\.png\t/);
+    if (m) have.add(Number(m[1]));
+  }
+  return [...new Set((rows || []).map((r) => r.imageId))].filter((id) => !have.has(id)).sort((a, b) => a - b);
+}
+
+module.exports = { makeEmblems, addGroupCodes, servedRows, rowOf, patch, missingIcons, FAR, FIELDS };
