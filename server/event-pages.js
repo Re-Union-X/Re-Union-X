@@ -483,6 +483,7 @@ const EVENT_SHORT = {
   donorKept: ['values', 'Later game data', 'Used instead of the wiki page (the 2018 run)', 'replaced'],
   wikiLowConfidence: ['values', 'Wiki value', 'From khuxwiki, not confirmed by a second source', 'replaced'],
   noWikiPage: ['values', 'No wiki page', 'Later game data only, no second source', 'replaced'],
+  otherRunWiki: ['values', 'Wiki of another run', 'Original enemies, confirmed by the khuxwiki page of another run', 'replaced'],
   wikiAp: ['values', 'AP', 'From the khuxwiki page of this run', 'replaced'],
   mapIncomplete: ['values', 'Map', 'Incomplete in our data: the gaps are reported', 'removed'],
   eventCoins: ['rewards', 'Event Coins', 'Paid into the boards of this event; they never expire', 'camp'],
@@ -497,7 +498,7 @@ const EVENT_SHORT = {
   dramaOff: ['rules', 'Scenes', 'The original scenes are not shown yet', 'later'],
   hscThresholds: ['rewards', 'Score thresholds', 'Ranking rewards by your own best score, not by a leaderboard', 'bonus'],
 };
-const EVENT_LABEL = { wikiAp: 'AP', donorKept: 'later game data', wikiLowConfidence: 'a wiki value', noWikiPage: 'no wiki page', mapIncomplete: 'map', eventCoins: 'Event Coins',
+const EVENT_LABEL = { wikiAp: 'AP', donorKept: 'later game data', wikiLowConfidence: 'a wiki value', noWikiPage: 'no wiki page', otherRunWiki: 'wiki of another run', mapIncomplete: 'map', eventCoins: 'Event Coins',
   wholeDay: 'opening time', dramaOff: 'scenes', boardsLater: 'event boards', noCoinSource: 'event boards', boosterLater: 'Boosters', noBoardSet: 'Event Coins', quizBoard: 'quiz board',
   communityBonus: 'community goal', completionReward: 'completion reward', hscThresholds: 'score thresholds' };
 const EVENT_GROUPS = [['values', 'Quest data', 'tleg', ''], ['rewards', 'Rewards', 'camp', ' rw'], ['rules', 'Rules', 'weekday', ' ru'], ['other', 'Other', 'replaced', ' ot']];

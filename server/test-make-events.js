@@ -1314,6 +1314,21 @@ const tests = {
     assert.ok(q1.served, JSON.stringify(q1));
     assert.strictEqual(q2.reason, 'rewardItemMissing', JSON.stringify(q2));
   },
+  // census 23-11: a renumbered medal (I-225) whose rows no longer have medalId == imageId resolves to its normal row, not the
+  // boosted one (FFRK Warrior of Light 311423 / 2311423, imageId 301422); «Pence A 6★» (donor) is our 2016 «Pence» (no B row)
+  reward_medal_renumbered_and_a_name() {
+    const m = { ...master(), medal: [{ medalId: 311423, name: 'FFRK Warrior of Light', rare: 6, imageId: 301422 },
+      { medalId: 2311423, name: 'FFRK Warrior of Light', rare: 6, imageId: 301422, groupId: 311423 }, { medalId: 11046, name: 'Pence', rare: 6, imageId: 11046 },
+      { medalId: 20046, name: 'Roxas', rare: 6, imageId: 20046 }, { medalId: 20047, name: 'Roxas B', rare: 6, imageId: 20047 }],
+      material: [], title: [], avatarParts: [], petParts: [] };
+    const obj = (id, name) => quest(702400 + id % 97, 1, [501], { objectives: [objective(10, 'Complete without having to continue', { type: 3, id, num: 1, name })] });
+    const out = me.buildEvents([record('E-W', [obj(99001, 'FFRK Warrior of Light 6★'), obj(99002, 'Pence A 6★'), obj(99003, 'Roxas A 6★')])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
+    const [w, p, r] = entry(out, 'E-W').quests;
+    assert.ok(w.served && p.served, JSON.stringify([w.why, p.why]));
+    assert.strictEqual(r.reason, 'rewardItemMissing', 'a bare name with a B row is another medal: never guessed');
+    const ids = JSON.stringify(out.stage.concat(out.reward || []));
+    assert.ok(ids.includes('311423') && !ids.includes('2311423') && ids.includes('11046'), 'normal rows used');
+  },
   // Events Part 10a: a data-hole quest whose map is generated later (map.source 'generateLater', Part 10b): not served, reason
   // mapUnusable «map to generate (Events Part 10b)», not listed in event_gen_maps.json; the other quests of the record are unaffected
   // Events Part 10b: drops of a generated map (record genDrops {byName {name: rewardId}, target rewardId, rows {rewardId: rows}}):
@@ -1749,7 +1764,7 @@ const tests = {
   },
   // a data-hole record (rec.dataHole, the 2016-17 runs) whose original stage row loaded the map of another record's quest (its
   // stageBinId: the Daily XIII quests of EV-0333 on the monthly maps) shares that map with its own stage row when the drops are
-  // equal; a record that is not a data-hole record keeps the Part 4 rule (mapKeyUsed)
+  // equal; since 23-11 (census C1) any record with that evidence, the others keep the Part 4 rule (mapKeyUsed)
   data_hole_shares_donor_map() {
     const monthly = record('E-H1', [quest(702800, 1, [501])]);
     const daily = (extra = {}) => record('E-H2', [quest(702810, 1, [501], { map: { key: 702800, stageBinId: 702800, status: 'ok' } })], { start: '2019-06-01', end: '2019-06-07', ...extra });
@@ -1757,7 +1772,11 @@ const tests = {
     const [m, d] = [entry(out, 'E-H1').quests[0], entry(out, 'E-H2').quests[0]];
     assert.deepStrictEqual([d.served, d.stageId !== m.stageId], [true, true]);
     assert.strictEqual(out.stage.find((s) => s.stageId === d.stageId).stageBinId, 702800);
-    assert.strictEqual(entry(build([monthly, daily()]), 'E-H2').quests[0].reason, 'mapKeyUsed');
+    // census 23-11 (C1, EV-0529 / EV-1119): any record whose original stage row loads the holder quest's own map shares it
+    assert.strictEqual(entry(build([monthly, daily()]), 'E-H2').quests[0].served, true);
+    // without that evidence (the donor stage row loads its own map) the Part 4 rule stays
+    const own = record('E-H3', [quest(702820, 1, [501], { map: { key: 702800, stageBinId: 0, status: 'ok' } })], { start: '2019-06-01', end: '2019-06-07' });
+    assert.strictEqual(entry(build([monthly, own]), 'E-H3').quests[0].reason, 'mapKeyUsed');
   },
   // datesOf (EV-0913 dates EV-0929 from 2019-09-03): the target starts then and, with no end, ends on the Pacific day its donor row
   // ends; the line itself is a schedule line (no row). objectiveResolved in a record label is a note, not a label phrase
@@ -2076,6 +2095,13 @@ const tests = {
       assert.deepStrictEqual(ix.own.ranking, [h.rankingId]);
       assert.ok(ix.entries[0].hsc && ix.entries[0].hsc.thresholds.length === 3);
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  },
+  // user rulings A1 / A2 (23-11): the record phrases of the patched quests map to labels with a reason text
+  ww_ruling_labels() {
+    assert.deepStrictEqual(me.labelIds('original; enemies confirmed by another run', REAL_CONFIG.labelPhrases), ['otherRunWiki']);
+    assert.deepStrictEqual(me.labelIds('original; no khuxwiki page', REAL_CONFIG.labelPhrases), ['noWikiPage']);
+    assert.ok(/another run/.test(REAL_CONFIG.reconstructedWhy.otherRunWiki || ''), 'otherRunWiki has its reason text');
+    assert.ok(REAL_CONFIG.reconstructedWhy.noWikiPage, 'noWikiPage has its reason text');
   },
   held_hsc_not_served() {
     const noThr = hscRecord('H-1');

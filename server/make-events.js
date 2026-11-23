@@ -522,7 +522,15 @@ function itemResolver(master) {
     }
     if (!mt) return null;
     let rows = byName.get(`${mt[1]}|${mt[2]}`) || [];
-    if (rows.length > 1) rows = rows.filter((m) => m.medalId === m.imageId);
+    // census 23-11: «Pence A» (donor) is our 2016 «Pence» when no «Pence B» exists (the A was added once a B medal came out)
+    const bare = /^(.*) A$/.exec(mt[1]);
+    if (!rows.length && bare && !byName.has(`${bare[1]} B|${mt[2]}`)) rows = byName.get(`${bare[1]}|${mt[2]}`) || [];
+    if (rows.length > 1) {
+      // on a tie the row whose medalId == imageId; after the I-225 renumbering no row may match: then the normal row (no groupId),
+      // never a boosted twin
+      const same = rows.filter((m) => m.medalId === m.imageId);
+      rows = same.length ? same : rows.filter((m) => !m.groupId);
+    }
     return rows.length === 1 ? rows[0].medalId : null;
   };
   return (d, missing) => {
@@ -1374,9 +1382,12 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       const twinShare = !!(prior && rec.dataHole && (srcMap === 'jpTwin' || prior.jpTwin));
       // a record rebuilt from the surviving stage rows of the 2016-17 data hole (rec.dataHole, Part 5): the original stage row of a
       // quest loaded another stage's map (its stageBinId: the Daily XIII quests of EV-0333 on the maps of the monthly runs, user
-      // 10-11-2026), so it shares that map file; the drops must be equal (the check below). Other records keep the Part 4 rule
+      // 10-11-2026), so it shares that map file; the drops must be equal (the check below). Records without that evidence keep the Part 4 rule
       const donorBin = (q0.map || {}).stageBinId;
-      const binShare = !!(prior && rec.dataHole && !gen && !shifted && Number.isInteger(donorBin) && donorBin === mapKey && donorBin !== q0.stageId);
+      // census 23-11 (C1: EV-0529 on EV-0783's maps, EV-1119 on EV-1019's): on any record when the map is the holder quest's own
+      // map (its donor stage id is the key), not only in the data hole
+      const binShare = !!(prior && !gen && !shifted && Number.isInteger(donorBin) && donorBin === mapKey && donorBin !== q0.stageId
+        && (rec.dataHole || prior.ownKey === mapKey));
       if (prior && prior.censusId !== rec.censusId && !quizShare && !surpriseShare && !twinShare && !binShare) { item.reason = 'mapKeyUsed'; item.why = `map key ${mapKey} is the map of event stage ${prior.stageId} too`; continue; }
       if (prior && prior.dropsKey !== dropsKey) { item.reason = 'mapKeyUsed'; item.why = `map key ${mapKey} is shared with event stage ${prior.stageId} but the drops differ`; continue; }
       // every candidate goes into event_maps.json (the list import_event_stages.py imports), served or not
@@ -1386,7 +1397,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         ...(lt ? { fromKey: lt.fromKey, enemySwaps: lt.swaps || [], layoutTwin: true } : {}),
         // map parts the JP dump dropped as dedup stubs, taken from their source part (recon/tools/import_event_stages.py partSources)
         ...((q.map || {}).partSources ? { partSources: q.map.partSources } : {}) };
-      if (!prior) { builtMaps.set(mapKey, { stageId, censusId: rec.censusId, dropsKey, mapItem, quiz, shortWindow: !!rec.shortWindow, jpTwin: srcMap === 'jpTwin' }); if (!gen) put(out.maps, mapItem); }
+      if (!prior) { builtMaps.set(mapKey, { stageId, censusId: rec.censusId, dropsKey, mapItem, quiz, shortWindow: !!rec.shortWindow, jpTwin: srcMap === 'jpTwin', ownKey: q0.stageId }); if (!gen) put(out.maps, mapItem); }
       const newRewards = [];
       if (maps && !gen) {
         // the original map file (recon/tools/import_event_stages.py report): not imported -> not served
