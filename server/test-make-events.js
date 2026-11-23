@@ -2123,6 +2123,9 @@ const tests = {
     // rule R8 (user 23-11-2026): an ambiguous name with no month row takes the row the JP maps of the same period place in that role
     assert.deepStrictEqual(me.labelIds('original; enemy version from the JP maps of the period', REAL_CONFIG.labelPhrases), ['jpPeriodVersion']);
     assert.ok(/Japanese maps of the same period/.test(REAL_CONFIG.reconstructedWhy.jpPeriodVersion || ''), 'jpPeriodVersion has its reason text');
+    // research 23-11 (user): the month rows of one event are difficulty tiers; chosen by their order across the event's quests
+    assert.deepStrictEqual(me.labelIds('original; enemy version from the month rows of the event', REAL_CONFIG.labelPhrases), ['monthRowOrder']);
+    assert.ok(/difficulty/.test(REAL_CONFIG.reconstructedWhy.monthRowOrder || ''), 'monthRowOrder has its reason text');
   },
   held_hsc_not_served() {
     const noThr = hscRecord('H-1');
