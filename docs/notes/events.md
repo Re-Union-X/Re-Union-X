@@ -1666,3 +1666,12 @@ Plan `docs/superpowers/plans/2026-11-22-events-part10c-special-mechanics.md`. Pe
 - Open: contest bench on a later save; WOFF Advanced; 41 ambiguous enemy names (`tmp/events/part10/gen_held.md`); Goofy medal
   drops; card endTime vs window end in daylight time (minor); M5 «Open all treasure chests» with 0 chests to bench.
 
+
+### Skill objectives (bench 23-11-2026)
+
+- Objective code 14 «Trigger the skill %s» (dataType 3, idType 6, id = skillId): the client fills in the skill name from the
+  `%s` template; a record text with the bare id is printed as is, so `make-events.js` turns «Trigger the skill N» into the
+  template (test `objective_text_skill_id`).
+- The client clears it only for the exact skill id: «ATK B XIV Max & Poison» (1168) does not count for «Poison» (1104).
+  The original rows use the same ids (7 rows on 1104, 44 on 1101 Attack Boost II), so this is original behaviour.
+  The objective is reported in `clearMissionIds` of `/stage/clear`; the `14_0` condition stays 0 even when it is met.
