@@ -230,7 +230,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(/r\.rw/.test(hr) && /s\.reward/.test(hr), 'script filters by reward');
   const bn = pages.buildNames((n) => ({ reward: [{ rewardId: 5, type: [3, 5, 2], id: [9, 8, 0] }], stage: [{ stageId: 3, submissionRewardType: [20, 14, 0], submissionItemId: [1, 0, 0] }] }[n] || []));
   check(bn.dropTypes(5).join() === '3,5,2' && bn.objectiveTypes(3).join() === '20,14' && bn.dropTypes(99).length === 0, 'buildNames reward types');
-  // real local index: 40 quest rows, 120 campaign rows
+  // real local index: 40 quest rows, 121 campaign rows (C22565 of Part 10d)
   let real = null; try { real = require('./game_data/special.json'); } catch { /* no local index */ }
   if (real) {
     const sp = require('./special');
@@ -239,7 +239,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
     // round 17: the week versions of a recurring VIP set (weekOf) join their set's row
     const fams = new Set(real.entries.filter((en) => !(en.campaign && !en.weekOf) && en.periods).map((en) => en.name.replace(/\s*\((?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day\)\s*$/, '').replace(/\s+\d+$/, '')));
     const crs = hh.split('<div class="row cr ').slice(1);
-    check(nCamp === 120 && crs.length < nCamp && crs.reduce((t, x) => t + +(/data-nv="(\d+)"/.exec(x) || [0, 0])[1], 0) === nCamp, `real campaigns: ${crs.length} rows for ${nCamp} weeks`);
+    check(nCamp === 121 && crs.length < nCamp && crs.reduce((t, x) => t + +(/data-nv="(\d+)"/.exec(x) || [0, 0])[1], 0) === nCamp, `real campaigns: ${crs.length} rows for ${nCamp} weeks`);
     check((hh.match(/<div class="row (?!cr )/g) || []).length === fams.size, `real quest rows ${(hh.match(/<div class="row (?!cr )/g) || []).length} = families ${fams.size}`);
     const realIds = (hh.match(/ id="[^"]+"/g) || []); check(realIds.length === new Set(realIds).size, 'real page: unique ids');
   }

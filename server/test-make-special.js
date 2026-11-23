@@ -528,11 +528,11 @@ if (fs.existsSync(path.join(MASTER, 'stage.json')) && fs.existsSync(SRC)) {
     petParts: JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'petParts.json'), 'utf8')) });
   const live = real.entries.filter((e) => !e.removed && !e.weeklyOnly);
   const weeklyV = all.index.entries.filter((e) => e.weekOf);
-  check(all.evStageRows.length === 1 + live.length + 120 + 198, `real build: ${all.evStageRows.length} evStage rows (1 + ${live.length} + 120 campaigns + 198 week versions)`);
+  check(all.evStageRows.length === 1 + live.length + 121 + 198, `real build: ${all.evStageRows.length} evStage rows (1 + ${live.length} + 121 campaigns + 198 week versions)`);
   // the 120 WW week-limited VIP campaigns (Task 12)
   const sp = require('./special');
   const camps = all.index.entries.filter((e) => e.campaign && !e.weekOf);
-  check(camps.length === 120 && camps.every((e, i) => e.evStageId === 7501 + i && /^C\d+$/.test(e.key)), `real build: 120 campaigns 7501-7620 (${camps.length})`);
+  check(camps.length === 121 && camps.map((e) => e.evStageId).sort((a, b) => a - b).every((id, i) => id === 7501 + i) && camps.every((e) => /^C\d+$/.test(e.key)), `real build: 121 campaigns 7501-7621 (120 of 30-10 + C22565 of Part 10d) (${camps.length})`);
   // final review: the frozen ids are the ones of the live index (server/game_data/special.json, read only)
   check(camps.every((e) => real.campaigns[e.key].evStageId === e.evStageId), 'real build: campaign ids not frozen in special_periods.json');
   const LIVE = path.join(__dirname, 'game_data', 'special.json');

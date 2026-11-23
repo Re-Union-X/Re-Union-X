@@ -1686,3 +1686,19 @@ Plan `docs/superpowers/plans/2026-11-22-events-part10c-special-mechanics.md`. Pe
   `addLevel`: the stage row now has `addLevel` 0 on them (49 quests showed e.g. LV 400 + 390 = 790; test `gen_map_no_add_level`).
 - Event cards of Part 10c (evStage 23074-23082) built from the original notice banners (`make_event_banners.py --fetch --ids`),
   checked one by one; KEPT copies by `make_special_banners.py --section event`.
+
+## Part 10d summary (social prizes, 0 AP days, EV-0085 VIP set, 23 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-23-events-part10d-social-ap-vip.md`, spec `2026-11-23-events-part10d-design.md`.
+Part 10 (events of 2016-11..2018-03) is complete with 10a-10d.
+
+- **Social-goal prizes** (checked on the official X account): new Conditional Present kind `date` in `campaign-gifts.js`
+  (one unit once the campaign is open). 64 rows with `"source": "x"` in `campaign_gifts.json`: 80,000 followers
+  (Fantasia Mickey B + 2,000 Jewels, 2017-05-05), Halloween Screenshot Contest retweets (3,000 Jewels + Fantasia Mickey B,
+  2017-11-03), 62 #ChirithyMini quizzes 2018-01..2020-07 (200 Jewels each, paid on the Sunday the result was announced;
+  the research header said 60, its list has 62 dates: all paid). The August 2017 retweet goal stays paid only by login
+  specials 333/334. Notice «Campaign Rewards» lists them.
+- **0 AP days**: nothing to add. The seven notices (EV-0093, 0110, 0129, 0150, 0168, 0197, 0230) are already in the Part 9a
+  calendar (docs/notes/campaigns.md «Notice-backed 0 AP days»).
+- **EV-0085 Cyber Week VIP set**: campaign C22565 (evStageId 7621, stages 976210-976214), the Chip & Dale set like C23990,
+  2016-11-21..12-04; private catalogue row E22565-1 in `special_quests.json`. The Jewel sale is not served.
