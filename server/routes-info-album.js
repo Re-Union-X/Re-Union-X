@@ -672,7 +672,7 @@ function eventNotices() {
   return out;
 }
 
-const NOTICES = [
+const RAW_NOTICES = [
   // conditional Present campaigns (I-234): server/campaign-gifts.js, campaign_gifts.json, docs/notes/campaigns.md
   { date: '11/05', tag: 'IMPORTANT', title: 'Campaign Rewards',
     body: ['Some campaigns of the original game sent rewards to the **Present Box** when you met a condition: owning certain Medals, unlocking their Special Attack Bonus or their traits, drawing a Deal a number of times, clearing a Story Quest, your LUX level or your Medal storage, or a goal reached by the players on Twitter. They are back, so their Medals, titles, Gems, Jewels and Draw Tickets can be obtained again.',
@@ -1007,6 +1007,27 @@ const NOTICES = [
     body: ['Equipping a Supernova Medal lets you unleash its powerful Supernova once per quest: tap the button under the special attack gauge during your turn.',
       'To unlock or raise the Supernova of a Medal, use Evolve with five identical Dual Meow Wow Medals; the base Medal must be at its max level.'] },
 ];
+
+// Readable notices (plan 2026-11-23-notices-readable, Task 3): notice-summaries.js gives each long notice 1-3 «in short» lines and
+// each section a one-liner; the old lead lines move into a closed «Overview» section (nothing dropped). The Event Quests notice
+// gets its numbers line from events.json.
+function readableNotice(x) {
+  const { SUMMARY, ONELINER } = require('./notice-summaries');
+  const sum = SUMMARY[x.title];
+  if (!sum) return x;
+  const one = ONELINER[x.title] || {};
+  const first = x.body.findIndex((l) => l.startsWith('## '));
+  const lead = first < 0 ? x.body : x.body.slice(0, first), rest = first < 0 ? [] : x.body.slice(first);
+  const nums = [];
+  if (x.title === 'Event Quests: how they work') {
+    const f = eventNoticeFacts();
+    if (f) nums.push(`#= ${f.events.toLocaleString('en-US')} events · ${f.served.toLocaleString('en-US')} of ${f.quests.toLocaleString('en-US')} quests`
+      + (f.coins && f.coins.boards ? ` · ${f.coins.boards} Event Boards` : ''));
+  }
+  const sec = (l) => { const t = l.slice(3).split(' | ')[0]; return one[t] && !l.includes(' | ') ? `## ${t} | ${one[t]}` : l; };
+  return { ...x, body: [...sum, ...nums, ...(lead.length ? [`## Overview${one.Overview ? ` | ${one.Overview}` : ''}`, ...lead] : []), ...rest.map((l) => (l.startsWith('## ') ? sec(l) : l))] };
+}
+const NOTICES = RAW_NOTICES.map(readableNotice);
 const TAG_COLOR = { 'READ FIRST': '#d4a017', DETAILS: '#7a6a3a', EVENT: '#36c9d6', CAMPAIGN: '#8a3fc4', UPDATE: '#9fb85a', IMPORTANT: '#e0405a', INFORMATION: '#3f7fd0' };
 
 const webBase = (sessionBase) => sessionBase.replace(/^https:/, 'http:');   // https: la WebView rifiuta il certificato

@@ -5,6 +5,8 @@ const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const U = (y, m, d, h = 0) => Date.UTC(y, m - 1, d, h);
 // the «Events» notice split in 7 (plan 2026-11-23-notices-readable, Task 2): its content checks read the 7 bodies together
+// a section line «## Title» or, since the readable notices, «## Title | one-liner»
+const hasSec = (arr, t) => arr.some((l) => l === t || l.startsWith(t + ' | '));
 const eventsAll = () => ({ body: n.NOTICES.filter((x) => x.group === 'events').flatMap((x) => x.body) });
 
 let p = n.noticesPage(U(2026, 10, 16, 15));
@@ -84,7 +86,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV i
     && shop.findIndex((s) => s.startsWith('Guarantees work as on')) + 1 === shop.findIndex((s) => s.startsWith('When a guarantee covers')),
   'Shop: riga della striscia di categoria, dopo quella delle garanzie');
   check(shop.includes('Every original banner is in the Banner Catalog. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'Shop: banner originali e storia');
-  check(shop.includes('## Weekly rotation') && shop.some((x) => /every \*\*Monday\*\*|Every \*\*Monday\*\*/.test(x)), 'Shop: rotazione settimanale (I-165)');
+  check(hasSec(shop, '## Weekly rotation') && shop.some((x) => /every \*\*Monday\*\*|Every \*\*Monday\*\*/.test(x)), 'Shop: rotazione settimanale (I-165)');
 }
 
 {
@@ -102,7 +104,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV i
   const shopN = n.NOTICES.find((x) => x.title === 'Shop');
   const shop = shopN.body, all = shop.join('\n');
   check(shopN.date === '10/20', 'Shop: data 10/20');
-  for (const s of ['## Seasonal banners', '## Keep one banner in the Shop', '## Catalog filters']) check(shop.includes(s), `Shop: sezione ${s}`);
+  for (const s of ['## Seasonal banners', '## Keep one banner in the Shop', '## Catalog filters']) check(hasSec(shop, s), `Shop: sezione ${s}`);
   const win = { newyear: 'New Year: December 22 – January 17', lunar: 'Lunar New Year: January 28 – February 3',
     valentine: 'Valentine\'s Day: February 3 – February 17', anniversary: 'Anniversary: April 6 – April 30',
     summer: 'Summer: August 22 – September 1', halloween: 'Halloween: October 12 – November 2',
@@ -126,7 +128,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences in detail' && /maximum LV i
   check(diff.some((s) => /Keep in the Shop/.test(s) && /did not exist in the original/.test(s)), 'differenze: banner fissato');
   check(diff.some((s) => /Platinum Tickets or Draw Tickets/.test(s) && /only after a banner that uses them/.test(s)), 'differenze: Limited coi biglietti');
   // home banner carousel (user 15-11): Shop deals and events of the Story week, chosen by the server, not original
-  check(diff.includes('## Home banners') && diff.some((s) => /\*\*Home\*\* screen/.test(s) && /Story week/.test(s) && /did not survive/.test(s) && /\{not original\}/.test(s) && !/restored/i.test(s)), 'differenze: banner della Home');
+  check(hasSec(diff, '## Home banners') && diff.some((s) => /\*\*Home\*\* screen/.test(s) && /Story week/.test(s) && /did not survive/.test(s) && /\{not original\}/.test(s) && !/restored/i.test(s)), 'differenze: banner della Home');
 }
 // Special Quests (Special tab, 30-10)
 {
@@ -637,6 +639,23 @@ for (const web of [false, true]) {
   const h = n.noticesPage(U(2026, 11, 20));
   check(/data-s="event-quests-how-they-work" data-a="events"/.test(h), 'alias #events on the first event notice');
   check(h.includes('getAttribute("data-a")===h'), 'the load script matches the alias');
+}
+// notices_readable (Task 3): every notice over 300 words (and the 7 event notices) opens with 1-3 «in short» lines, every section
+// has a one-liner of at most 45 characters, no bold «not original» left; the Event Quests notice has its numbers line
+{
+  const words = (x) => x.body.join(' ').split(/\s+/).length;
+  for (const x of n.NOTICES.filter((y) => !y.pinned && (words(y) > 300 || y.group === 'events'))) {
+    const first = x.body.findIndex((l) => l.startsWith('## '));
+    const brief = (first < 0 ? x.body : x.body.slice(0, first)).filter((l) => !l.startsWith('#= '));
+    check(brief.length >= 1 && brief.length <= 3, `${x.title}: ${brief.length} in-short lines`);
+    for (const l of x.body.filter((y) => y.startsWith('## '))) {
+      const one = l.slice(3).split(' | ')[1];
+      check(one && one.length <= 45, `${x.title}: section «${l.slice(3)}» one-liner`);
+    }
+    check(!x.body.some((l) => l.includes('**not original**')), `${x.title}: bold not original left`);
+  }
+  const eq = n.NOTICES.find((x) => x.title === 'Event Quests: how they work');
+  check(eq && eq.body.some((l) => /^#= [0-9,]+ events · [0-9,]+ of [0-9,]+ quests/.test(l)), 'Event Quests: numbers line');
 }
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');
