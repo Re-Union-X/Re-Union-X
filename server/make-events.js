@@ -1318,8 +1318,11 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         // «Collect all materials» needs materials on the map: the khuxwiki pages give none for a generated map, so the objective
         // could never be met as the original (nothing half-served)
         // (Part 10c review: code 18 counts enemy material drops, not chests: page treasures do not help)
+        // Since plan 2026-11-23-chance-spawns-materials the map's own material spots (MAP materials, STG [15], as the 20 served
+        // original maps with this objective) are rebuilt from the infobox totals (genAreas areas[].materials): then it is served
         const chests = (q.objectives || []).filter((o) => o.code === 18);
-        if (chests.length) { item.reason = 'mapUnusable'; item.why = `map not usable: a generated map has no materials for «${chests[0].text}» (no treasure on the khuxwiki page)`; continue; }
+        const hasSpots = (g.entry.areas || []).some((a) => Array.isArray(a.materials) && a.materials.length);
+        if (chests.length && !hasSpots) { item.reason = 'mapUnusable'; item.why = `map not usable: a generated map has no materials for «${chests[0].text}» (no treasure on the khuxwiki page)`; continue; }
         genEntry = g.entry;
         // Events Part 10b: calibrated drops of a generated map (record genDrops {byName {name: rewardId}, target, rows {rewardId: rows}})
         const gd = q.genDrops;

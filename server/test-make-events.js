@@ -1549,6 +1549,20 @@ const tests = {
     const om = me.buildEvents([record('E-CH3', [genQuest(702323, { genAreas: badM, wikiEnemies: { 'Foe B': 2, 'Foe A': 1 } })])], CONFIG, m, undefined, {}, null, null, { eventEnemyIds: [] });
     assert.match(entry(om, 'E-CH3').quests[0].why || '', /genAreas: area 0 materials/);
   },
+  // «Collect all materials» (code 18) on a generated map: held without material spots, served once genAreas gives them
+  gen_materials_objective_served() {
+    const obj = [{ code: 18, num: 0, text: 'Collect all materials' }];
+    const ga = (mats) => ({ areas: [{ label: 'Room', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 1 }] }, { target: true, members: [{ name: 'Foe A', n: 1 }] }],
+      chests: 0, ...(mats ? { materials: mats } : {}) }], backExits: false, source: null, why: 'w' });
+    const run = (cid, sid, mats) => {
+      const out = me.buildEvents([record(cid, [genQuest(sid, { genAreas: ga(mats), objectives: obj, wikiEnemies: { 'Foe B': 1, 'Foe A': 1 } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+      return entry(out, cid).quests[0];
+    };
+    const held = run('E-MO1', 702330, null);
+    assert.deepStrictEqual([held.served, held.reason], [false, 'mapUnusable']);
+    const ok = run('E-MO2', 702331, [{ materialId: 17, n: 3 }]);
+    assert.ok(ok.served, JSON.stringify(ok));
+  },
   // random squads of the original maps (server/random_squads.json {stageBinId: {uids, target, source}}, opts.randomSquads): put on
   // the served map's POI as random / target; a uid equal to the target is dropped with a warning; maps not served get nothing
   random_squads_merged() {
