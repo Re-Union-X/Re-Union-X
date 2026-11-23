@@ -260,6 +260,64 @@ try:
         rb = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'gen_story_maps.py'), os.path.join(tmp, 'cfga.json')],
                             capture_output=True, text=True, encoding='utf-8', errors='replace')
         check(rb.returncode != 0 and 'not reachable' in rb.stderr, 'unreachable layout point: error (%s)' % rb.stderr[-300:])
+        # chance squads and material spots (plan 2026-11-23-chance-spawns-materials, Task 2): `chance` = indexes of the chance groups
+        # of an area (or of the one-area entry), listed by their squad uid in POI «random» (the server removes each with p 1/2);
+        # `materials` [{materialId, n}] -> ceil(n/2) spots per material, units split evenly (larger first), STG [15] = spot count
+        E = lambda n: {'name': 'Eggcognito', 'enemyId': 80001, 'n': n, 'reward': 1}  # noqa: E731
+        EVM, EVS = 4009991, 4009990
+        evm = dict(base, stageId=EVM, room='Corridor (1)', roomCodes=[R27], censusId='EV-TEST', rooms=2, targetArea=1, backExits=False,
+                   layoutSource=None, enemies=[[B(1)], [E(1)], [E(1)]], targetWith=[], areas=[
+                       {'room': 'Corridor (1)', 'roomCodes': [R27], 'enemies': [[B(1)], [E(1)]], 'chance': [1], 'chests': 0,
+                        'materials': [{'materialId': 101, 'n': 5}, {'materialId': 102, 'n': 2}]},
+                       {'room': 'Corridor (2)', 'roomCodes': [R27], 'enemies': [[E(1)]], 'chance': [0], 'chests': 0}])
+        evs = dict(base, stageId=EVS, roomCodes=[R27], censusId='EV-TEST', chance=[1], materials=[{'materialId': 103, 'n': 4}])
+        outm = os.path.join(tmp, 'stagem')
+        poim = os.path.join(tmp, 'poim.json')
+        json.dump({}, open(poim, 'w'))
+        json.dump([evm, evs], open(os.path.join(tmp, 'eventsm.json'), 'w'))
+        cfgm = dict(cfg, out=outm, report=os.path.join(tmp, 'reportm.json'), events=os.path.join(tmp, 'eventsm.json'), poi=poim)
+        cfgm.pop('special')
+        json.dump(cfgm, open(os.path.join(tmp, 'cfgm.json'), 'w'))
+        rm = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'gen_story_maps.py'), os.path.join(tmp, 'cfgm.json')],
+                            capture_output=True, text=True, encoding='utf-8', errors='replace')
+        check(rm.returncode == 0, 'chance/materials run exit %d: %s' % (rm.returncode, rm.stderr[-800:]))
+        fm = lambda sid, part='': os.path.join(outm, 'mappoi_stg%d%s.bin' % (sid, part))  # noqa: E731
+        pm = json.load(open(poim, encoding='utf-8')) if os.path.exists(poim) else {}
+        if all(os.path.exists(fm(EVM, p)) for p in ('', '_00', '_01')):
+            s = mapfile.parse_stg(open(fm(EVM), 'rb').read())
+            ps = [mapfile.parse_map(open(fm(EVM, '_%02d' % k), 'rb').read(), k) for k in range(2)]
+            # chance_group_listed_in_poi + chance_only_area_kept
+            want = [ps[0]['teams'][1]['uid'], ps[1]['teams'][0]['uid']]
+            tgt = [t['uid'] for p in ps for t in p['teams'] if t['boss']]
+            check(pm.get(str(EVM), {}).get('random') == want, 'POI random = the chance squads\' uids %s (%s)' % (want, pm.get(str(EVM))))
+            check(pm.get(str(EVM), {}).get('target') == tgt[0] and tgt[0] not in want, 'POI target = the boss squad uid, not random')
+            check(s['teams_total'] == 4, 'STG [8] counts the chance squads (%s)' % s['teams_total'])
+            check(len(ps[1]['teams']) == 2, 'an area whose only group is a chance group keeps it (%s)' % ps[1]['teams'])
+            # material_spots_split
+            mats = [(m['materialId'], m['quantity']) for p in ps for m in p['materials']]
+            check(sorted(mats) == [(101, 1), (101, 2), (101, 2), (102, 2)], 'material spots 101 [2,2,1], 102 [2] (%s)' % mats)
+            check(s['materials_total'] == 4, 'STG [15] = 4 spots (%s)' % s['materials_total'])
+            check(sorted((m['materialId'], m['number']) for m in pm[str(EVM)].get('materials', [])) == [(101, 1), (101, 2), (101, 2), (102, 2)],
+                  'POI materials (%s)' % pm[str(EVM)].get('materials'))
+            for k, p in enumerate(ps):
+                for m in p['materials']:
+                    check(all((m['x'] - e['x']) ** 2 + (m['y'] - e['y']) ** 2 >= 96 ** 2 for e in p['exits']), 'spot %s far from the exits' % m)
+        else:
+            check(False, 'chance/materials map %d written' % EVM)
+        if os.path.exists(fm(EVS, '_00')):
+            # material_spots_one_area (+ chance on the one-area entry: group 1 of [[3 Shadows], [2 Shadows]])
+            s = mapfile.parse_stg(open(fm(EVS), 'rb').read())
+            p0 = mapfile.parse_map(open(fm(EVS, '_00'), 'rb').read())
+            check(sorted((m['materialId'], m['quantity']) for m in p0['materials']) == [(103, 2), (103, 2)] and s['materials_total'] == 2,
+                  'one area: 103 [2,2], STG [15] 2 (%s, %s)' % (p0['materials'], s['materials_total']))
+            check(pm.get(str(EVS), {}).get('random') == [p0['teams'][1]['uid']], 'one area: POI random = group 1 (%s)' % pm.get(str(EVS)))
+        else:
+            check(False, 'one-area chance/materials map %d written' % EVS)
+        vm = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'validate_maps.py'), outm, CLS, '--json', os.path.join(tmp, 'vm.json')],
+                            capture_output=True, text=True, encoding='utf-8', errors='replace')
+        vmr = json.load(open(os.path.join(tmp, 'vm.json'), encoding='utf-8')) if os.path.exists(os.path.join(tmp, 'vm.json')) else {}
+        for sid in (EVM, EVS):
+            check(vmr.get(str(sid), {}).get('errors') == [], 'validate_maps %d: no errors (%s)' % (sid, vmr.get(str(sid)) or vm.stderr[-400:]))
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 

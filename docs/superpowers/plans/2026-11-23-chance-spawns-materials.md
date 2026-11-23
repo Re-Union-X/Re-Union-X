@@ -19,7 +19,7 @@
 - `userRandomEnemies` element is exactly `{ uniqueSymbolEnemyId: <squad uid> }` (squad int [5]); the list names squads to REMOVE.
 - Probability 50% per random squad per `/stage/start`; the target squad is never listed.
 - Stages with no random list send `[]`, as today, so the response for every other stage is byte-identical.
-- Material spots per material: `ceil(units / 2)` spots. The units are split as evenly as possible, larger first. Example: 5 units give 3 + 2; this matches the 04/11/2017 footage (4 -> 2 spots, 2 -> 1, 5 -> 3).
+- Material spots per material: `ceil(units / 2)` spots. The units are split as evenly as possible, larger first. Example: 5 units give 3 spots, 2 + 2 + 1; this matches the 04/11/2017 footage (4 -> 2 spots, 2 -> 1, 5 -> 3).
 - The STG header [15] equals the total number of material spots.
 - A chance squad's source must be khuxwiki chance rows, an official notice, or footage; the 0x80 flag alone is not proof.
 - Docs and commits are in English. Commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Git needs `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0='*'`.
@@ -78,7 +78,7 @@
 - [ ] **Step 1: Write the failing tests** (same fixture style as the existing event tests):
   - `chance_group_listed_in_poi`: a 2-area entry with a chance group in area 0 makes `POI[sid]['random']` == [that group's area uid]; the target uid is not in it; STG [8] counts the chance squad.
   - `chance_only_area_kept`: an area whose only group is a chance group still produces its part.
-  - `material_spots_split`: area materials `[{materialId:A,n:5},{materialId:B,n:2}]` gives spots A [3,2] and B [2] (`ceil(n/2)` spots, so 3 + 1 = 4 spots, with the units split evenly, larger first). STG [15] == 4. Every spot is on a walkable pixel ≥ 96 from any exit.
+  - `material_spots_split`: area materials `[{materialId:A,n:5},{materialId:B,n:2}]` gives spots A [2,2,1] and B [2] (`ceil(n/2)` spots, so 3 + 1 = 4 spots, with the units split evenly, larger first). STG [15] == 4. Every spot is on a walkable pixel ≥ 96 from any exit.
   - `material_spots_one_area`: the same for the one-area path.
 - [ ] **Step 2:** Run `python -I recon/tools/test_gen_story_maps_events.py`. Expected: the 4 new tests FAIL.
 - [ ] **Step 3: Implement.**

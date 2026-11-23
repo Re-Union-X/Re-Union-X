@@ -341,8 +341,34 @@ def member_reward(m):
     return rw
 
 
-def build_part(folder, start, dist, groups, nchests, level=1, layout=None, zero_arena=False):
-    """layout (optional, an event entry's «layout», see apply_layout): fixed centres of the normal groups ("groups", in order;
+# Material spots of the «Collect all materials» event quests (plan 2026-11-23-chance-spawns-materials): the khuxwiki infobox
+# numbers are the result totals in units (04/11/2017 footage: BB 4 / Teardrops 2 / WFN 5 = 2 + 1 + 3 pickup banners), so each
+# material gets ceil(n / 2) spots with the units split evenly, larger first (5 -> 2, 2, 1). Rebuilt, not the original positions.
+def split_units(n):
+    n = int(n)
+    if n <= 0:
+        return []
+    k = -(-n // 2)
+    return [n // k + 1] * (n % k) + [n // k] * (k - n % k)
+
+
+def material_spots(mats, cands):
+    """mats [{materialId, n}], cands: free walk points ordered by walking distance -> [(x, y, materialId, quantity)], spread
+    evenly along the walk (one spot per point)"""
+    items = [(int(m['materialId']), q) for m in mats or [] for q in split_units(m.get('n', 0))]
+    if not items or not cands:
+        return []
+    return [cands[min(len(cands) - 1, int(len(cands) * (k + 0.5) / len(items)))] + (mid, q) for k, (mid, q) in enumerate(items)]
+
+
+def materials_block(mats):
+    return struct.pack('<i', len(mats)) + b''.join(struct.pack('<4i', *m) for m in mats)
+
+
+def build_part(folder, start, dist, groups, nchests, level=1, layout=None, zero_arena=False, chance=(), materials=(), extra=None):
+    """chance: indexes of the normal groups that are chance squads, materials: [{materialId, n}] (event entries, plan
+    2026-11-23-chance-spawns-materials); extra (dict) receives random (their squad uids), target (the target squad uid) and
+    mats (the material spots). layout (optional, an event entry's «layout», see apply_layout): fixed centres of the normal groups ("groups", in order;
     a null keeps the rule), fixed member positions of the target team ("target": target first, then its escorts) and the
     arena polygon ("arena"); without it every position follows the rules below, byte for byte as before"""
     layout = layout or {}
@@ -378,6 +404,11 @@ def build_part(folder, start, dist, groups, nchests, level=1, layout=None, zero_
         struct.pack_into('<2i', rec, 0, len(ens), len(members))
         # uid dell'area, unico come nelle mappe vere (il modello aveva 7 per tutte, uguale a un nemico)
         struct.pack_into('<i', rec, 0x14, uid)
+        if extra is not None:
+            if is_t:
+                extra['target'] = uid
+            elif i in chance:
+                extra.setdefault('random', []).append(uid)
         uid += 1
         if is_t and layout.get('arena'):
             struct.pack_into('<8i', rec, 0x24, *[v for p in layout['arena'] for v in p])
@@ -413,6 +444,10 @@ def build_part(folder, start, dist, groups, nchests, level=1, layout=None, zero_
         x, y = spots[(k * 7919) % len(spots)]
         chests.append((x, y, 81, 15, uid))
         uid += 1
+    taken = used | {(c[0], c[1]) for c in chests}
+    mats = material_spots(materials, [p for p in spots if p not in taken])
+    if extra is not None:
+        extra['mats'] = mats
     body = bytearray(tmpl[:ta0])
     nm = folder.encode()
     body[0x0c:0x0c + 16] = nm + b'\0' * (16 - len(nm))
@@ -426,7 +461,7 @@ def build_part(folder, start, dist, groups, nchests, level=1, layout=None, zero_
     for c in chests:
         body += struct.pack('<5i', *c)
     B = len(body)
-    body += struct.pack('<i', 0)                 # nessun oggetto
+    body += materials_block(mats)                # materials (none: count 0, as before)
     C = len(body)
     body += b'\0' * 64
     struct.pack_into('<3i', body, 0x28, A - 0x34, B - 0x34, C - 0x34)
@@ -653,7 +688,7 @@ def build_part_mr(folder, dist, groups, nchests, exits, uid, has_target):
     return mr_body(folder, exits, areas, ens, chests), areas, ens, chests, uid
 
 
-def mr_body(folder, exits, areas, ens, chests, npcs=()):
+def mr_body(folder, exits, areas, ens, chests, npcs=(), mats=()):
     """MAP part with an exits block (several parts): header of the template, exits, areas, enemies, chests, objects (npcs:
     (x, y, id) map objects of type 4, the portals of PORTAL_ROOMS; without them the old empty block, byte for byte)."""
     body = bytearray(tmpl[:0x34])
@@ -674,7 +709,7 @@ def mr_body(folder, exits, areas, ens, chests, npcs=()):
     for c in chests:
         body += struct.pack('<5i', *c)
     B = len(body)
-    body += struct.pack('<i', 0)
+    body += materials_block(mats)
     C = len(body)
     if npcs:
         # as the originals: count, 0x20 per object (x, y, id, short type 4, 0, facing 1, 0, talk 0, talk2 0, 0), no padding
@@ -1207,8 +1242,15 @@ def build_multi(s, q, room_names, groups):
 POI = {}
 
 
-def poi_add(sid, part, ens, chests):
+def poi_add(sid, part, ens, chests, random=(), target=None, mats=()):
     d = POI.setdefault(str(sid), {'chests': [], 'enemies': []})
+    # chance squads (server stageRandomEnemies: removed with p 1/2), the target squad, the material spots (plan 2026-11-23)
+    if random:
+        d['random'] = d.get('random', []) + list(random)
+    if target is not None:
+        d['target'] = target
+    if mats:
+        d['materials'] = d.get('materials', []) + [{'materialId': m[2], 'number': m[3], 'map': part} for m in mats]
     d['enemies'] += [{'uid': e[7], 'enemyId': e[2], 'reward': e[6], 'map': part} for e in ens]
     d['chests'] += [{'uid': c[4], 'reward': c[2], 'kind': c[3], 'map': part} for c in chests]
 
@@ -1365,6 +1407,7 @@ def build_event_areas(sp):
     bdoor = [(tp(lays[k].get('back')) or grids[k][0]) if back and k > 0 else None for k in range(R)]
     barr = [(tp(lays[k + 1].get('backArrive')) or arrival_near(fwd[k], pts[k], folders_[k])) if back and k < R - 1 else None for k in range(R)]
     uid, parts, placed = 1, [], []
+    random_uids, target_uid = [], None
     for k in range(R):
         f, dist, lay = folders_[k], dists[k], lays[k]
         ex_pts = [p for p in (fwd[k], bdoor[k]) if p] + [d for d, _ in doors[k][1:]]
@@ -1402,6 +1445,10 @@ def build_event_areas(sp):
             rec = bytearray(ARENA if is_t else NORMAL)
             struct.pack_into('<2i', rec, 0, len(ens), len(members))
             struct.pack_into('<i', rec, 0x14, uid)
+            if is_t:
+                target_uid = uid
+            elif i in set(areas[k].get('chance') or ()):
+                random_uids.append(uid)                             # chance squad (plan 2026-11-23-chance-spawns-materials)
             uid += 1
             # team kind (record +0x18, default 1): 1 + bit 1 CAUTION (label over the enemy on the field, red-purple swirl, the team
             # strikes first) + bit 2 hidden; khuxwiki {{caution}} teams are 2 / 4 in the JP story maps (bench 11-11). layout
@@ -1464,9 +1511,13 @@ def build_event_areas(sp):
             x, y = spots[(j * 7919) % len(spots)]
             chests.append((x, y, 81, 15, uid))
             uid += 1
-        placed.append((recs, ens, chests))
+        # material spots: free walk points (no enemy, chest, entry) at least EXIT_KEEP from this area's doors
+        taken = used | {(c[0], c[1]) for c in chests}
+        doors_k = [p for p in (fwd[k], bdoor[k]) if p] + [d for d, _ in doors[k]]
+        mats = material_spots(areas[k].get('materials'), [p for p in spots if p not in taken and all(dd(p, d) >= EXIT_KEEP for d in doors_k)])
+        placed.append((recs, ens, chests, mats))
     # target point, route left (straight lines, as build_multi) and parts left to the target
-    t_recs, t_ens, _ = placed[tk]
+    t_recs, t_ens = placed[tk][0], placed[tk][1]
     tpos = t_ens[struct.unpack_from('<i', t_recs[-1], 0)[0]][:2]
     rem = [0] * R            # rem[j]: route from the entry of area j to the target (the shortest branch)
     steps = [0] * R          # steps[j]: parts from area j to the target part
@@ -1479,7 +1530,7 @@ def build_event_areas(sp):
     target_id = None
     for k in range(R):
         f, lay = folders_[k], lays[k]
-        recs, ens, chests = placed[k]
+        recs, ens, chests, mats = placed[k]
         ex = []
         for j_, (d, n) in enumerate(doors[k]):
             a = entry[n]
@@ -1499,13 +1550,14 @@ def build_event_areas(sp):
                 npcs.append((entry[k][0] - 163, entry[k][1] - 10, PORTAL_ARRIVAL))
             if back and k < R - 1 and barr[k]:
                 npcs.append((barr[k][0] + 163, barr[k][1] - 10, PORTAL_ARRIVAL))
-        parts.append(mr_body(f, ex, recs, ens, chests, npcs))
+        parts.append(mr_body(f, ex, recs, ens, chests, npcs, mats))
         if k == tk:
             target_id = ens[struct.unpack_from('<i', recs[-1], 0)[0]][2]
-        poi_add(sid, k, ens, chests)
+        poi_add(sid, k, ens, chests, mats=mats)
         tot_a, tot_e, tot_c = tot_a + len(recs), tot_e + len(ens), tot_c + len(chests)
+    poi_add(sid, tk, [], [], random_uids, target_uid if random_uids else None)
     hdr = struct.pack('<16i', 4674643, 16, R, entry[0][0], entry[0][1], lays[0]['startFacing'] if lays[0].get('startFacing') in (0, 1, 2) else 2, target_id, 1, tot_a, tot_e,
-                      0, level, tk, 0, tot_c, 0)
+                      0, level, tk, 0, tot_c, sum(len(p[3]) for p in placed))
     return hdr, parts, {'parts': R, 'folders': folders_, 'groups_per_room': [len(p[0]) for p in placed],
                         'chests_per_room': [len(p[2]) for p in placed], 'doubts': doubts}, tot_e, tot_c
 
@@ -1554,17 +1606,21 @@ if generated:
             groups.append(tgt)
         else:
             start, dist, lay = apply_layout(folder, sp) if is_event else (*walk_grid(folder), None)
+            extra = {}
             part, areas, ens, chests = build_part(folder, start, dist, groups, len(sp.get('treasures', [])), sp.get('level', 1), lay,
-                                                  zero_arena=is_event)
+                                                  zero_arena=is_event, chance=set(sp.get('chance') or ()) if is_event else (),
+                                                  materials=sp.get('materials') if is_event else (), extra=extra)
         # the target group is placed last (arena), the target first in it (then its targetWith escorts)
         target_id = ens[struct.unpack_from('<i', areas[-1], 0)[0]][2]
         # STG [11] = quest level, as every story stage (import_orig_stages.py: [11] = wiki Lv = enemy record level): the
         # client shows it on the quest card («LV») and the enemies fight at it; [11] 1 showed LV 1 (MOG, bench 30-10)
+        if sp.get('training'):
+            extra = {}
         hdr = struct.pack('<16i', 4674643, 16, 1, start[0], start[1], 2, target_id, 1, len(areas), len(ens),
-                          0, sp.get('level', 1), 0, 0, len(chests), 0)
+                          0, sp.get('level', 1), 0, 0, len(chests), len(extra.get('mats', [])))
         open(os.path.join(out, 'mappoi_stg%05d.bin' % sid), 'wb').write(hdr)
         open(os.path.join(out, 'mappoi_stg%05d_00.bin' % sid), 'wb').write(part)
-        poi_add(sid, 0, ens, chests)
+        poi_add(sid, 0, ens, chests, extra.get('random', ()), extra.get('target') if extra.get('random') else None, extra.get('mats', ()))
         names = [m[0] for g in groups for m in g['members'] if not m[3]]
         report.append(dict({'mission': 0, 'stageId': sid, 'name': sp['name'], 'room': room_name, 'folder': folder,
                             'exact_room': bool(coded) or room_name in rooms or room_name in special_rooms, 'enemies': len(ens), 'chests': len(chests),
