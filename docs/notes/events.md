@@ -1765,5 +1765,11 @@ Menace Intermediate #4 (filled corridor parts walked to the Gold Tricholoma of p
   never goes down as the level rises; only high / medium-high picks, label monthRowOrder; also re-pins 740688, 740753, 740756,
   served before on generic rows). Rows: `tmp\events\part10\add_rules12_rows.py`, `add_research_b_rows.py`,
   `add_research_a_rows.py` (event_enemies.json 2,096 rows).
+- **Research 3 D (online, original videos; user 23-11)**: patch 14 `patch_research_d.py` (after patch 13): EV-0417 on donor row
+  530010 (Assault Dragon Lv 2000 alone, Corridor of Darkness, AP 5 by I-251; the wiki-only key EV-0417/w1 is `retiredKeys`),
+  EV-0121 700330 enemy list counted from the footage (chance enemies left out), «Angry Adventurer» = Adventurer (EV-0622,
+  EV-0737; EV-0999 held: no January 2020 row), EV-0156 704190 / EV-0202 706830 follow the video over the JP maps. Each quest
+  carries `researchDWhy` with the video and timestamp. Next (approved, own plan): chance spawns random as in the original
+  (official notice «can appear»), Collect-all-materials spots with the khuxwiki unit totals (declared rebuilt).
 - **Still held**: EV-0941 (Union twin of 740926, sharing would merge it);
   the 18 materials pins (`pins_r2_skipped.json`); EV-0108 / EV-0417 (no source).
