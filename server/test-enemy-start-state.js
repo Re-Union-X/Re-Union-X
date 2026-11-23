@@ -44,8 +44,18 @@ const rose = byId.get(76) || {};
 check(JSON.stringify(rose.statusAilments) === '[112,0]' && rose.statusAilmentsTurn === 5, `White Rose 76 ${JSON.stringify(rose.statusAilments)}`);
 const choc = byId.get(1912001620) || {};
 check(choc.bufAttack === 1 && choc.bufTurn === 5 && choc.bufAttackUpright === 0, `Chocolate Monster ${choc.bufAttack}/${choc.bufTurn}/${choc.bufAttackUpright}`);
-const bogus = master.filter((e) => e.bufAttackUpright || e.bufDefenseUpright || e.bufAttackReverse || e.bufDefenseReverse);
+// the shifted old-decoder fields only concern story rows and their clones: event rows (make-event-enemies.js, Events
+// Parts 1-10) come from the WW table read at the right offsets and have real Upright/Reversed buffs (e.g. DEF +15, 9999
+// turns): they must stay exactly as their source row
+const evSrc = require('./make-event-enemies').readEventEnemies();
+const evIds = require('./make-event-enemies').eventIds(evSrc);
+const bogus = master.filter((e) => !evIds.has(e.enemyId) && (e.bufAttackUpright || e.bufDefenseUpright || e.bufAttackReverse || e.bufDefenseReverse));
 check(bogus.length === 0, `buff Upright/Reversed rimasti: ${bogus.length} (${bogus.slice(0, 5).map((e) => e.enemyId)})`);
+if (evSrc) {
+  const moved = master.filter((e) => evIds.has(e.enemyId) && evSrc.enemies[e.enemyId]?.row
+    && st.KEYS.some((k) => JSON.stringify(e[k] ?? 0) !== JSON.stringify(evSrc.enemies[e.enemyId].row[k] ?? 0))).map((e) => e.enemyId);
+  check(moved.length === 0, `buff/stati delle righe evento diversi dalla riga WW: ${moved.length} (${moved.slice(0, 5)})`);
+}
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: enemy start state');

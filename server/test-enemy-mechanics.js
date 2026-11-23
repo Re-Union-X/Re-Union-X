@@ -35,10 +35,22 @@ const u = (id) => { const e = byId.get(id) || {}; return JSON.stringify([e.valid
 check(u(1912001620) === '[0,0,0,0,0]', `Chocolate Monster (q920) sospeso ${u(1912001620)}`);
 check(byId.get(2103001650)?.absorbAttribute === 16 && byId.get(2509)?.absorbAttribute === 4, 'assorbimento Darkness/Gargoyle Wizard');
 check(u(1501) === '[1,2,5,0,1501001]', `Gold Tricholoma originale toccato ${u(1501)}`);
-const counted = master.filter((e) => e.validUrgency > 0 && e.enemyId !== 1501 && !(e.enemyId >= 160911501 && e.enemyId <= 160951501));
+// event rows (make-event-enemies.js, Events Parts 1-10) keep the counters of their WW row: not ours, left out here
+const evIds = require('./make-event-enemies').eventIds();
+const counted = master.filter((e) => e.validUrgency > 0 && e.enemyId !== 1501 && !(e.enemyId >= 160911501 && e.enemyId <= 160951501)
+  && !evIds.has(e.enemyId));
 // mosse a 0 verificate (26-10): 44 nemici di 24 famiglie, ognuno con una riga d'attacco esistente; Chocolate Monster resta spento
 const attIds = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemyAttack.json'), 'utf8')).map((a) => a.enemyAttackId));
-check(counted.length === 44, `nemici con contatore ${counted.length}, attesi 44 (Green Requiem riacceso 27-10 con la sua atkSp)`);
+const moves = JSON.parse(fs.readFileSync(mech.MOVES_PATH, 'utf8')).counters || {};
+check(Object.keys(moves).length === 44, `mosse a 0 verificate ${Object.keys(moves).length}, attese 44 (Green Requiem riacceso 27-10 con la sua atkSp)`);
+// plus the donor rows of enemy-motion-fix.js (I-261, 10-11): their original countdown wins (10271, 160110233 Dual
+// Durandal/Wandering Spook; 10249 is already one of the 44)
+const donor = Object.entries(require('./enemy-motion-fix').readOriginalMoves()?.enemies || {})
+  .filter(([, m]) => m.validUrgency > 0).map(([id]) => Number(id));
+const expected = new Set([...Object.keys(moves).map(Number), ...donor].filter((id) => byId.has(id)));
+const extra = counted.filter((e) => !expected.has(e.enemyId)).map((e) => e.enemyId);
+check(counted.length === expected.size && extra.length === 0,
+  `nemici con contatore ${counted.length}, attesi ${expected.size} (44 verificati + righe donate I-261); in piu': ${extra.slice(0, 5)}`);
 check(counted.every((e) => attIds.has(e.urgencySkillId[0]) && e.urgencyFrequency[0] === 0), 'mossa a 0 senza riga di attacco');
 check(u(1502) === '[1,2,2,0,992070010]', `Green Requiem: contatore con la sua atkSp (27-10) ${u(1502)}`);
 const src = JSON.parse(fs.readFileSync(require('./make-enemy-oltre').SOURCES_PATH, 'utf8')).sources;

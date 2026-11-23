@@ -22,7 +22,15 @@ check(again.patched === 0, `master non corretto o non idempotente: ${JSON.string
 // stati alterati come l'originale (Poison Apple «High Chance of Poison»)
 const byId = new Map(atts.map((a) => [a.enemyAttackId, a]));
 check(byId.get(9301)?.poison === 10000, `9301 poison ${byId.get(9301)?.poison}`);
-check(atts.filter((a) => !(a.enemyAttackId >= 992070000 && a.enemyAttackId < 992080000) && (a.poison || a.deepPoison || a.sleep || a.paralysis)).length === 39, 'attacchi originali con stato != 39 (le righe 9920700xx delle mosse a 0 a parte)');
+// the 39 are the status attacks of the story rows (thethiny): event rows (make-event-enemies.js, Events Parts 1-10) bring
+// their own WW attacks, and the donor moves of enemy-motion-fix.js (I-261: Dual Durandal 271020/271030) are original
+// rows outside that set; both are checked by applyEnemyAttacks above
+const evIds = require('./make-event-enemies').eventIds();
+const donorAtt = new Set(Object.keys(require('./enemy-motion-fix').readOriginalMoves()?.attacks || {}).map(Number));
+const storyCited = new Set(enemies.filter((e) => !evIds.has(e.enemyId)).flatMap((e) => [...(e.skillId || []), ...(e.urgencySkillId || [])]));
+const storyStatus = atts.filter((a) => storyCited.has(a.enemyAttackId) && !donorAtt.has(a.enemyAttackId)
+  && !(a.enemyAttackId >= 992070000 && a.enemyAttackId < 992080000) && (a.poison || a.deepPoison || a.sleep || a.paralysis));
+check(storyStatus.length === 39, `attacchi originali con stato ${storyStatus.length} != 39 (le righe 9920700xx delle mosse a 0, gli eventi e le mosse donate a parte)`);
 // solo risorse servite: effetto di colpo servito, animazione atk1_o o atkSp
 const badHit = atts.filter((a) => !served.has(a.hitEffect)).map((a) => `${a.enemyAttackId}:${a.hitEffect}`);
 check(badHit.length === 0, `hitEffect non serviti: ${badHit.slice(0, 5).join(', ')} (${badHit.length})`);
