@@ -23,6 +23,8 @@ const update = { date: '10/16', tag: 'IMPORTANT', title: 'About game data update
 
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+const mdLine = (p) => p.replace(/\{(not original|rebuilt|later)\}/g, '($1)');
+
 function render() {
   const all = byDate([update, ...NOTICES]);
   const out = ['# In-game Notices', '',
@@ -38,9 +40,10 @@ function render() {
   for (const n of all) {
     out.push('', `## ${n.title}`, '', `**${n.tag}** · ${n.date}`, '');
     for (const p of n.body) {
-      // headings inside a notice become level-3 headings here (level 2 is the notice itself)
-      if (p.startsWith('## ')) out.push('', '#' + p, '');
-      else out.push(p, '');
+      // headings inside a notice become level-3 headings here (level 2 is the notice itself); readable notices: «## T | one»
+      // -> «### T — one», «#= » numbers line -> plain, {not original} / {rebuilt} / {later} -> «(not original)» etc.
+      if (p.startsWith('## ')) { const t = p.slice(3), i = t.indexOf(' | '); out.push('', '### ' + (i < 0 ? t : `${t.slice(0, i)} — ${t.slice(i + 3)}`), ''); }
+      else out.push(mdLine(p.startsWith('#= ') ? p.slice(3) : p), '');
     }
   }
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';

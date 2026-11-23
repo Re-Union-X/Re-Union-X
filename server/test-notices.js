@@ -657,5 +657,14 @@ for (const web of [false, true]) {
   const eq = n.NOTICES.find((x) => x.title === 'Event Quests: how they work');
   check(eq && eq.body.some((l) => /^#= [0-9,]+ events · [0-9,]+ of [0-9,]+ quests/.test(l)), 'Event Quests: numbers line');
 }
+// export_markdown_clean (Task 4): docs/NOTICES.md prints tags as «(not original)», a one-liner as «— one-liner» after the heading, the
+// numbers line as plain text; no {tag}, «#=» or « | » syntax left
+{
+  const md = require('./export-notices').render();
+  check(!/\{(not original|rebuilt|later)\}/.test(md), 'markdown: no raw {tag}');
+  check(!/^#= /m.test(md), 'markdown: no raw #= line');
+  check(!/^### .* \| /m.test(md), 'markdown: no raw « | » in headings');
+  check(/\(not original\)/.test(md) && /^### Rewards — once, original drop chances$/m.test(md), 'markdown: tags and one-liners as text');
+}
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');
