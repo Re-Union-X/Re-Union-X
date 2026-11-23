@@ -1018,19 +1018,37 @@ const byDate = (list) => list.map((n, i) => [n, i])
 function noticesPage(realMs = Date.now(), opts = {}) {
   const notices = byDate(opts.notices || [updateNotice(realMs), ...NOTICES]);
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const rich = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="k">$1</b>');
-  // cards: every «## » section in a box of its own (pinned notice), the lines before the first one as the lead
+  // readable notices (plan 2026-11-23-notices-readable): {not original} / {rebuilt} / {later} = small status tags
+  const TAGS = { 'not original': ['no', 'NOT ORIGINAL'], rebuilt: ['rb', 'REBUILT'], later: ['la', 'LATER'] };
+  const rich = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="k">$1</b>')
+    .replace(/\{(not original|rebuilt|later)\}/g, (_, k) => `<span class="tag ${TAGS[k][0]}">${TAGS[k][1]}</span>`);
+  // «## Title | one-liner»: split at the first « | »
+  const head = (line) => { const t = line.slice(3), i = t.indexOf(' | '); return i < 0 ? [t, ''] : [t.slice(0, i), t.slice(i + 3)]; };
+  // «#= 539 events · 4,092 of 4,243 quests»: the leading number of each part in gold
+  const nums = (line) => `<div class="nums">${line.slice(3).split(' · ').map((x) => esc(x).replace(/^([0-9][0-9,.]*)/, '<b>$1</b>')).join(' · ')}</div>`;
+  // the lines before the first «## » = the «in short» box (cards: the lead of the pinned notice); every «## » section = a closed
+  // <details> with its one-liner (cards: a box of its own, as before)
   const bodyHtml = (body, cards = false) => {
-    let out = '', list = false;
-    const close = () => (list ? '</ul>' + (cards ? '</div>' : '') : '');
+    let out = '', sec = false, brief = [];
+    const flushBrief = () => {
+      if (!brief.length) return '';
+      const h = cards ? brief.map((l) => (l.startsWith('#= ') ? nums(l) : `<p class="lead">${rich(l)}</p>`)).join('')
+        : `<div class="brief">${brief.map((l) => (l.startsWith('#= ') ? nums(l) : `<p>${rich(l)}</p>`)).join('')}</div>`;
+      brief = [];
+      return h;
+    };
+    const close = () => (sec ? (cards ? '</ul></div>' : '</div></details>') : '');
     for (const line of body) {
       if (line.startsWith('## ')) {
-        out += close();
-        out += `${cards ? '<div class="card">' : ''}<h3>${esc(line.slice(3))}</h3><ul>`;
-        list = true;
-      } else out += list ? `<li>${rich(line)}</li>` : `<p${cards ? ' class="lead"' : ''}>${rich(line)}</p>`;
+        out += flushBrief() + close();
+        const [t, one] = head(line);
+        out += cards ? `<div class="card"><h3>${esc(t)}</h3><ul>`
+          : `<details><summary><span>${esc(t)}</span>${one ? `<i>${esc(one)}</i>` : ''}</summary><div class="body">`;
+        sec = true;
+      } else if (!sec) brief.push(line);
+      else out += cards ? `<li>${rich(line)}</li>` : `<p>${rich(line)}</p>`;
     }
-    return out + close();
+    return out + flushBrief() + close();
   };
   const rows = notices.map((n, i) => `<a class="row${n.pinned === 1 ? ' pin' : n.pinned ? ' sub' : ''}" href="#n${i}" onclick="show(${i});return false">`
     + (n.pinned === 1 ? `<span class="d">&#9733;</span><span class="x"><span class="cap">${esc(n.tag)}</span>${esc(n.title)}</span>`
@@ -1059,6 +1077,16 @@ function noticesPage(realMs = Date.now(), opts = {}) {
     + 'ul{margin:0 0 6px;padding:0 0 0 4px;list-style:none}li{position:relative;padding:6px 0 6px 22px;border-bottom:1px solid #1a4a68;color:#eef4f7}'
     + 'li:before{content:"";position:absolute;left:4px;top:19px;width:7px;height:7px;border-radius:50%;background:#2fd0e8}'
     + '.k{color:#ffae3b;font-weight:bold}'
+    // readable notices (mockup v2): «in short» box, closed sections with a one-liner, status tags
+    + '.brief{background:#123f5e;border-left:4px solid #ffd65a;border-radius:4px;padding:8px 12px;margin:0 0 12px;line-height:1.5}'
+    + '.brief p{margin:0 0 4px}.brief p:last-child{margin:0}.nums{color:#9fc3d6;font-size:15px;margin-top:6px}.nums b{color:#ffd65a;font-size:17px}'
+    + 'details{border-bottom:1px solid #1a4a68}summary{list-style:none;display:flex;align-items:center;gap:8px;padding:10px 2px;color:#5fe0f0;font-weight:bold;line-height:1.3}'
+    + 'summary::-webkit-details-marker{display:none}summary:before{content:"";flex:none;border-style:solid;border-width:6px 0 6px 9px;'
+    + 'border-color:transparent transparent transparent #2fd0e8}details[open] summary:before{transform:rotate(90deg)}'
+    + 'summary span{flex:1}summary i{font-style:normal;font-weight:normal;color:#9fc3d6;font-size:14px;text-align:right;max-width:45%}'
+    + '.body{padding:0 2px 8px 17px;line-height:1.55}.body p{margin:0 0 8px}'
+    + '.tag{display:inline-block;font-size:11px;font-weight:bold;color:#fff;padding:0 5px;border-radius:3px;vertical-align:1px;line-height:17px;letter-spacing:.5px}'
+    + '.tag.no{background:#8a4fc2}.tag.rb{background:#d07a12}.tag.la{background:#5c6b75}'
     // pinned notice: gold row at the top of the list, its page as cards
     + '.row.pin{background:linear-gradient(#a8740a,#7a5205);border:2px solid #ffd65a;border-radius:10px;margin:6px 6px 0;'
     + 'padding:12px 10px;box-shadow:0 0 12px rgba(255,200,60,.4),inset 0 1px 0 rgba(255,255,255,.3)}'

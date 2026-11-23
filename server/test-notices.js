@@ -600,5 +600,25 @@ for (const web of [false, true]) {
   check(/donated/.test(t.slice(t.indexOf('## Bonus Times'))), 'Bonus Times: source declared');
   check(/Raid Bosses/.test(t.slice(t.indexOf('## Bonus Times'))), 'Bonus Times: raids keep their own');
 }
+// readable notices (plan 2026-11-23-notices-readable, Task 1): lines before the first «##» = «in short» box; «#= » = numbers line;
+// «## Title | one-liner» = a closed <details> section; {not original} / {rebuilt} / {later} = status tags
+{
+  const fx = { date: '11/20', tag: 'IMPORTANT', title: 'Fixture',
+    body: ['The **Event Quests** are back.', '#= 539 events · 4,092 of 4,243 quests', '## Rewards | once, original drop chances',
+      'Given **once** {not original} and {rebuilt} and {later}, {other}.', '<b>raw</b>', '## A | b | c', 'x'] };
+  const h = n.noticesPage(U(2026, 11, 20), { notices: [fx] });
+  check(/<div class="brief"><p>The <b class="k">Event Quests<\/b> are back\.<\/p>/.test(h), 'notice_in_short_box: brief');
+  check(h.includes('<div class="nums"><b>539</b> events · <b>4,092</b> of 4,243 quests</div>'), 'notice_in_short_box: numbers line');
+  check(h.includes('<details><summary><span>Rewards</span><i>once, original drop chances</i></summary>'), 'notice_sections_details: closed details with one-liner');
+  check(!/<details open/.test(h), 'sections closed by default');
+  check(h.includes('<span class="tag no">NOT ORIGINAL</span>') && h.includes('<span class="tag rb">REBUILT</span>') && h.includes('<span class="tag la">LATER</span>'), 'notice_tags');
+  check(h.includes('{other}'), 'unknown {tag} stays as text');
+  check(h.includes('&lt;b&gt;raw&lt;/b&gt;'), 'notice_escape: text escaped');
+  check(h.includes('<summary><span>A</span><i>b | c</i></summary>'), 'notice_escape: split at the first |');
+  const plain = n.noticesPage(U(2026, 11, 20), { notices: [{ date: '11/20', tag: 'INFO', title: 'Old', body: ['lead', '## Sec', 'line one'] }] });
+  check(plain.includes('<details><summary><span>Sec</span></summary>') && plain.includes('<p>line one</p>'), 'old bodies: section without one-liner');
+  const pin = n.noticesPage(U(2026, 11, 20), { notices: [{ date: '', tag: 'RULES', title: 'Pinned', pinned: 1, body: ['lead', '## Topic | short', 'a {not original}'] }] });
+  check(pin.includes('<a class="row pin"') && pin.includes('<div class="card"><h3>Topic</h3>') && pin.includes('tag no'), 'notice_pinned_cards');
+}
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');
