@@ -927,7 +927,9 @@ function genAreasOf(q, stageId, { target, targetId, members, missing, ambiguous,
       else if (list.length) groups.push(merge(list));
     }
     return { room: a.label, roomCodes: [a.room], enemies: groups, chests: Number(a.chests) || 0, ...(a.layout ? { layout: a.layout } : {}),
-      ...(Array.isArray(a.next) ? { next: a.next } : {}), ...(chance.length ? { chance } : {}), ...(a.materials ? { materials: a.materials } : {}) };
+      ...(Array.isArray(a.next) ? { next: a.next } : {}), ...(chance.length ? { chance } : {}), ...(a.materials ? { materials: a.materials } : {}),
+      // khuxwiki treasure codes of the area's chests (a1-a3 orange, h1-h3 green: gen_story_maps.py CHEST_OF_CODE), bench 25-11
+      ...(Array.isArray(a.chestCodes) && a.chestCodes.length ? { chestCodes: a.chestCodes } : {}) };
   });
   const entry = { stageId, world: q.worldId, name: q.name, room: areas[0].room, roomCodes: areas[0].roomCodes, target, targetId, level: q.level || 1,
     enemies: areas.flatMap((a) => a.enemies), treasures: [], rooms: areas.length, areas, targetArea: tGroups[0], targetWith,

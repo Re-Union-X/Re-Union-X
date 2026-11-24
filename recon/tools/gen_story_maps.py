@@ -74,6 +74,7 @@ griglia), si usano tutti i punti della componente con distanze geodetiche (vedi 
 import collections
 import hashlib
 import json
+import math
 import os
 import re
 import struct
@@ -1355,6 +1356,36 @@ def apply_layout(folder, sp):
 EXIT_KEEP = 200
 
 
+# chest of a khuxwiki treasure code (TC template): reward row and record kind of the original story maps (844 quests whose page and
+# map agree, 25-11-2026): a1 / a2 / a3 the orange chests (rows 80 / 81 / 82), h1 / h2 / h3 the green ones (90 / 91 / 92); another
+# code (i1 / i2 item chests: their reward rows are lost) keeps a2, as before
+CHEST_OF_CODE = {'a1': (80, 13), 'a2': (81, 15), 'a3': (82, 17), 'h1': (90, 7), 'h2': (91, 9), 'h3': (92, 11)}
+CHEST_GAP = 80              # chests at least 2 grid steps apart (bench 25-11: the old (j * 7919) % n pick clustered them)
+
+
+def chest_of(codes, j):
+    return CHEST_OF_CODE.get((codes[j] if j < len(codes) else '') or '', (81, 15))
+
+
+def spread_spots(spots, n, taken=()):
+    """n points of spots (sorted by walking distance from the entry) spread evenly along that distance, each at least CHEST_GAP from
+    the others and from taken; where the gap cannot be kept the nearest free point of the even pick is used."""
+    out = []
+    if not spots or n <= 0:
+        return out
+    far = lambda p, pts: all(math.hypot(p[0] - q[0], p[1] - q[1]) >= CHEST_GAP for q in pts)  # noqa: E731
+    for j in range(n):
+        i0 = min(len(spots) - 1, int((j + 0.5) * len(spots) / n))
+        order = sorted(range(len(spots)), key=lambda i: abs(i - i0))
+        pick = next((spots[i] for i in order if spots[i] not in out and far(spots[i], out + list(taken))), None)
+        if pick is None:
+            pick = next((spots[i] for i in order if spots[i] not in out), None)
+        if pick is None:
+            break
+        out.append(pick)
+    return out
+
+
 def build_event_areas(sp):
     sid, areas = sp['stageId'], sp['areas']
     R, level = len(areas), sp.get('level', 1)
@@ -1514,16 +1545,14 @@ def build_event_areas(sp):
                         doors[k][0] = (q, doors[k][0][1])
         used = {(e[0], e[1]) for e in ens}
         chests = []
+        codes = areas[k].get('chestCodes') or []
         for c in lay.get('chests') or []:
             if len(chests) < areas[k].get('chests', 0):
-                chests.append((c[0], c[1], 81, 15, uid))
+                chests.append((c[0], c[1]) + chest_of(codes, len(chests)) + (uid,))
                 uid += 1
         spots = [p for p in by_d[len(by_d) // 4:] if p not in used and p != entry[k]]
-        for j in range(len(chests), areas[k].get('chests', 0)):
-            if not spots:
-                break
-            x, y = spots[(j * 7919) % len(spots)]
-            chests.append((x, y, 81, 15, uid))
+        for (x, y) in spread_spots(spots, areas[k].get('chests', 0) - len(chests), [(c[0], c[1]) for c in chests]):
+            chests.append((x, y) + chest_of(codes, len(chests)) + (uid,))
             uid += 1
         # material spots: free walk points (no enemy, chest, entry) at least EXIT_KEEP from this area's doors
         taken = used | {(c[0], c[1]) for c in chests}

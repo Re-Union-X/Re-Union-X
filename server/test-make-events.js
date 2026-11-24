@@ -1624,6 +1624,13 @@ const tests = {
     const ok = run('E-MO2', 702331, [{ materialId: 17, n: 3 }]);
     assert.ok(ok.served, JSON.stringify(ok));
   },
+  // bench 25-11: the khuxwiki treasure codes of an area (record genAreas areas[].chestCodes) reach the generated map entry
+  gen_area_chest_codes() {
+    const ga = { areas: [{ label: 'Room', room: 'DG_0200_27_00', groups: [{ members: [{ name: 'Foe B', n: 1 }] }, { target: true, members: [{ name: 'Foe A', n: 1 }] }],
+      chests: 2, chestCodes: ['h1', 'a3'] }], backExits: false, source: null, why: 'w' };
+    const out = me.buildEvents([record('E-CC', [genQuest(702340, { genAreas: ga, wikiEnemies: { 'Foe B': 1, 'Foe A': 1 } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.deepStrictEqual(out.genMaps[0].areas[0].chestCodes, ['h1', 'a3']);
+  },
   // random squads of the original maps (server/random_squads.json {stageBinId: {uids, target, source}}, opts.randomSquads): put on
   // the served map's POI as random / target; a uid equal to the target is dropped with a warning; maps not served get nothing
   random_squads_merged() {

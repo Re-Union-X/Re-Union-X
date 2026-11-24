@@ -159,7 +159,7 @@ try:
         two = sorted(d for d in os.listdir(os.path.join(CLS, 'map')) if d.startswith('DB_') and d.endswith('_00_00'))[0]
         evb = dict(base, stageId=EVB, room='Room A', roomCodes=[two], censusId='EV-TEST', rooms=2, targetArea=1, backExits=True,
                    layoutSource=None, enemies=[[B(2)], [B(1)]], targetWith=[], areas=[
-                       {'room': 'Room A', 'roomCodes': [two], 'enemies': [[B(2)]], 'chests': 1},
+                       {'room': 'Room A', 'roomCodes': [two], 'enemies': [[B(2)]], 'chests': 3, 'chestCodes': ['h1', 'a3', 'i2']},
                        {'room': 'Room B', 'roomCodes': [R27], 'enemies': [[B(1)]], 'chests': 0}])
         outa = os.path.join(tmp, 'stagea')
         # branched map (HSC pages with one path per attribute, 16-11-2026; JP 300370 / 300390 / 300400): a start part whose exits
@@ -218,6 +218,12 @@ try:
             pb = [mapfile.parse_map(open(fa(EVB, '_%02d' % k), 'rb').read(), k) for k in range(2)]
             check([[e['dest_part'] for e in p['exits']] for p in pb] == [[1], [0]], 'backExits: the way back from area 1 (%s)' % [p['exits'] for p in pb])
             check([p['room'] for p in pb] == [two, R27], 'rooms of the two areas')
+            # I-297 bench 25-11: chest kind and reward from the khuxwiki code (a1-a3 orange, h1-h3 green, as 844 original story maps),
+            # an unknown code keeps a2; chests spread at least 2 grid steps apart, not clustered
+            cb = pb[0]['chests']
+            check([(c['reward'], c['kind']) for c in cb] == [(90, 7), (82, 17), (81, 15)], 'chest codes h1 / a3 / unknown (%s)' % cb)
+            check(all(((u['x'] - v['x']) ** 2 + (u['y'] - v['y']) ** 2) ** 0.5 >= 80 for i, u in enumerate(cb) for v in cb[i + 1:]),
+                  'chests at least 80 apart (%s)' % [(c['x'], c['y']) for c in cb])
         repa = {x['stageId']: x for x in json.load(open(os.path.join(tmp, 'reporta.json'), encoding='utf-8'))}
         check(repa.get(EVA, {}).get('parts') == 3 and repa[EVA].get('folders') == [R27] * 3 and repa[EVA].get('event') is True
               and repa[EVA].get('layout') == 'test 706830' and not any('exit moved' in d for d in repa[EVA].get('doubts', []))
