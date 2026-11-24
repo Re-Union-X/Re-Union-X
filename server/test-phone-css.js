@@ -58,7 +58,7 @@ check(/\.pk\{[^}]*font-size:13px!important;line-height:1\.3/.test(PHONE_CSS), 'b
 // every card of a catalog the same size (user 24-11: a 3-line «Replaced by» chip made its row taller): equal rows in the
 // card grids (not #camps: its headers are grid items), chips and «Replaces» lines at most two lines
 check(PHONE_CSS.includes('#rows,#quests,.cat{grid-auto-rows:1fr}'), 'equal rows in the card grids');
-check(/\.s,[^{]*\.rp\{[^}]*-webkit-line-clamp:2/.test(PHONE_CSS), 'chips and Replaces lines clamped to two lines');
+check(/\.s\{display:-webkit-box!important[^}]*-webkit-line-clamp:2/.test(PHONE_CSS) && /\.rp\{display:-webkit-box;[^}]*-webkit-line-clamp:2/.test(PHONE_CSS), 'chips and Replaces lines clamped to two lines');
 
 // Medal Gallery (cards with a .mi picture, user 24-11): 4 columns, the Medal centred, the attribute line one line high,
 // track name and Variants one line each (a long track name pushed the chips down)
@@ -83,7 +83,13 @@ check(PHONE_CSS.includes('#rows>.grp>.sec .av img{width:96px!important;height:14
 
 // Full Art: every artwork card half a row (a full-row card for 4+ Medals left holes and empty columns, user 24-11);
 // its tiles wrap 3 per line; rows of the art grid sized by their cards
-check(!PHONE_CSS.includes(':has(>.row:nth-child(5))') && PHONE_CSS.includes('#rows:has(>.grp){grid-auto-rows:auto}') && PHONE_CSS.includes('#rows>.grp>.sec{grid-row:1/span 2;'), 'Full Art cards all half a row, tiles wrap');
+check(!PHONE_CSS.includes(':has(>.row:nth-child(5))') && PHONE_CSS.includes('#rows:has(>.grp:not(:has(>.sec.hide))){grid-auto-rows:auto}') && PHONE_CSS.includes('#rows>.grp>.sec{grid-row:1/span 2;'), 'Full Art cards all half a row, tiles wrap');
+
+// final review 24-11: (1) the «Replaces» line keeps the page's inline display:none (no !important display on .rp);
+// (3) the BGM tab keeps equal rows: auto rows only while an artwork group is visible; (5) empty-list messages span the row
+check(!/\.rp\{display:-webkit-box!important/.test(PHONE_CSS) && !/\.rp,[^{]*\{display:-webkit-box!important/.test(PHONE_CSS), 'Replaces line can still be hidden by the page');
+check(PHONE_CSS.includes('#rows:has(>.grp:not(:has(>.sec.hide))){grid-auto-rows:auto}') && !PHONE_CSS.includes('#rows:has(>.grp){grid-auto-rows:auto}'), 'auto rows only in the Full Art tab');
+check(PHONE_CSS.includes('#rows>p,#quests>p,#camps>p{grid-column:1/-1}'), 'empty-list messages across the grid');
 
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';

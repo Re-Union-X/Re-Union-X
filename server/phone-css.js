@@ -25,6 +25,7 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // catalogs: a 3-column grid of cards; headers, intro and year chips of the Special campaigns span the row
   + `${GRIDS.join(',')}{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}`
   + '#camps>h2,#camps>p,#camps>.yrs{grid-column:1/-1}'
+  + '#rows>p,#quests>p,#camps>p{grid-column:1/-1}'
   // every card of a catalog the same size (user 24-11): equal rows in the card grids (#camps has its headers as grid
   // items, so it keeps auto rows); the tallest card sets the row, chips and «Replaces» lines stop at two lines
   + '#rows,#quests,.cat{grid-auto-rows:1fr}'
@@ -44,7 +45,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // buttons are as wide as the card (their text wraps), the button sits at the bottom so buttons of a row line up
   + `${inCards('.info')}{font-size:14px;line-height:1.35;flex:1 1 auto;display:flex;flex-direction:column;min-width:0;margin:0!important;padding:0!important}`
   + `${inCards('.s')}{display:block!important;width:100%;box-sizing:border-box;white-space:normal;margin:4px 0 0;font-size:13px!important;line-height:1.35!important;padding:3px 10px!important}`
-  + `${inCards('.s')},${inCards('.rp')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:0 0 auto}`
+  + `${inCards('.s')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:0 0 auto}`
+  // .rp without !important: the page hides it with an inline display:none (event-pages.js / raid-pages.js kxRow)
+  + `${inCards('.rp')}{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:0 0 auto}`
   + `${inCards('.pkw')},${inCards('.info>div:has(>.pk)')}{margin-top:auto;padding-top:6px}`
   + `${inCards('.pk')}{display:flex!important;align-items:center;justify-content:center;gap:6px;width:100%;box-sizing:border-box;text-align:center;white-space:normal;min-height:34px;margin:0;font-size:13px!important;line-height:1.3;padding:4px 8px!important}`
   + `${inCards('.d')},${inCards('.rp')},${inCards('.n')}{font-size:12px}`
@@ -69,7 +72,7 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + '#rows>.grp{display:grid!important;grid-column:span 2;grid-template-columns:104px repeat(3,minmax(0,1fr));gap:6px;align-items:stretch;padding:8px;background:#0b3a58;border:2px solid #ffcd4a;border-radius:8px;min-width:0;box-sizing:border-box}'
   // every artwork card is half a row (a full-row card for 4+ Medals left holes in the grid and empty columns, user
   // 24-11): its tiles wrap 3 per line (at most 5 Medals per artwork: two lines, the artwork spans both)
-  + '#rows:has(>.grp){grid-auto-rows:auto}'
+  + '#rows:has(>.grp:not(:has(>.sec.hide))){grid-auto-rows:auto}'
   + '#rows>.grp:has(>.sec.hide){display:none!important}#rows>.grp>.row.hide{display:none!important}'
   + '#rows>.grp>.sec{grid-row:1/span 2;display:flex!important;flex-direction:column;align-items:center;gap:3px;padding:0!important;margin:0!important;border:0!important;text-align:center;min-width:0}'
   + '#rows>.grp>.sec .av{flex:0 0 auto!important;width:96px!important;height:144px!important}#rows>.grp>.sec .av img{width:96px!important;height:144px!important}'
