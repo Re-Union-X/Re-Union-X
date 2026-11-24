@@ -38,6 +38,13 @@ check(/\.cat>\.b\{[^}]*flex-direction:column;align-items:stretch!important/.test
 // notice tables (banner notices: 8 columns, table-layout:fixed in the page) let long columns take the room (user 24-11)
 check(PHONE_CSS.includes('table{table-layout:auto!important}') && /\.ntb th,\.ntb td\{[^}]*font-size:13px/.test(PHONE_CSS), 'tables sized by their content on phones');
 
+// chips line up across a row (user 24-11): titles two lines high (clamped), dates two lines high, every card the same
+// left border (state colour only where the page sets one), Keep / Remove text centred in the button
+check(/\.nm\{[^}]*-webkit-line-clamp:2[^}]*height:2\.7em/.test(PHONE_CSS), 'titles: two lines, fixed height');
+check(/\.d\{[^}]*min-height:2\.7em/.test(PHONE_CSS), 'dates: two lines high');
+check(/border-left-width:4px!important/.test(PHONE_CSS) && PHONE_CSS.includes(':where(') , 'same left border on every card, colour from the page state');
+check(/\.pk\{[^}]*display:flex[^}]*align-items:center[^}]*justify-content:center/.test(PHONE_CSS), 'button text centred');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);
