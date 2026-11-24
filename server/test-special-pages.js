@@ -37,14 +37,18 @@ check(row(7102).includes('Keep in Special') && row(7102).includes('/web/special/
 check(row(7101).includes('/web/special/img/v' + require('./special').SPECIAL_IMG_VERSION + '/7101.png'), 'image');
 // Task 13: tabs, filters sheet, data attributes, half-size banners
 check(html.includes('class="tab on" data-p="all"'), 'All tab default');
-for (const y of [0, 1, 2, 3, 4]) check(html.includes('data-p="' + y + '"') && html.includes('id="tc' + y + '"'), 'tab ' + y); check(!html.includes('data-p="5"'), 'no tab for a game year without rows');
-check(html.includes('id="tc0">6<') && html.includes('id="tc1">4<') && html.includes('id="tc2">1<') && html.includes('id="tcall">8<'), 'tab counts (6 in the launch year, 8 total)');
+for (const y of [0, 1, 3]) check(html.includes('data-p="' + y + '"') && html.includes('id="tc' + y + '"'), 'tab ' + y); check(![2, 4, 5].some((y) => html.includes('data-p="' + y + '"')), 'no tab for a game year where nothing started');
+check(html.includes('id="tc0">6<') && html.includes('id="tc1">1<') && html.includes('id="tc3">1<') && html.includes('id="tcall">8<'), 'tab counts by start year (6 in the launch year, 8 total)');
 const attr = (id, a) => { const r = row(id), m = new RegExp(a + '="([^"]*)"').exec(r.slice(0, r.indexOf('>') + 1)); return m ? m[1] : null; };
 for (const id of [7101, 7102, 7103, 7104, 7105, 7106, 7107, 7108]) check(['data-periods', 'data-type', 'data-show', 'data-search'].every((a) => attr(id, a) !== null), 'row attrs ' + id);
 check(attr(7106, 'data-type').split(' ').includes('vip'), 'VIP');
 check(attr(7102, 'data-search').toLowerCase().includes('huey') && attr(7102, 'data-search').toLowerCase().includes('mythril') && attr(7102, 'data-search').toLowerCase().includes('quest two'), 'search has drop names');
 check(attr(7107, 'data-search') === 'N-cid', 'search plain name (as written)');
-check(attr(7102, 'data-periods') === '0' && attr(7101, 'data-periods') === '0 1' && attr(7103, 'data-periods') === '0 1' && attr(7105, 'data-periods') === '3 4' && attr(7108, 'data-periods') === '0', 'data-periods = game years of the periods (and of a campaign week)');
+check(attr(7102, 'data-periods') === '0' && attr(7101, 'data-periods') === '0' && attr(7106, 'data-periods') === '1' && attr(7105, 'data-periods') === '3' && attr(7108, 'data-periods') === '0', 'data-periods = the game year of the start only (24-11)');
+// 24-11: one grid by start date, a date line on every card, no VIP Campaigns section
+check(['7102', '7103', '7104', '7108', '7101', '7107', '7106', '7105'].join() === (html.match(/<div class="row[^"]*" id="q(\d+)"/g) || []).map((x) => /q(\d+)/.exec(x)[1]).join(), 'cards by start date');
+check(row(7101).includes('<div class="d">Tuesdays · Launch year → Year 2</div>') && row(7105).includes('<div class="d">Year 4 → Year 5</div>') && row(7108).includes('<div class="d">Jan 1, 2016 – Feb 1, 2016</div>'), 'date lines: days, game years; campaign: its weeks');
+check(!html.includes('id="camps"') && !html.includes('class="yc') && !html.includes('class="ml"') && !/\byr\b|ycs|\$\('yrs'\)/.test(html), 'no VIP Campaigns section, year chips or month labels');
 check(attr(7107, 'data-type') === 'daily' && attr(7106, 'data-type').split(' ').includes('vip') && attr(7108, 'data-type') === 'camp' && attr(7101, 'data-type') === 'weekday', 'types');
 check(attr(7101, 'data-show') === 'kept' && attr(7102, 'data-show') === 'can' && attr(7103, 'data-show') === 'replaced' && attr(7104, 'data-show') === 'removed' && attr(7105, 'data-show') === 'later' && attr(7106, 'data-show') === 'can' && attr(7108, 'data-show') === 'now', 'shows');
 check(html.includes('id="sum"') && html.includes('>7 quests</span> · 1 campaign · all years, no filters') && html.includes('id="fbtn"'), 'summary and filters button');
@@ -174,13 +178,16 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   const line = (x) => (/<span class="s s-[a-z]+">(?:<img[^>]*>)?([^<]*)<\/span>/.exec(x) || [])[1];
   const one = (t) => { const r = rowOf(t); return r.length === 1 ? r[0] : ''; };
   // no timeline / version / day chips in the list, one status line, at most one button, «›», one row per quest
-  check(rows.length === 9 + 2, `rows: ${rows.length} (9 quests + 2 campaigns)`);
+  check(rows.length === 11 + 2, `cards: ${rows.length} (11 quest versions + 2 campaigns)`);
   check(rows.every((x) => !/class="(tl|tp|vr|vc|ch)[ "]/.test(x) && (x.match(/<span class="s s-/g) || []).length === 1 && (x.match(/class="pk"/g) || []).length <= 1 && x.includes('class="go"')),
     'rows: no timeline or chips, one status line, at most one button, «›»');
-  check(one('EXP &amp; Evolve Medals: Power') && one('Daily Challenge: Cid'), 'one row per quest (versions and days inside)');
+  check(rowOf('EXP &amp; Evolve Medals: Power').length === 2 && rowOf('Daily Challenge: Cid').length === 2 && rowOf('Daily Challenge: Cid')[1].includes('data-eid="7321 7322 7323 7324 7325 7326 7327"'), 'one card per version (24-11), the days of a version inside');
+  const ver = (t, i) => rowOf(t)[i] || '';
   // status lines (best version)
-  check(line(one('EXP &amp; Evolve Medals: Power')) === 'Open today (Tue)', `open today Tue: ${line(one('EXP &amp; Evolve Medals: Power'))}`);
-  check(line(one('Daily Challenge: Cid')) === 'Open today (Tue)', 'Cid: today open');
+  check(line(ver('EXP &amp; Evolve Medals: Power', 1)) === 'Open today (Tue)' && line(ver('EXP &amp; Evolve Medals: Power', 0)) === 'Old quest — can be kept', `Power: ${line(ver('EXP &amp; Evolve Medals: Power', 1))}`);
+  check(ver('EXP &amp; Evolve Medals: Power', 0).includes('<div class="d">Launch year → Year 2 · VIP</div>') && ver('EXP &amp; Evolve Medals: Power', 1).includes('<div class="d">Tuesdays · Year 2 → Year 5 · Free</div>')
+    && ver('EXP &amp; Evolve Medals: Power', 1).includes('data-periods="1"'), 'version cards: their days, game years and Free / VIP, in the year they started');
+  check(line(ver('Daily Challenge: Cid', 1)) === 'Open today (Tue)' && line(ver('Daily Challenge: Cid', 0)).startsWith('Replaced by'), 'Cid: the free version open today, the VIP one replaced');
   check(line(one('Monday Quest')) === 'Opens on Monday' && one('Monday Quest').startsWith(' locked'), `opens on Monday: ${line(one('Monday Quest'))}`);
   check(line(one('VIP Quest')) === 'VIP only — locked', 'VIP only — locked');
   check(line(one('Kept Quest')) === 'Kept in Special' && one('Kept Quest').includes('Remove from Special'), 'kept + Remove');
@@ -189,20 +196,20 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(line(one('Replaced Quest')) === 'Replaced by Old Quest', 'replaced');
   check(line(one('Gone Quest')) === 'Not built', 'not built');
   // buttons: none where the keepable version is ambiguous or absent
-  check(!one('Daily Challenge: Cid').includes('class="pk"') && !one('Monday Quest').includes('class="pk"'), 'no button without a direct action');
-  check(one('EXP &amp; Evolve Medals: Power').includes('data-pin="/web/special/pin/7301"'), 'the one keepable version: Keep on the row');
-  // the row opens the quest's details page (banner, title, «›», and the row itself)
-  const pw = one('EXP &amp; Evolve Medals: Power');
+  check(!rowOf('Daily Challenge: Cid').some((x) => x.includes('class="pk"')) && !one('Monday Quest').includes('class="pk"'), 'no button without a direct action');
+  check(ver('EXP &amp; Evolve Medals: Power', 0).includes('data-pin="/web/special/pin/7301"') && !ver('EXP &amp; Evolve Medals: Power', 1).includes('class="pk"'), 'the keepable version: Keep on its card');
+  // the card opens the quest's details page (banner, title, «›», and the card itself)
+  const pw = ver('EXP &amp; Evolve Medals: Power', 1);
   check((pw.match(/ href="\/web\/special\/quest\/7301\?from=catalog"/g) || []).length === 3 && pw.includes('data-href="/web/special/quest/7301?from=catalog"'), 'row links to the quest');
   check(/location\.href=attr\(r\.el,'data-href'\)/.test(h) && /if\(t\.tagName==='A'\)return/.test(h), 'script: tap on the row opens the details, links and buttons keep theirs');
   check(['7301', '7302', '7311', '7327', '7351'].every((id) => (h.match(new RegExp(` id="q${id}"`, 'g')) || []).length === 1), 'one q<id> anchor per entry (BACK)');
   const ids = (h.match(/ id="[^"]+"/g) || []); check(ids.length === new Set(ids).size, 'unique element ids');
-  // campaigns: the same minimal rows in the year / month list
-  const camps = h.slice(h.indexOf('id="camps"'), h.indexOf('<div class="ov"'));
-  check((camps.match(/<div class="row cr /g) || []).length === 2 && camps.includes('width="320" height="70"') && !camps.includes('class="pk"'), 'campaign rows: like the quest rows, no Keep');
-  check(camps.includes('Jun 12, 2017 – Jun 18, 2017') && camps.includes('>June 2017</div>') && /class="yc on" data-yr="2019"/.test(camps), 'campaign dates, month labels, the Shop week year selected');
+  // campaigns: the same minimal cards in the one grid, by date
+  const crs = rows.filter((x) => x.startsWith(' cr '));
+  check(crs.length === 2 && crs.every((x) => x.includes('width="320" height="70"') && !x.includes('class="pk"')), 'campaign cards: like the quest cards, no Keep');
+  check(crs[0].includes('<div class="d">Jun 12, 2017 – Jun 18, 2017</div>') && crs[0].includes('data-periods="1"') && rows.indexOf(crs[0]) === rows.findIndex((x) => x.includes('id="q7302"')) - 1, 'campaign dates, between the versions by start date');
   // tabs / summary
-  check(h.includes('<span class="n1">9 quests</span> · 2 campaigns · all years, no filters') && h.includes('id="tcall">11<') && h.includes('id="tc4">2<'), `summary and tabs: ${(/<div class="sum"[^>]*>(.*?)<\/div>/.exec(h) || [])[1]} ${(h.match(/id="tc[^"]+">\d+</g) || []).join(' ')}`);
+  check(h.includes('<span class="n1">11 quests</span> · 2 campaigns · all years, no filters') && h.includes('id="tcall">13<') && h.includes('id="tc2">3<') && !h.includes('id="tc4"'), `summary and tabs: ${(/<div class="sum"[^>]*>(.*?)<\/div>/.exec(h) || [])[1]} ${(h.match(/id="tc[^"]+">\d+</g) || []).join(' ')}`);
   // the quest's details page: versions newest first, their own Keep buttons, day text
   const q = pages.detailPage(ix, 7311, { ...c4, fromCatalog: true });
   check(q && q.includes('<title>Daily Challenge: Cid</title>') && q.includes('<h1>Daily Challenge: Cid</h1>'), 'details: one page for the quest');
@@ -240,7 +247,10 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
     const fams = new Set(real.entries.filter((en) => !(en.campaign && !en.weekOf) && en.periods).map((en) => en.name.replace(/\s*\((?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day\)\s*$/, '').replace(/\s+\d+$/, '')));
     const crs = hh.split('<div class="row cr ').slice(1);
     check(nCamp === 121 && crs.length < nCamp && crs.reduce((t, x) => t + +(/data-nv="(\d+)"/.exec(x) || [0, 0])[1], 0) === nCamp, `real campaigns: ${crs.length} rows for ${nCamp} weeks`);
-    check((hh.match(/<div class="row (?!cr )/g) || []).length === fams.size, `real quest rows ${(hh.match(/<div class="row (?!cr )/g) || []).length} = families ${fams.size}`);
+    // 24-11: a card per version, the weeks of a VIP set one card per game year
+    const gy = require('./gacha').gameYearOf, fv = pages.familiesOf(real.entries).filter((f) => !f.campaign);
+    const want = fv.reduce((t, f) => t + f.versions.filter((v) => !v[0].campaign).length + new Set(f.versions.filter((v) => v[0].campaign).map((v) => gy(v[0].campaign.start))).size, 0);
+    check(fv.length === fams.size && (hh.match(/<div class="row (?!cr )/g) || []).length === want, `real quest cards ${(hh.match(/<div class="row (?!cr )/g) || []).length} = ${want} (families ${fams.size})`);
     const realIds = (hh.match(/ id="[^"]+"/g) || []); check(realIds.length === new Set(realIds).size, 'real page: unique ids');
   }
 }
@@ -318,7 +328,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(cases.every((c, i) => i === 0 || rk(...cases[i - 1]) < rk(...c)), `rank order ${cases.map((c) => rk(...c))}`);
   const ix = { catalog: { evStageId: 7000 }, entries: [
     e('o1', 7951, { name: 'Old (Monday)', periods: [1], days: ['Mon'], banner: 'old.png' }),
-    e('o2', 7952, { name: 'Old (Tuesday)', periods: [1, 4], days: ['Tue'], banner: 'old.png' }),
+    e('o2', 7952, { name: 'Old (Tuesday)', periods: [1], days: ['Tue'], banner: 'old.png', replacedBy: 'kp' }),
     e('kp', 7953, { name: 'Kept One', periods: [2] }),
   ] };
   const h = pages.catalogPage(ix, { period: 4, pinnedKey: 'kp', periods: PERIODS, shopFrom: '2016-01-11', shopTo: '2016-01-17', weekday: 'Tue' });
@@ -351,7 +361,7 @@ function h0() { return html; }
   ] };
   const c = { period: 4, pinnedKey: 'kept', periods: PERIODS, shopFrom: '2019-03-04', shopTo: '2019-03-10', weekday: 'Tue', vip: false, unlockQuestOf: () => 951 };
   const h = pages.catalogPage(ix, c), hv = pages.catalogPage(ix, { ...c, vip: true });
-  const camps = h.slice(h.indexOf('id="camps"'), h.indexOf('<div class="ov"'));
+  const camps = h.slice(h.indexOf('id="quests"'), h.indexOf('<div class="ov"'));
   const rows = camps.split('<div class="row cr').slice(1).map((x) => x.slice(0, x.indexOf('</div>' + String.fromCharCode(10))));
   const line = (x) => (/<span class="s s-[a-z]+">(?:<img[^>]*>)?([^<]*)<\/span>/.exec(x || '') || [])[1];
   const rowOf = (t, list = rows) => list.find((x) => x.includes(`>${t}</a>`)) || '';
@@ -361,14 +371,13 @@ function h0() { return html; }
   check(ka && ka.includes('2 weeks · Jun 12, 2017 – Jun 25, 2017') && ka.includes('data-eid="7401 7402"') && ka.includes('data-nv="2"'), `merged Key Art #9 row: ${ka.slice(0, 160)}`);
   check(line(ka) === 'June 2017 · can be kept with VIP' && /^ can"/.test(ka), `past: ${line(ka)}`);
   check(line(rowOf('Kept Campaign')) === 'Kept in Special', 'kept');
-  check(line(rowOf('This Week Campaign')) === 'This week · VIP only — locked' && line(rowOf('This Week Campaign', hv.slice(hv.indexOf('id="camps"')).split('<div class="row cr').slice(1))) === 'This week · VIP', 'this week, without and with VIP');
+  check(line(rowOf('This Week Campaign')) === 'This week · VIP only — locked' && line(rowOf('This Week Campaign', hv.slice(hv.indexOf('id="quests"')).split('<div class="row cr').slice(1))) === 'This week · VIP', 'this week, without and with VIP');
   check(line(rowOf('Future Campaign')) === 'Coming in March 2020 · Story Quest 951' && /^ off"/.test(rowOf('Future Campaign')), `future: ${line(rowOf('Future Campaign'))}`);
-  // year selector (the Shop week's year selected), month labels
-  check(camps.includes('data-defy="2019"') && /<button type="button" class="yc" data-yr="all">All years <span class="yn">5<\/span><\/button>/.test(camps)
-    && /<button type="button" class="yc on" data-yr="2019">2019 <span class="yn">1<\/span><\/button>/.test(camps) && /data-yr="2017">2017 <span class="yn">2<\/span>/.test(camps), 'year chips with counts, the Shop week year on');
-  check(camps.includes('<div class="ml" data-y="2017" data-m="2017-06">June 2017</div>') && camps.includes('>July 2017</div>') && !camps.includes('<details'), 'plain month labels, no accordions');
-  check(rows.every((x) => /data-y="\d{4}"/.test(x)) && /yr==='all'\|\|r\.y===yr/.test(h) && /if\(cur\.q\)yr=ys\.length===1\?ys\[0\]:'all'/.test(h), 'script: year filter; a search goes to its year');
-  check(/attr\(d,'data-y'\)\)\{yr=attr\(d,'data-y'\)/.test(h), 'BACK selects the year of the row');
+  // 24-11: no year selector or month labels; by date in the one grid, each in the game year of its start
+  check(!h.includes('class="yc') && !h.includes('class="ml"') && !h.includes('id="camps"') && !camps.includes('<details'), 'no year chips, month labels, section');
+  check(rows.map((x) => /class="nm"[^>]*>([^<]*)/.exec(x)[1]).join('|') === 'Kept Campaign|Key Art #9 VIP Quests|VIP Magic Broom Quests!|This Week Campaign|Future Campaign'
+    && rows.map((x) => /data-periods="([^"]*)"/.exec(x)[1]).join() === '0,1,1,2,3', 'by date, game year of the start');
+  check(!/\byr\b|ycs/.test(h) && /if\(h&&h\.scrollIntoView\)h\.scrollIntoView\(\)/.test(h), 'script: no year filter; BACK scrolls to the card');
   // filters and search still find campaigns
   check(rows.every((x) => ['data-type', 'data-show', 'data-search', 'data-periods', 'data-reward'].every((a) => x.includes(a + '="'))) && ka.includes('Key Art #9 Pt.2 &amp; Combo VIP Quests!'), 'filter and search attributes (both week titles)');
   // details page: each week a version with its own Keep button
@@ -394,11 +403,13 @@ function h0() { return html; }
   const vf = fams.find((f) => f.title === 'VIP! Medal Quest');
   check(fams.length === 2 && vf && !vf.campaign && vf.list.length === 4 && vf.versions.length === 4 && vf.key === 7021, `one quest row for the set: ${fams.map((f) => `${f.title}:${f.list.length}/${f.versions && f.versions.length}`)}`);
   const h = pages.catalogPage(ix, c);
-  const r = itemOf(h, 7021);
-  check(r && !r.startsWith('<div class="row cr') && r.includes('data-eid="7021 7700 7703 7724"') && r.includes('data-nv="4"'), `catalogue: one row, 4 versions (${r.slice(0, 200)})`);
-  check(!(/data-type="([^"]*)"/.exec(r) || [, ''])[1].split(' ').includes('camp') && (/data-type="([^"]*)"/.exec(r) || [, ''])[1].split(' ').includes('vip'), 'week versions are VIP, not campaigns');
-  check(h.includes('>1 quest</span> · 1 campaign'), 'summary: the set counts once, the campaign stays a campaign');
-  check(r.includes('This week · VIP'), `row status: this week's version (${r.slice(r.indexOf('<span class="s'), r.indexOf('<span class="s') + 120)})`);
+  // 24-11: the set's own version is a card; its weeks one card per game year («N weeks · first – last»)
+  const r = itemOf(h, 7021), w1 = itemOf(h, 7700), w3 = itemOf(h, 7703), w2 = itemOf(h, 7724);
+  check(r && r.includes('data-eid="7021"') && w1.includes('data-eid="7700"') && w1.includes('<div class="d">Mar 4 – Mar 17, 2019</div>') && w1.includes('data-periods="2"') && w3.includes('data-periods="3"')
+    && w2.includes('data-eid="7724"') && w2.includes('<div class="d">Week of Jun 1, 2020</div>') && w2.includes('data-periods="4"'), `catalogue: the set and its weeks per year (${w1.slice(0, 200)})`);
+  check([r, w1, w2].every((x) => !x.startsWith('<div class="row cr') && !(/data-type="([^"]*)"/.exec(x) || [, ''])[1].split(' ').includes('camp') && (/data-type="([^"]*)"/.exec(x) || [, ''])[1].split(' ').includes('vip')), 'week versions are VIP, not campaigns');
+  check(h.includes('>4 quests</span> · 1 campaign'), 'summary: the cards of the set are quests, the campaign stays a campaign');
+  check(w2.includes('This week · VIP'), `card status: this week's version (${w2.slice(w2.indexOf('<span class="s'), w2.indexOf('<span class="s') + 120)})`);
   const d = pages.detailPage(ix, 7703, c);
   const vers = (d.match(/<div class="ver [^"]*" id="v\d"><h3>[^<]*<\/h3>/g) || []).map((x) => />([^<]*)<\/h3>/.exec(x)[1]);
   check(vers.join('|') === 'Week of Jun 1, 2020|Week of Apr 22, 2019|Mar 4 – Mar 17, 2019|2019 · VIP only', `details: weeks newest first, then the set's entry (${vers.join('|')})`);
@@ -482,8 +493,8 @@ function SHOW_OPTS_OF(h) { const box = h.slice(h.indexOf('data-g="show"'), h.ind
 }
 // round 16 (bench rev 221): with SHOW «In Special now» the campaign rows of other years stayed visible (and the
 // summary said «0 campaigns»). The page script runs in headless Edge when it is installed: apply a SHOW filter, then
-// every row that is really displayed (computed style) must match it, the counts must agree, and the month labels / year
-// chips must follow. Skipped without Edge.
+// every row that is really displayed (computed style) must match it and the counts must agree (24-11: one grid by date,
+// year tabs). Skipped without Edge.
 {
   const cp = require('child_process'), os = require('os'), path = require('path'), fs = require('fs');
   const EDGE = process.env.KHUX_EDGE || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
@@ -506,11 +517,10 @@ function SHOW_OPTS_OF(h) { const box = h.slice(h.indexOf('data-g="show"'), h.ind
 function shown(el){while(el&&el.nodeType===1){if(getComputedStyle(el).display==='none')return false;el=el.parentNode;}return true;}
 function rows(cr){return [].filter.call(document.querySelectorAll('.row'),function(r){return (r.className.indexOf(' cr')>=0)===cr&&shown(r);});}
 function ids(list){var o=[];list.forEach(function(r){o.push(r.getAttribute('data-eid'));});return o.join(',');}
-function state(tag){R[tag]={q:ids(rows(false)),c:ids(rows(true)),ml:[].filter.call(document.querySelectorAll('.ml'),shown).map(function(m){return m.getAttribute('data-m');}).join(','),
-sum:document.getElementById('sum').textContent,year:(document.querySelector('.yc.on')||{}).getAttribute?document.querySelector('.yc.on').getAttribute('data-yr'):'',
-yn:[].map.call(document.querySelectorAll('.yc'),function(y){return y.getAttribute('data-yr')+':'+y.querySelector('.yn').textContent;}).join(','),camps:shown(document.getElementById('camps'))};}
+function state(tag){R[tag]={q:ids(rows(false)),c:ids(rows(true)),sum:document.getElementById('sum').textContent,tc3:document.getElementById('tc3').textContent};}
 function show(v){document.getElementById('fbtn').click();document.querySelector('.opts[data-g="show"] [data-v="'+v+'"]').click();document.getElementById('fok').click();}
-state('start');show('now');state('now');document.querySelector('.yc[data-yr="all"]').click();state('nowAll');show('unl');state('unl');
+function tab(p){document.querySelector('.tab[data-p="'+p+'"]').click();}
+state('start');show('now');state('now');tab(3);state('now3');tab('all');show('unl');state('unl');
 var p=document.createElement('pre');p.id='probe';p.textContent=JSON.stringify(R);document.body.appendChild(p);});</script>`;
     const file = path.join(os.tmpdir(), `khux-r16-${process.pid}.html`);
     fs.writeFileSync(file, pages.catalogPage(fx, c).replace('</body>', probe + '</body>'));
@@ -519,15 +529,16 @@ var p=document.createElement('pre');p.id='probe';p.textContent=JSON.stringify(R)
       const out = cp.execFileSync(EDGE, ['--headless=new', '--disable-gpu', '--dump-dom', 'file:///' + file.replace(/\\/g, '/')], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'ignore'] });
       const m = /<pre id="probe">([^<]*)<\/pre>/.exec(out);
       R = m ? JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&')) : null;
+      if (!R) errors.push('headless Edge: the page script did not finish (no probe)');
     } catch (err) { errors.push('headless Edge failed: ' + err.message); }
     try { fs.unlinkSync(file); } catch { /* gone */ }
     if (R) {
       check(tab.join() === '7801,7802,7811', `fixture tab ${tab}`);
-      check(R.start.year === '2019' && R.start.c === '7811', `start: the year of this week's campaign (2019) selected: ${JSON.stringify(R.start)}`);
-      check(R.now.q === '7801,7802' && R.now.c === '7811' && R.now.ml === '2019-12' && R.now.camps === true, `«In Special now»: only tab rows displayed ${JSON.stringify(R.now)}`);
-      check(/^2 quests · 1 campaign /.test(R.now.sum), `summary agrees: ${R.now.sum}`);
-      check(R.nowAll.c === '7811' && R.nowAll.ml === '2019-12' && /all:1,2017:0,2019:1,2020:0/.test(R.nowAll.yn), `All years: still only the tab's campaign; chips ${R.nowAll.yn}`);
-      check(R.unl.q === '7803' && R.unl.c.split(',').sort().join() === '7812,7813,7814' && R.unl.ml === '2017-08,2017-09,2020-02', `«Unlocked, not in Special now»: ${JSON.stringify(R.unl)}`);
+      // 24-11: one grid by start date, a year tab = what started in that game year
+      check(R.start.q === '7803,7802,7801,7804' && R.start.c === '7812,7813,7811,7814', `start: every card by date ${JSON.stringify(R.start)}`);
+      check(R.now.q === '7802,7801' && R.now.c === '7811' && /^2 quests · 1 campaign /.test(R.now.sum), `«In Special now»: only tab cards displayed ${JSON.stringify(R.now)}`);
+      check(R.now3.q === '' && R.now3.c === '7811' && R.now3.tc3 === '1', `«In Special now» in Year 4: ${JSON.stringify(R.now3)}`);
+      check(R.unl.q === '7803' && R.unl.c === '7812,7813,7814', `«Unlocked, not in Special now»: ${JSON.stringify(R.unl)}`);
     }
   }
 }
