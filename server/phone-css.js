@@ -37,9 +37,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // every card of a row looks the same (user 24-11): the text part fills the card, state chips and the Keep / Remove
   // buttons are as wide as the card (their text wraps), the button sits at the bottom so buttons of a row line up
   + `${inCards('.info')}{font-size:14px;line-height:1.35;flex:1 1 auto;display:flex;flex-direction:column;min-width:0;margin:0!important;padding:0!important}`
-  + `${inCards('.s')}{display:block!important;width:100%;box-sizing:border-box;white-space:normal;margin:4px 0 0}`
+  + `${inCards('.s')}{display:block!important;width:100%;box-sizing:border-box;white-space:normal;margin:4px 0 0;font-size:13px!important;line-height:1.35!important;padding:3px 10px!important}`
   + `${inCards('.pkw')},${inCards('.info>div:has(>.pk)')}{margin-top:auto;padding-top:6px}`
-  + `${inCards('.pk')}{display:flex!important;align-items:center;justify-content:center;gap:6px;width:100%;box-sizing:border-box;text-align:center;white-space:normal;min-height:34px;margin:0}`
+  + `${inCards('.pk')}{display:flex!important;align-items:center;justify-content:center;gap:6px;width:100%;box-sizing:border-box;text-align:center;white-space:normal;min-height:34px;margin:0;font-size:13px!important;line-height:1.3;padding:4px 8px!important}`
   + `${inCards('.d')},${inCards('.rp')},${inCards('.n')}{font-size:12px}`
   // chips line up across a row (user 24-11): titles always two lines high (longer ones end in «…», the full name is on
   // the details page), dates of Event / Raid / Avatar Board cards two lines high, the same left border on every card

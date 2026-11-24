@@ -49,6 +49,11 @@ check(/\.pk\{[^}]*display:flex[^}]*align-items:center[^}]*justify-content:center
 // Banner Catalog cards without a price line (.n followed by the chip): the chip keeps the place of the missing line
 check(PHONE_CSS.includes('.cat>.b .n+.s{margin-top:calc(14px*1.35 + 4px)}'), 'banner chip lines up when the price line is missing');
 
+// chips and buttons: one compact size in every catalog (Avatar Board chips were 17 px with a tall line; «Remove from
+// Avatar Boards» wrapped and made its button taller than «Keep in Avatar Boards», user 24-11)
+check(/\.s\{[^}]*font-size:13px!important;line-height:1\.35!important/.test(PHONE_CSS), 'chips 13 px, compact line');
+check(/\.pk\{[^}]*font-size:13px!important;line-height:1\.3/.test(PHONE_CSS), 'buttons 13 px');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);
