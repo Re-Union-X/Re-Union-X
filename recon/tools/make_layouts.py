@@ -802,6 +802,12 @@ LAYOUTS = {
     # and WW footage of Dec. 2020 (reference\events_tab_ww2020) shows the lower banners undimmed. User 26-11: keep the original.
     # Served as a plain copy of the WW file so the resources replace the shaded copy of resources 171.
     'AdventureTop2_EV_Banner_Area_ver120.json': ('copy', 'AdventureTop2_EV_Banner_Area_ver120.json', {}, False),
+    # I-300: the bottom shade of the Events / Special lists is Bg_Shade_Bottom of the WW EV_Lock_ver130 (1136 wide, x 568 =
+    # design 0..1136, an iPhone-style placement, cf. Win_Bottom «Bg_Bottom720_ip»): on a 16:9 screen the design area starts at
+    # screen x 150, so the left strip stayed unshaded, while WW footage of Dec. 2020 shows the shade over the whole width.
+    # Centred on x 480 (design -88..1048 = the whole 16:9 screen)
+    'AdventureTop2_EV_Lock_ver130.json': ('copy', 'AdventureTop2_EV_Lock_ver130.json', {}, False,
+                                          [('opts', 'Bg_Shade_Bottom', {'x': 480}), ('opts', 'Win_Bottom', {'x': 480})]),
     'AdventureTop2_EV_Banner_ver220.json': ('build', P('EV_Banner', 0, 0, 800, 172, [
         I('Image_3', 400, 98, 640, 140, 'Event_Banner1.png', s9=False),
         P('Mask', 80, 28, 640, 140, visible=False,
