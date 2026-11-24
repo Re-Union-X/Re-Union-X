@@ -11,12 +11,13 @@ check(PHONE_MQ === '(max-height:480px) and (max-width:900px)', `PHONE_MQ ${PHONE
 check(PHONE_CSS.startsWith('@media (max-height:480px) and (max-width:900px){'), 'PHONE_CSS starts with the phone media query');
 check(PHONE_CSS.endsWith('}'), 'PHONE_CSS is one closed block');
 check(PHONE_CSS.includes('html{zoom:.7}'), 'reduction html{zoom:.7}');
-for (const c of ['#rows', '#quests', '#camps', '.cat']) {
+for (const c of ['#rows', '#quests', '.cat']) {
   check(new RegExp(`${c.replace(/[#.]/g, '\\$&')}[,{]`).test(PHONE_CSS), `grid container ${c}`);
 }
 check(PHONE_CSS.includes('grid-template-columns:repeat(3,minmax(0,1fr))'), '3-column grid');
 check(!/(^|[{};])\.ml\{/.test(PHONE_CSS) && !/,\.ml[,{]/.test(PHONE_CSS), 'no bare .ml rule (gacha.js uses .ml for medal lists)');
-for (const c of ['#rows>.ml', '#quests>.ml', '#camps>.ml']) check(PHONE_CSS.includes(c), `month headers hidden in ${c}`);
+for (const c of ['#rows>.ml', '#quests>.ml']) check(PHONE_CSS.includes(c), `month headers hidden in ${c}`);
+check(!PHONE_CSS.includes('#camps'), 'no rules for the old VIP Campaigns section of the Special Catalog (one grid since 24-11)');
 
 // Avatar Board cards hold several 70 px board pictures (.im.bc): they wrap as small tiles, never stretched to the card
 check(PHONE_CSS.includes('#rows>.row .im.bc,') && /\.im\.bc img[^{]*\{[^}]*width:50px!important/.test(PHONE_CSS), 'board tiles of the Avatar Board Catalog: 50 px');
@@ -24,7 +25,7 @@ check(/\.im\.bc\{[^}]*flex-wrap:nowrap!important[^}]*height:50px!important/.test
 
 // Cards of a row look the same (user 24-11): equal heights, state chips and Keep / Remove buttons as wide as the card,
 // the button at the bottom of the card
-check(/#rows,#quests,#camps,\.cat\{[^}]*align-items:stretch/.test(PHONE_CSS), 'cards of a row stretch to the same height');
+check(/#rows,#quests,\.cat\{display:grid[^}]*align-items:stretch/.test(PHONE_CSS), 'cards of a row stretch to the same height');
 check(/\.s\{[^}]*display:block[^}]*width:100%/.test(PHONE_CSS) || /\.s\{[^}]*width:100%[^}]*display:block/.test(PHONE_CSS), 'state chips as wide as the card');
 check(/\.pk\{[^}]*width:100%/.test(PHONE_CSS), 'Keep / Remove buttons as wide as the card');
 check(/\.pkw[^{]*\{[^}]*margin-top:auto/.test(PHONE_CSS) && PHONE_CSS.includes('>div:has(>.pk)'), 'Keep / Remove at the bottom of the card');
@@ -56,7 +57,7 @@ check(/\.s\{[^}]*font-size:13px!important;line-height:1\.35!important/.test(PHON
 check(/\.pk\{[^}]*font-size:13px!important;line-height:1\.3/.test(PHONE_CSS), 'buttons 13 px');
 
 // every card of a catalog the same size (user 24-11: a 3-line «Replaced by» chip made its row taller): equal rows in the
-// card grids (not #camps: its headers are grid items), chips and «Replaces» lines at most two lines
+// card grids, chips and «Replaces» lines at most two lines
 check(PHONE_CSS.includes('#rows,#quests,.cat{grid-auto-rows:1fr}'), 'equal rows in the card grids');
 check(/\.s\{display:-webkit-box!important[^}]*-webkit-line-clamp:2/.test(PHONE_CSS) && /\.rp\{display:-webkit-box;[^}]*-webkit-line-clamp:2/.test(PHONE_CSS), 'chips and Replaces lines clamped to two lines');
 
@@ -89,7 +90,7 @@ check(!PHONE_CSS.includes(':has(>.row:nth-child(5))') && PHONE_CSS.includes('#ro
 // (3) the BGM tab keeps equal rows: auto rows only while an artwork group is visible; (5) empty-list messages span the row
 check(!/\.rp\{display:-webkit-box!important/.test(PHONE_CSS) && !/\.rp,[^{]*\{display:-webkit-box!important/.test(PHONE_CSS), 'Replaces line can still be hidden by the page');
 check(PHONE_CSS.includes('#rows:has(>.grp:not(:has(>.sec.hide))){grid-auto-rows:auto}') && !PHONE_CSS.includes('#rows:has(>.grp){grid-auto-rows:auto}'), 'auto rows only in the Full Art tab');
-check(PHONE_CSS.includes('#rows>p,#quests>p,#camps>p{grid-column:1/-1}'), 'empty-list messages across the grid');
+check(PHONE_CSS.includes('#rows>p,#quests>p{grid-column:1/-1}'), 'empty-list messages across the grid');
 
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';

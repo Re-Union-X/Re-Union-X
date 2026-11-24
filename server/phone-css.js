@@ -2,14 +2,14 @@
 // The game is always landscape: on a phone the WebView frame is about 640 x 320 CSS px (Galaxy A54), and our pages,
 // sized for PC / tablet, filled it (one catalog event per screen). On a short and narrow frame every page becomes the
 // tablet layout reduced to 70 % (CSS zoom), with the title and Filters on one line, a tap floor for the controls and
-// the catalogs (Event / Raid / Avatar Board: #rows, Special: #quests + #camps, Banner: .cat) as a 3-column grid of
+// the catalogs (Event / Raid / Avatar Board: #rows, Special: #quests, Banner: .cat) as a 3-column grid of
 // cards. PC, tablet and the LDPlayer bench (taller or wider frames) never match the query.
 'use strict';
 
 const PHONE_MQ = '(max-height:480px) and (max-width:900px)';
 
-const GRIDS = ['#rows', '#quests', '#camps', '.cat'];
-const CARDS = ['#rows>.row', '#quests>.row', '#camps>.row', '.cat>.b'];
+const GRIDS = ['#rows', '#quests', '.cat'];
+const CARDS = ['#rows>.row', '#quests>.row', '.cat>.b'];
 const inCards = (sel) => CARDS.map((c) => `${c} ${sel}`).join(',');
 
 const PHONE_CSS = `@media ${PHONE_MQ}{`
@@ -22,14 +22,12 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + 'table{table-layout:auto!important}.ntb th,.ntb td{font-size:13px}'
   // tap floor (30 CSS px of the reduced page)
   + '.fbtn,.tab,.yc,.pk,.o,button{min-height:30px}'
-  // catalogs: a 3-column grid of cards; headers, intro and year chips of the Special campaigns span the row
+  // catalogs: a 3-column grid of cards; an empty-list message spans the row
   + `${GRIDS.join(',')}{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}`
-  + '#camps>h2,#camps>p,#camps>.yrs{grid-column:1/-1}'
-  + '#rows>p,#quests>p,#camps>p{grid-column:1/-1}'
-  // every card of a catalog the same size (user 24-11): equal rows in the card grids (#camps has its headers as grid
-  // items, so it keeps auto rows); the tallest card sets the row, chips and «Replaces» lines stop at two lines
+  + '#rows>p,#quests>p{grid-column:1/-1}'
+  // every card of a catalog the same size (user 24-11): equal rows in the card grids; the tallest card sets the row, chips and «Replaces» lines stop at two lines
   + '#rows,#quests,.cat{grid-auto-rows:1fr}'
-  + '#rows>.ml,#quests>.ml,#camps>.ml{display:none!important}'
+  + '#rows>.ml,#quests>.ml{display:none!important}'
   + `${CARDS.map((c) => `${c}.hide`).join(',')}{display:none!important}`
   + `${CARDS.join(',')}{display:flex;flex-direction:column;align-items:stretch!important;padding:6px 6px 8px!important;margin:0;border-bottom:0;background:#06283e;border-radius:8px}`
   + `${inCards('.im')},${inCards('.im img')}{width:100%!important;height:auto!important}`
