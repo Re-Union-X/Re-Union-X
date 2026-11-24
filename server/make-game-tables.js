@@ -992,6 +992,17 @@ fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 }
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
+// Union Cross chat phrases (I-299, tester 22-11: «Chat Phrases» empty and the screen cannot be left): the MultiTalk table was
+// removed from the 5.0.1 master, so it was empty here. The 280 worldwide phrases of the live master donated by the ReLux Team
+// (private verified extract, KHUX_MULTITALK_2021; without it the table stays as it is). Credited to the ReLux Team.
+{
+  const MULTITALK_2021 = process.env.KHUX_MULTITALK_2021 || 'D:/Progetto_Restauro_KH_UX/private/donations/relux_2026-11/verified/multi_talk_2021.json';
+  try {
+    const rows = JSON.parse(fs.readFileSync(MULTITALK_2021, 'utf8')).rows;
+    fs.writeFileSync(path.join(OUT, 'multiTalk.json'), JSON.stringify(rows));
+    console.log(`multiTalk: ${rows.length} chat phrases (ReLux Team donation)`);
+  } catch { console.warn(`multiTalk: ${MULTITALK_2021} not readable, chat phrases left as they are`); }
+}
 // adesivi della chat del party (stamp-table.js, I-210)
 fs.writeFileSync(path.join(OUT, 'stamp.json'), JSON.stringify(require('./stamp-table').stampRows()));
 // guiltProb (guilt della copia, «Special Attack Bonus»): intervalli della khuxwiki per tier, un

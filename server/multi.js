@@ -95,13 +95,29 @@ function makeMulti(ctx) {
     };
   }
 
+  // /multi/talk (159, I-299): the player's chat phrases (8 slots of the «Select a chat phrase» screen). A body with multiTalkIds
+  // saves them (only talkIds of the multiTalk table, at most 8, order kept); without a saved list the first 8 phrases of the
+  // table («Hi!», «Thanks!», ...). The client does not let the screen close without one phrase: an empty list softlocked it.
+  const TALK_SLOTS = 8;
+  function talk(body) {
+    const known = ctx.masterRows('multiTalk').map((r) => r.talkId).sort((a, b) => a - b);
+    const valid = new Set(known);
+    const p = ctx.player;
+    if (Array.isArray(body?.multiTalkIds)) {
+      const ids = body.multiTalkIds.map(Number).filter((id) => valid.has(id)).slice(0, TALK_SLOTS);
+      if (ids.length) { p.multiTalkIds = ids; ctx.savePlayer(); }
+    }
+    const saved = (p.multiTalkIds || []).filter((id) => valid.has(id));
+    return { ret: ctx.ret(), multiTalkIds: saved.length ? saved : known.slice(0, TALK_SLOTS) };
+  }
+
   return {
     route: routeMulti,
     respond(kind, res, body) {
       switch (kind) {
         case 'multistatus': return ctx.send(res, 200, status());
         // GET /multi/talk (159): multiTalkIds[] (frasi rapide della stanza)
-        case 'multitalk': return ctx.send(res, 200, { ret: ctx.ret(), multiTalkIds: [] });
+        case 'multitalk': return ctx.send(res, 200, talk(body));
         case 'multimembers': return ctx.send(res, 200, members());
         case 'multicreate': return ctx.send(res, 200, create(body));
         case 'multistart': return ctx.send(res, 200, start(body));
