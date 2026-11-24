@@ -686,6 +686,13 @@
    "group": "CLOSED",
    "hash": "d4ce8b5878efcf64",
    "name": "I-307 · Event medal drops missing on generated maps"
+  },
+  "I-308": {
+   "thread": "1574706976565239820",
+   "msg": "1574706976565239820",
+   "group": "TO VERIFY",
+   "hash": "bba10bb1b8f359da",
+   "name": "I-308 · Quests «Progress» of Special and Events left out quests"
   }
  }
 }
