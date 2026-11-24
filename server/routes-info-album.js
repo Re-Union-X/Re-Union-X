@@ -1065,7 +1065,7 @@ const WEB_CSS = '<style>body{background:#000 linear-gradient(#06121c,#0a2233);mi
   + '.ttl{font:bold 30px sans-serif;color:#fff;text-shadow:0 2px 0 #0a2f55;padding:4px 8px 10px}'
   + '*{box-sizing:border-box}.x{min-width:0}#list{background:#174a5c;border:2px solid #36a6e6}.det{min-height:60vh}.bar{position:sticky}'
   + '.foot{max-width:980px;margin:14px auto 0;color:#8fb3c0;font:13px sans-serif;text-align:center}.foot a{color:#5fe0f0}'
-  + '@media(max-width:600px){body{padding:12px 6px}.frame{padding:8px 6px 10px}.row{padding:10px 6px}.d{width:44px;font-size:13px}.t{width:96px;font-size:11px;margin-right:8px}.x{font-size:15px}.ttl{font-size:24px}}</style>';
+  + '@media (max-width:600px) and (min-height:481px){body{padding:12px 6px}.frame{padding:8px 6px 10px}.row{padding:10px 6px}.d{width:44px;font-size:13px}.t{width:96px;font-size:11px;margin-right:8px}.x{font-size:15px}.ttl{font-size:24px}}</style>';
 const WEB_FOOT = '<div class="foot">Re-Union X &middot; a fan restoration of Kingdom Hearts Union &chi;[Cross], not affiliated with Square Enix or Disney &middot; the in-game Notices, exported from the server '
   + '&middot; <a href="https://github.com/Re-Union-X/Re-Union-X">project on GitHub</a></div>';
 
@@ -1165,7 +1165,7 @@ function noticesPage(realMs = Date.now(), opts = {}) {
     + '.row.sub .x{font-size:16px;color:#f3e6b8}'
     + '.row.sub .a{border-color:transparent transparent transparent #d4a017}' // secondary gold arrow (user 13-11)
     + '.row.pin .x,.row.sub .x{white-space:normal;overflow:visible;line-height:1.25}'
-    + '@media(max-width:600px){.row.pin .x{font-size:19px}.row.pin .d{width:34px;font-size:24px}}'
+    + '@media (max-width:600px) and (min-height:481px){.row.pin .x{font-size:19px}.row.pin .d{width:34px;font-size:24px}}'
     + '.det.pin h2{color:#ffd65a;border-bottom-color:#b8860b}.det.pin h2:before{background:#ffd65a}'
     + '.lead{background:#123f5e;border-left:4px solid #ffd65a;padding:10px 14px;border-radius:4px}'
     + '.card{background:#0f3d5c;border:1px solid #2a76a0;border-radius:10px;padding:2px 14px 6px;margin:0 0 14px;box-shadow:0 2px 6px rgba(0,0,0,.35)}'

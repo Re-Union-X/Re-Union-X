@@ -392,7 +392,7 @@ const tests = {
       assert.ok(r.includes('<div class="mt"></div>'), 'the «Matches:» line');
     }
     // the narrow layout of the shared catalogues applies (NARROW_CSS: full-width button, one chip per row)
-    assert.ok(raw.includes('@media (max-width:700px)') && raw.includes('.fbtn{-webkit-flex:1 1 100%'));
+    assert.ok(raw.includes('@media (max-width:700px) and (min-height:481px){') && raw.includes('.fbtn{-webkit-flex:1 1 100%'));
     for (const m of raw.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(m[1]); // eslint-disable-line no-new-func
   },
   // FIND: event and quest names (served or not), the type, the Event Board names and rewards (without amounts and stat cells) and

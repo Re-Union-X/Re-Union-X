@@ -37,5 +37,13 @@ for (const f of ['server.js', 'keyblade-evo.js']) {
   });
 }
 
+// Task 3: portrait rules (max-width) never fire on a phone in landscape
+for (const f of fs.readdirSync(__dirname).filter((n) => n.endsWith('.js') && !n.startsWith('test') && n !== 'phone-css.js')) {
+  const src = fs.readFileSync(path.join(__dirname, f), 'utf8');
+  for (const m of src.matchAll(/@media\s*\(max-width:\s*\d+px\)[^{\n]*\{/g)) {
+    check(m[0].includes('min-height:481px'), `${f}: unguarded ${m[0]}`);
+  }
+}
+
 if (errors.length) { console.log(errors.join('\n')); console.log(`${errors.length} errors`); process.exit(1); }
 console.log('test-phone-css: ok');

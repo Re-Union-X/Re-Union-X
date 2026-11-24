@@ -534,7 +534,7 @@ const EVENT_DETAIL_CSS = '.tt{table-layout:auto}.tt td:nth-child(2),.tt td:nth-c
   + '.tt.ab td:nth-child(3){white-space:normal}.tt.ab td:nth-child(4){white-space:nowrap}' + BOARD_CARD_CSS
   // High Score tables on a phone (user 16-11: the 5-column thresholds table broke on mobile): one card per row, each cell on its
   // own line with its column name (data-l), the header row hidden
-  + '@media (max-width:700px){table.tt.hs,table.tt.hs>tbody,table.tt.hs tr,table.tt.hs td{display:block!important;width:auto!important;box-sizing:border-box}'
+  + '@media (max-width:700px) and (min-height:481px){table.tt.hs,table.tt.hs>tbody,table.tt.hs tr,table.tt.hs td{display:block!important;width:auto!important;box-sizing:border-box}'
   + 'table.tt.hs{overflow:visible!important;padding:0!important}table.tt.hs tr.hh{display:none!important}'
   + 'table.tt.hs tr{border:1px solid #2f5d78;border-radius:8px;margin:0 0 8px;padding:6px 8px}'
   + 'table.tt.hs td{border:0!important;padding:2px 0!important;white-space:normal!important;text-align:left}'

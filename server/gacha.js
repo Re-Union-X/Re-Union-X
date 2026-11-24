@@ -424,7 +424,7 @@ const firstPrice = (b) => ((b.prices || []).length ? Math.max(0, b.prices[0]) : 
 // Narrow screens (phones in portrait, <= 700 CSS px): the in-game landscape WebView (~830 px) never matches, so the approved
 // wide look is unchanged. Shared narrow design of the catalogue pages: single column, body text >= 15 px, tap targets
 // >= 44 px, buttons full width, tables kept inside the page width (cells wrap), Medal lists in 2 columns.
-const PAGE_NARROW_CSS = '@media (max-width:700px){body{padding:6px 12px 40px;overflow-wrap:break-word}h1{font-size:21px;line-height:1.35}'
+const PAGE_NARROW_CSS = '@media (max-width:700px) and (min-height:481px){body{padding:6px 12px 40px;overflow-wrap:break-word}h1{font-size:21px;line-height:1.35}'
   + '.s{font-size:15px;line-height:1.6;padding:2px 12px}.b.now,.b.pinned{padding-left:10px}'
   + '.btn{display:block;box-sizing:border-box;width:100%;min-height:44px;padding:9px 14px;text-align:center;line-height:1.3}'
   + 'table{width:100%;font-size:15px;table-layout:auto}th,td{padding:4px 4px;overflow-wrap:break-word}th{overflow-wrap:normal}'
@@ -816,7 +816,7 @@ const CATALOG_CSS = 'img.ic{display:inline-block;width:1.3em;height:1.3em;max-wi
   + '.foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px}.ok{padding:6px 20px}.ok:disabled{opacity:.6;cursor:default}.reset{color:#b9cfdc;font-size:14px}'
   // narrow screens (<= 700 px, see PAGE_NARROW_CSS): full-width Filters button under the title, year tabs in one row that
   // scrolls sideways, filter options in one column, banner rows as stacked cards (picture, name, state, full-width button)
-  + '@media (max-width:700px){.hdr{flex-wrap:wrap;gap:4px 10px}.hdr h1{flex:1 1 auto}'
+  + '@media (max-width:700px) and (min-height:481px){.hdr{flex-wrap:wrap;gap:4px 10px}.hdr h1{flex:1 1 auto}'
   + '.hdr .fbtn{flex:1 1 100%;min-height:46px;font-size:17px;border-radius:12px;margin:2px 0 6px}.dot{font-size:15px}'
   + '.gy{font-size:15px}.tabs{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;font-size:0;padding-bottom:2px}'
   + '.tab{display:inline-block;vertical-align:bottom;min-width:92px;min-height:50px;margin-right:3px;padding:5px 9px;white-space:nowrap}'

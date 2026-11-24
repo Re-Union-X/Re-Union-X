@@ -639,7 +639,7 @@ const DETAIL_CSS = 'table{width:100%;margin:6px 0 10px;border-collapse:collapse;
 // line (tap targets >= 44 px); rows: stacked cards (card picture full width, title, pills, full-width buttons); detail and
 // notice pages: one column, a table that does not fit scrolls inside its own box (display:block + tbody as the table), never
 // the page. Same palette and fonts; no markup or script change.
-const NARROW_CSS = '@media (max-width:700px){'
+const NARROW_CSS = '@media (max-width:700px) and (min-height:481px){'
   + 'html{-webkit-text-size-adjust:100%}body{padding:6px 12px 40px;overflow-x:hidden}h1{font-size:21px;line-height:1.3}'
   + '.n,.d,.sum,.rp{font-size:15px}.rp{margin-top:4px}'
   // header: the Filters button under the title, full width (its count dot stays)
