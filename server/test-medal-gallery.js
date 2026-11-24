@@ -87,6 +87,10 @@ const tests = {
     const html = g.expandGallery(page);
     assert.strictEqual(count(html, '<div class="row '), 4);
     assert.strictEqual(count(html, '<div class="sec" data-tab="art">'), 1);
+    // each artwork and its Medals in one group (a card on phones, user 24-11); invisible to the layout elsewhere
+    assert.strictEqual(count(html, '<div class="grp" data-tab="art"><div class="sec" data-tab="art">'), 1, 'artwork group wraps its header');
+    assert(/<div class="grp" data-tab="art"><div class="sec"[\s\S]*?Key Art #2[\s\S]*?Illustrated Xion \[EX\][\s\S]*?<\/div>\n<\/div>/.test(html), 'its Medals inside the group');
+    assert(page.includes('.grp{display:contents}'), 'group invisible to the PC / tablet layout');
     assert(html.includes('data-src="/web/medals/img/v1/300779.png"') && html.includes('data-src="/web/medals/art/v1/21266.jpg"') && html.includes('data-big="/web/medals/art/v1/21266-l.jpg"'), 'lazy picture URLs');
     assert(!/<img[^>]* src=/.test(html.split('<div id="rows"')[1].split('<div id="big"')[0]), 'no picture loaded before render (data-src only)');
     assert(!html.includes('Plain'), 'a Medal with neither is not listed');

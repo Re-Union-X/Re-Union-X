@@ -63,12 +63,22 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // Medal Gallery (medal-gallery.js: cards with a .mi picture, user 24-11): 4 columns of square Medals, the picture centred,
   // the attribute line one line high, track name and «Variants» one line each with «…» (the full text is in the detail)
   + '#rows:has(>.row>.mi){grid-template-columns:repeat(4,minmax(0,1fr))}'
-  // Full Art tab (user 24-11: 65 artworks, too much scrolling as full-width headers): each artwork (.sec) is a card of
-  // the grid with a gold border, its picture, name and «N Medals», followed in the same grid by the cards of its Medals
-  + '#rows>.sec{display:flex!important;flex-direction:column;align-items:center;gap:4px;margin:0;padding:6px!important;background:#0b3a58;border:2px solid #ffcd4a;border-radius:8px;text-align:center;box-sizing:border-box;min-width:0}'
-  + '#rows>.sec .av{flex:0 0 auto!important;width:70px!important;height:105px!important}#rows>.sec .av img{width:70px!important;height:105px!important}'
-  + '#rows>.sec b{font-size:14px;line-height:1.35;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}'
-  + '#rows>.sec .d{font-size:12px;line-height:1.35;margin:0}#rows>.sec>div{min-width:0;width:100%}'
+  // Full Art tab (user 24-11: «the Medals must be part of the artwork card»): each artwork group (.grp, medal-gallery.js:
+  // its header .sec + its Medal cards) is one gold card, two per row (four or more Medals: the whole row); the artwork on the
+  // left with its name, its Medals on the right as small tiles (picture, name, Owned) that open the detail as before
+  + '#rows>.grp{display:grid!important;grid-column:span 2;grid-template-columns:76px repeat(3,minmax(0,1fr));gap:6px;align-items:start;padding:8px;background:#0b3a58;border:2px solid #ffcd4a;border-radius:8px;min-width:0;box-sizing:border-box}'
+  + '#rows>.grp:has(>.row:nth-child(5)){grid-column:1/-1;grid-template-columns:76px repeat(7,minmax(0,1fr))}'
+  + '#rows>.grp:has(>.sec.hide){display:none!important}#rows>.grp>.row.hide{display:none!important}'
+  + '#rows>.grp>.sec{grid-row:1/span 3;display:flex!important;flex-direction:column;align-items:center;gap:3px;padding:0!important;margin:0!important;border:0!important;text-align:center;min-width:0}'
+  + '#rows>.grp>.sec .av{flex:0 0 auto!important;width:66px!important;height:99px!important}#rows>.grp>.sec .av img{width:66px!important;height:99px!important}'
+  + '#rows>.grp>.sec b{font-size:12px;line-height:1.3;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}'
+  + '#rows>.grp>.sec .d{font-size:10px;line-height:1.3;margin:0}#rows>.grp>.sec>div{min-width:0;width:100%}'
+  + '#rows>.grp>.row{display:flex!important;flex-direction:column;align-items:center;gap:2px;padding:4px!important;margin:0!important;border:0!important;background:#06283e;border-radius:6px;min-width:0}'
+  + '#rows>.grp>.row .mi{flex:0 0 auto!important;width:56px!important;height:56px!important;margin:0!important}#rows>.grp>.row .mi img{width:56px!important;height:56px!important}'
+  + '#rows>.grp>.row .info{width:100%;text-align:center;margin:0!important;padding:0!important}'
+  + '#rows>.grp>.row .nm{font-size:11px!important;line-height:1.25;height:2.5em;margin:0;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}'
+  + '#rows>.grp>.row .d,#rows>.grp>.row .tk,#rows>.grp>.row .vrt,#rows>.grp>.row .go,#rows>.grp>.row .st{display:none!important}'
+  + '#rows>.grp>.row .cps{display:flex;flex-direction:column;align-items:center;gap:2px;margin:2px 0 0}#rows>.grp>.row .s{font-size:10px!important;padding:1px 6px!important;margin:0!important;line-height:1.4}'
   // a Medal with no music (Full Art tab) keeps the place of the track line (12 px, line 1.5em, margin 2px): chips line up
   + '#rows>.row:has(>.mi) .info:not(:has(>.tk))>.d{margin-bottom:calc(12px*1.5 + 2px)}'
   // Medal detail (#det, user 24-11: the info needed scrolling): the Medal on the left, name, chips, track, music and

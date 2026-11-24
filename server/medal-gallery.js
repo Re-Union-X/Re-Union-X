@@ -137,6 +137,8 @@ const CSS = SPECIAL_CSS
   + '.p{color:#ff6b8a}.g{color:#6be05a}.m{color:#7ab4ff}.s{vertical-align:middle;font-size:12.5px}.s-own{background:#2e9e3e;font-weight:bold}.s-not{background:#5a6470;color:#e0e6ea}.s-rec{background:transparent;border:1px solid #ffcd4a;color:#ffcd4a}'
   + '.go{color:#9fd4ff}'
   + '.sec{display:flex;gap:14px;align-items:center;padding:16px 0 4px;margin-top:6px;border-bottom:2px solid #0a8fa3}.sec .av{flex:0 0 80px;width:80px;height:120px;background:#06283e;border-radius:6px;display:block;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.5)}'
+  // .grp = an artwork and its Medals (a card on phones, phone-css.js); invisible to this layout
+  + '.grp{display:contents}'
   + '.sec .av img{width:80px;height:120px}.sec b{display:block;color:#00d4ed;font-size:18px}.sec .d{margin-top:2px}'
   + '.ovl{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(1,12,20,.94);z-index:7;overflow:auto;padding:12px 14px 30px;box-sizing:border-box}'
   + '.ovl .x{position:absolute;right:12px;top:10px}#big{text-align:center}#big img{display:inline-block;max-width:100%;max-height:calc(100% - 50px);width:auto}#big .n{margin:4px 40px 4px 0}'
@@ -169,9 +171,9 @@ return '<div class="row '+o+' t'+t.charAt(0)+'" data-i="'+i+'" data-tab="'+t+'" 
 +(vs.length?'<div class="vrt"><b>Variants:</b> '+vs.join(', ')+'</div>':'')+'</div><span class="go">\\u203a</span></div>\\n';}
 function kxBuild(d){var h="",i,j,s,n;kxD=d;kxCards=[];for(i=0;i<d.b.length;i++)h+=kxCard(d.b[i],"bgm");
 for(i=0;i<d.a.length;i++){s=d.a[i];n=s[2].length;
-h+='<div class="sec" data-tab="art"><a class="av" href="#" data-big="/web/medals/art/v'+d.v+'/'+s[0]+'-l.jpg" data-title="'+kxEsc(s[1])+'" aria-label="Full artwork">'
+h+='<div class="grp" data-tab="art"><div class="sec" data-tab="art"><a class="av" href="#" data-big="/web/medals/art/v'+d.v+'/'+s[0]+'-l.jpg" data-title="'+kxEsc(s[1])+'" aria-label="Full artwork">'
 +'<img width="80" height="120" data-src="/web/medals/art/v'+d.v+'/'+s[0]+'.jpg" alt=""></a><div><b>'+kxEsc(s[1])+'</b><div class="d">Full artwork \\u00b7 '+n+' Medal'+(n===1?'':'s')+' \\u00b7 tap to enlarge</div></div></div>\\n';
-for(j=0;j<n;j++)h+=kxCard(s[2][j],"art");}return h;}`;
+for(j=0;j<n;j++)h+=kxCard(s[2][j],"art");h+='</div>\\n';}return h;}`;
 const kxBuild = new Function(`${BUILD_JS};return kxBuild;`)();
 
 const packStars = (stars, owned) => stars.map((s) => [s.rare, owned.has(s.id) ? 1 : 0]);
