@@ -189,5 +189,11 @@ if (fs.existsSync(SRC)) {
   }
 } else console.log(`(private catalogue ${SRC} missing: catalogue checks skipped)`);
 
+// I-302 / I-303 (tester 22-11): the days printed on the original banner art (the banner rules over the wiki), and the 1★-3★ quests
+// listed from 1★
+check(JSON.stringify(byKey.get('evolve-1-3').days) === '["Fri"]' && JSON.stringify(byKey.get('evolve-4-5').days) === '["Sat","Sun"]'
+  && JSON.stringify(byKey.get('munny-medals').days) === '["Mon","Tue","Wed","Thu","Fri"]', 'Evolve 1-3 Fri, Evolve 4-5 Sat & Sun, Munny Medals Mon-Fri (banner art)');
+check(JSON.stringify(byKey.get('evolve-1-3').quests) === '["★ Evolve Medals","2★ Evolve Medals","3★ Evolve Medals"]', 'Evolve 1-3: quests from 1★');
+
 if (errors.length) { console.error(`test-special-periods: FAIL\n- ${errors.join('\n- ')}`); process.exit(1); }
 console.log(`test-special-periods: OK (${E.length} entries, per period ${[1, 2, 3, 4, 5].map((n) => inP(n).length).join('/')})`);
