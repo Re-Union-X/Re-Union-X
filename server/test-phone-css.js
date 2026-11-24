@@ -60,6 +60,15 @@ check(/\.pk\{[^}]*font-size:13px!important;line-height:1\.3/.test(PHONE_CSS), 'b
 check(PHONE_CSS.includes('#rows,#quests,.cat{grid-auto-rows:1fr}'), 'equal rows in the card grids');
 check(/\.s,[^{]*\.rp\{[^}]*-webkit-line-clamp:2/.test(PHONE_CSS), 'chips and Replaces lines clamped to two lines');
 
+// Medal Gallery (cards with a .mi picture, user 24-11): 4 columns, the Medal centred, the attribute line one line high,
+// track name and Variants one line each (a long track name pushed the chips down)
+check(PHONE_CSS.includes('#rows:has(>.row>.mi){grid-template-columns:repeat(4,minmax(0,1fr))}'), 'Medal Gallery in 4 columns');
+check(/:has\(>\.mi\)>\.mi\{[^}]*align-self:center/.test(PHONE_CSS), 'Medal picture centred');
+check(/\.tk,[^{]*\.vrt\{[^}]*white-space:nowrap[^}]*text-overflow:ellipsis/.test(PHONE_CSS), 'track and Variants on one line');
+
+// Medal Gallery Full Art tab: each artwork header (.sec) is a full-width line above its Medals, rows not forced equal
+check(PHONE_CSS.includes('#rows>.sec{grid-column:1/-1}') && PHONE_CSS.includes('#rows:has(>.sec){grid-auto-rows:auto}'), 'Full Art headers span the row');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);

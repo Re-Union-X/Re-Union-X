@@ -60,6 +60,16 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // place, so its chip lines up with the others of the row
   + '.cat>.b .n+.s{margin-top:calc(14px*1.35 + 4px)}'
   + `${inCards('.go')}{display:none}`
+  // Medal Gallery (medal-gallery.js: cards with a .mi picture, user 24-11): 4 columns of square Medals, the picture centred,
+  // the attribute line one line high, track name and «Variants» one line each with «…» (the full text is in the detail)
+  + '#rows:has(>.row>.mi){grid-template-columns:repeat(4,minmax(0,1fr))}'
+  // Full Art tab: each artwork header (.sec) is a full-width line above its 1-3 Medals; rows not forced equal there
+  + '#rows>.sec{grid-column:1/-1}#rows:has(>.sec){grid-auto-rows:auto}'
+  + '#rows>.row:has(>.mi)>.mi{align-self:center;flex:0 0 auto!important;width:84px!important;height:84px!important;margin:0 auto 4px}'
+  + '#rows>.row:has(>.mi)>.mi img{width:84px!important;height:84px!important}'
+  + '#rows>.row:has(>.mi) .d{height:1.4em!important;-webkit-line-clamp:1}'
+  + '#rows>.row:has(>.mi) .tk,#rows>.row:has(>.mi) .vrt{display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:1.5em;line-height:1.5em;font-size:12px;margin:2px 0 0;flex:0 0 auto}'
+  + '#rows>.row:has(>.mi) .cps{margin-top:4px}'
   + '}';
 
 const MARK = '<style data-phone>';
