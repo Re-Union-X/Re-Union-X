@@ -48,6 +48,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + `${inCards('.d')}{min-height:2.7em;line-height:1.35}`
   + `${CARDS.join(',')}{border-left-style:solid!important;border-left-width:4px!important}`
   + `:where(${CARDS.join(',')}){border-left-color:#2f5d78}`
+  // Banner Catalog: a card with no price line (.pay, 14 px, line-height 1.35: «Original details missing» banners) keeps its
+  // place, so its chip lines up with the others of the row
+  + '.cat>.b .n+.s{margin-top:calc(14px*1.35 + 4px)}'
   + `${inCards('.go')}{display:none}`
   + '}';
 

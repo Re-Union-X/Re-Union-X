@@ -45,6 +45,9 @@ check(/\.d\{[^}]*min-height:2\.7em/.test(PHONE_CSS), 'dates: two lines high');
 check(/border-left-width:4px!important/.test(PHONE_CSS) && PHONE_CSS.includes(':where(') , 'same left border on every card, colour from the page state');
 check(/\.pk\{[^}]*display:flex[^}]*align-items:center[^}]*justify-content:center/.test(PHONE_CSS), 'button text centred');
 
+// Banner Catalog cards without a price line (.n followed by the chip): the chip keeps the place of the missing line
+check(PHONE_CSS.includes('.cat>.b .n+.s{margin-top:calc(14px*1.35 + 4px)}'), 'banner chip lines up when the price line is missing');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);
