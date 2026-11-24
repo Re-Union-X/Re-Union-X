@@ -45,7 +45,8 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // the details page), dates of Event / Raid / Avatar Board cards two lines high, the same left border on every card
   // (:where = no specificity: the page's state colours .now / .pinned / .can ... still win)
   + `${inCards('.nm')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35;height:2.7em;flex:0 0 auto}`
-  + `${inCards('.d')},${inCards('.n')}{min-height:2.7em;line-height:1.35}`
+  // dates: exactly two lines (clamped): with the phone's 110 % system font a two-line date was taller than a min-height
+  + `${inCards('.d')},${inCards('.n')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35;height:2.8em;flex:0 0 auto}`
   + `${CARDS.join(',')}{border-left-style:solid!important;border-left-width:4px!important}`
   + `:where(${CARDS.join(',')}){border-left-color:#2f5d78}`
   // Banner Catalog: a card with no price line (.pay, 14 px, line-height 1.35: «Original details missing» banners) keeps its

@@ -41,8 +41,8 @@ check(PHONE_CSS.includes('table{table-layout:auto!important}') && /\.ntb th,\.nt
 // chips line up across a row (user 24-11): titles two lines high (clamped), dates two lines high, every card the same
 // left border (state colour only where the page sets one), Keep / Remove text centred in the button
 check(/\.nm\{[^}]*-webkit-line-clamp:2[^}]*height:2\.7em/.test(PHONE_CSS), 'titles: two lines, fixed height');
-check(/\.d[,{][^}]*min-height:2\.7em/.test(PHONE_CSS), 'dates: two lines high');
-check(/\.cat>\.b \.n\{[^}]*min-height:2\.7em/.test(PHONE_CSS), 'banner dates (.n, «end date reconstructed» wraps): two lines high');
+check(/\.d,[^{]*\.cat>\.b \.n\{[^}]*-webkit-line-clamp:2[^}]*;height:2\.8em/.test(PHONE_CSS), 'dates (and banner dates .n): exactly two lines high, clamped (the phone 110 %% font made two-line dates taller than a min-height)');
+
 check(/border-left-width:4px!important/.test(PHONE_CSS) && PHONE_CSS.includes(':where(') , 'same left border on every card, colour from the page state');
 check(/\.pk\{[^}]*display:flex[^}]*align-items:center[^}]*justify-content:center/.test(PHONE_CSS), 'button text centred');
 
