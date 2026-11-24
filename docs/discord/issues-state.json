@@ -620,15 +620,15 @@
   "I-298": {
    "thread": "1574671818453942394",
    "msg": "1574671818453942394",
-   "group": "TO VERIFY",
-   "hash": "e91def26bc4809b3",
+   "group": "CLOSED",
+   "hash": "b3fcbfb9ca1e8c02",
    "name": "I-298 · Special quest «Avatar Board Catalog»: no stars and no rewards"
   },
   "I-299": {
    "thread": "1574671820874055782",
    "msg": "1574671820874055782",
-   "group": "TO VERIFY",
-   "hash": "5389d6abb7730a6f",
+   "group": "CLOSED",
+   "hash": "6c9a266fd80b122e",
    "name": "I-299 · Union Cross «Chat Phrases» empty: softlock"
   },
   "I-300": {
@@ -648,15 +648,15 @@
   "I-302": {
    "thread": "1574671828616618035",
    "msg": "1574671828616618035",
-   "group": "TO VERIFY",
-   "hash": "09150737458d801f",
+   "group": "CLOSED",
+   "hash": "d3a1e3b32518d9de",
    "name": "I-302 · Weekly Special quests open on the wrong days"
   },
   "I-303": {
    "thread": "1574671831166619809",
    "msg": "1574671831166619809",
-   "group": "TO VERIFY",
-   "hash": "5897749794e87e65",
+   "group": "CLOSED",
+   "hash": "3359053d77fcdf60",
    "name": "I-303 · Daily Special quests in the wrong order"
   },
   "I-304": {
@@ -690,8 +690,8 @@
   "I-308": {
    "thread": "1574706976565239820",
    "msg": "1574706976565239820",
-   "group": "TO VERIFY",
-   "hash": "bba10bb1b8f359da",
+   "group": "CLOSED",
+   "hash": "9c2bd037cccbf78d",
    "name": "I-308 · Quests «Progress» of Special and Events left out quests"
   }
  }
