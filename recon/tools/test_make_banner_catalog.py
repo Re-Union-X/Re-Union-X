@@ -336,7 +336,9 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(all(next(b for b in bs if b['rowId'] == r)['end'] == '2021-06-29' for r in ('B0811', 'B0812', 'B0794')), 'deal fino alla fine del servizio')
     check(all(b['end'] for b in bs), 'tutte le date di fine')
     inc = [b['rowId'] for b in bs if b['catalogOnly'] == 'INCOMPLETE']  # 31 prima degli override dei notice (Task 4), 23 until 24-11
-    check(inc == ['B0612'], f'righe INCOMPLETE {inc}')  # 24-11: B0612 (Supernova+ - Aced rerun) has no source yet
+    check(inc == [], f'righe INCOMPLETE {inc}')  # 24-11: the last one, B0612 (Supernova+ - Aced rerun), from its banner art N58407
+    b612 = next(b for b in bs if b['rowId'] == 'B0612')
+    check(b612['prices'] == [3000] and b612['lotCount'] == 10 and b612['image'] == 'N58407.png' and 'VIP' not in b612['flags'], f'B0612 {b612["prices"]} {b612["image"]}')
     # 24-11: the Top-Drawer Deal drawn three times per day (2018 campaigns) = variants of B0242, shown instead of it while on
     tdv = sorted(b['rowId'] for b in bs if b.get('variantOf') == 'B0242')
     check(tdv == ['B0255', 'B0277', 'B0287', 'B0305', 'B0313'] and all(next(x for x in bs if x['rowId'] == r)['dayLimit'] == 3 for r in tdv), f'Top-Drawer variants {tdv}')

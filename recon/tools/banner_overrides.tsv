@@ -226,3 +226,6 @@ B0277	variant_of	B0242	notice 38880: the Top-Drawer Deal (B0242) drawn three tim
 B0287	variant_of	B0242	notice 39404: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)
 B0305	variant_of	B0242	notice 40318: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)
 B0313	variant_of	B0242	notice 40725: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)
+B0612	price	3000	PROBABLE: notice 58407 says «See in-game»; the reruns of the same weekly cycle B0602/B0603 Ira, B0609 Ava, B0610 Gula (wiki Shop/2019, non-VIP, same banner layout) are 3000
+B0612	draw_size	x10	banner art N58407 (KH13 forum thread 121748 of 2019-10-20, the 10/18 deals; no VIP tag: KHIII Medal+ x2, Aced Trait Medal x1, 5★+ x7, Power Gem x2, Limited VIP Coin x10)
+B0612	rarity_mix	6★:3 5★:7 Other:2	banner art N58407 (KH13 forum thread 121748 of 2019-10-20, the 10/18 deals; no VIP tag: KHIII Medal+ x2, Aced Trait Medal x1, 5★+ x7, Power Gem x2, Limited VIP Coin x10); as B0602-B0610 (wiki 6★:3 5★:7 Other:2)
