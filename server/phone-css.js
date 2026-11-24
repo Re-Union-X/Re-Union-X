@@ -66,19 +66,21 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // Full Art tab (user 24-11: «the Medals must be part of the artwork card»): each artwork group (.grp, medal-gallery.js:
   // its header .sec + its Medal cards) is one gold card, two per row (four or more Medals: the whole row); the artwork on the
   // left with its name, its Medals on the right as small tiles (picture, name, Owned) that open the detail as before
-  + '#rows>.grp{display:grid!important;grid-column:span 2;grid-template-columns:76px repeat(3,minmax(0,1fr));gap:6px;align-items:start;padding:8px;background:#0b3a58;border:2px solid #ffcd4a;border-radius:8px;min-width:0;box-sizing:border-box}'
-  + '#rows>.grp:has(>.row:nth-child(5)){grid-column:1/-1;grid-template-columns:76px repeat(7,minmax(0,1fr))}'
+  + '#rows>.grp{display:grid!important;grid-column:span 2;grid-template-columns:104px repeat(3,minmax(0,1fr));gap:6px;align-items:stretch;padding:8px;background:#0b3a58;border:2px solid #ffcd4a;border-radius:8px;min-width:0;box-sizing:border-box}'
+  + '#rows>.grp:has(>.row:nth-child(5)){grid-column:1/-1;grid-template-columns:104px repeat(7,minmax(0,1fr))}'
   + '#rows>.grp:has(>.sec.hide){display:none!important}#rows>.grp>.row.hide{display:none!important}'
   + '#rows>.grp>.sec{grid-row:1/span 3;display:flex!important;flex-direction:column;align-items:center;gap:3px;padding:0!important;margin:0!important;border:0!important;text-align:center;min-width:0}'
-  + '#rows>.grp>.sec .av{flex:0 0 auto!important;width:66px!important;height:99px!important}#rows>.grp>.sec .av img{width:66px!important;height:99px!important}'
+  + '#rows>.grp>.sec .av{flex:0 0 auto!important;width:96px!important;height:144px!important}#rows>.grp>.sec .av img{width:96px!important;height:144px!important}'
   + '#rows>.grp>.sec b{font-size:12px;line-height:1.3;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}'
   + '#rows>.grp>.sec .d{font-size:10px;line-height:1.3;margin:0}#rows>.grp>.sec>div{min-width:0;width:100%}'
-  + '#rows>.grp>.row{display:flex!important;flex-direction:column;align-items:center;gap:2px;padding:4px!important;margin:0!important;border:0!important;background:#06283e;border-radius:6px;min-width:0}'
+  + '#rows>.grp>.row{display:flex!important;flex-direction:column;align-items:center;gap:2px;padding:3px 2px!important;margin:0!important;border:0!important;background:#06283e;border-radius:6px;min-width:0}'
   + '#rows>.grp>.row .mi{flex:0 0 auto!important;width:56px!important;height:56px!important;margin:0!important}#rows>.grp>.row .mi img{width:56px!important;height:56px!important}'
   + '#rows>.grp>.row .info{width:100%;text-align:center;margin:0!important;padding:0!important}'
   + '#rows>.grp>.row .nm{font-size:11px!important;line-height:1.25;height:2.5em;margin:0;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}'
   + '#rows>.grp>.row .d,#rows>.grp>.row .tk,#rows>.grp>.row .vrt,#rows>.grp>.row .go,#rows>.grp>.row .st{display:none!important}'
-  + '#rows>.grp>.row .cps{display:flex;flex-direction:column;align-items:center;gap:2px;margin:2px 0 0}#rows>.grp>.row .s{font-size:10px!important;padding:1px 6px!important;margin:0!important;line-height:1.4}'
+  + '#rows>.grp>.row .cps{display:flex;flex-direction:column;align-items:center;gap:2px;margin:2px 0 0}#rows>.grp>.row .s{font-size:8px!important;padding:1px 2px!important;letter-spacing:0!important;margin:0!important;line-height:1.4;display:block!important;width:100%;max-width:100%;box-sizing:border-box;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+  // tiles of a card share one height (a «Reconstructed» chip no longer makes one taller), pinned to the top of the card
+  + '#rows>.grp>.row{align-self:start}#rows>.grp>.row .cps{width:100%;min-height:calc(8px*1.4*2 + 8px)}'
   // a Medal with no music (Full Art tab) keeps the place of the track line (12 px, line 1.5em, margin 2px): chips line up
   + '#rows>.row:has(>.mi) .info:not(:has(>.tk))>.d{margin-bottom:calc(12px*1.5 + 2px)}'
   // Medal detail (#det, user 24-11: the info needed scrolling): the Medal on the left, name, chips, track, music and

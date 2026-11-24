@@ -78,6 +78,9 @@ check(/#det \.vl li\{[^}]*display:flex[^}]*align-items:center/.test(PHONE_CSS), 
 // Medal Gallery cards without a track line (Full Art Medals with no music) keep its place: chips line up (user 24-11)
 check(PHONE_CSS.includes('#rows>.row:has(>.mi) .info:not(:has(>.tk))>.d{margin-bottom:calc(12px*1.5 + 2px)}'), 'missing track line keeps its place');
 
+// Full Art card: a larger artwork (96 x 144), tiles of one height whose chips (Owned, Reconstructed) stay inside them
+check(PHONE_CSS.includes('#rows>.grp>.sec .av img{width:96px!important;height:144px!important}') && PHONE_CSS.includes('#rows>.grp{display:grid!important;grid-column:span 2;grid-template-columns:104px') && /#rows>\.grp>\.row \.s\{[^}]*max-width:100%[^}]*box-sizing:border-box/.test(PHONE_CSS) && /#rows>\.grp\{[^}]*align-items:stretch/.test(PHONE_CSS), 'Full Art card: big artwork, chips inside equal tiles');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);
