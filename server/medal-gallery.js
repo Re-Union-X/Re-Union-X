@@ -146,7 +146,7 @@ const CSS = SPECIAL_CSS
   // on their side, docs/notes/medaglie.md «Full artwork»; user 24-11): the portrait picture is rotated -90 deg and as large
   // as the frame allows (its width becomes the shown height: at most the frame height and 2/3 of the frame width)
   + '#big{text-align:center;padding:0;background:#000;container-type:size;overflow:hidden}'
-  // --rxs = the horizontal stretch of the companion app's Full screen option (cookie rxstretch, Stretch.java; 1 elsewhere):
+  // --rxs = the horizontal stretch a full-screen client applies to the page (cookie rxstretch when it sets one; 1 elsewhere):
   // the picture is narrowed by it so the stretched page shows it with its true proportions (user 24-11)
   + '#big img{position:absolute;left:50%;top:50%;width:100vh;width:min(100cqh,calc(66.67cqw * var(--rxs,1)));height:auto;max-width:none;max-height:none;transform:translate(-50%,-50%) scale(calc(1 / var(--rxs,1)),1) rotate(-90deg)}'
   + '#big .n{position:absolute;left:10px;top:6px;margin:0;z-index:2;text-shadow:0 0 4px #000}#big .x{z-index:3}'

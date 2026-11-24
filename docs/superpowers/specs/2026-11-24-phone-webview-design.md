@@ -3,8 +3,8 @@
 ## Intent
 
 The in-game web pages (Notices, event / raid / Special Details, the Catalogs) read well on PC and tablet, but on a
-phone "everything is too big" and the Event Catalog is "not comfortable at all" (user, 24-11). Most testers play the
-companion app on a phone, so these pages are what they consult to understand events, raids and rules.
+phone "everything is too big" and the Event Catalog is "not comfortable at all" (user, 24-11). Most testers play on a
+phone, so these pages are what they consult to understand events, raids and rules.
 
 ## What we found on the user's phone (Galaxy A54, 2340x1080, density 450, system font 110 %)
 
