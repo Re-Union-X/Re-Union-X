@@ -75,6 +75,9 @@ check(/#dbody\{[^}]*display:grid[^}]*grid-template-columns:auto 1fr/.test(PHONE_
 // variants list of the Medal detail: name and chips vertically centred on one line (user 24-11)
 check(/#det \.vl li\{[^}]*display:flex[^}]*align-items:center/.test(PHONE_CSS), 'variant chips centred on the name line');
 
+// Medal Gallery cards without a track line (Full Art Medals with no music) keep its place: chips line up (user 24-11)
+check(PHONE_CSS.includes('#rows>.row:has(>.mi) .info:not(:has(>.tk))>.d{margin-bottom:calc(12px*1.5 + 2px)}'), 'missing track line keeps its place');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);

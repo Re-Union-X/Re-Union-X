@@ -65,6 +65,8 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + '#rows:has(>.row>.mi){grid-template-columns:repeat(4,minmax(0,1fr))}'
   // Full Art tab: each artwork header (.sec) is a full-width line above its 1-3 Medals; rows not forced equal there
   + '#rows>.sec{grid-column:1/-1}#rows:has(>.sec){grid-auto-rows:auto}'
+  // a Medal with no music (Full Art tab) keeps the place of the track line (12 px, line 1.5em, margin 2px): chips line up
+  + '#rows>.row:has(>.mi) .info:not(:has(>.tk))>.d{margin-bottom:calc(12px*1.5 + 2px)}'
   // Medal detail (#det, user 24-11: the info needed scrolling): the Medal on the left, name, chips, track, music and
   // variants on the right
   + '#dbody{display:grid;grid-template-columns:auto 1fr;column-gap:18px;align-items:start;text-align:left}'
