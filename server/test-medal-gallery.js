@@ -91,6 +91,8 @@ const tests = {
     assert.strictEqual(count(html, '<div class="grp" data-tab="art"><div class="sec" data-tab="art">'), 1, 'artwork group wraps its header');
     assert(/<div class="grp" data-tab="art"><div class="sec"[\s\S]*?Key Art #2[\s\S]*?Illustrated Xion \[EX\][\s\S]*?<\/div>\n<\/div>/.test(html), 'its Medals inside the group');
     assert(page.includes('.grp{display:contents}'), 'group invisible to the PC / tablet layout');
+    // tapped artwork: full screen, landscape, turned upright like the original Inspect view (files lie on their side)
+    assert(page.includes('#big img{position:absolute;left:50%;top:50%;width:100vh;width:min(100cqh,66.67cqw);height:auto;max-width:none;max-height:none;transform:translate(-50%,-50%) rotate(-90deg)}'), 'artwork turned upright, full screen');
     assert(html.includes('data-src="/web/medals/img/v1/300779.png"') && html.includes('data-src="/web/medals/art/v1/21266.jpg"') && html.includes('data-big="/web/medals/art/v1/21266-l.jpg"'), 'lazy picture URLs');
     assert(!/<img[^>]* src=/.test(html.split('<div id="rows"')[1].split('<div id="big"')[0]), 'no picture loaded before render (data-src only)');
     assert(!html.includes('Plain'), 'a Medal with neither is not listed');

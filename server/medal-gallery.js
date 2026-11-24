@@ -141,7 +141,13 @@ const CSS = SPECIAL_CSS
   + '.grp{display:contents}'
   + '.sec .av img{width:80px;height:120px}.sec b{display:block;color:#00d4ed;font-size:18px}.sec .d{margin-top:2px}'
   + '.ovl{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(1,12,20,.94);z-index:7;overflow:auto;padding:12px 14px 30px;box-sizing:border-box}'
-  + '.ovl .x{position:absolute;right:12px;top:10px}#big{text-align:center}#big img{display:inline-block;max-width:100%;max-height:calc(100% - 50px);width:auto}#big .n{margin:4px 40px 4px 0}'
+  + '.ovl .x{position:absolute;right:12px;top:10px}'
+  // a tapped artwork: full screen on black, landscape, turned upright like the original Inspect view (the 640x960 files lie
+  // on their side, docs/notes/medaglie.md «Full artwork»; user 24-11): the portrait picture is rotated -90 deg and as large
+  // as the frame allows (its width becomes the shown height: at most the frame height and 2/3 of the frame width)
+  + '#big{text-align:center;padding:0;background:#000;container-type:size;overflow:hidden}'
+  + '#big img{position:absolute;left:50%;top:50%;width:100vh;width:min(100cqh,66.67cqw);height:auto;max-width:none;max-height:none;transform:translate(-50%,-50%) rotate(-90deg)}'
+  + '#big .n{position:absolute;left:10px;top:6px;margin:0;z-index:2;text-shadow:0 0 4px #000}#big .x{z-index:3}'
   + '#det{text-align:center}#det .lg{display:block;width:240px;height:240px;margin:6px auto 4px;max-width:70vw;max-height:70vw}#det h2{color:#fff;font-size:21px;margin:4px 30px 2px}#det h2:before{content:none}'
   + '#det .d{font-size:15px}#det .tk{font-size:17px;margin:10px 0 4px}#det .vl{text-align:left;max-width:440px;margin:12px auto 0;padding:0;list-style:none}#det .vl li{padding:6px 0;border-bottom:1px solid #2f5d78}'
   + '.play{border:2px solid #ffe08a;border-radius:22px;color:#fff;font:bold 17px sans-serif;padding:7px 26px;background:linear-gradient(#e0a020,#a8700a);cursor:pointer;margin:8px 0 2px}.play.on{border-color:#ffb0b0;background:linear-gradient(#ff5a5a,#d81e2e 55%,#9c1020)}'
