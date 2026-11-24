@@ -315,6 +315,8 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - Some enemies of this quest only «can appear» in the original game (the notice, khuxwiki or the footage says so): the original server left them out of some runs. They appear at random here too, each with a chance of 1 in 2 (9 in 10 for the Fireworks of the 2016 Countdown & New Year's Event, whose objectives need almost all of them): that rate is ours, the original one is unknown. Objectives that count them may need more than one run, as in the original.
 
+- The drop rates of this quest are lost with its map. Its enemies drop what the event's notice named, at the rates of the original drop rows of a quest of the same kind (the KH 3D medal quests of 2017 or the event's own surviving maps). Reconstructed, not original.
+
 - Our game data holds several versions of an enemy of this quest, with different strength, and no source says which one the worldwide quest used. From mid-2018 the worldwide event enemies carry the year and month of their event at the start of their id (88% of the event enemies on the Japanese maps follow it), and exactly one version of this enemy has the year and month of this event: that version is used. Chosen by rule, not confirmed (ruling of 23-11-2026).
 
 - A reward of this quest is a Booster. Its effect is rebuilt from its original description (the original Booster data lost its effect values): which Medals or keyblade slots it strengthens and by how much are those of the description. It lasts as many days as in the original, counted from when you obtain it.
@@ -351,13 +353,11 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - The map of this quest spanned several areas (khuxwiki lists them, with the enemies and chests of each area). Its map file is lost, so the areas were rebuilt in that order, in the rooms of the quest's surviving stage data and of the khuxwiki pictures, joined by exits; start points, exits and enemy spots were taken from original maps of the same rooms where they survive, otherwise placed by the generator. The warp portals inside the areas (Xigbar's maze) are not rebuilt. Rebuilt, not original.
 
-- The drop rates of this quest are lost with its map. Its enemies drop what the event's notice named, at the rates of the original drop rows of a quest of the same kind (the KH 3D medal quests of 2017 or the event's own surviving maps). Reconstructed, not original.
-
 - The map of this quest is a Japanese map with the same layout used at another level in the original; here its enemies fight at this quest's own level (khuxwiki), every enemy shifted by the same amount. The original map of this level is lost.
 
 - The material spots of this quest's map are lost with the map. They were rebuilt along the way: the totals of each material match the original results (khuxwiki, checked on footage of the original), the number of spots follows the footage (about one spot for every two units), their positions are not the original ones. Rebuilt, not original.
 
-- In the original game this event had a Bonus Time (hours of the original notice, Pacific time) when the Heartless dropped rare Medals more often. The drops of these quests are lost with their maps and are not rebuilt yet, so here there is nothing for the Bonus Time to raise.
+- During this event's Bonus Time (the hours of the original notice, Pacific time) the Heartless drop rare Medals more often. The notice does not say by how much: here the drop rates are doubled in those hours (not original).
 
 - In the original game this event's quests opened only for 12-hour periods, at times the notices never published. Here they stay open all day, every day of the event (not original).
 
@@ -479,7 +479,7 @@ Gem Quests and the **Organization XIII** events are back too.
 
 The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **66 events** are served, with **565 of the 565 quests of that period**, on the dates of the original notices. Quests that came from the Japanese version are played on the **original Japanese maps** (a few on the map of their Japanese twin quest).
 
-**377 quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (not original). Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **12 quests** drop it at the rates of the original KH 3D event quests of 2017 (not original). Most **Event Coins** of the board events came from enemy drops, so in **53 quests** of those events the enemies drop Event Coins again: rare enemies (Gold Tricholoma, Shenaneggan) many, the powerful enemies of the Daily Challenges a sure amount, the others a few now and then, scaled on each quest's coin objectives (not original). The other quests drop nothing.
+**377 quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (not original). Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day, the Meow Wow / Flowbermeow / Meowjesty, Classic Goofy and Classic Donald medals, also from the item chests where the notice names them; a Gold Tricholoma drops the event's 6★ medal), **19 quests** drop it at the rates of the original KH 3D event quests of 2017 (not original). Most **Event Coins** of the board events came from enemy drops, so in **53 quests** of those events the enemies drop Event Coins again: rare enemies (Gold Tricholoma, Shenaneggan) many, the powerful enemies of the Daily Challenges a sure amount, the others a few now and then, scaled on each quest's coin objectives (not original). The other quests drop nothing.
 
 The **Event Coins** of the coin events go to **8 sets of Event Boards** of the original game data (the event boards, the Gem Boards and the daily Jewel boards of the period); all boards of a set are open for the whole event (not original) (some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.
 
@@ -488,6 +488,8 @@ The **Event Coins** of the coin events go to **8 sets of Event Boards** of the o
 **3 Damage Contests** («Test Your Might») are back as High Score runs: the score is the damage you deal. As for the High Score Challenges, the original rank brackets became **score thresholds** (calibrated, (not original)). The July and October 2017 contests use the map of the December 2017 one, the same quest (no other map survives: (not original)).
 
 **Classic Donald**: the original quests opened only for 12-hour periods at times never published; here they stay **open all day** (not original).
+
+**Classic Goofy**: in the **Bonus Time** hours of the original notice (12:00 p.m. to 1:59 p.m. and 8:00 p.m. to 9:59 p.m., Pacific time) rare Medals drop more often; the notice gave no rate, so the drop rates are **doubled** in those hours (not original).
 
 In the original game **10 quests** of the period could make a **raid boss** appear («A Hard-Boiled Daily Challenge Event!», «WORLD OF FINAL FANTASY Event!»); no raid of those bosses with their strength of the time is served yet, so here they summon none.
 

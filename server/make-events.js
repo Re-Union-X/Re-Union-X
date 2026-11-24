@@ -1375,6 +1375,11 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
           const first = (name) => (Array.isArray(byName[name]) ? byName[name][0] : byName[name]);
           for (const e of g.enemies) e.reward = e.target ? gd.target || 1 : first(e.name) || 1;
           if (gd.target) genEntry.targetReward = gd.target;
+          // item chests of the notice's medal (genDrops.chests {code: rewardId}, 25-11): on every area holding that code
+          if (gd.chests) for (const ar of genEntry.areas || []) {
+            const crw = Object.fromEntries(Object.entries(gd.chests).filter(([c]) => (ar.chestCodes || []).includes(c)));
+            if (Object.keys(crw).length) ar.chestRewards = crw;
+          }
           // rows paying Event Coins (type 15) are rebuilt coin drops (I-297, user 25-11), not a drop the notice named
           const dl = Object.values(gd.rows || {}).some((rows) => rows.some((x) => x.type === 15)) ? 'coinDropsRebuilt' : 'dropsCalibrated';
           if (!qLabels.includes(dl)) { qLabels.push(dl); item.labels = qLabels; }

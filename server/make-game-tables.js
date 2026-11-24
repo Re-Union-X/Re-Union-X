@@ -1119,6 +1119,8 @@ require('./make-raid').patch(OUT);
 // Event quests: stage rows 4000000+, evStage 20000+, game_data/events.json and event_maps.json from server/event_config.json and the
 // private event quest records (KHUX_EVENT_SRC; without it nothing is written). KHUX_EVENTS=0 turns it off (make-events.js)
 require('./make-events').patch(OUT);
+// the original notices of the events (Details of a card) follow the event index just written (git-ignored, private texts)
+require('./make-event-notices').write();
 // Raid «AP 0» campaign: evCampaign rows type 7 power 0 over the raid quest stages written just above (make-ev-campaign.js)
 require('./make-ev-campaign').patch(OUT);
 // Bonus Times of the story day (Events Part 9a, make-campaigns.js): evCampaign rows 96000-97999 and campaign_days.json from the

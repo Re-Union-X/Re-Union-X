@@ -43,16 +43,22 @@ function build({ entries, noticeText }) {
     rows, notices, missing, scrubbed };
 }
 
-if (require.main === module) {
-  const src = process.env.KHUX_RAID_SRC || DEFAULT_SRC;
+// reads the event index and the private notice texts, writes OUT; -> the document, or null without the private texts (a public
+// checkout: nothing written). make-game-tables.js runs it after make-events.js (bench 25-11: the file was left from an older event
+// index, so 144 events of Part 10 said «not available» although their notice is in the private texts)
+function write(src = process.env.KHUX_RAID_SRC || DEFAULT_SRC, log = console.log) {
+  const file = path.join(src, 'raid_census', 'work', 'notice_text.json');
+  if (!fs.existsSync(file) || !fs.existsSync(INDEX)) { log(`event notices: ${fs.existsSync(file) ? INDEX : file} missing, ${OUT} left as it is`); return null; }
   const entries = JSON.parse(fs.readFileSync(INDEX, 'utf8')).entries || [];
-  const noticeText = JSON.parse(fs.readFileSync(path.join(src, 'raid_census', 'work', 'notice_text.json'), 'utf8'));
-  const doc = build({ entries, noticeText });
+  const doc = build({ entries, noticeText: JSON.parse(fs.readFileSync(file, 'utf8')) });
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(doc));
-  console.log(`event notices: ${Object.keys(doc.rows).length} of ${entries.length} events with a notice (${Object.keys(doc.notices).length} notices) -> ${OUT}`);
-  if (doc.missing.length) console.log(`  not found: ${doc.missing.map((m) => `${m.censusId} (${m.noticeId})`).join(', ')}`);
-  if (doc.scrubbed.length) console.log(`  player rankings removed from: ${doc.scrubbed.join(' ')}`);
+  log(`event notices: ${Object.keys(doc.rows).length} of ${entries.length} events with a notice (${Object.keys(doc.notices).length} notices) -> ${OUT}`);
+  if (doc.missing.length) log(`  not found: ${doc.missing.map((m) => `${m.censusId} (${m.noticeId})`).join(', ')}`);
+  if (doc.scrubbed.length) log(`  player rankings removed from: ${doc.scrubbed.join(' ')}`);
+  return doc;
 }
 
-module.exports = { build, OUT };
+if (require.main === module) write();
+
+module.exports = { build, write, OUT };

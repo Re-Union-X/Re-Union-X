@@ -1630,6 +1630,12 @@ const tests = {
       chests: 2, chestCodes: ['h1', 'a3'] }], backExits: false, source: null, why: 'w' };
     const out = me.buildEvents([record('E-CC', [genQuest(702340, { genAreas: ga, wikiEnemies: { 'Foe B': 1, 'Foe A': 1 } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
     assert.deepStrictEqual(out.genMaps[0].areas[0].chestCodes, ['h1', 'a3']);
+    // genDrops.chests {code: rewardId}: the item chests (i1-i3) of the areas get that row (medal chests of a notice, 25-11)
+    const g2 = { ...ga, areas: [{ ...ga.areas[0], chestCodes: ['i2', 'a3'] }] };
+    const out2 = me.buildEvents([record('E-CC2', [genQuest(702341, { genAreas: g2, wikiEnemies: { 'Foe B': 1, 'Foe A': 1 },
+      genDrops: { byName: {}, chests: { i2: 69330 }, rows: { 69330: [{ type: 3, id: 23085, num: 1, odds: 10000 }] } } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.deepStrictEqual(out2.genMaps[0].areas[0].chestRewards, { i2: 69330 });
+    assert.ok(out2.reward.some((r) => r.rewardId === 69330));
   },
   // random squads of the original maps (server/random_squads.json {stageBinId: {uids, target, source}}, opts.randomSquads): put on
   // the served map's POI as random / target; a uid equal to the target is dropped with a warning; maps not served get nothing

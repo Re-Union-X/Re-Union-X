@@ -1363,8 +1363,16 @@ CHEST_OF_CODE = {'a1': (80, 13), 'a2': (81, 15), 'a3': (82, 17), 'h1': (90, 7), 
 CHEST_GAP = 80              # chests at least 2 grid steps apart (bench 25-11: the old (j * 7919) % n pick clustered them)
 
 
-def chest_of(codes, j):
-    return CHEST_OF_CODE.get((codes[j] if j < len(codes) else '') or '', (81, 15))
+# item chests (i1 / i2 / i3: kinds 1 / 3 / 5 on the original story maps) with a reward row given by the area (chestRewards
+# {code: rewardId}: the medal of an event whose notice names its chests, make-events genDrops.chests, 25-11-2026)
+ITEM_KIND = {'i1': 1, 'i2': 3, 'i3': 5}
+
+
+def chest_of(codes, j, rewards=None):
+    code = (codes[j] if j < len(codes) else '') or ''
+    if rewards and code in rewards and code in ITEM_KIND:
+        return (int(rewards[code]), ITEM_KIND[code])
+    return CHEST_OF_CODE.get(code, (81, 15))
 
 
 def spread_spots(spots, n, taken=()):
@@ -1546,13 +1554,14 @@ def build_event_areas(sp):
         used = {(e[0], e[1]) for e in ens}
         chests = []
         codes = areas[k].get('chestCodes') or []
+        crw = areas[k].get('chestRewards') or {}
         for c in lay.get('chests') or []:
             if len(chests) < areas[k].get('chests', 0):
-                chests.append((c[0], c[1]) + chest_of(codes, len(chests)) + (uid,))
+                chests.append((c[0], c[1]) + chest_of(codes, len(chests), crw) + (uid,))
                 uid += 1
         spots = [p for p in by_d[len(by_d) // 4:] if p not in used and p != entry[k]]
         for (x, y) in spread_spots(spots, areas[k].get('chests', 0) - len(chests), [(c[0], c[1]) for c in chests]):
-            chests.append((x, y) + chest_of(codes, len(chests)) + (uid,))
+            chests.append((x, y) + chest_of(codes, len(chests), crw) + (uid,))
             uid += 1
         # material spots: free walk points (no enemy, chest, entry) at least EXIT_KEEP from this area's doors
         taken = used | {(c[0], c[1]) for c in chests}
