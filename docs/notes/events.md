@@ -1822,3 +1822,24 @@ Pretenders, Sparkler, Icy Beast, Iron Giant, Gold Hammer Frame, Martial Monkey),
 - **No genAreas.** EV-1007 x4, EV-0080, EV-0172, EV-0108 (records without genAreas) and EV-0182 (materials).
 - **Guessed rows.** The Power-attribute Gold Tricholoma of EV-0090 501860, whose row would be a guess.
 - **Census rows for a later decision.** 83 `noSource` rows, among them the HSC 0x80 Gold Tricholoma squads 300660-300770, and 80 `otherSpeciesOriginal` rows (Gift Shadow, Prize Egg, Pretenders).
+
+## EV-0242 Magic Gems Challenge Event (I-310, 24 November 2026)
+
+The census gave EV-0242 no quests (`noQuests 'coin'`, «quests in no source»); a tester saw it as «Not built yet». It is khuxwiki
+«Challenge Event #8»: the notice's «4 quests of increasing difficulty» are 4 tiers (Beginner, Intermediate, Advanced, Legendary)
+of 4 rounds each. The donated WW master keeps the 16 stage rows 511080..511230 and the 16 khuxwiki pages «… Round n/4 (July
+2017)» agree with them (AP 5, the 3 objectives of 10 Event Coins each); all enemies exist in our master. The maps are lost:
+generated maps in Daybreak Town, Corridor of Darkness (the donor thumbId room, as EV-0211), label wikiRoom. The Magic Gem Board
+2310052 (set `hole-2017-07-magicgem`, 480 coins = 16 x 3 x 10) is now handed out (it was `noCoinSource`). The tiers opened on
+7/31, 8/1, 8/3 and 8/5 in the original: here all 16 are open the whole event, like EV-0258 / EV-0279 (user 24-11; already
+declared in the Notices, «Events of 2016-2018»). The khuxwiki series «Defeat Enemies to get Magic Gems!» is another event
+(Dec 2019, Feb 2020, May 2020), linked by name only: unlinked in the census.
+
+- Builder inputs: `tmp\events\part10\hole_input.py` CELEB `EV-0242`; pilot `tmp\events_p1\pilot\work\build.py` P10_PAGE_PIN for
+  the 16 «(July 2017)» pages (the GEM page rule took the bare pages of other runs) and a SPLITS guard (a `--ids` run without
+  EV-0988 / EV-1165).
+- **Private record patches #23**, after #22, in order: **#23a** `tmp\events\unbuilt\i310\patch_i310_gem.py` (EV-0242 out of
+  records/gem.json), **#23b** `splice_i310.py` (the EV-0242 record of a `KHUX_HOLE_OUT=…\i310\hole_out` build_hole.py run into
+  the live hole_2016_18.json), **#23c** `patch_i310_census.py` (census unlink).
+- Master regen: 4,260 of 4,260 event quests served; only additions (16 stage, 1 evStage, 1 board); stage ids 4004500..4004515,
+  evStage 20015, board 4000110.

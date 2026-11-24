@@ -1,6 +1,6 @@
 {
   "updated": "23 November 2026",
-  "summary": "Single player works from a new player to the end of the story (quest 979). Every worldwide raid of 2016-2021 is back (solo), and so are all 4,244 event quests. Multiplayer and the Coliseum do not exist yet.",
+  "summary": "Single player works from a new player to the end of the story (quest 979). Every worldwide raid of 2016-2021 is back (solo), and so are all 4,260 event quests. Multiplayer and the Coliseum do not exist yet.",
   "areas": [
     {
       "name": "Startup and home screen",
@@ -212,9 +212,9 @@
     {
       "name": "Events",
       "state": "done",
-      "detail": "All 4,244 event quests of 2016-2021 (552 events): Gem Quests, Event Coin and challenge events, quizzes, Organization XIII, The Keyblade War, High Score Challenges, Booster Challenges and Damage Contests. They follow your Story week like the Shop, with an Event Catalog (one past event kept), 114 Event Boards, 428 Boosters, Bonus Times and special login bonuses. The events of November 2016 - March 2018, a period with no original data left, are rebuilt on original or generated maps: every rebuilt part is labelled in the game.",
-      "done": 4244,
-      "total": 4244,
+      "detail": "All 4,260 event quests of 2016-2021 (553 events): Gem Quests, Event Coin and challenge events, quizzes, Organization XIII, The Keyblade War, High Score Challenges, Booster Challenges and Damage Contests. They follow your Story week like the Shop, with an Event Catalog (one past event kept), 114 Event Boards, 428 Boosters, Bonus Times and special login bonuses. The events of November 2016 - March 2018, a period with no original data left, are rebuilt on original or generated maps: every rebuilt part is labelled in the game.",
+      "done": 4260,
+      "total": 4260,
       "unit": "quests",
       "breakdown": {
         "title": "What is original and what is not",
@@ -283,7 +283,7 @@
             "detail": "Events follow your Story week instead of the real calendar. High Score and ranking rewards become score thresholds calibrated on the original scores. Enemies that only sometimes appeared show up about one run in two (the 2016 Countdown Fireworks 9 in 10)."
           }
         ],
-        "note": "1,642 of the 4,244 quests carry a label in the game that names what was rebuilt or differs from the original; the in-game Notices explain every label. Raid summons from event quests and the Coliseum, Union Cross and PvP events will come later."
+        "note": "1,658 of the 4,260 quests carry a label in the game that names what was rebuilt or differs from the original; the in-game Notices explain every label. Raid summons from event quests and the Coliseum, Union Cross and PvP events will come later."
       }
     },
     {
