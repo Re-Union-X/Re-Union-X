@@ -798,11 +798,10 @@ LAYOUTS = {
     # Panel_Eff (facoltativo). Senza eventi: Txt_NoEvent di AdventureTop2_EV_Banner_Area_ver120
     # (102900026 «No available events.»). Stile: banner Event_Banner1 (640x140, come in
     # AdventureTop2_EV_Title_ver103) con la targa Plate09 della scadenza (AdventureTop2_EV_Lock_ver130).
-    # I-300 (tester 22-11, user 25-11): the shade over the lower banners of the Events / Special lists, dimming them as they scroll
-    # under it. The 2016 original AdventureTop2_EV_Banner_Area_ver103 has Bg_Shade_Bottom (1136 wide = a whole 16:9 screen, above
-    # the scroll Area); the WW ver120 we serve lost it. Put back with the ver103 geometry, after Area (drawn over the banners)
-    'AdventureTop2_EV_Banner_Area_ver120.json': ('copy', 'AdventureTop2_EV_Banner_Area_ver120.json', {}, False,
-                                                 [('add', 'Panel_1', I('Bg_Shade_Bottom', 480, 78, 1136, 156, 'Bg_Shade_Bottom.png', s9=False))]),
+    # I-300 (tester 22-11): the 2016 ver103 had a bottom shade (Bg_Shade_Bottom) over the lower banners; the WW ver120 has none,
+    # and WW footage of Dec. 2020 (reference\events_tab_ww2020) shows the lower banners undimmed. User 26-11: keep the original.
+    # Served as a plain copy of the WW file so the resources replace the shaded copy of resources 171.
+    'AdventureTop2_EV_Banner_Area_ver120.json': ('copy', 'AdventureTop2_EV_Banner_Area_ver120.json', {}, False),
     'AdventureTop2_EV_Banner_ver220.json': ('build', P('EV_Banner', 0, 0, 800, 172, [
         I('Image_3', 400, 98, 640, 140, 'Event_Banner1.png', s9=False),
         P('Mask', 80, 28, 640, 140, visible=False,
