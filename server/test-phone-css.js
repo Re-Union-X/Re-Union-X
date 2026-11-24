@@ -81,6 +81,10 @@ check(PHONE_CSS.includes('#rows>.row:has(>.mi) .info:not(:has(>.tk))>.d{margin-b
 // Full Art card: a larger artwork (96 x 144), tiles of one height whose chips (Owned, Reconstructed) stay inside them
 check(PHONE_CSS.includes('#rows>.grp>.sec .av img{width:96px!important;height:144px!important}') && PHONE_CSS.includes('#rows>.grp{display:grid!important;grid-column:span 2;grid-template-columns:104px') && /#rows>\.grp>\.row \.s\{[^}]*max-width:100%[^}]*box-sizing:border-box/.test(PHONE_CSS) && /#rows>\.grp\{[^}]*align-items:stretch/.test(PHONE_CSS), 'Full Art card: big artwork, chips inside equal tiles');
 
+// Full Art: every artwork card half a row (a full-row card for 4+ Medals left holes and empty columns, user 24-11);
+// its tiles wrap 3 per line; rows of the art grid sized by their cards
+check(!PHONE_CSS.includes(':has(>.row:nth-child(5))') && PHONE_CSS.includes('#rows:has(>.grp){grid-auto-rows:auto}') && PHONE_CSS.includes('#rows>.grp>.sec{grid-row:1/span 2;'), 'Full Art cards all half a row, tiles wrap');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);

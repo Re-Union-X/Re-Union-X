@@ -67,9 +67,11 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // its header .sec + its Medal cards) is one gold card, two per row (four or more Medals: the whole row); the artwork on the
   // left with its name, its Medals on the right as small tiles (picture, name, Owned) that open the detail as before
   + '#rows>.grp{display:grid!important;grid-column:span 2;grid-template-columns:104px repeat(3,minmax(0,1fr));gap:6px;align-items:stretch;padding:8px;background:#0b3a58;border:2px solid #ffcd4a;border-radius:8px;min-width:0;box-sizing:border-box}'
-  + '#rows>.grp:has(>.row:nth-child(5)){grid-column:1/-1;grid-template-columns:104px repeat(7,minmax(0,1fr))}'
+  // every artwork card is half a row (a full-row card for 4+ Medals left holes in the grid and empty columns, user
+  // 24-11): its tiles wrap 3 per line (at most 5 Medals per artwork: two lines, the artwork spans both)
+  + '#rows:has(>.grp){grid-auto-rows:auto}'
   + '#rows>.grp:has(>.sec.hide){display:none!important}#rows>.grp>.row.hide{display:none!important}'
-  + '#rows>.grp>.sec{grid-row:1/span 3;display:flex!important;flex-direction:column;align-items:center;gap:3px;padding:0!important;margin:0!important;border:0!important;text-align:center;min-width:0}'
+  + '#rows>.grp>.sec{grid-row:1/span 2;display:flex!important;flex-direction:column;align-items:center;gap:3px;padding:0!important;margin:0!important;border:0!important;text-align:center;min-width:0}'
   + '#rows>.grp>.sec .av{flex:0 0 auto!important;width:96px!important;height:144px!important}#rows>.grp>.sec .av img{width:96px!important;height:144px!important}'
   + '#rows>.grp>.sec b{font-size:12px;line-height:1.3;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}'
   + '#rows>.grp>.sec .d{font-size:10px;line-height:1.3;margin:0}#rows>.grp>.sec>div{min-width:0;width:100%}'
