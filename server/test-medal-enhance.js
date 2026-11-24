@@ -388,6 +388,39 @@ assert.equal(state(trio[0]).medalId, 300826, 'Meow Wow -> Sora & Riku & Meow Wow
 assert.ok(!state(trio[1]) && !state(trio[2]), 'KH 3D Sora + Riku consumed');
 log('14. Added evolutions: Blue Fairy LV 1 -> 2 on its own stack, Pongo + Puppies + Perdita, Meow Wow + KH 3D Sora/Riku');
 
+// 15. I-305 (tester report 23-11): more than 99 copies = two or more stack cells. Spending copies of the first cell refills it
+// from the next one, so the NEXT cell gets a new head id too. The client applies a response as «drop the removed ids, upsert
+// userMedals by id»: every old cell id that no longer exists must be in the removed list, else the client keeps it with its old
+// count next to the new cell (bench: 67, 64, 63 ... stacks of the same material after each Evolve)
+const cellsOf = (medalId) => t.stackedMedalList().filter((c) => c.medalId === medalId).map((c) => [c.userMedalId, c.number]);
+function clientView(before, r, removedKey, medalId) {
+  const view = new Map(before);
+  for (const id of r[removedKey] || []) view.delete(id);
+  for (const m of r.userMedals || []) if (m.medalId === medalId) view.set(m.userMedalId, m.number);
+  return [...view].sort((a, b) => a[0] - b[0]);
+}
+const sortCells = (c) => [...c].sort((a, b) => a[0] - b[0]);
+give(FMB, 150);
+let fmbBefore = cellsOf(FMB);
+assert.equal(fmbBefore.length, 2, 'two Fantasia Mickey B cells (99 + 51)');
+const terra2 = give(301941)[0];
+r = evolve(terra2, [fmbBefore[0][0]]);
+assert.equal(state(terra2).medalId, 302008, 'Terra evolved with the first cell');
+assert.deepEqual(clientView(fmbBefore, r, 'attachmentMedalIds', FMB), sortCells(cellsOf(FMB)), 'Evolve: the client view equals the server cells');
+fmbBefore = cellsOf(FMB);
+const lvBase = give(base.medalId)[0];
+r = enhance(lvBase, [fmbBefore[0][0]], [3]);
+assert.deepEqual(clientView(fmbBefore, r, 'componentUserMedalIds', FMB), sortCells(cellsOf(FMB)), 'Level Up: the client view equals the server cells');
+fmbBefore = cellsOf(FMB);
+{
+  let out;
+  const res = { writeHead: () => {}, end: (b2) => { out = JSON.parse(b2.toString('utf8')); } };
+  console.log = () => {};
+  try { t.respondMedalSell(res, { userMedalIds: [fmbBefore[0][0]], numbers: [5] }); } finally { console.log = log; }
+  assert.deepEqual(clientView(fmbBefore, out, 'sellUserMedalIds', FMB), sortCells(cellsOf(FMB)), 'Sell: the client view equals the server cells');
+}
+log('15. I-305: spending copies of a full stack cell removes the old head ids of the cells after it (Evolve, Level Up, Sell)');
+
 // medaglia 1 (Stock Medal) intatta
 assert.equal(byId.get(1).imageId, 90000);
 try { fs.unlinkSync(SAVE); } catch {}

@@ -3980,6 +3980,19 @@ function stackedMedalList() {
   return out;
 }
 
+// I-305: the cell ids of these medals now, taken before an action that spends or moves copies, and after it the ones gone. With
+// more than 99 copies a medal has several cells: spending copies of the first one refills it from the next, so the next cell's
+// head id changes too. The client drops only the ids it is told about and upserts userMedals by id: an old head left out stays
+// on its screen with its old count next to the new cell (tester 23-11: 67, 64, 63 ... cells of one material after each Evolve)
+function cellIdsOf(medalIds) {
+  const ids = new Set(medalIds);
+  return stackedMedalList().filter((c) => ids.has(c.medalId)).map((c) => c.userMedalId);
+}
+function goneCellIds(beforeIds, extra = []) {
+  const now = new Set(stackedMedalList().map((c) => c.userMedalId));
+  return [...new Set([...beforeIds, ...extra])].filter((id) => !now.has(id));
+}
+
 // Le copie da consumare per (userMedalId della cella, numero): vendita e Level Up.
 function stackCopies(userMedalId, number) {
   const cell = stackedMedalList().find((m) => m.userMedalId === Number(userMedalId));
@@ -4277,6 +4290,7 @@ function respondMedalEnhance(res, body) {
   }
   const row = rows.get(base.medalId);
   const before = userMedalElement(base, now);
+  const cellsBefore = cellIdsOf([base.medalId, ...comps.map((m) => m.medalId)]); // I-305
   let gain = comps.reduce((s, m) => s + (rows.get(m.medalId) ? materialExpFor(row, rows.get(m.medalId), m.level || 1) : 0), 0);
   if (Number(body.isGreatSuccess)) gain = Math.trunc(gain * medalMiscValue(118)[0] / 10000);
   // Medal Fusion Bonus Times of the story day (campaigns.js, types 11 / 14 / 17): the numbers the client shows on the screen
@@ -4378,7 +4392,8 @@ function respondMedalEnhance(res, body) {
     // dopo pet (uint64): le medaglie consumate, che il
     // client toglie dall'elenco; senza, «200 ERROR :55»
     // solo le celle sparite: una pila con copie rimaste resta (arriva in userMedals)
-    componentUserMedalIds: cells.filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
+    // I-305: also the old heads of the later cells of these medals
+    componentUserMedalIds: goneCellIds(cellsBefore, cells),
   });
 }
 
@@ -4410,6 +4425,7 @@ function respondMedalEvolve(res, body) {
     return send(res, 200, { ret: ret() });
   }
   const before = userMedalElement(base, now);
+  const cellsBefore = cellIdsOf([base.medalId, row.evolveId, ...comps.map((m) => m.medalId)]); // I-305
   setMedalState(base.userMedalId, { medalId: row.evolveId, level: 1, exp: 0 });
   for (const m of comps) setMedalState(m.userMedalId, { removed: true });
   // la guilt resta (guilt.md) e l'evoluta e' un medalId nuovo: il Nova sale (+1/+5) in silenzio, letto da
@@ -4430,9 +4446,8 @@ function respondMedalEvolve(res, body) {
     pet: { petSubslot: petSubslotNow() }, // come l'azione 55 (usato solo se il pet c'e')
     // solo le celle sparite (una pila con copie rimaste resta)
     // e la base, se l'evoluta e' entrata in una pila esistente (validPack, es. Fantasia Mickey B):
-    // senza, il client teneva due celle separate fino al login successivo
-    attachmentMedalIds: [...new Set([...cells, base.userMedalId])]
-      .filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
+    // senza, il client teneva due celle separate fino al login successivo; I-305: also the old heads of the later cells
+    attachmentMedalIds: goneCellIds(cellsBefore, [...cells, base.userMedalId]),
   });
 }
 
@@ -4575,6 +4590,8 @@ function respondMedalSell(res, body) {
   // volta sola (stackCopies lo ricostruiva per ogni medaglia venduta: vendite lente con
   // migliaia di medaglie)
   const cells = new Map(stackedMedalList().map((m) => [m.userMedalId, m]));
+  // I-305: the cells of the sold medals before the sale (a later cell's head moves when a full cell is refilled)
+  const cellsBefore = [...cells.values()].filter((c) => [...sold.keys()].some((id) => cells.get(Number(id))?.medalId === c.medalId)).map((c) => c.userMedalId);
   const copies = new Set([...sold].flatMap(([id, n]) => {
     const cell = cells.get(Number(id));
     return cell ? cell.copies.slice(0, Math.max(1, Number(n) || 1)) : [Number(id)];
@@ -4619,7 +4636,7 @@ function respondMedalSell(res, body) {
     userSkills: userSkillsData(now),
     userMedals: after.map((m) => userMedalElement(m, now)),
     // solo le celle sparite (una pila con copie rimaste resta)
-    sellUserMedalIds: [...sold.keys()].filter((id) => !left.has(id)),
+    sellUserMedalIds: goneCellIds(cellsBefore, [...sold.keys()]).filter((id) => !left.has(id)),
   });
 }
 
