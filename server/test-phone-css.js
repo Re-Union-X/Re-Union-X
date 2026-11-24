@@ -21,6 +21,20 @@ for (const c of ['#rows>.ml', '#quests>.ml', '#camps>.ml']) check(PHONE_CSS.incl
 // Avatar Board cards hold several 70 px board pictures (.im.bc): they wrap as small tiles, never stretched to the card
 check(PHONE_CSS.includes('#rows>.row .im.bc,') && /\.im\.bc img[^{]*\{[^}]*width:64px!important/.test(PHONE_CSS), 'board tiles of the Avatar Board Catalog stay 64 px');
 
+// Cards of a row look the same (user 24-11): equal heights, state chips and Keep / Remove buttons as wide as the card,
+// the button at the bottom of the card
+check(/#rows,#quests,#camps,\.cat\{[^}]*align-items:stretch/.test(PHONE_CSS), 'cards of a row stretch to the same height');
+check(/\.s\{[^}]*display:block[^}]*width:100%/.test(PHONE_CSS) || /\.s\{[^}]*width:100%[^}]*display:block/.test(PHONE_CSS), 'state chips as wide as the card');
+check(/\.pk\{[^}]*width:100%/.test(PHONE_CSS), 'Keep / Remove buttons as wide as the card');
+check(/\.pkw[^{]*\{[^}]*margin-top:auto/.test(PHONE_CSS) && PHONE_CSS.includes('>div:has(>.pk)'), 'Keep / Remove at the bottom of the card');
+
+// Banner Catalog: .cat .im{flex:0 0 46%} (gacha.js) is a height in a column card: reset to auto
+check(/\.cat>\.b \.im\{[^}]*flex:0 0 auto!important/.test(PHONE_CSS), 'card pictures not sized by the 46 % row rule');
+
+// kept / current cards (.b.pinned, .b.now: padding-left 10px in gacha.js) keep the same inner width as the others
+check(/\.cat>\.b\{[^}]*padding:6px 6px 8px!important/.test(PHONE_CSS) && /\.info\{[^}]*margin:0!important/.test(PHONE_CSS), 'same card padding for every state');
+check(/\.cat>\.b\{[^}]*flex-direction:column;align-items:stretch!important/.test(PHONE_CSS), 'card parts stretch even on kept cards (a page rule centres them)');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);

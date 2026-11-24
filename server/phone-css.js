@@ -20,16 +20,23 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // tap floor (30 CSS px of the reduced page)
   + '.fbtn,.tab,.yc,.pk,.o,button{min-height:30px}'
   // catalogs: a 3-column grid of cards; headers, intro and year chips of the Special campaigns span the row
-  + `${GRIDS.join(',')}{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}`
+  + `${GRIDS.join(',')}{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}`
   + '#camps>h2,#camps>p,#camps>.yrs{grid-column:1/-1}'
   + '#rows>.ml,#quests>.ml,#camps>.ml{display:none!important}'
   + `${CARDS.map((c) => `${c}.hide`).join(',')}{display:none!important}`
-  + `${CARDS.join(',')}{display:flex;flex-direction:column;align-items:stretch;padding:6px 6px 8px;margin:0;border-bottom:0;background:#06283e;border-radius:8px}`
+  + `${CARDS.join(',')}{display:flex;flex-direction:column;align-items:stretch!important;padding:6px 6px 8px!important;margin:0;border-bottom:0;background:#06283e;border-radius:8px}`
   + `${inCards('.im')},${inCards('.im img')}{width:100%!important;height:auto!important}`
+  // Banner Catalog: .cat .im{flex:0 0 46%} (gacha.js) would be a height in the column card
+  + `${inCards('.im')}{flex:0 0 auto!important;max-width:none!important}`
   // Avatar Board Catalog: several 70 px board pictures per entry (event-pages.js BOARD_ROW_CSS): small tiles that wrap
   + `${inCards('.im.bc')}{display:flex!important;flex-wrap:wrap;gap:4px;height:auto!important}`
   + `${inCards('.im.bc img')},${inCards('.im.bc .nb')}{width:64px!important;height:64px!important;flex:0 0 64px}`
-  + `${inCards('.info')}{font-size:14px;line-height:1.35}`
+  // every card of a row looks the same (user 24-11): the text part fills the card, state chips and the Keep / Remove
+  // buttons are as wide as the card (their text wraps), the button sits at the bottom so buttons of a row line up
+  + `${inCards('.info')}{font-size:14px;line-height:1.35;flex:1 1 auto;display:flex;flex-direction:column;min-width:0;margin:0!important;padding:0!important}`
+  + `${inCards('.s')}{display:block!important;width:100%;box-sizing:border-box;white-space:normal;margin:4px 0 0}`
+  + `${inCards('.pkw')},${inCards('.info>div:has(>.pk)')}{margin-top:auto;padding-top:6px}`
+  + `${inCards('.pk')}{display:block;width:100%;box-sizing:border-box;text-align:center;white-space:normal;min-height:34px;margin:0}`
   + `${inCards('.d')},${inCards('.rp')},${inCards('.n')}{font-size:12px}`
   + `${inCards('.go')}{display:none}`
   + '}';
