@@ -5136,7 +5136,7 @@ function eventRoutes() {
     player, savePlayer, masterRows, eventIndex, realNow, serverTimeAt, clock, webBase: WEB_BASE,
     // the Shop week of the story, as the raids (event-calendar.js)
     storyWeek: () => { const c = storyCtx(); return { shopFrom: c.shopFrom, shopTo: c.shopTo }; },
-    stageState: (id) => ({ score: player.stageScores?.[id] || 0, playStatus: id in (player.stageScores || {}) ? STAGE_CLEARED : 0 }),
+    stageState: (id) => ({ score: player.stageScores?.[id] || 0, playStatus: id in (player.stageScores || {}) ? STAGE_CLEARED : 0, clearMissionIds: stageClearMissions(id) }),
     grantItem, grantObjective: grantObjectiveReward,
     addEventCoins: (setKey, n) => eventBoards().addCoins(setKey, n), // Event Coins (type 15) into the entry's board set
     // a Spirit part (33) with the pet off is kept in player.pendingRewards, paid at a later login with the pet on (payPending)

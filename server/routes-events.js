@@ -380,11 +380,12 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   function catalogEvents() {
     const cat = (eventIndex() || {}).catalog;
     if (!cat || !cat.evStageId || !(cat.stageIds || []).length) return [];
-    const stages = cat.stageIds.map((id, i) => { const st = stageState(id); return { stageId: id, useAp: Number((cat.useAp || [])[i]) || 0, score: st.score, playStatus: st.playStatus, clearMissionIds: [] }; });
+    const stages = cat.stageIds.map((id, i) => { const st = stageState(id); return { stageId: id, useAp: Number((cat.useAp || [])[i]) || 0, score: st.score, playStatus: st.playStatus, clearMissionIds: st.clearMissionIds || [] }; });
     return [{ stages, eventStageId: cat.evStageId, showIcon: 1, bannerUrl: `${webBase}/web/event/img/v${EVENT_IMG_VERSION}/${cat.evStageId}.png`, eventType: 0, status: 1,
       endTime: serverTimeAt(clock.weekEnd(realNow())), newStageId: 0, isLock: 0, complete: 0 }];
   }
 
+  // I-298 (tester 22-11): both catalog banners show the stars of their Training Grounds (objectives done: stageState clearMissionIds)
   // The Avatar Board Catalog banner (Task 5b, index.avatarCatalog of make-events.js: eventType 0, Details -> /web/avatar/catalog, a
   // tap opens the Training Grounds): in the Special tab, right after the Special Catalog banner (special.js lists it first), until
   // the end of the day as that banner. None without index.avatarCatalog.
@@ -392,7 +393,7 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
   function avatarCatalogEvents() {
     const cat = (eventIndex() || {}).avatarCatalog;
     if (!cat || !cat.evStageId || !(cat.stageIds || []).length) return [];
-    const stages = cat.stageIds.map((id, i) => { const st = stageState(id); return { stageId: id, useAp: Number((cat.useAp || [])[i]) || 0, score: st.score, playStatus: st.playStatus, clearMissionIds: [] }; });
+    const stages = cat.stageIds.map((id, i) => { const st = stageState(id); return { stageId: id, useAp: Number((cat.useAp || [])[i]) || 0, score: st.score, playStatus: st.playStatus, clearMissionIds: st.clearMissionIds || [] }; });
     return [{ stages, eventStageId: cat.evStageId, showIcon: 1, bannerUrl: `${webBase}/web/event/img/v${EVENT_IMG_VERSION}/${cat.evStageId}.png`, eventType: 0, status: 1,
       endTime: serverTimeAt(clock.dayEnd(realNow())), newStageId: 0, isLock: 0, complete: 0 }];
   }

@@ -30,7 +30,7 @@ function world(opts = {}) {
   w.ev = routesEvents(w.opts = {
     player: w.player, savePlayer: () => { w.saves++; }, masterRows: (t) => w.tables[t] || [], eventIndex: () => w.index, storyWeek: () => w.week, realNow: () => w.now,
     serverTimeAt: fmt, clock: { weekEnd: (ms) => ms + 7000, dayEnd: (ms) => ms + 1000 }, webBase: 'http://x', log: (m) => w.logs.push(m),
-    stageState: (id) => ({ score: w.scores[id] || 0, playStatus: id in w.scores ? 3 : 0 }),
+    stageState: (id) => ({ score: w.scores[id] || 0, playStatus: id in w.scores ? 3 : 0, clearMissionIds: (w.missions || {})[id] || [] }),
     grantItem: (type, id, num) => w.grants.push({ type, id, num }),
     grantObjective: (stage, n) => w.objectives.push({ stageId: stage.stageId, n, type: stage.submissionRewardType[n - 1] }),
     addEventCoins: (setKey, n) => { if (setKey !== '2019-04') return false; w.coins.push([setKey, n]); return true; },
@@ -194,6 +194,11 @@ const tests = {
     assert.deepStrictEqual(w.ev.withAvatarCatalog([]), [], 'Special tab locked: nothing');
     assert.deepStrictEqual(world().ev.withAvatarCatalog(sp).map((e) => e.eventStageId), [7000, 7101], 'no banner in the index');
     assert.strictEqual(w.ev.avatarCatalogId(), 20704);
+    // I-298 (tester 22-11): the banner shows the Training Grounds stars (objectives done, shared with the Special and Event
+    // Catalog banners) instead of none
+    w.scores[970000] = 5; w.missions = { 970000: [1, 2, 3] };
+    assert.deepStrictEqual(w.ev.avatarCatalogEvents()[0].stages[0].clearMissionIds, [1, 2, 3]);
+    assert.deepStrictEqual(w.ev.catalogEvents()[0] ? w.ev.catalogEvents()[0].stages[0].clearMissionIds : [1, 2, 3], [1, 2, 3]);
   },
   // keep a past event (Task 5's catalogue buttons): listed first with the KEPT banner; only a past one; unkeep
   keep_unkeep() {
