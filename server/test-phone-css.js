@@ -35,6 +35,9 @@ check(/\.cat>\.b \.im\{[^}]*flex:0 0 auto!important/.test(PHONE_CSS), 'card pict
 check(/\.cat>\.b\{[^}]*padding:6px 6px 8px!important/.test(PHONE_CSS) && /\.info\{[^}]*margin:0!important/.test(PHONE_CSS), 'same card padding for every state');
 check(/\.cat>\.b\{[^}]*flex-direction:column;align-items:stretch!important/.test(PHONE_CSS), 'card parts stretch even on kept cards (a page rule centres them)');
 
+// notice tables (banner notices: 8 columns, table-layout:fixed in the page) let long columns take the room (user 24-11)
+check(PHONE_CSS.includes('table{table-layout:auto!important}') && /\.ntb th,\.ntb td\{[^}]*font-size:13px/.test(PHONE_CSS), 'tables sized by their content on phones');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);

@@ -17,6 +17,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // header: title and Filters on one line, a shorter intro
   + '.hdr{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:12px}.hdr h1{flex:0 0 auto!important;margin:4px 0}'
   + '.fbtn{flex:0 0 auto!important;width:auto!important}p.n{font-size:13px;margin:2px 0 6px}'
+  // tables: columns sized by their content (banner notices have 8 columns and table-layout:fixed: the Special Attack
+  // text got 1/8 of the width, user 24-11)
+  + 'table{table-layout:auto!important}.ntb th,.ntb td{font-size:13px}'
   // tap floor (30 CSS px of the reduced page)
   + '.fbtn,.tab,.yc,.pk,.o,button{min-height:30px}'
   // catalogs: a 3-column grid of cards; headers, intro and year chips of the Special campaigns span the row
