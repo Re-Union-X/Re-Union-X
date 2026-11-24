@@ -707,6 +707,34 @@
    "group": "CLOSED",
    "hash": "8ce9ec31f51ad7f7",
    "name": "I-310 · «Magic Gems Challenge Event!» (EV-0242, Jul 31 – Aug 7, 2017) served as «Not built yet»…"
+  },
+  "I-312": {
+   "thread": "1574873845083414751",
+   "msg": "1574873845083414751",
+   "group": "OPEN",
+   "hash": "bbaed5edc8a77ee6",
+   "name": "I-312 · Special «5★ Evolve Medals: Power»: objective «Defeat 30 or more enemies» impossible"
+  },
+  "I-313": {
+   "thread": "1574873848799830080",
+   "msg": "1574873848799830080",
+   "group": "OPEN",
+   "hash": "a1198f20467a3959",
+   "name": "I-313 · Special quests: the map thumbnails of the quest list do not match the map played"
+  },
+  "I-314": {
+   "thread": "1574873851412873331",
+   "msg": "1574873851412873331",
+   "group": "OPEN",
+   "hash": "e6aa987a415b1592",
+   "name": "I-314 · Spirit «Rank Up!» popup: a line in Japanese"
+  },
+  "I-315": {
+   "thread": "1574873854457675937",
+   "msg": "1574873854457675937",
+   "group": "OPEN",
+   "hash": "0f8a1b78543b6ab5",
+   "name": "I-315 · Avatar: wrong legs during combat"
   }
  }
 }
