@@ -26,6 +26,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + `${CARDS.map((c) => `${c}.hide`).join(',')}{display:none!important}`
   + `${CARDS.join(',')}{display:flex;flex-direction:column;align-items:stretch;padding:6px 6px 8px;margin:0;border-bottom:0;background:#06283e;border-radius:8px}`
   + `${inCards('.im')},${inCards('.im img')}{width:100%!important;height:auto!important}`
+  // Avatar Board Catalog: several 70 px board pictures per entry (event-pages.js BOARD_ROW_CSS): small tiles that wrap
+  + `${inCards('.im.bc')}{display:flex!important;flex-wrap:wrap;gap:4px;height:auto!important}`
+  + `${inCards('.im.bc img')},${inCards('.im.bc .nb')}{width:64px!important;height:64px!important;flex:0 0 64px}`
   + `${inCards('.info')}{font-size:14px;line-height:1.35}`
   + `${inCards('.d')},${inCards('.rp')},${inCards('.n')}{font-size:12px}`
   + `${inCards('.go')}{display:none}`

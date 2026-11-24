@@ -18,6 +18,9 @@ check(PHONE_CSS.includes('grid-template-columns:repeat(3,minmax(0,1fr))'), '3-co
 check(!/(^|[{};])\.ml\{/.test(PHONE_CSS) && !/,\.ml[,{]/.test(PHONE_CSS), 'no bare .ml rule (gacha.js uses .ml for medal lists)');
 for (const c of ['#rows>.ml', '#quests>.ml', '#camps>.ml']) check(PHONE_CSS.includes(c), `month headers hidden in ${c}`);
 
+// Avatar Board cards hold several 70 px board pictures (.im.bc): they wrap as small tiles, never stretched to the card
+check(PHONE_CSS.includes('#rows>.row .im.bc,') && /\.im\.bc img[^{]*\{[^}]*width:64px!important/.test(PHONE_CSS), 'board tiles of the Avatar Board Catalog stay 64 px');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);
