@@ -62,17 +62,21 @@ const p = t.player;
 const view = (n, d) => (n >= d ? 'COMPLETE' : `${Math.trunc((n * 100) / d)}%`);
 const ach = () => call(t.respondStageAchievements).stageAchievement;
 const story0 = (a) => view(a.mainNumerator, a.mainDenominator);
-// Special expected now: 3 per stage of the open quests (isLock 0/2) without the catalogue banner, none done; no quest 0/1
-const strengthNow = () => {
-  const n = t.specialEvents().filter((e) => e.isLock !== 1 && e.eventStageId !== 7000).reduce((s, e) => s + e.stages.length, 0);
-  return n ? [0, 3 * n] : [0, 1];
+// Expected Progress of a tab (bench 25-11): every quest it lists now and does not lock (isLock 1), the catalog banners included,
+// each stage once (the shared Training Grounds), min(3, validSubmission) objectives (1 when none); none done; no quest 0/1
+const rowOf = new Map(stages.map((r) => [r.stageId, r]));
+const dueOf = (list) => {
+  const ids = new Set(list.filter((e) => e.isLock !== 1).flatMap((e) => e.stages.map((x) => x.stageId)));
+  const d = [...ids].reduce((n, id) => { const k = Math.min(3, rowOf.get(id)?.validSubmission ?? 3); return n + (k > 0 ? k : 1); }, 0);
+  return d ? [0, d] : [0, 1];
 };
+const strengthNow = () => dueOf(t.specialEvents());
+const eventNow = () => dueOf([...t.raidEventsNow(), ...t.eventRoutes().catalogEvents(), ...t.eventRoutes().events()]);
 const emptyOk = (a, when, exact) => {
   const [sn, sd] = exact || strengthNow();
   check(a.strengthNumerator === sn && a.strengthDenominator === sd, `${when}: Special ${a.strengthNumerator}/${a.strengthDenominator} (expected ${sn}/${sd})`);
-  // Events (user 03-11): 3 per raid event quest listed now, none done; no raid this week 0/1
-  const ev = t.raidEventsNow().filter((e) => e.eventType === 2).reduce((s, e) => s + e.stages.length, 0); // not the Raid Catalog banner
-  const [en, ed] = ev ? [0, 3 * ev] : [0, 1];
+  // Events: the raids, the Event Catalog banner and the event cards listed now
+  const [en, ed] = eventNow();
   check(a.eventNumerator === en && a.eventDenominator === ed, `${when}: event ${a.eventNumerator}/${a.eventDenominator} (expected ${en}/${ed})`);
   check(a.multiNumerator === 0 && a.multiDenominator === 1, `${when}: multi ${a.multiNumerator}/${a.multiDenominator} (atteso 0/1)`);
   check(a.colosseumRank === 0 && a.pvpRanking && a.pvpRanking.userPvpRanking && a.pvpRanking.userPvpRanking.rank === 0,
@@ -105,7 +109,7 @@ check(ach().mainNumerator === 200, `duplicati/fuori intervallo contati: ${ach().
 p.clearMissions[991001] = [1, 2, 3]; p.clearMissions[123456789] = [1];
 check(ach().mainNumerator === 200, 'tour/stage sconosciuti contati');
 check(!INDEX || t.specialCtx().period === 1, `story 1-100: period ${t.specialCtx().period} (expected 1)`);
-emptyOk(ach(), 'storia parziale', INDEX ? [0, 18] : null);
+emptyOk(ach(), 'storia parziale');
 
 // 3. tutta la storia superata ma senza tutti gli obiettivi: niente COMPLETE (e la Proud manca)
 for (const r of story) { p.stageScores[r.stageId] = 10; p.clearMissions[r.stageId] = [1]; }
@@ -136,7 +140,7 @@ p.clearMissions[lastObj.stageId] = [1, 2, 3];
 a = ach();
 check(a.mainNumerator === TOTAL && a.mainDenominator === TOTAL && story0(a) === 'COMPLETE', `tutto: ${a.mainNumerator}/${a.mainDenominator}`);
 check(!INDEX || t.specialCtx().period === 5, `whole story: period ${t.specialCtx().period} (expected 5)`);
-emptyOk(a, 'tutto', INDEX ? [0, 21] : null);
+emptyOk(a, 'tutto');
 
 // 8. salvataggio vecchio senza clearMissions: risponde 0%
 delete p.clearMissions;
@@ -160,4 +164,4 @@ if (INDEX) try { fs.unlinkSync(INDEX); } catch { /* removed */ }
   } else console.log('(no raid event this week: Events numerator check skipped)');
 }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.slice(0, 60).join('\n  ')); process.exit(1); }
-log(`OK: /stage/achievements (Story ${STORY_OBJ} + Proud ${PROUD_OBJ} obiettivi, Special ${INDEX ? 'periods 1 and 5: 0/18, 0/21' : 'from game_data'}, Events from the raid quests, Union Cross 0/1)`);
+log(`OK: /stage/achievements (Story ${STORY_OBJ} + Proud ${PROUD_OBJ} obiettivi, Special and Events from the listed quests (catalog banners included), Union Cross 0/1)`);

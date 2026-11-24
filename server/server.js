@@ -4997,28 +4997,26 @@ function specialEventsNow(realMs = realNow()) {
   try { return eventRoutes().withAvatarCatalog(list); } catch (e) { console.log(`[event] avatar catalog banner: ${e.message}`); return list; }
 }
 const avatarCatalogBannerId = () => { try { return eventRoutes().avatarCatalogId(); } catch { return null; } };
-// «Progress» della scheda Special (I-037): obiettivi compiuti / 3 x stage delle quest aperte adesso (isLock 0 o 2,
-// compresa la fissata), senza la quest di allenamento del catalogo; nessuna quest = 0/1 come prima
-function specialAchievement(realMs = realNow()) {
-  const catalogId = specialIndex().catalog?.evStageId;
-  const avatarId = avatarCatalogBannerId(); // the Avatar Board Catalog banner shares the Training Grounds: not counted either
-  const ids = new Set(specialEventsNow(realMs).filter((e) => e.isLock !== 1 && e.eventStageId !== catalogId && e.eventStageId !== avatarId)
-    .flatMap((e) => e.stages.map((s) => s.stageId)));
+// «Progress» of the Special and Events tabs (I-037; bench 25-11: Events counted only the raid quests and both left out the
+// catalog banners): the objectives done / due of every quest the tab lists now and does not lock (isLock 1), the catalog
+// banners included (their shared Training Grounds once: a Set of stage ids). A quest is worth min(3, validSubmission)
+// objectives, 1 (cleared or not) when it has none, as the crown (special.stageDone). No quest: 0/1 as before.
+function tabAchievement(list) {
+  const ids = new Set((list || []).filter((e) => e.isLock !== 1).flatMap((e) => (e.stages || []).map((s) => s.stageId)));
   if (!ids.size) return ACHIEVEMENT_EMPTY;
   const done = player.clearMissions || {};
-  let numerator = 0;
-  for (const id of ids) numerator += new Set((done[id] || []).filter((m) => m >= 1 && m <= 3)).size;
-  return { numerator, denominator: 3 * ids.size };
+  let numerator = 0, denominator = 0;
+  for (const id of ids) {
+    const n = Math.min(3, stageRowOf(id)?.validSubmission ?? 3);
+    if (n <= 0) { denominator += 1; numerator += id in (player.stageScores || {}) ? 1 : 0; continue; }
+    denominator += n;
+    numerator += new Set((done[id] || []).filter((m) => m >= 1 && m <= n)).size;
+  }
+  return { numerator, denominator };
 }
-// Events (eventNumerator/Denominator, user 03-11): objectives of the raid event quests listed now (raid().events), as Special
-function eventAchievement(realMs = realNow()) {
-  const ids = new Set(raid().events(realMs).filter((e) => e.eventType === 2).flatMap((e) => e.stages.map((s) => s.stageId))); // not the Raid Catalog banner
-  if (!ids.size) return ACHIEVEMENT_EMPTY;
-  const done = player.clearMissions || {};
-  let numerator = 0;
-  for (const id of ids) numerator += new Set((done[id] || []).filter((m) => m >= 1 && m <= 3)).size;
-  return { numerator, denominator: 3 * ids.size };
-}
+const specialAchievement = (realMs = realNow()) => tabAchievement(specialEventsNow(realMs));
+// Events: the raids, the Event Catalog banner and the event cards (kept one included), as the Events tab lists them
+const eventAchievement = (realMs = realNow()) => tabAchievement(eventsTabOrder(raid().events(realMs), eventRoutes().catalogEvents(), eventRoutes().events(realMs)));
 // GET /web/special/img/<eventStageId>.png e <id>-kept.png (banner della quest fissata): immagini 640x140 di
 // game_data/special_img, 404 se mancano. /web/special/quest/<id> (e il vecchio /detail/<id>): pagina della quest (dal catalogo con
 // ?from=catalog: barra BACK); /web/special/icon/<chiave>.png: icone di chip e pill (SPECIAL_ICON_KEYS)
@@ -5700,8 +5698,7 @@ function respondProudList(res) {
 // numeratore >= denominatore, quindi 0/0 = COMPLETE (il difetto di prima: tutte le categorie complete).
 // - main = Story: obiettivi compiuti delle missioni Standard (1-979) e Proud (note di versione 2.2.0: «completion
 //   percentage for Standard Mode and Proud Mode challenges»); denominatore = tutti gli obiettivi di quelle missioni.
-// - strength (Special): obiettivi delle quest Special aperte adesso (specialAchievement).
-// - event (Events): obiettivi delle quest degli eventi raid della settimana (eventAchievement, utente 03-11).
+// - strength (Special) / event (Events): tabAchievement, every unlocked quest the tab lists now, catalog banners included.
 // - multi (Union Cross): modalita' non ancora presente nel server: 0/1 = «Progress: 0%» senza COMPLETE.
 // - colosseumRank 0 e pvpRanking con rank 0: il client scrive «---» (nessuna classifica).
 const ACHIEVEMENT_EMPTY = { numerator: 0, denominator: 1 };

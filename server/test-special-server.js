@@ -149,7 +149,8 @@ const special = t.specialEvents(Date.now()).filter((e) => e.eventStageId !== 700
 const nStages = special.reduce((a, e) => a + e.stages.length, 0);
 p.clearMissions[970030] = [1, 2]; p.clearMissions[970100] = [3]; p.clearMissions[970000] = [1, 2, 3];
 let a = call(t.respondStageAchievements).stageAchievement;
-check(nStages === 7 && a.strengthDenominator === 21 && a.strengthNumerator === 3, `Special ${a.strengthNumerator}/${a.strengthDenominator} (${nStages} stage)`);
+// bench 25-11: the catalog banners count too, their shared Training Grounds once (3 objectives, all done): 8 stages, 6 / 24
+check(nStages === 7 && a.strengthDenominator === 24 && a.strengthNumerator === 6, `Special ${a.strengthNumerator}/${a.strengthDenominator} (${nStages} stage + Training Grounds)`);
 const saved = p.stageScores; p.stageScores = { [sid(5)]: 1 };
 a = call(t.respondStageAchievements).stageAchievement;
 check(a.strengthNumerator === 0 && a.strengthDenominator === 1, `Special chiusa: ${a.strengthNumerator}/${a.strengthDenominator}`);
