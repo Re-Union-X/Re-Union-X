@@ -1846,5 +1846,6 @@ declared in the Notices, «Events of 2016-2018»). The khuxwiki series «Defeat 
 - Board card (user 24-11: the board had no picture): the khuxwiki card «Preview - Magic Gem Board» is 144 px (grainy at 306 on the
   bench, user), so it is redrawn at full size: the 306 px card of the June Speed Gem Board (2310043, the same Chip / Dale / Magic
   Mirror / Cid medals and layout) with its gem replaced by the Magic Gem of the 306 px khuxwiki card «Preview - Magic Gem (Cross)»
-  (private script `tmp\eventboards\missing_art\scripts\magicgem_card.py`), `boardArt` 2310052 (loc), label boardArt; resources 176.
+  (private script `tmp\eventboards\missing_art\scripts\magicgem_card.py`; the bottom band of the gem, hidden by «x15» on that card,
+  from the khuxwiki card of this board aligned on the medals), `boardArt` 2310052 (loc), label boardArt; resources 177.
   The full board needs all 48 objectives (480 coins), as in the original.
