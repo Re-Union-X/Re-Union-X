@@ -662,15 +662,15 @@
   "I-304": {
    "thread": "1574671833473617921",
    "msg": "1574671833473617921",
-   "group": "OPEN",
-   "hash": "e8c786b06178804f",
+   "group": "OBSOLETE",
+   "hash": "f669f1c10a3c94fe",
    "name": "I-304 · Unequip screen does not work"
   },
   "I-305": {
    "thread": "1574671835776295097",
    "msg": "1574671835776295097",
-   "group": "OPEN",
-   "hash": "7c5219ed3a87ff7e",
+   "group": "TO VERIFY",
+   "hash": "27b6536dcb55e9d4",
    "name": "I-305 · Evolving medals multiplies the material medals instead of spending them"
   }
  }
