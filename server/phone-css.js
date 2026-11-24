@@ -65,6 +65,12 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + '#rows:has(>.row>.mi){grid-template-columns:repeat(4,minmax(0,1fr))}'
   // Full Art tab: each artwork header (.sec) is a full-width line above its 1-3 Medals; rows not forced equal there
   + '#rows>.sec{grid-column:1/-1}#rows:has(>.sec){grid-auto-rows:auto}'
+  // Medal detail (#det, user 24-11: the info needed scrolling): the Medal on the left, name, chips, track, music and
+  // variants on the right
+  + '#dbody{display:grid;grid-template-columns:auto 1fr;column-gap:18px;align-items:start;text-align:left}'
+  + '#dbody>.lg{grid-row:1/span 20;width:150px!important;height:150px!important;max-width:none!important;max-height:none!important;margin:4px 0 0!important}'
+  + '#dbody>:not(.lg){grid-column:2;margin-left:0!important;margin-right:0!important}#dbody>h2{margin:4px 30px 2px 0!important}'
+  + '#dbody .cps{justify-content:flex-start}#dbody>.vl{max-width:none}'
   + '#rows>.row:has(>.mi)>.mi{align-self:center;flex:0 0 auto!important;width:84px!important;height:84px!important;margin:0 auto 4px}'
   + '#rows>.row:has(>.mi)>.mi img{width:84px!important;height:84px!important}'
   + '#rows>.row:has(>.mi) .d{height:1.4em!important;-webkit-line-clamp:1}'
