@@ -613,9 +613,65 @@
   "I-297": {
    "thread": "1574569964369617068",
    "msg": "1574569964369617068",
-   "group": "OPEN",
-   "hash": "86e9cd408f526125",
+   "group": "IN PROGRESS",
+   "hash": "5d4906f41a761807",
    "name": "I-297 · Gold Tricholoma pay no Event Coins in «Dress Like Santa Sora»"
+  },
+  "I-298": {
+   "thread": "1574671818453942394",
+   "msg": "1574671818453942394",
+   "group": "OPEN",
+   "hash": "4b4433939a5cf810",
+   "name": "I-298 · Special quest «Avatar Board Catalog»: no stars and no rewards"
+  },
+  "I-299": {
+   "thread": "1574671820874055782",
+   "msg": "1574671820874055782",
+   "group": "OPEN",
+   "hash": "d527401b0f5619a9",
+   "name": "I-299 · Union Cross «Chat Phrases» empty: softlock"
+  },
+  "I-300": {
+   "thread": "1574671823654756403",
+   "msg": "1574671823654756403",
+   "group": "OPEN",
+   "hash": "58b873f852f348b8",
+   "name": "I-300 · Events menu: the bottom HUD shadow is cut on the left"
+  },
+  "I-301": {
+   "thread": "1574671826255224855",
+   "msg": "1574671826255224855",
+   "group": "OPEN",
+   "hash": "4a2cd67e28e24450",
+   "name": "I-301 · Upright / Reversed slots without their gold / purple backgrounds"
+  },
+  "I-302": {
+   "thread": "1574671828616618035",
+   "msg": "1574671828616618035",
+   "group": "OPEN",
+   "hash": "77f15dfb6062c2cd",
+   "name": "I-302 · Weekly Special quests open on the wrong days"
+  },
+  "I-303": {
+   "thread": "1574671831166619809",
+   "msg": "1574671831166619809",
+   "group": "OPEN",
+   "hash": "2cce14e87918f1f9",
+   "name": "I-303 · Daily Special quests in the wrong order"
+  },
+  "I-304": {
+   "thread": "1574671833473617921",
+   "msg": "1574671833473617921",
+   "group": "OPEN",
+   "hash": "e8c786b06178804f",
+   "name": "I-304 · Unequip screen does not work"
+  },
+  "I-305": {
+   "thread": "1574671835776295097",
+   "msg": "1574671835776295097",
+   "group": "OPEN",
+   "hash": "7c5219ed3a87ff7e",
+   "name": "I-305 · Evolving medals multiplies the material medals instead of spending them"
   }
  }
 }
