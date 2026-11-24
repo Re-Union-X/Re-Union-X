@@ -1843,3 +1843,6 @@ declared in the Notices, «Events of 2016-2018»). The khuxwiki series «Defeat 
   the live hole_2016_18.json), **#23c** `patch_i310_census.py` (census unlink).
 - Master regen: 4,260 of 4,260 event quests served; only additions (16 stage, 1 evStage, 1 board); stage ids 4004500..4004515,
   evStage 20015, board 4000110.
+- Board card (user 24-11: the board had no picture): khuxwiki card «Preview - Magic Gem Board» (144 px, same picture as the card
+  of the board screenshot «Event Board - Magic Gem Board KHUX»), 306 px with the JP card mask, `boardArt` 2310052 (loc); resources 175.
+  The full board needs all 48 objectives (480 coins), as in the original.
