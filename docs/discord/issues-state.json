@@ -676,15 +676,15 @@
   "I-306": {
    "thread": "1574687333150752818",
    "msg": "1574687333150752818",
-   "group": "IN PROGRESS",
-   "hash": "a012836b131b761c",
+   "group": "CLOSED",
+   "hash": "78c8c0ea5b8646ff",
    "name": "I-306 · Generated maps: chests all orange and clustered"
   },
   "I-307": {
    "thread": "1574692006981148684",
    "msg": "1574692006981148684",
-   "group": "IN PROGRESS",
-   "hash": "3bd90784330cad1b",
+   "group": "CLOSED",
+   "hash": "d4ce8b5878efcf64",
    "name": "I-307 · Event medal drops missing on generated maps"
   }
  }
