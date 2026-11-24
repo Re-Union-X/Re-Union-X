@@ -225,7 +225,7 @@ Rewards are given once, drops keep their original chances, and **Event Coins** n
 
 The **Event Catalog** lists every event; keep one past event at a time.
 
-546 events · 4,162 of 4,239 quests · 108 Event Boards
+551 events · 4,240 of 4,240 quests · 114 Event Boards
 
 ### Overview — past events following your Story week
 
@@ -233,7 +233,7 @@ The **Event Quests** are back: the limited-time events of the original game, wit
 
 Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.
 
-Today **546 events** are served, with **4162 of their 4239 quests** (583 events are in the data so far, from July 2016 to February 2021). The others follow in later updates: the **Event Catalog** lists every event and, for each quest not served yet, the reason (a map or an enemy whose original files are still missing). A quest whose enemy is missing is not served: no other enemy stands in for it.
+Today **551 events** are served, with **4240 of their 4240 quests** (583 events are in the data so far, from July 2016 to February 2021). The others follow in later updates: the **Event Catalog** lists every event and, for each quest not served yet, the reason (a map or an enemy whose original files are still missing). A quest whose enemy is missing is not served: no other enemy stands in for it.
 
 ### Opening hours — open for the whole original day
 
@@ -257,13 +257,13 @@ The story scenes before and after some event quests are not shown yet.
 
 ### Event coins and boards — coins never expire
 
-**Event Coins** are back, with the **Event Boards**: today **108 Event Boards** in **21 board sets**, for 49 events. The quest list of these events has the **Event Boards** button. Event Coins come from objectives (**once**) and from enemy drops (at every clear, also for a kept event).
+**Event Coins** are back, with the **Event Boards**: today **114 Event Boards** in **22 board sets**, for 50 events. The quest list of these events has the **Event Boards** button. Event Coins come from objectives (**once**) and from enemy drops (at every clear, also for a kept event).
 
 Each **board set** (the boards of a month, shared by its events) has **one balance**, and Event Coins **never expire** (not original) (the original game lost them when the event ended, as the board screen still says). Each cell and each finished board gives its reward **once**.
 
 One board set is listed at a time: the set of the **last event quest you started** (only a quest of an event whose Event Boards are available counts), otherwise the newest set of your Story week, otherwise the set of your **kept event**. The Event Coins shown on the boards are that set's balance; the other sets keep theirs.
 
-In the original game every cell of an Event Board paid a reward, and here every served board pays them all, the **Booster** cells included (see **Boosters** below). A board with a cell that cannot be paid here is **not served**, nor is a board that opens after it. The set of **Invalid Date** is not served yet (2 events): those events are served **without Event Boards**, and the Event Coins they pay are **kept** in the balance of their set, which is not shown until its boards arrive.
+In the original game every cell of an Event Board paid a reward, and here every served board pays them all, the **Booster** cells included (see **Boosters** below). A board with a cell that cannot be paid here is **not served**, nor is a board that opens after it. The sets of **November 2016 and March 2017** are not served yet (3 events): those events are served **without Event Boards**, and the Event Coins they pay are **kept** in the balance of their set, which is not shown until its boards arrive.
 
 **Raid Coins** are unchanged: raids pay and spend them as before.
 
@@ -273,11 +273,11 @@ The **Riku & Moogle** 6★ Medal, a drop of the August and September 2019 coin e
 
 ### Boosters — rebuilt effects, timed from pickup
 
-The **Boosters** are back: **425 Boosters**, paid by 46 event quests, 267 Event Board cells, 3 Raid Board cells and 79 Avatar Board cells. As in the original game, a Booster raises the damage of the Medals it names, or the slot multipliers of the Keyblade it names, until it expires: you see it in your profile (**Boosters**, with its expiry), as the light-blue **+N%** plate on the Medal Details screen, and in battle. Different Boosters add up.
+The **Boosters** are back: **428 Boosters**, paid by 49 event quests, 267 Event Board cells, 3 Raid Board cells and 79 Avatar Board cells. As in the original game, a Booster raises the damage of the Medals it names, or the slot multipliers of the Keyblade it names, until it expires: you see it in your profile (**Boosters**, with its expiry), as the light-blue **+N%** plate on the Medal Details screen, and in battle. Different Boosters add up.
 
 No original Booster record with its effect values survives: each effect is **rebuilt from the Booster's original description** (the attribute, Upright or Reversed, the group of Medals or the Keyblade it names, and its value). The Medals of a group are the ones the original game data assigns to that Booster.
 
-In the original every Booster expired on a fixed date. Here a Booster lasts, **from the moment you get it**, as many days as it lasted in the original from the start of its event to its expiry (**8 to 32 days**) (not original) (in the original a Booster obtained late in its event lasted less). So a Booster from a past event, a kept event or an older board set works for its full time too. For 153 Boosters whose expiry notice did not survive, the end of their event or board is used as the expiry.
+In the original every Booster expired on a fixed date. Here a Booster lasts, **from the moment you get it**, as many days as it lasted in the original from the start of its event to its expiry (**8 to 32 days**) (not original) (in the original a Booster obtained late in its event lasted less). So a Booster from a past event, a kept event or an older board set works for its full time too. For 156 Boosters whose expiry notice did not survive, the end of their event or board is used as the expiry.
 
 Each quest objective and each board cell gives its Booster **once**, ever: a replay does not give it again, not even after it expired. The same Booster from another quest or cell extends the one you have.
 
@@ -295,13 +295,15 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - The header of this quest's map (start point, target and the list of its parts) is missing from the surviving Japanese files, which kept only one copy of the data the game shared between quests. Five headers of the same event fit; they differ only in one running counter, so the first one was used. The map parts themselves are original. Rebuilt, not original.
 
+- This quest has no original map, and our game data holds several versions of one of its enemies with different strength; no source says which one this run used. The enemy is the version the original maps of the same period use most often for it: the same enemy, its exact strength not confirmed.
+
+- No original map of this quest survives in any source we hold (the Japanese and worldwide game files, the donated data, the rooms rebuilt so far): its map was generated in the quest's original room (the room of its surviving stage data, else the room the khuxwiki page names), with the enemies and the target of the page at the quest's level. Not original.
+
 - One file of this quest's map (a part or its header) is missing from the surviving Japanese files, which kept only one copy of the map data the game shared between quests. It was taken from that shared copy, byte for byte: the map is the original one.
 
 - The enemies of this quest come from the original game data (the stage row and its Japanese map). The only khuxwiki page is of another run of the same quest; it lists the same enemies, so it is taken as their confirmation (ruling of 23-11-2026).
 
 - Our game data holds several versions of an enemy of this quest, with different strength, no source says which one the worldwide quest used, and none carries the year and month of its event. The Japanese maps of the same period place one of them in that role (target or not) in at least 9 of every 10 cases: that version is used. Chosen by rule, not confirmed (ruling of 23-11-2026).
-
-- No original map of this quest survives in any source we hold (the Japanese and worldwide game files, the donated data, the rooms rebuilt so far): its map was generated in the quest's original room (the room of its surviving stage data, else the room the khuxwiki page names), with the enemies and the target of the page at the quest's level. Not original.
 
 - No khuxwiki page exists for this quest: its values come from the later game data only, without a second source.
 
@@ -310,6 +312,8 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 - The room of this quest's map lacks 4 picture tiles in the surviving Japanese files, which kept only one copy of the tiles the game shared. They lie in a band that is fully transparent in every other tile of the room and of its twin room, so they were rebuilt as transparent tiles. The map itself is original. Rebuilt, not original.
 
 - AP from the khuxwiki page of this run: the surviving game data (a later snapshot) gives another AP.
+
+- Some enemies of this quest only «can appear» in the original game (the notice, khuxwiki or the footage says so): the original server left them out of some runs. They appear at random here too, each with a chance of 1 in 2 (9 in 10 for the Fireworks of the 2016 Countdown & New Year's Event, whose objectives need almost all of them): that rate is ours, the original one is unknown. Objectives that count them may need more than one run, as in the original.
 
 - Our game data holds several versions of an enemy of this quest, with different strength, and no source says which one the worldwide quest used. From mid-2018 the worldwide event enemies carry the year and month of their event at the start of their id (88% of the event enemies on the Japanese maps follow it), and exactly one version of this enemy has the year and month of this event: that version is used. Chosen by rule, not confirmed (ruling of 23-11-2026).
 
@@ -331,17 +335,19 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - In the original every player who cleared all the objectives of this event got a bonus sized by how many players did it worldwide (the official result notice gives the count). Here clearing every objective of its quests gives you, once, the bonus the original event reached, in your Presents: the count was of all players then, and is not redone for you alone (not original).
 
-- Some enemies of this quest only «can appear» in the original game (the notice, khuxwiki or the footage says so): the original server left them out of some runs. They appear at random here too, each with a chance of 1 in 2 (9 in 10 for the Fireworks of the 2016 Countdown & New Year's Event, whose objectives need almost all of them): that rate is ours, the original one is unknown. Objectives that count them may need more than one run, as in the original.
-
 - The map file of this quest is lost. The same quest series ran again in another month on a map that survives (the same room, the same single enemy and target, every difficulty on the same map): that layout is used, with the enemy of this run, the original enemy row of these quests (its own strength at each difficulty). Layout reconstructed, enemy original.
 
 - The map of this quest is the Japanese map of the same quest, found by its content (the same enemies, counts, target and rooms at the quest's level): the worldwide map file of this run is lost.
+
+- The drops of this quest are lost with its map, but most Event Coins of these events came from enemy drops (the boards cost far more than the objectives pay). Its enemies drop Event Coins again: rare enemies (Gold Tricholoma, Shenaneggan) many, sure, the powerful enemies of a Daily Challenge a sure amount, the others a few now and then; amounts scaled on the quest's own coin objectives (the Event Coins Galore of 2020 use the rows of the December 2019 one). Reconstructed, not original.
 
 - The event boards of this event are not handed out yet: none of the quests that paid their Event Coins can be served yet, so the boards could not be filled.
 
 - The stage row and the map file of this quest are those of the same weekly quest in a later run (the row of this run is not in the data we have). Enemies, level, gem and rewards were checked against the khuxwiki page of this run; the AP, the gem and the world follow the page.
 
 - The quest keeps the values of the later game data; the khuxwiki page describes an earlier run of the same quest (2018), so it was not used for this one.
+
+- In the original every player who completed all the challenges of this event by the end of its campaign got this reward, the same for everyone (official notice). Here clearing every objective of its quests gives you the same reward, once, in your Presents.
 
 - The map of this quest spanned several areas (khuxwiki lists them, with the enemies and chests of each area). Its map file is lost, so the areas were rebuilt in that order, in the rooms of the quest's surviving stage data and of the khuxwiki pictures, joined by exits; start points, exits and enemy spots were taken from original maps of the same rooms where they survive, otherwise placed by the generator. The warp portals inside the areas (Xigbar's maze) are not rebuilt. Rebuilt, not original.
 
@@ -358,6 +364,8 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 - In the original game clearing this quest could make a raid boss appear (the notice or the khuxwiki page names it). No raid of that boss with the strength it had at that time is served yet, so here the quest summons no raid boss.
 
 - The khuxwiki page of this High Score Challenge names its enemies but not which version of each (our game data holds several, with different strength). The Japanese High Score maps of the same years place the base version for nearly all their enemies (2,204 of 2,424), so the base version of each name is used. Inferred, not original.
+
+- An enemy of this quest is missing from our game data: its row was taken from the worldwide game data shared by the community (the same name, strength and level curve as in the original game).
 
 - In the original game the ranking rewards of a High Score Challenge went to the players by leaderboard position. This server has one player, so each original rank bracket became a score threshold: reach it with your best run and you receive that bracket's original rewards (only the highest bracket reached is paid; a better run later pays the difference, once per event). The thresholds are calibrated on the original scores where known, scaled from them or interpolated, as each one is marked. The rank shown is the best rank of the bracket you reached. The point milestones are the original ones.
 
@@ -381,8 +389,6 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - In the original this event was open for a short window (minutes to hours); here it is open for its whole original day.
 
-- An enemy of this quest is missing from our game data: its row was taken from the worldwide game data shared by the community (the same name, strength and level curve as in the original game).
-
 ## Event Challenges & High Scores
 
 **IMPORTANT** · 11/16
@@ -393,15 +399,15 @@ Challenge, battle, quiz, Surprise and Time Missions events are back from 2016 to
 
 ### Challenge events — battle, quiz and Surprise events
 
-The **challenge and battle events** are back (Defeat events, Big Bonus Challenges, daily quests, time trials, **Keyblade Challenges** and **quizzes**): today **326 events** of 2016 to 2021 are served, with **2779 of their 2832 quests** (by year: 2016: 8 events, 87 quests; 2017: 39 events, 366 quests; 2018: 61 events, 711 quests; 2019: 63 events, 601 quests; 2020: 133 events, 915 quests; 2021: 22 events, 99 quests). The Event Catalog lists the others with the reason they are not here yet.
+The **challenge and battle events** are back (Defeat events, Big Bonus Challenges, daily quests, time trials, **Keyblade Challenges** and **quizzes**): today **329 events** of 2016 to 2021 are served, with **2832 of their 2832 quests** (by year: 2016: 9 events, 89 quests; 2017: 39 events, 366 quests; 2018: 62 events, 732 quests; 2019: 64 events, 631 quests; 2020: 133 events, 915 quests; 2021: 22 events, 99 quests). The Event Catalog lists the others with the reason they are not here yet.
 
 **Surprise events** and **Time Missions** are back: today 52 Surprise events and 6 Time Missions events (**175 quests**). As in the original game, each Surprise event is open for **one whole day** (12:00 a.m. to 11:59 p.m. Pacific time, on the real weekday of that day in your Story week) and is gone the next day. In the original game each target of a Time Missions event appeared only at four set hours a day; here every quest of a Time Missions event is open for its **whole original day** (not original), and the event lists all its quests on each of its days.
 
-**Community goals.** Some events of 2020 gave every player who cleared **all their objectives** a bonus whose size depended on how many players around the world did it, announced afterwards in a result notice. Here, when you clear every objective of such an event (a kept event of the Event Catalog too), you get **once** the bonus the original event reached, in your **Presents**: the count was of all the players of the time and is not redone for you alone (not original). The original results: Summon Rush! (732 players: 740 Jewels), Defeat Savage Vanguard (7,237 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Sephiroth! (8,529 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Dragon Maleficent Battle Event (7,701 players: Draw Ticket x10, Power Gem x30, Speed Gem x30, Magic Gem x30), Mean Maiden Battle Event (its «Defeat the Mean Maiden» quests; 3,931 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Flame Core Battle Event (4,370 players: Power Gem x30, Speed Gem x30, Magic Gem x30) and Heartless Battle Event (4,026 players: Power Gem x30, Speed Gem x30, Magic Gem x30).
+**Community goals.** Some events of 2020 gave every player who cleared **all their objectives** a bonus whose size depended on how many players around the world did it, announced afterwards in a result notice. Here, when you clear every objective of such an event (a kept event of the Event Catalog too), you get **once** the bonus the original event reached, in your **Presents**: the count was of all the players of the time and is not redone for you alone (not original). The original results: Summon Rush! (732 players: 740 Jewels), Defeat Savage Vanguard (7,237 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Sephiroth! (8,529 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Dragon Maleficent Battle Event (7,701 players: Draw Ticket x10, Power Gem x30, Speed Gem x30, Magic Gem x30), Mean Maiden Battle Event (its «Defeat the Mean Maiden» quests; 3,931 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Flame Core Battle Event (4,370 players: Power Gem x30, Speed Gem x30, Magic Gem x30) and Heartless Battle Event (4,026 players: Power Gem x30, Speed Gem x30, Magic Gem x30). Other events gave a **fixed reward** to every player who completed all their challenges, whatever the number of players: as in the original, clearing every objective gives you that reward **once**, in your **Presents** (a kept event of the Event Catalog too): The Keyblade War Challenge Campaign (Spirit Lord Kyroo [SAB LV 10] x1, Spirit Chef Kyroo [SAB LV 10] x1, Spirit Sir Kyroo [SAB LV 10] x1, NM Lord Kyroo [SAB LV 10] x1, NM Chef Kyroo [SAB LV 10] x1, NM Sir Kyroo [SAB LV 10] x1).
 
 The **quiz** events asked their question on a picture board before the quest, and no original board survives in the game files, so every board is (rebuilt): 65 are redrawn in the original style from the question text recorded on the community wiki (obvious typing errors of the wiki corrected), 5 come from screenshots of the original boards and 5 are redrawn from videos of the original game. Today **85 quiz quests** are served with their board; the others wait, mostly for a map file that is incomplete.
 
-**46** served quests pay a **Booster** among their rewards: see **Boosters** in the **Event Quests: how they work** notice.
+**49** served quests pay a **Booster** among their rewards: see **Boosters** in the **Event Quests: how they work** notice.
 
 A **Spirit part** reward earned while your Spirit cannot receive it is **kept**, once, and given at a later login.
 
@@ -471,23 +477,19 @@ Gem Quests and the **Organization XIII** events are back too.
 
 ### Events of 2016-2018 — old events on original or rebuilt maps
 
-The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **65 events** are served, with **563 of the 565 quests of that period**, on the dates of the original notices. Quests that came from the Japanese version are played on the **original Japanese maps** (a few on the map of their Japanese twin quest).
+The events of **November 2016 to March 2018** are back. No event record of that period survives, but the donated game data of 2021 still holds their quests (objectives, rewards, levels and worlds): today **66 events** are served, with **565 of the 565 quests of that period**, on the dates of the original notices. Quests that came from the Japanese version are played on the **original Japanese maps** (a few on the map of their Japanese twin quest).
 
-For 1 of the other quests, made for the worldwide version only, no map survives in any source we hold: they wait in the **Event Catalog** until their maps are rebuilt from the community wiki and videos of the time (not original).
-
-**375 quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (not original). Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **12 quests** drop it at the rates of the original KH 3D event quests of 2017 (not original); the others drop nothing.
+**377 quests** are played on generated maps: their map files survive nowhere, so each map was rebuilt from the community wiki page of the quest (its areas in order, the enemies of each area with their levels, the target last), in the original rooms (not original). Their drop rates are lost too: where the event's notice names a drop (Christmas Sora, the Nova medals of the day), **12 quests** drop it at the rates of the original KH 3D event quests of 2017 (not original). Most **Event Coins** of the board events came from enemy drops, so in **53 quests** of those events the enemies drop Event Coins again: rare enemies (Gold Tricholoma, Shenaneggan) many, the powerful enemies of the Daily Challenges a sure amount, the others a few now and then, scaled on each quest's coin objectives (not original). The other quests drop nothing.
 
 The **Event Coins** of the coin events go to **8 sets of Event Boards** of the original game data (the event boards, the Gem Boards and the daily Jewel boards of the period); all boards of a set are open for the whole event (not original) (some opened later). Where the coins came only from enemy drops, the boards wait until those drops are rebuilt.
 
-**5 Booster Challenges** of the period are back: their objectives pay the original **Boosters** of the donated game data (see **Boosters** in the **Event Quests: how they work** notice).
+**6 Booster Challenges** of the period are back: their objectives pay the original **Boosters** of the donated game data (see **Boosters** in the **Event Quests: how they work** notice).
 
 **3 Damage Contests** («Test Your Might») are back as High Score runs: the score is the damage you deal. As for the High Score Challenges, the original rank brackets became **score thresholds** (calibrated, (not original)). The July and October 2017 contests use the map of the December 2017 one, the same quest (no other map survives: (not original)).
 
 **Classic Donald**: the original quests opened only for 12-hour periods at times never published; here they stay **open all day** (not original).
 
 In the original game **10 quests** of the period could make a **raid boss** appear («A Hard-Boiled Daily Challenge Event!», «WORLD OF FINAL FANTASY Event!»); no raid of those bosses with their strength of the time is served yet, so here they summon none.
-
-The other 1 quests are held for a missing piece (a map file, an enemy or a level check): the **Event Catalog** gives the reason of each one.
 
 The daily quests, the Gauntlet tiers and the quests that opened day by day are all open for the **whole event** (not original) (the original released them day by day).
 
@@ -503,15 +505,13 @@ The quest lists of the events whose Event Boards are not served yet show no **Ev
 
 ### Org XIII events — the Organization XIII events, per Union
 
-The **Organization XIII events** are back: today **33 events** are served, with **503 of their 504 quests** (the monthly XIII Events of 2016-17: 242 of 242 quests; the NEW XIII Events of 2018-19: 198 of 198 quests; Challenge Organization XIII of 2020: 38 of 38 quests; The Keyblade War part 3: 25 of 26 quests).
+The **Organization XIII events** are back: today **33 events** are served, with **505 of their 505 quests** (the monthly XIII Events of 2016-17: 242 of 242 quests; the NEW XIII Events of 2018-19: 198 of 198 quests; Challenge Organization XIII of 2020: 38 of 38 quests; The Keyblade War part 3: 27 of 27 quests).
 
 The monthly **XIII Events** of November 2016 to December 2017 have **no surviving quest record**: their quests are (rebuilt) from the community wiki and from the Japanese tables of their 13 stages (levels, enemies, objectives and rewards). 185 of them are played on the **original Japanese map** of the same quest, found by its content (the same enemies, counts, target and rooms). For the other 57 no original map survives in any source we hold: their map is (rebuilt) in the quest's original room, with the enemies and the target recorded on the community wiki (not original); 18 of them spanned several areas, which are rebuilt in their order and joined by exits.
 
 The **NEW XIII Events** of 2018-19, the **Organization XIII SP Challenge** and **Challenge Organization XIII** (2020) use their **original quest records**: maps, enemies, objectives and rewards as in the original game. Where a small part of a map was missing from the surviving files, it is completed from the copy the game shared between quests or from another quest of the same event, as the Event Catalog notes.
 
 **The Keyblade War** part 3, **The Ultimate Test**, is back **for each Union**: in the original each Union played its own version of these quests, and only one version survives in the game data, so the versions of the other Unions are (rebuilt) from it with the target of their own map. You see only your own Union's version, and only it counts for the **Keyblade War Challenge Campaign** reward (see **Community goals** in the **Event Challenges & High Scores** notice).
-
-The other 1 quests of these events wait in the **Event Catalog**, each with the reason it is not here yet.
 
 ## Event enemies
 

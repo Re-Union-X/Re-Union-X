@@ -1379,6 +1379,16 @@ const tests = {
     assert.deepStrictEqual([q2.served, q2.reason], [false, 'rewardRowTooLong'], JSON.stringify(q2));
     assert.ok(!out2.reward.some((x) => x.rewardId === 69313));
   },
+  // I-297 (user 25-11): calibrated rows that pay Event Coins (type 15) are the rebuilt coin drops of a board event whose map
+  // drops are lost: label coinDropsRebuilt, not dropsCalibrated (that one says the drop is named by the notice)
+  gen_drops_coin_rebuilt() {
+    const g = genQuest(702320, { genDrops: { byName: { 'Foe B': 69320 }, target: 69321,
+      rows: { 69320: [{ type: 15, id: 0, num: 5, odds: 3300 }], 69321: [{ type: 15, id: 0, num: 10, odds: 10000 }, { type: 15, id: 0, num: 10, odds: 5000 }] } } });
+    const out = me.buildEvents([record('E-C', [g])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
+    const q = entry(out, 'E-C').quests[0];
+    assert.ok(q.served && q.labels.includes('coinDropsRebuilt') && !q.labels.includes('dropsCalibrated'), JSON.stringify(q));
+    assert.deepStrictEqual(out.reward.find((r) => r.rewardId === 69321).odds, [10000, 5000]);
+  },
   // Events Part 10c Task 4: a quest whose original clear could summon a raid boss (record raidSummon {boss, why}): no served raid row
   // of that boss has the HP of the period, so the quest is served without the summon and labelled raidSummonLater
   quest_raid_summon_later() {

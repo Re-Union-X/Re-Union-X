@@ -77,7 +77,7 @@ const RAID_SPECIAL = [970000, 989999], EGGCOGNITO = 100;
 const NOT_SERVED = 'not served yet';
 // labels this generator sets (the record labels come through labelPhrases)
 const GENERATED_LABELS = ['boardArt', 'boosterEffect', 'wholeDay', 'communityBonus', 'completionReward', 'dramaOff', 'eventCoins', 'wwEnemy', 'wikiAp', 'boardsLater', 'noCoinSource', 'boosterLater', 'noBoardSet', 'quizBoard',
-  'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
+  'quizBoardFootage', 'quizBoardScreenshot', 'wikiRoom', 'dropsCalibrated', 'coinDropsRebuilt', 'jpTwinMap', 'levelShifted', 'mapPartShared', 'mapHeaderRebuilt', 'roomTilesRebuilt', 'mapPartRebuilt', 'seriesLayoutTwin', 'jpReplayLayoutTwin', 'wikiAreas',
   'hscThresholds', 'damageContest', 'chanceSpawns', 'materialSpots', 'raidSummonLater', 'openWindowsReconstructed', 'openAllDay', 'bonusHoursFactor', 'bonusHoursLater'];
 // the labels a quizDramas entry may give its board (Part 4 Task 6): rebuilt from the khuxwiki text (quizBoard, the default of
 // reconstructed true), redrawn from footage of the original (quizBoardFootage), taken from a screenshot of the original
@@ -1373,7 +1373,9 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
           const first = (name) => (Array.isArray(byName[name]) ? byName[name][0] : byName[name]);
           for (const e of g.enemies) e.reward = e.target ? gd.target || 1 : first(e.name) || 1;
           if (gd.target) genEntry.targetReward = gd.target;
-          if (!qLabels.includes('dropsCalibrated')) { qLabels.push('dropsCalibrated'); item.labels = qLabels; }
+          // rows paying Event Coins (type 15) are rebuilt coin drops (I-297, user 25-11), not a drop the notice named
+          const dl = Object.values(gd.rows || {}).some((rows) => rows.some((x) => x.type === 15)) ? 'coinDropsRebuilt' : 'dropsCalibrated';
+          if (!qLabels.includes(dl)) { qLabels.push(dl); item.labels = qLabels; }
         }
         q = { ...q, enemies: g.enemies, targets: g.targets };
       }
