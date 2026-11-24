@@ -186,3 +186,43 @@ B0794	skill	72415:all	notice 73873 (About medals with skills: Attack Boost I 1.6
 B0087	start_pt	2017-03-14	notice 26296 («3 Days of Skills to Thrill!»: Mar. 14 - 16, 2017; the wiki start 2017-02-14 is wrong; user 06-11)
 B0088	start_pt	2017-03-14	notice 26296 («3 Days of Skills to Thrill!»: Mar. 14 - 16, 2017; the wiki start 2017-02-14 is wrong; user 06-11)
 B0009	exclude	not a banner	notice 17892 (Zootopia Medals & Avatars are Here!, 02-15/05/2016): two limited avatar boards at 3,000 Jewels each from the Avatar Board menu, no draw (user 23-11-2026)
+B0166	price	3000	PROBABLE: no own source (notice 32026 gives no price); every 2017 10-Medal featured/EX deal is 3000 (TSV/wiki Shop/2017: B0164 Illus. KH II Kairi Deal 09-04, B0165 Disney Tsum Tsum 09-08, B0168 EX Medal Deal 09-15)
+B0166	rarity_mix	6★:1 5★:9	banner art N32026 (Tier-dots icon x1, 5★+ x9: same icon row as N34475 = B0199 EX Medal Deal, wiki 6★:1 5★:9) + notice 32026 (one Tier 4+ pre-strengthened, remaining 9 Medals 5★+; same wording as notice 34215 = B0198, wiki 6★:1 5★:9)
+B0167	exclude	duplicate	notice 32530 (Tsum Tsums have invaded!) is a campaign umbrella: its Tsum Tsum Medal Deal (Sept. 8-21, 2017) = B0165; art N32530.png pixel-identical to Shop_-_Disney_Tsum_Tsum_banner_KHUX.png
+B0205	exclude	duplicate	notice 34475 = the five Foreteller EX Medal Deals B0199-B0203 (arts N34475..N34475_5 identical to Shop_-_EX_Medal_Deal_9..13; dates already overridden to 2017-11-24..12-04)
+B0220	exclude	duplicate	notice 35148 = B0219 New Year's Draw (same period 2017-12-22..2018-01-10; art N35148 pixel-identical to Shop_-_New_Year's_Draw!_banner_KHUX.png)
+B0255	price	1000	B0242 Top-Drawer Deal! (wiki Shop/2018: 1000, 02/15/18-07/19/18): notice 37765 names the same deal and only raises the daily count
+B0255	rarity_mix	6★:2 5★:2 Other:1	art N37765 (same icon row as Shop_-_Top-Drawer_Deal!_banner, wiki 6★:2 5★:2 Other:1) + notice 37765 (listed Medal x1, Tier 6+ x1, remaining 2 Medals 5★+, Magic Mirror x1)
+B0277	price	1000	B0242 Top-Drawer Deal! (wiki Shop/2018: 1000, 02/15/18-07/19/18): notice 38880 names the same deal and only raises the daily count
+B0277	rarity_mix	6★:2 5★:2 Other:1	art N38880 (same icon row as Shop_-_Top-Drawer_Deal!_banner, wiki 6★:2 5★:2 Other:1) + notice 38880 (listed Medal x1, Tier 6+ x1, remaining 2 Medals 5★+, Magic Mirror x1)
+B0287	price	1000	B0242 Top-Drawer Deal! (wiki Shop/2018: 1000, 02/15/18-07/19/18): notice 39404 names the same deal and only raises the daily count
+B0287	rarity_mix	6★:2 5★:2 Other:1	art N39404 (same icon row as Shop_-_Top-Drawer_Deal!_banner, wiki 6★:2 5★:2 Other:1) + notice 39404 (listed Medal x1, Tier 6+ x1, remaining 2 Medals 5★+, Magic Mirror x1)
+B0305	price	1000	B0242 Top-Drawer Deal! (wiki Shop/2018: 1000, 02/15/18-07/19/18): notice 40318 names the same deal and only raises the daily count
+B0305	rarity_mix	6★:2 5★:2 Other:1	art N40318 (same icon row as Shop_-_Top-Drawer_Deal!_banner, wiki 6★:2 5★:2 Other:1) + notice 40318 (listed Medal x1, Tier 6+ x1, remaining 2 Medals 5★+, Magic Mirror x1)
+B0305	day_limit	3	notice 40318 (draw three times each day; art N40318 «Three times per day!»)
+B0313	price	1000	B0242 Top-Drawer Deal! (wiki Shop/2018: 1000, 02/15/18-07/19/18): notice 40725 names the same deal and only raises the daily count
+B0313	rarity_mix	6★:2 5★:2 Other:1	art N40725 (same icon row as Shop_-_Top-Drawer_Deal!_banner, wiki 6★:2 5★:2 Other:1) + notice 40725 (listed Medal x1, Tier 6+ x1, remaining 2 Medals 5★+, Magic Mirror x1)
+B0313	day_limit	3	notice 40725 (draw three times each day; art N40725 «Three times per day!»)
+B0274	exclude	duplicate	notice 38663 = B0272 2nd Anniversary Draw (same period 2018-04-07..04-30; art N38663 pixel-identical to Shop_-_2nd_Anniversary_Draw!_banner_KHUX.png)
+B0285	exclude	duplicate	notice 39400 = B0284 EX Medal Deal 2018-04-20..04-23 (Sephiroth [EX+]; art N39400 pixel-identical to Shop_-_EX_Medal_Deal_32_banner_KHUX.png)
+B0289	exclude	duplicate	notice 39402 = B0288 EX Medal Deal 2018-04-23..04-26 (KH II Cloud [EX+]; art N39402 pixel-identical to Shop_-_EX_Medal_Deal_33_banner_KHUX.png)
+B0310	exclude	duplicate	notice 40734 = the three 7★ Medal Deals B0306-B0308 2018-05-25..05-31 (arts N40734..N40734_3 pixel-identical to Shop_-_7★_Medal_Deal(_2,_3)_banner_KHUX.png)
+B0378	exclude	duplicate	notice 43560 = B0377 7★ Deal 2018-08-23..08-25 (7★ Roxas Art [EX]; art N43560 = Shop_-_7★_Deal_4_banner_KHUX.png, same content)
+B0383	exclude	duplicate	notice 43568 = B0382 7★ Deal 2018-08-29..08-31 (7★ Sephiroth [EX]; art N43568 pixel-identical to Shop_-_7★_Deal_6_banner_KHUX.png)
+B0414	price	3000	PROBABLE: notice 46656 gives no price; Naminé [EX+] Deals B0373 (2018-08-17) and B0461 (2019-02-08) are 3000, as are all 2018 non-falling 10-Medal deals (wiki Shop/2018)
+B0414	rarity_mix	7★:2 5★:8 Other:3	notice 46656 (two Tier 6 or 7, 7★ Medals per draw, remaining 8 Medals 5★+, three Magic Mirrors) + banner art N46656 (7★+ x2, 5★+ x8, Magic Mirror x3)
+B0487	exclude	duplicate	notice 51530 = 7★ Deals B0485 (standard) + B0486 (VIP) 2019-03-29..03-31 (arts N51530_2 / N51530 pixel-identical to Shop_-_7★_Deal_8 / Shop_-_VIP_7★_Deal)
+B0493	exclude	duplicate	notice 52166 = KHIII Deals B0494 (standard) + B0495 (VIP) 2019-04-07..04-15 (first draw free in both, same Lea/Monster Sora/Kairi A guarantee, wiki Shop/2019)
+B0497	exclude	duplicate	notice 52165 = B0496 Million Jewel Sweepstakes 2019-04-07..05-06 (Free x1 5★:1, KH III Moogle, wiki Shop/2019)
+B0611	price	3000	PROBABLE: notice 58408 says «See in-game»; the first run of the same deal, B0570 KH III Dark Riku Deal 2019-08-16 (standard), is 3000 (wiki Shop/2019)
+B0611	draw_size	x10	banner art N58408 (KHIII Medal+ x2 + Dark Riku x1 + 5★+ x7 = 10 Medals; same icon row as Shop_-_KH_III_Dark_Riku_Deal_banner = B0570 x10)
+B0611	rarity_mix	6★:3 5★:7	banner art N58408 (same Medal icons as Shop_-_KH_III_Dark_Riku_Deal_banner_KHUX.png = B0570, wiki 6★:3 5★:7); bonus items (x10 Limited VIP Coins, x2 green item) not counted
+B0623	draw_size	x5	wiki Shop/2019 + Shop/2020 «Beginner's Deal» 12/06/19-10/11/20: 7★ 2, 6★ 3 = 5 Medals, 1200 (same banner: notice 60743 1200 Jewels, SN - KH III Kairi A within 3 draws)
+B0623	rarity_mix	7★:2 6★:3 Other:2	wiki Shop/2019 + Shop/2020 «Beginner's Deal» 12/06/19-10/11/20 (7★ 2, 6★ 3, Other 2 = two bonus 6★ Dual Meow Wow)
+B0623	day_limit	3	wiki Shop/2019 + Shop/2020 «Beginner's Deal» notes: «Available three times per day»
+B0737	exclude	duplicate	notice 70579 = B0736 Falling Price Deal 2020-10-19..10-31 (art N70579 pixel-identical to Shop_-_Falling_Price_Deal_12_banner_KHUX.png; same 4 SN++ within 3 draws)
+B0255	variant_of	B0242	notice 37765: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)
+B0277	variant_of	B0242	notice 38880: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)
+B0287	variant_of	B0242	notice 39404: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)
+B0305	variant_of	B0242	notice 40318: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)
+B0313	variant_of	B0242	notice 40725: the Top-Drawer Deal (B0242) drawn three times per day in this campaign (user 24-11: one deal, shown instead of B0242 while on)

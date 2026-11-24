@@ -1100,7 +1100,7 @@ def build_catalog(inputs):
     for o in inputs['overrides']:
         if o.get('field') == 'pity_label':
             labels[o['row_id']]['pity_label'] = o['value']
-        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit', 'featured', 'pity', 'max_skill', 'not_reproduced', 'skill'):
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit', 'featured', 'pity', 'max_skill', 'not_reproduced', 'skill', 'variant_of'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -1208,6 +1208,8 @@ def build_catalog(inputs):
             'dayLimit': day, 'totalLimit': total, 'vipFree': vip_free,
             'pool': pool, 'guarantee': g, 'enhance': enh, 'skill': skill_of(typ, r['start_pt'], (ov.get(rid) or {}).get('skill')), 'bonus': found,
             'catalogOnly': only, 'completedFrom': completed, 'image': img, 'imageFrom': img_from,
+            # 24-11: a campaign row of a permanent deal (field variant_of): the Shop shows it instead of the deal while it is on
+            'variantOf': (ov.get(rid) or {}).get('variant_of'),
             'notes': notes, 'guaranteesText': r['guarantees'], 'notesSource': nsrc,
         })
     # nomi di vetrina e garanzia -> chiavi di `medals` (alias, redirect, famiglie SN)

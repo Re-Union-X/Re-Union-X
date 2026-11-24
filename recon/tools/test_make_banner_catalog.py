@@ -310,15 +310,15 @@ check(n_md == 1 and MD['sn++ - axel b'] == {'date': '2021-01-01', 'ids': [[30207
 WIKI = os.environ.get('KHUX_WIKI_JSON', m.DEFAULTS['wiki'])
 TSV = os.environ.get('KHUX_BANNERS_TSV', m.DEFAULTS['banners'])
 if os.path.exists(WIKI) and os.path.exists(TSV):
-    TIER_BANNERS = 182  # + B0267 (D3); audit delle garanzie, appendice A (178) + 5 frasi SAB del 2016 - 3 a lista dal notice (2c/G4) + B0204 (2c/G9)
+    TIER_BANNERS = 187  # 24-11: +5 Top-Drawer «three times per day» variants of B0242 (Tier 6+ slot), drawable now; + B0267 (D3); audit delle garanzie, appendice A (178) + 5 frasi SAB del 2016 - 3 a lista dal notice (2c/G4) + B0204 (2c/G9)
     cat = m.build_catalog(m.default_inputs())
     bs = cat['banners']
-    check(len(bs) == 806, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 (campo exclude); B0009 campagna di avatar board (user 23-11)
+    check(len(bs) == 793, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 (campo exclude); B0009 campagna di avatar board (user 23-11); 24-11: 13 notice rows of complete banners (exclude)
     check(not any(b['rowId'] == 'B0009' for b in bs), 'B0009 Zootopia: avatar boards a 3000 Jewel, non un banner (exclude)')
     from collections import Counter
     t = Counter(b['type'] for b in bs)
-    check(t == Counter({'SN': 213, 'FEATURED': 168, 'FALLING': 129, 'SKILL': 69, 'DAILY': 64, 'SEVEN': 48, 'FREE': 36,
-                        'STANDARD': 22, 'T_TICKET': 21, 'ITEM': 19, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
+    check(t == Counter({'SN': 213, 'FEATURED': 163, 'FALLING': 129, 'SKILL': 69, 'DAILY': 64, 'SEVEN': 44, 'FREE': 33,
+                        'STANDARD': 21, 'T_TICKET': 21, 'ITEM': 19, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
     # 85 = 78 della regola vecchia + i 7 banner della tranche 526-540 (12-01-2017 .. 08-02-2017, B0079-B0085),
     # che ora si sbloccano a 525; i 6 del lancio (B0001-B0006) passano da 200 a 0
     ub = sum(1 for b in bs if b['unlockQuest'] <= 525)
@@ -335,8 +335,13 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     # fine del servizio 2021-06-29 per i deal del 25-02-2021 (notice 74613/74614)
     check(all(next(b for b in bs if b['rowId'] == r)['end'] == '2021-06-29' for r in ('B0811', 'B0812', 'B0794')), 'deal fino alla fine del servizio')
     check(all(b['end'] for b in bs), 'tutte le date di fine')
-    inc = sum(1 for b in bs if b['catalogOnly'] == 'INCOMPLETE')  # 31 prima degli override dei notice (Task 4)
-    check(inc == 23, f'righe INCOMPLETE {inc}')
+    inc = [b['rowId'] for b in bs if b['catalogOnly'] == 'INCOMPLETE']  # 31 prima degli override dei notice (Task 4), 23 until 24-11
+    check(inc == ['B0612'], f'righe INCOMPLETE {inc}')  # 24-11: B0612 (Supernova+ - Aced rerun) has no source yet
+    # 24-11: the Top-Drawer Deal drawn three times per day (2018 campaigns) = variants of B0242, shown instead of it while on
+    tdv = sorted(b['rowId'] for b in bs if b.get('variantOf') == 'B0242')
+    check(tdv == ['B0255', 'B0277', 'B0287', 'B0305', 'B0313'] and all(next(x for x in bs if x['rowId'] == r)['dayLimit'] == 3 for r in tdv), f'Top-Drawer variants {tdv}')
+    b623 = next(b for b in bs if b['rowId'] == 'B0623')
+    check(b623['prices'] == [1200] and b623['lotCount'] == 5 and b623['dayLimit'] == 3 and b623['catalogOnly'] is None, f"B0623 Beginner's Draw {b623['prices']} {b623['lotCount']}")
     for rid in ('B0742', 'B0765'):
         bg = next(b for b in bs if b['rowId'] == rid)['guarantee']
         check(bg['every'] == 3 and len(bg['list']) >= 15, f'{rid} garanzia every {bg}')
@@ -543,7 +548,8 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     # Task 2: potenziamenti per banner (enhance) e regalo della pity
     ek = {'preset', 'boosted', 'maxSkill', 'notReproduced'}
     check(all(set(b['enhance']) == ek and all(isinstance(b['enhance'][k], list) for k in ek) for b in bs), 'enhance sempre presente')
-    check(B['B0310']['enhance']['preset'] == [{'on': {'star': 7}, 'dots': 'max', 'guilt': 'max'}], f"B0310 {B['B0310']['enhance']}")
+    # 24-11: B0310 is the notice row of B0306-B0308 (exclude duplicate); its preset is on the three deals (block G below)
+    check('B0310' not in B, 'B0310: duplicate of B0306-B0308, excluded')
     check({'on': {'slots': [0]}, 'dots': [1, 3], 'guilt': None} in B['B0131']['enhance']['preset'], f"B0131 {B['B0131']['enhance']}")
     check({'on': {'names': ['hd terra [ex]']}, 'dots': 5, 'guilt': None} in B['B0243']['enhance']['preset'], f"B0243 {B['B0243']['enhance']}")
     check(B['B0166']['enhance']['preset'] == [{'on': {'names': ['hd naminé']}, 'dots': 3, 'guilt': None}], f"B0166 {B['B0166']['enhance']}")

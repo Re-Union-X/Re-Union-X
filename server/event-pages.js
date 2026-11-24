@@ -625,6 +625,7 @@ const BOARD_LABEL_TEXT = {
   priceFromKhuxwiki: 'Price from khuxwiki: no surviving notice states it',
   priceFromDonor: 'Price from later game data: no surviving notice states it',
   windowFromWiki: 'Dates from khuxwiki: no surviving notice dates them',
+  windowFromNotice: 'Dates from the original notice of the sale',
   windowFromOtherCensusRow: 'Dates from another notice of the same sale',
   windowFixedFromNotice: 'Dates read from the notice text',
   windowToServiceEnd: 'On sale until the end of the service',

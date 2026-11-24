@@ -131,8 +131,11 @@ function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, s
   const inWindow = (b) => (shopFrom ? b.start <= shopTo && (b.end || '2099-12-31') >= shopFrom : activeOn(b, storyDay));
   const top = [...seasonal, ...(pinned ? [pinned] : [])].filter((b, i, a) => a.findIndex((x) => x.drawMedalTypeId === b.drawMedalTypeId) === i);
   const topIds = new Set(top.map((b) => b.drawMedalTypeId));
-  const pick = banners.filter((b) => !topIds.has(b.drawMedalTypeId) && drawable(b, sizes)
-    && ((b.unlockQuest <= storyQuest && inWindow(b)) || show.has(b.rowId)))
+  const pick0 = banners.filter((b) => !topIds.has(b.drawMedalTypeId) && drawable(b, sizes)
+    && ((b.unlockQuest <= storyQuest && inWindow(b)) || show.has(b.rowId)));
+  // a campaign row of a permanent deal (variantOf: the Top-Drawer Deal drawn three times per day, 2018) takes its place while on
+  const shadowed = new Set([...top, ...pick0].map((b) => b.variantOf).filter(Boolean));
+  const pick = pick0.filter((b) => !shadowed.has(b.rowId))
     // con la finestra, prima i banner che stanno tutti dentro la settimana (non avranno un'altra occasione: con lo Shop
     // pieno restavano fuori), poi i piu' recenti
     .sort((a, b) => (shopFrom ? inside(b) - inside(a) : 0) || (a.start < b.start ? 1 : a.start > b.start ? -1 : a.drawMedalTypeId - b.drawMedalTypeId));

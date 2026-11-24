@@ -1000,7 +1000,7 @@ function questMusic(q, over) {
 // names (entry.held), else, with the unmapped ones, to index.avatarHeld (listed at the end of the catalogue with the reason).
 // The level boards are not dated: no entry.
 const BOARD_GROUP_TITLE = { outfit: 'Avatar Boards', gem: 'Gem Boards', skill: 'Skill Enhancement Boards', medal: 'Medal Boards', avatarCoin: 'Avatar Coin Boards',
-  jewelBooster: 'Jewel Booster Boards', avatarCoinBooster: 'Avatar Coin Booster Boards' };
+  jewelBooster: 'Jewel Booster Boards', avatarCoinBooster: 'Avatar Coin Booster Boards', drawTicket: 'Draw Ticket Boards' };
 const BOARD_NAMED = new Set(['outfit', 'medal']);
 function boardEntryName(windows) {
   return [...new Set(windows.map((w) => w.group))].map((g) => {

@@ -69,6 +69,16 @@ check(s.length === g.SHOP_MAX && g.SHOP_MAX === 20, 'al massimo SHOP_MAX');
   check(!g.shopBanners([a], { ...opt, storyQuest: 210, shopFrom: '2016-04-28', shopTo: '2016-05-04' }).length, 'finestra: fuori dalla settimana');
 }
 check(s.every((b, i) => i === 0 || s[i - 1].start >= b.start), 'ordine decrescente con molti banner');
+// variants (24-11): a campaign row of a permanent deal (variantOf = its rowId, e.g. Top-Drawer «three times per day») takes the
+// deal's place in the Shop while it is on; the deal comes back after
+{
+  const base = mk({ start: '2016-11-01', end: '2017-06-01', name: 'Top-Drawer Deal!' });
+  const v = mk({ start: '2016-12-05', end: '2016-12-11', dayLimit: 3, variantOf: base.rowId });
+  const on = g.shopBanners([base, v], { ...opt, storyDay: '2016-12-08' });
+  check(on.includes(v) && !on.includes(base), `variant on: replaces its deal ${on.map((b) => b.rowId)}`);
+  const off = g.shopBanners([base, v], { ...opt, storyDay: '2016-12-20' });
+  check(off.includes(base) && !off.includes(v), 'variant over: the deal is back');
+}
 const tDraw = mk({ payType: 8, currency: 'draw', prices: [1], start: '2016-12-05' });
 const tSpooky = mk({ payType: 8, currency: 'spooky', prices: [1], start: '2016-12-03' });
 s = g.shopBanners([tSpooky, tDraw], opt);

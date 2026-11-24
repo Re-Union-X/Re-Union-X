@@ -6,7 +6,7 @@ const SEASONS = [
   { key: 'newyear', from: '12-22', to: '01-17', rowIds: [...range(72, 76), 'B0219', 'B0774'] },
   { key: 'lunar', from: '01-28', to: '02-03', rowIds: ['B0084'] },
   { key: 'valentine', from: '02-03', to: '02-17', rowIds: ['B0085', 'B0086'] },
-  { key: 'anniversary', from: '04-06', to: '04-30', rowIds: ['B0106', 'B0272', 'B0493', 'B0651'] },
+  { key: 'anniversary', from: '04-06', to: '04-30', rowIds: ['B0106', 'B0272', 'B0494', 'B0651'] },
   { key: 'summer', from: '08-22', to: '09-01', rowIds: ['B0042'] },
   { key: 'halloween', from: '10-12', to: '11-02', rowIds: ['B0731', 'B0732', 'B0740'] },
   { key: 'blackfriday', from: '11-22', to: '12-09', rowIds: ['B0066', 'B0067', 'B0621', 'B0752', 'B0754'] },

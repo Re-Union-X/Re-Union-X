@@ -46,7 +46,7 @@ const BOARD_INDEX = () => {
   ix.entries.push(boardEntry('B-0', 29920, '2019-03-04', '2019-03-17', [{ donorId: 9001, name: 'Red Coat' }, { donorId: 9002, name: 'Blue Coat' }],
     { labels: ['priceFromKhuxwiki'], held: [{ donorId: 9009, name: 'Lost Coat', why: 'rewardMissing: cell 2: medal «X» not in our medal table (windows: 2019-03-04..2019-03-17)' }] }));
   ix.entries.push({ ...boardEntry('B-1', 29921, '2019-04-08', '2019-04-21', [{ donorId: 9003, name: 'Gem Board' }]), name: 'Gem Boards',
-    avatarBoards: [{ key: 'B-1/gem', group: 'gem', type: 2, window: ['2019-04-08', '2019-04-21'], price: 2000, labels: [], boards: [{ donorId: 9003, name: 'Gem Board' }] }] });
+    avatarBoards: [{ key: 'B-1/gem', group: 'gem', type: 2, window: ['2019-04-08', '2019-04-21'], price: 2000, labels: ['windowFromNotice'], boards: [{ donorId: 9003, name: 'Gem Board' }] }] });
   ix.entries.push(boardEntry('khuxwiki@2019-02-01/outfit', 29922, '2019-02-01', '2019-02-10', [{ donorId: 9005, name: 'Wiki Coat' }],
     { key: 'khuxwiki@2019-02-01/outfit', price: 2000, labels: ['windowFromWiki'] }));
   ix.entries.push(boardEntry('B-9', 29929, '2019-03-11', '2019-03-17', [{ donorId: 9004, name: 'Grey Coat' }]));
@@ -575,6 +575,8 @@ const tests = {
     assert.ok(/Red Coat.{0,200}Bought/.test(k), 'a bought board says so');
     assert.ok(k.includes('Remove from Avatar Boards'), 'the kept entry offers Remove');
     assert.strictEqual(pages.boardDetailPage(ix, 29900, ctx()), null, 'an event without boards has no Avatar Board page');
+    // I-311 (24-11): a window dated by an original notice that has no census row (Enhancement Set+ June-Sept 2019, Draw Tickets)
+    assert.ok(/original notice/i.test(pages.boardDetailPage(ix, 29921, ctx())), 'label windowFromNotice in plain words');
   },
   // Task 5b: the Event Catalog lists events only; every BOARD entry is in the Avatar Board Catalog, with an event that also sold
   // boards (its boards only there); the BOARD entries have no Event Catalog page and the event keep refuses them
