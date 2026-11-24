@@ -198,6 +198,9 @@ const tests = {
     // Catalog banners) instead of none
     w.scores[970000] = 5; w.missions = { 970000: [1, 2, 3] };
     assert.deepStrictEqual(w.ev.avatarCatalogEvents()[0].stages[0].clearMissionIds, [1, 2, 3]);
+    assert.strictEqual(w.ev.avatarCatalogEvents()[0].complete, 1, 'crown once the Training Grounds objectives are done');
+    w.missions = { 970000: [1, 2] };
+    assert.strictEqual(w.ev.avatarCatalogEvents()[0].complete, 0, 'no crown with an objective left');
     assert.deepStrictEqual(w.ev.catalogEvents()[0] ? w.ev.catalogEvents()[0].stages[0].clearMissionIds : [1, 2, 3], [1, 2, 3]);
   },
   // keep a past event (Task 5's catalogue buttons): listed first with the KEPT banner; only a past one; unkeep
