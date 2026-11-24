@@ -63,8 +63,12 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // Medal Gallery (medal-gallery.js: cards with a .mi picture, user 24-11): 4 columns of square Medals, the picture centred,
   // the attribute line one line high, track name and «Variants» one line each with «…» (the full text is in the detail)
   + '#rows:has(>.row>.mi){grid-template-columns:repeat(4,minmax(0,1fr))}'
-  // Full Art tab: each artwork header (.sec) is a full-width line above its 1-3 Medals; rows not forced equal there
-  + '#rows>.sec{grid-column:1/-1}#rows:has(>.sec){grid-auto-rows:auto}'
+  // Full Art tab (user 24-11: 65 artworks, too much scrolling as full-width headers): each artwork (.sec) is a card of
+  // the grid with a gold border, its picture, name and «N Medals», followed in the same grid by the cards of its Medals
+  + '#rows>.sec{display:flex!important;flex-direction:column;align-items:center;gap:4px;margin:0;padding:6px!important;background:#0b3a58;border:2px solid #ffcd4a;border-radius:8px;text-align:center;box-sizing:border-box;min-width:0}'
+  + '#rows>.sec .av{flex:0 0 auto!important;width:70px!important;height:105px!important}#rows>.sec .av img{width:70px!important;height:105px!important}'
+  + '#rows>.sec b{font-size:14px;line-height:1.35;display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}'
+  + '#rows>.sec .d{font-size:12px;line-height:1.35;margin:0}#rows>.sec>div{min-width:0;width:100%}'
   // a Medal with no music (Full Art tab) keeps the place of the track line (12 px, line 1.5em, margin 2px): chips line up
   + '#rows>.row:has(>.mi) .info:not(:has(>.tk))>.d{margin-bottom:calc(12px*1.5 + 2px)}'
   // Medal detail (#det, user 24-11: the info needed scrolling): the Medal on the left, name, chips, track, music and

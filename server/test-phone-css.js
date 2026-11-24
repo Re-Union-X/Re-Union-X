@@ -67,7 +67,7 @@ check(/:has\(>\.mi\)>\.mi\{[^}]*align-self:center/.test(PHONE_CSS), 'Medal pictu
 check(/\.tk,[^{]*\.vrt\{[^}]*white-space:nowrap[^}]*text-overflow:ellipsis/.test(PHONE_CSS), 'track and Variants on one line');
 
 // Medal Gallery Full Art tab: each artwork header (.sec) is a full-width line above its Medals, rows not forced equal
-check(PHONE_CSS.includes('#rows>.sec{grid-column:1/-1}') && PHONE_CSS.includes('#rows:has(>.sec){grid-auto-rows:auto}'), 'Full Art headers span the row');
+check(!PHONE_CSS.includes('#rows>.sec{grid-column:1/-1}') && /#rows>\.sec\{[^}]*flex-direction:column[^}]*border:2px solid #ffcd4a/.test(PHONE_CSS), 'Full Art: each artwork is a gold-bordered card of the grid, followed by its Medals (user 24-11: less scrolling)');
 
 // Medal Gallery detail (#det, user 24-11: too big, the info needed scrolling): picture on the left, the info on the right
 check(/#dbody\{[^}]*display:grid[^}]*grid-template-columns:auto 1fr/.test(PHONE_CSS) && /#dbody>\.lg\{[^}]*grid-row:1\/span 20[^}]*width:150px!important/.test(PHONE_CSS) && PHONE_CSS.includes('#dbody>:not(.lg){grid-column:2'), 'Medal detail side by side');
