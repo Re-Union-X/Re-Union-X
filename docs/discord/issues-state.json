@@ -693,6 +693,20 @@
    "group": "CLOSED",
    "hash": "9c2bd037cccbf78d",
    "name": "I-308 · Quests «Progress» of Special and Events left out quests"
+  },
+  "I-309": {
+   "thread": "1574767597184884799",
+   "msg": "1574767597184884799",
+   "group": "OPEN",
+   "hash": "95145e8af39c87c0",
+   "name": "I-309 · In-game web pages too big on phones, catalogs uncomfortable"
+  },
+  "I-310": {
+   "thread": "1574767600553033762",
+   "msg": "1574767600553033762",
+   "group": "OPEN",
+   "hash": "2baee4381baaed5f",
+   "name": "I-310 · «Magic Gems Challenge Event!» (EV-0242, Jul 31 – Aug 7, 2017) served as «Not built yet»…"
   }
  }
 }
