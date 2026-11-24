@@ -32,8 +32,11 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // Banner Catalog: .cat .im{flex:0 0 46%} (gacha.js) would be a height in the column card
   + `${inCards('.im')}{flex:0 0 auto!important;max-width:none!important}`
   // Avatar Board Catalog: several 70 px board pictures per entry (event-pages.js BOARD_ROW_CSS): small tiles that wrap
-  + `${inCards('.im.bc')}{display:flex!important;flex-wrap:wrap;gap:4px;height:auto!important}`
-  + `${inCards('.im.bc img')},${inCards('.im.bc .nb')}{width:64px!important;height:64px!important;flex:0 0 64px}`
+  // one row of fixed height (up to 3 pictures + the «+N» badge, event-pages.js ROW_CARDS = 3): a badge on a second row
+  // pushed the title down (user 24-11)
+  + `${inCards('.im.bc')}{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:4px;overflow:hidden;height:50px!important}`
+  + `${inCards('.im.bc img')},${inCards('.im.bc .nb')}{width:50px!important;height:50px!important;flex:0 0 50px}`
+  + `${inCards('.im.bc .more')}{flex:0 0 auto}`
   // every card of a row looks the same (user 24-11): the text part fills the card, state chips and the Keep / Remove
   // buttons are as wide as the card (their text wraps), the button sits at the bottom so buttons of a row line up
   + `${inCards('.info')}{font-size:14px;line-height:1.35;flex:1 1 auto;display:flex;flex-direction:column;min-width:0;margin:0!important;padding:0!important}`

@@ -19,7 +19,8 @@ check(!/(^|[{};])\.ml\{/.test(PHONE_CSS) && !/,\.ml[,{]/.test(PHONE_CSS), 'no ba
 for (const c of ['#rows>.ml', '#quests>.ml', '#camps>.ml']) check(PHONE_CSS.includes(c), `month headers hidden in ${c}`);
 
 // Avatar Board cards hold several 70 px board pictures (.im.bc): they wrap as small tiles, never stretched to the card
-check(PHONE_CSS.includes('#rows>.row .im.bc,') && /\.im\.bc img[^{]*\{[^}]*width:64px!important/.test(PHONE_CSS), 'board tiles of the Avatar Board Catalog stay 64 px');
+check(PHONE_CSS.includes('#rows>.row .im.bc,') && /\.im\.bc img[^{]*\{[^}]*width:50px!important/.test(PHONE_CSS), 'board tiles of the Avatar Board Catalog: 50 px');
+check(/\.im\.bc\{[^}]*flex-wrap:nowrap!important[^}]*height:50px!important/.test(PHONE_CSS), 'board pictures on one row of fixed height (a «+N» badge wrapped to a second row, user 24-11)');
 
 // Cards of a row look the same (user 24-11): equal heights, state chips and Keep / Remove buttons as wide as the card,
 // the button at the bottom of the card
