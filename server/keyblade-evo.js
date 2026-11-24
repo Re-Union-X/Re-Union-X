@@ -315,7 +315,7 @@ function makeKeybladeEvo(ctx) {
       + '.none{text-align:center;margin-top:30%}</style></head><body>'
       + (rows ? `<ul>${rows}</ul>` : '<p class="none">There are no passive effects.</p>')
       + '</body></html>';
-    const buf = Buffer.from(html, 'utf8');
+    const buf = Buffer.from(require('./phone-css').withPhone(html), 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
     res.end(buf);
   }

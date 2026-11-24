@@ -27,5 +27,15 @@ check(withPhone(once) === once, 'idempotent');
 check(withPhone('not found') === 'not found', 'no head: unchanged');
 check(withPhone('<body>no head</body>') === '<body>no head</body>', 'body without head: unchanged');
 
+// Task 2: every page sent as text/html goes through withPhone (404 «not found» helpers excepted)
+for (const f of ['server.js', 'keyblade-evo.js']) {
+  const lines = fs.readFileSync(path.join(__dirname, f), 'utf8').split('\n');
+  lines.forEach((l, i) => {
+    if (!l.includes("'Content-Type': 'text/html") || l.includes("Buffer.from('not found'")) return;
+    const ctx = lines.slice(Math.max(0, i - 3), i + 1).join('\n');
+    check(/withPhone\(/.test(ctx), `${f}:${i + 1} sends a page without withPhone`);
+  });
+}
+
 if (errors.length) { console.log(errors.join('\n')); console.log(`${errors.length} errors`); process.exit(1); }
 console.log('test-phone-css: ok');

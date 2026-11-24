@@ -25,6 +25,7 @@ const zlib = require('zlib');
 const remote = require('./resource-remote');   // pieces from GitHub (optional, KHUX_RESOURCE_REMOTE)
 
 const codec = require('./khux-codec');
+const { withPhone } = require('./phone-css');   // phone layout of the in-game pages (I-309)
 const { startDns } = require('./dns');
 const { makeMulti, routeMulti } = require('./multi');
 const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
@@ -2197,7 +2198,7 @@ function respondPetDraw(res, body) {
 // (gli id evolve, es. 301495, non sono in catalog.medals); skill solo se presenti in skill.json.
 function respondGachaWeb(res, url) {
   const p = url.split('?')[0];
-  const html = (s, code = 200) => { const b = Buffer.from(s, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
+  const html = (s, code = 200) => { const b = Buffer.from(withPhone(s), 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
   const img = /^\/web\/gacha\/img\/(\d+)(?:-kept(\d+)|-v(\d+))?\.png$/i.exec(p);
   if (img) {
     if (img[2] && Number(img[2]) !== gacha.KEPT_STYLE) return html('not found', 404); // stile vecchio o sconosciuto
@@ -3722,7 +3723,7 @@ function respondBeginnerPage(res) {
     + section(4, 'Limited', () => 'Available until the date shown on each mission.')
     + '<h2>Jewels</h2><p>Jewels come from missions, quests and login bonuses. Use them to draw '
     + 'medals and buy boards.</p></body></html>';
-  const buf = Buffer.from(html, 'utf8');
+  const buf = Buffer.from(withPhone(html), 'utf8');
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
   res.end(buf);
 }
@@ -5029,7 +5030,7 @@ const catalogStageDone = (id) => special.stageDone({ clearMissionIds: stageClear
 function respondSpecialWeb(res, url) {
   const p = url.split('?')[0];
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
-  const page = (html) => { const b = Buffer.from(html, 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (p === '/web/special/catalog') {
     // no Avatar Board Catalog block at the top (user 23-11: it is reached from its own banner in the Special tab)
     return page(specialPages.catalogPage(specialIndex(), { ...specialCtx(), names: specialPages.buildNames(masterRows), unlockQuestOf: specialUnlockQuest, stageDone: catalogStageDone })); // names: search box (drop and objective rewards)
@@ -5331,7 +5332,7 @@ const raidPageCtx = (fromCatalog = false) => ({ ...raid().catalogCtx(), periods:
 function respondRaidWeb(res, url) {
   const p = url.split('?')[0];
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
-  const page = (html) => { const b = Buffer.from(html, 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (/^\/web\/raid\/catalog$/i.test(p)) return page(raidPages.catalogPage(raidIndex(), raidPageCtx()));
   const nt = /^\/web\/raid\/notice\/([^/]*)$/i.exec(p);
   if (nt) {
@@ -5368,7 +5369,7 @@ const eventPageCtx = (fromCatalog = false) => ({ ...eventRoutes().catalogCtx(), 
 function respondEventWeb(res, url) {
   const p = url.split('?')[0], from = new URLSearchParams(url.split('?')[1] || '').get('from');
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
-  const page = (html) => { const b = Buffer.from(html, 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (/^\/web\/event\/catalog$/i.test(p)) {
     eventRoutes().pruneKept();
     return page(eventPages.catalogPage(eventIndex(), eventPageCtx()));
@@ -5435,7 +5436,7 @@ function respondAvatarCard(res, p) {
 }
 function respondAvatarWeb(res, url) {
   const p = url.split('?')[0], from = new URLSearchParams(url.split('?')[1] || '').get('from');
-  const page = (html, code = 200) => { const b = Buffer.from(html, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  const page = (html, code = 200) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (/^\/web\/avatar\/img\//i.test(p)) return respondAvatarCard(res, p);
   if (/^\/web\/avatar\/catalog$/i.test(p)) {
     eventRoutes().pruneBoardKept();
@@ -5473,7 +5474,7 @@ function respondMedalWeb(res, url, req = { headers: {} }) {
   if (/^\/web\/medals\/gallery$/i.test(p)) {
     const q = new URLSearchParams(url.split('?')[1] || ''), medals = masterRows('medal');
     const html = medalGallery.galleryPage(medals, { owned: medalGallery.ownedBases(userMedalList(), medals), tab: q.get('tab'), fromCatalog: q.get('from') === 'catalog' });
-    const b = Buffer.from(html, 'utf8');
+    const b = Buffer.from(withPhone(html), 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length });
     return res.end(b);
   }
@@ -5872,13 +5873,13 @@ function handler(scheme) {
       }
       if (kind === 'noticespage') {
         noticesServedAt = Date.now();
-        const buf = Buffer.from(infoAlbum.noticesPage(realNow()), 'utf8');
+        const buf = Buffer.from(withPhone(infoAlbum.noticesPage(realNow())), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
         return res.end(buf);
       }
       if (['agreementpage', 'licensepage', 'helppage', 'creditspage'].includes(kind)) {
-        const buf = Buffer.from({ agreementpage: legalPages.agreementPage, licensepage: legalPages.licensePage,
-          helppage: legalPages.helpPage, creditspage: legalPages.creditsPage }[kind](), 'utf8');
+        const buf = Buffer.from(withPhone({ agreementpage: legalPages.agreementPage, licensepage: legalPages.licensePage,
+          helppage: legalPages.helpPage, creditspage: legalPages.creditsPage }[kind]()), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
         return res.end(buf);
       }
