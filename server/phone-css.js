@@ -25,6 +25,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // catalogs: a 3-column grid of cards; headers, intro and year chips of the Special campaigns span the row
   + `${GRIDS.join(',')}{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}`
   + '#camps>h2,#camps>p,#camps>.yrs{grid-column:1/-1}'
+  // every card of a catalog the same size (user 24-11): equal rows in the card grids (#camps has its headers as grid
+  // items, so it keeps auto rows); the tallest card sets the row, chips and «Replaces» lines stop at two lines
+  + '#rows,#quests,.cat{grid-auto-rows:1fr}'
   + '#rows>.ml,#quests>.ml,#camps>.ml{display:none!important}'
   + `${CARDS.map((c) => `${c}.hide`).join(',')}{display:none!important}`
   + `${CARDS.join(',')}{display:flex;flex-direction:column;align-items:stretch!important;padding:6px 6px 8px!important;margin:0;border-bottom:0;background:#06283e;border-radius:8px}`
@@ -41,6 +44,7 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // buttons are as wide as the card (their text wraps), the button sits at the bottom so buttons of a row line up
   + `${inCards('.info')}{font-size:14px;line-height:1.35;flex:1 1 auto;display:flex;flex-direction:column;min-width:0;margin:0!important;padding:0!important}`
   + `${inCards('.s')}{display:block!important;width:100%;box-sizing:border-box;white-space:normal;margin:4px 0 0;font-size:13px!important;line-height:1.35!important;padding:3px 10px!important}`
+  + `${inCards('.s')},${inCards('.rp')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:0 0 auto}`
   + `${inCards('.pkw')},${inCards('.info>div:has(>.pk)')}{margin-top:auto;padding-top:6px}`
   + `${inCards('.pk')}{display:flex!important;align-items:center;justify-content:center;gap:6px;width:100%;box-sizing:border-box;text-align:center;white-space:normal;min-height:34px;margin:0;font-size:13px!important;line-height:1.3;padding:4px 8px!important}`
   + `${inCards('.d')},${inCards('.rp')},${inCards('.n')}{font-size:12px}`

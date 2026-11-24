@@ -55,6 +55,11 @@ check(PHONE_CSS.includes('.cat>.b .n+.s{margin-top:calc(14px*1.35 + 4px)}'), 'ba
 check(/\.s\{[^}]*font-size:13px!important;line-height:1\.35!important/.test(PHONE_CSS), 'chips 13 px, compact line');
 check(/\.pk\{[^}]*font-size:13px!important;line-height:1\.3/.test(PHONE_CSS), 'buttons 13 px');
 
+// every card of a catalog the same size (user 24-11: a 3-line «Replaced by» chip made its row taller): equal rows in the
+// card grids (not #camps: its headers are grid items), chips and «Replaces» lines at most two lines
+check(PHONE_CSS.includes('#rows,#quests,.cat{grid-auto-rows:1fr}'), 'equal rows in the card grids');
+check(/\.s,[^{]*\.rp\{[^}]*-webkit-line-clamp:2/.test(PHONE_CSS), 'chips and Replaces lines clamped to two lines');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);
