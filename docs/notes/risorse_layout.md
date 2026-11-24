@@ -318,6 +318,14 @@ The keyblade attaches to the movie with instance name `key` (path
 have `key`/`shadow`/face. `recon/tools/prefer_addnl.py` (in `build-resources.ps1`) copies into
 `stage_gen\files` the 4.3.1 versions of wait and win_levelup with their textures. The other differing
 motions (bwait, btlEnd, knockback, dead1-3) have `key` and `shadow` in both versions.
+**I-315 (24-11):** they have `key` and `shadow`, but the 5.0.1 bwait (25 of 26 frames), btlEnd (111 of 112, plus a
+baked face inside `head`), dead1 (frames 1-8) and dead3 (frame 25) replace the `left_foot` / `left_foot_b` /
+`left_foot_c` movies (filled by the client with the worn body / costume parts) with an unnamed movie holding a fixed
+bitmap (a black boot and shin, 38x87): in battle the lower left leg was the same with every outfit. Their 4.3.1
+versions (LWF and texture together: the 5.0.1 `_1.png` is the boot) are now in `prefer_addnl.py` DEFAULT. Side
+effects, all back to 4.3.1: in bwait the keyblade hand is drawn above the upper arm; btlEnd is 5 frames (was 112);
+dead1 80 frames (was 57), dead3 21 (was 26). dead2 (shadow timing) and knockback (`ikNode_*` wrappers) differ without
+a baked leg: left as they are.
 
 <a id="suoni-jp"></a>
 ## Sound effects of the LWFs from JP 4.3.1 (I-152)

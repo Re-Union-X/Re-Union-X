@@ -14,6 +14,10 @@ keyblade al movie di nome di istanza "key". Il wait.lwf dell'OBB 5.0.1 e' una po
 come nei video del gioco (reference\\field_idle). Anche win_levelup 5.0.1 non ha key, shadow
 ne' faccia; quello 4.3.1 si'.
 
+I-315, in battaglia la gamba sinistra uguale con ogni outfit: bwait, btlEnd, dead1 e dead3 5.0.1 hanno al posto dei
+movie left_foot / left_foot_b / left_foot_c (riempiti dal client col capo indossato) una bitmap fissa (stivale nero);
+le 4.3.1 hanno le parti con il nome. Si sostituiscono LWF e texture insieme (la _1.png 5.0.1 e' lo stivale).
+
 I record con cifratura 3 (le texture) si aprono con BGAD_KEY (chiave di sessione 5.0.1, come in
 bgad_extract.py; build-resources.ps1 la imposta). Non si scrive nulla nel repository.
 """
@@ -28,6 +32,16 @@ DEFAULT = [
     'lwf/avatar/motion/wait/wait_e38393e38383e38388e3839ee38383e3839720312e706e67.png',
     'lwf/avatar/motion/win_levelup/win_levelup.lwf',
     'lwf/avatar/motion/win_levelup/win_levelup_e38393e38383e38388e3839ee38383e3839720312e706e67.png',
+    # I-315 (tester 24-11): the 5.0.1 battle idle, battle end and two KO motions bake a fixed lower left leg (black boot) in
+    # place of the left_foot / left_foot_b / left_foot_c movies the 4.3.1 client fills with the worn outfit
+    'lwf/avatar/motion/bwait/bwait.lwf',
+    'lwf/avatar/motion/bwait/bwait_e38393e38383e38388e3839ee38383e3839720312e706e67.png',
+    'lwf/avatar/motion/btlEnd/btlEnd.lwf',
+    'lwf/avatar/motion/btlEnd/btlEnd_e38393e38383e38388e3839ee38383e3839720312e706e67.png',
+    'lwf/avatar/motion/dead1/dead1.lwf',
+    'lwf/avatar/motion/dead1/dead1_e38393e38383e38388e3839ee38383e3839720312e706e67.png',
+    'lwf/avatar/motion/dead3/dead3.lwf',
+    'lwf/avatar/motion/dead3/dead3_e38393e38383e38388e3839ee38383e3839720312e706e67.png',
 ]
 
 
