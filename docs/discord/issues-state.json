@@ -613,8 +613,8 @@
   "I-297": {
    "thread": "1574569964369617068",
    "msg": "1574569964369617068",
-   "group": "IN PROGRESS",
-   "hash": "5d4906f41a761807",
+   "group": "CLOSED",
+   "hash": "cc7b794fb08d64b2",
    "name": "I-297 · Gold Tricholoma pay no Event Coins in «Dress Like Santa Sora»"
   },
   "I-298": {
@@ -669,9 +669,16 @@
   "I-305": {
    "thread": "1574671835776295097",
    "msg": "1574671835776295097",
-   "group": "TO VERIFY",
-   "hash": "27b6536dcb55e9d4",
+   "group": "CLOSED",
+   "hash": "57961eadd059b1c1",
    "name": "I-305 · Evolving medals multiplies the material medals instead of spending them"
+  },
+  "I-306": {
+   "thread": "1574687333150752818",
+   "msg": "1574687333150752818",
+   "group": "IN PROGRESS",
+   "hash": "a012836b131b761c",
+   "name": "I-306 · Generated maps: chests all orange and clustered"
   }
  }
 }
