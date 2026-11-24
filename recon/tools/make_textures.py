@@ -1156,3 +1156,8 @@ if os.path.exists(_jp_sn):
     save('SBurst_SN_but02.png', Image.merge('RGBA', _dk + [_a]))
 else:
     print('SBurst_Icon1 JP assente: pulsante Supernova con la bussola originale')
+
+# I-314 (tester 24-11): Spirit «RANK UP!» banner (JP PetInfo_PetLvUp_Panel_Ver230): PetInfo_LvUp_JTxt1 is the drawn Japanese
+# «を習得！» («learned!») after the new Trick; the worldwide banner shows only RANK UP!, the Trick and New! (reference/pet NOTE §3.2):
+# the same size, transparent (import_jp_coco.py JP_DRAWN: the JP texture is never imported)
+save('PetInfo_LvUp_JTxt1.png', Image.new('RGBA', (110, 32), (0, 0, 0, 0)))

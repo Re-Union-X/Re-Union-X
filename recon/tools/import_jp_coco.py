@@ -56,7 +56,7 @@ WW_WINS = {'Ch_Logo.png', 'Deck_Title_MD.png', 'Av_Title3.png', 'World_Stage_Cle
 # texture JP con testo giapponese disegnato (jp431_cocostudio.md §3.1): non si importano mai,
 # contano come assenti (da ridisegnare in inglese)
 JP_DRAWN = re.compile(r'^(QuestBut6_Title|QuestBut7_Title|Rank_Title_3|Comeback_Tutorial_1|Comeback_Tutorial_Title1|'
-                      r'Camp_Balloon3|TresXTresStartUp_.*_Logo)\.png$')
+                      r'Camp_Balloon3|TresXTresStartUp_.*_Logo|PetInfo_LvUp_JTxt1)\.png$')  # PetInfo_LvUp_JTxt1: I-314, transparent (make_textures.py)
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 JPCHR = re.compile(r'[\u3040-\u30ff\u3400-\u9fff\uff00-\uffef]')
 CUS = re.compile(r'^Txt_.*_Cus$')

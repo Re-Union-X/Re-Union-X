@@ -498,7 +498,7 @@ function weeklyEntries(rules, catalogue, L, report = { weeklyLeftOut: [], weekly
   return out;
 }
 
-function build(rules, catalogue, masterRows) {
+function build(rules, catalogue, masterRows, look = {}) {
   // petParts not given (older callers): server/tables/petParts.json
   const L = lookups(masterRows.petParts ? masterRows : { ...masterRows, petParts: petPartsTable(path.join(__dirname, 'master_data')) });
   const report = { stopgaps: [], titleFallbacks: [], weeklyLeftOut: [], weeklyAliased: [], weeklySkills: [] };
@@ -524,6 +524,10 @@ function build(rules, catalogue, masterRows) {
       validClearGetSphere: 0, clearGetSphere: 0, resetClearGet: 0, validClearGetItem: 0, clearGetItemType: [], clearGetItemId: [],
       clearGetAssignSkillType: [], clearGetAssignSkillId: [], clearGetAssignSkillLv: [], clearGetItemNum: [], resetSubMission: 0,
       combinedSubmissionFlag: 0, raidBoss: 0 }, subsOf(q.objectives, rewards, q.target, L, report, `${stageId} ${q.quest}`));
+    // I-313 (tester 24-11): the quest-list thumbnail = the icon of the room the map is generated in (look.thumbOf); else the
+    // reference row's (a room of the same world)
+    const th = look.thumbOf ? look.thumbOf(q.room, worldId) : null;
+    if (th !== null && th !== undefined) row.thumbId = th;
     stageRows.push(row);
     return { stageId, quest: q.quest, world: q.world, worldId, room: q.room, target: q.target, targetId: L.mapEnemyId(q.target, true),
       attribute: q.attribute || '', wikiLv: wikiLv({ lvl: q.level }), ...(q.mapEnemies ? { mapEnemies: q.mapEnemies } : {}) };
@@ -657,18 +661,45 @@ function mapsOf(index, stageRows, rewardRows, masterRows, L) {
       const fit = groups.filter((gr) => size(gr) + x.n <= GROUP_MAX).sort((a, b) => size(a) - size(b))[0];
       if (fit) fit.push(x); else groups.push([x]);
     }
+    // I-312 (tester 24-11): «Defeat N or more enemies» (submissionRequire 3) needs N enemies on the map, the target included:
+    // more normal enemies of the quest, in the groups with room first (at most GROUP_MAX each), then new groups
+    const need = Math.max(0, ...row.submissionRequire.map((q, i) => (q === 3 && i < row.validSubmission ? row.submissionNum[i] : 0)));
+    while (groups.reduce((n, g) => n + size(g), 0) + 1 < need) {
+      const x = { name: s.target, enemyId: s.normalEnemyId || L.mapEnemyId(s.target, false), n: 1, reward: next() };
+      const fit = groups.filter((gr) => size(gr) < GROUP_MAX).sort((a, b) => size(a) - size(b))[0];
+      if (fit) fit.push(x); else groups.push([x]);
+    }
     return { stageId: s.stageId, world: s.worldId, name: s.quest, room: s.room, target: s.target, targetId: s.targetId,
       targetReward: next(), level: s.wikiLv || 1, enemies: groups, treasures: [], rooms: 1 };
   });
 }
 
 const readJson = (p, dflt) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return dflt; } };
+// the room maps of the repo and the served icons (resource index + JP data: outside the repo; none -> thumbnails unchanged)
+function defaultThumbOf() {
+  const so = require('./make-story-oltre');
+  const tools = path.join(__dirname, '..', 'recon', 'tools');
+  const thumbs = so.readThumbs(process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv',
+    process.env.KHUX_JP_ROOT || require('./local-paths').localPath('jp_data'));
+  return thumbForSpecial(readJson(path.join(tools, 'special_rooms.json'), {}), readJson(path.join(tools, 'story_rooms.json'), {}), thumbs);
+}
 // Spirit parts: server/tables/petParts.json (make-pet-parts.js, copied into the master after this generator runs), else
 // the master folder's copy
 const petPartsTable = (masterDir) => readJson(path.join(__dirname, 'tables', 'petParts.json'), null) || readJson(path.join(masterDir, 'petParts.json'), []);
 
 // appends the rows to the master tables (own rows of a previous run dropped first) and writes game_data/special.json
 // Returns null (nothing written) with KHUX_SPECIAL=0 or without the private catalogue.
+// I-313: room name -> thumbId of the quest list, as recon/tools/gen_story_maps.py picks the map's room (special_rooms.json, then
+// story_rooms.json): XX_AAAA_BB_CC -> stage_select_ico_<worldId>_<thumbId> (make-story-oltre.js thumbForRoom), only when that icon
+// is served (thumbs: make-story-oltre.js readThumbs; null = unknown -> no change)
+function thumbForSpecial(specialRooms, storyRooms, thumbs) {
+  const { thumbForRoom } = require('./make-story-oltre');
+  return (room, worldId) => {
+    const t = thumbForRoom((specialRooms || {})[room] || (storyRooms || {})[room]);
+    return t !== null && thumbs && thumbs.has(`${worldId}_${t}`) ? t : null;
+  };
+}
+
 function patch(masterDir, opts = {}) {
   if (process.env.KHUX_SPECIAL === '0') { console.log('special: off (KHUX_SPECIAL=0)'); return null; }
   const t = (name, dflt = []) => readJson(path.join(masterDir, name + '.json'), dflt);
@@ -698,7 +729,8 @@ function patch(masterDir, opts = {}) {
   if (foreignEnemy.length) throw new Error(`special: enemy row ${foreignEnemy[0].enemyId} («${foreignEnemy[0].name}») is not a training enemy`);
   const enemy = allEnemy.filter((r) => !isOwnEnemy(r));
   const out = build(rules, catalogue, { stage, reward, enemy, medal: t('medal'), material: t('material'), skill: t('skill'),
-    title: t('title'), keyblade: t('keyblade'), avatarParts: t('avatarParts'), enemyAttack: t('enemyAttack'), petParts: petPartsTable(masterDir) });
+    title: t('title'), keyblade: t('keyblade'), avatarParts: t('avatarParts'), enemyAttack: t('enemyAttack'), petParts: petPartsTable(masterDir) },
+    { thumbOf: opts.thumbOf || defaultThumbOf() });
   fs.writeFileSync(path.join(masterDir, 'stage.json'), JSON.stringify([...stage, ...out.stageRows]));
   fs.writeFileSync(path.join(masterDir, 'evStage.json'), JSON.stringify([...evStage, ...out.evStageRows]));
   fs.writeFileSync(path.join(masterDir, 'reward.json'), JSON.stringify([...reward, ...out.rewardRows]));
@@ -714,4 +746,4 @@ function patch(masterDir, opts = {}) {
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { lookups, build, patch, weeksOf, weeklyLabel, runsOf, skillPart, WEEKLY_EV_FIRST, STAGE_KIND, TRAINING_STAGE, CATALOG_EV, DUMMY_ENEMY_ID, DUMMY_HP, TRAINING_SHADOW_ID, TRAINING_TARGET_ID, CP_REWARD_ID, apOf, splitObjective };
+module.exports = { lookups, build, patch, thumbForSpecial, weeksOf, weeklyLabel, runsOf, skillPart, WEEKLY_EV_FIRST, STAGE_KIND, TRAINING_STAGE, CATALOG_EV, DUMMY_ENEMY_ID, DUMMY_HP, TRAINING_SHADOW_ID, TRAINING_TARGET_ID, CP_REWARD_ID, apOf, splitObjective };

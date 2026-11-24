@@ -204,6 +204,19 @@ check(index.catalog.dummyEnemyId === ms.DUMMY_ENEMY_ID && (index.catalog.rewardI
   const en = r2.index.entries[0];
   check(en.from === '2016-05-19' && en.to === '2017-04-19', 'index: from / to of the entry');
   check(!('from' in alpha) && !('to' in alpha), 'index: no from / to when the entry has none');
+  // I-313 (tester 24-11): the quest-list thumbnail is the icon of the map's room (room -> folder -> thumbId), when served
+  const r4 = ms.build(rules, catalogue, master, { thumbOf: (room, worldId) => (room === 'Fountain Square' && worldId === 1 ? 0 : room === 'Avenue' ? 60000 : null) });
+  const t0 = r4.stageRows.find((r) => r.stageId === 970010), t1 = r4.stageRows.find((r) => r.stageId === 970011), t2 = r4.stageRows.find((r) => r.stageId === 970020);
+  check(t0 && t0.thumbId === 0 && t1 && t1.thumbId === 60000 && t2 && t2.thumbId === a1.thumbId - a1.thumbId + b.thumbId, `thumbnail of the room ${[t0 && t0.thumbId, t1 && t1.thumbId, t2 && t2.thumbId]}`);
+  check(ms.thumbForSpecial({ 'Fountain Square': 'DB_0000_00_00' }, { Avenue: 'DB_0006_00_00' }, new Set(['1_0', '1_60000']))('Avenue', 1) === 60000
+    && ms.thumbForSpecial({}, {}, new Set(['1_0']))('Avenue', 1) === null && ms.thumbForSpecial({}, { Avenue: 'DB_0006_00_00' }, null)('Avenue', 1) === null, 'thumbForSpecial');
+  // I-312 (tester 24-11): «Defeat N or more enemies» needs N enemies on the map (target included): padded with normal enemies,
+  // groups of at most 5
+  const ovN = ['Defeat 17 or more enemies -> Avatar Coin x5', 'Complete without having to continue -> Avatar Coin x5', 'Defeat Great Pretender x 1 -> Mythril Shard x1'];
+  const r3 = ms.build({ ...rules, entries: [{ ...rules.entries[0], objectives: { 'Alpha II': ovN } }] }, catalogue, master);
+  const mN = (r3.maps || []).find((m) => m.stageId === 970011);
+  const nN = mN ? mN.enemies.flat().reduce((n, x) => n + x.n, 0) + 1 : 0;
+  check(nN >= 17 && mN.enemies.every((g) => g.reduce((n, x) => n + x.n, 0) <= 5), `«Defeat 17 or more enemies»: ${nN} enemies on the map`);
 }
 
 // WW week-limited VIP campaigns (Task 12, spec 5.3): one entry per catalogue row `vip_limited_campaigns_ww`, key
