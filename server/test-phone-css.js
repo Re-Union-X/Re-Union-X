@@ -72,6 +72,9 @@ check(PHONE_CSS.includes('#rows>.sec{grid-column:1/-1}') && PHONE_CSS.includes('
 // Medal Gallery detail (#det, user 24-11: too big, the info needed scrolling): picture on the left, the info on the right
 check(/#dbody\{[^}]*display:grid[^}]*grid-template-columns:auto 1fr/.test(PHONE_CSS) && /#dbody>\.lg\{[^}]*grid-row:1\/span 20[^}]*width:150px!important/.test(PHONE_CSS) && PHONE_CSS.includes('#dbody>:not(.lg){grid-column:2'), 'Medal detail side by side');
 
+// variants list of the Medal detail: name and chips vertically centred on one line (user 24-11)
+check(/#det \.vl li\{[^}]*display:flex[^}]*align-items:center/.test(PHONE_CSS), 'variant chips centred on the name line');
+
 // withPhone
 const page = '<html><head><title>x</title></head><body>b</body></html>';
 const once = withPhone(page);

@@ -71,6 +71,7 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + '#dbody>.lg{grid-row:1/span 20;width:150px!important;height:150px!important;max-width:none!important;max-height:none!important;margin:4px 0 0!important}'
   + '#dbody>:not(.lg){grid-column:2;margin-left:0!important;margin-right:0!important}#dbody>h2{margin:4px 30px 2px 0!important}'
   + '#dbody .cps{justify-content:flex-start}#dbody>.vl{max-width:none}'
+  + '#det .vl li{display:flex;align-items:center;flex-wrap:wrap;gap:6px}#det .vl li>*{margin:0!important;vertical-align:middle}'
   + '#rows>.row:has(>.mi)>.mi{align-self:center;flex:0 0 auto!important;width:84px!important;height:84px!important;margin:0 auto 4px}'
   + '#rows>.row:has(>.mi)>.mi img{width:84px!important;height:84px!important}'
   + '#rows>.row:has(>.mi) .d{height:1.4em!important;-webkit-line-clamp:1}'
