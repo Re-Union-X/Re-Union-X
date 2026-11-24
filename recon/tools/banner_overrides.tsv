@@ -229,3 +229,5 @@ B0313	variant_of	B0242	notice 40725: the Top-Drawer Deal (B0242) drawn three tim
 B0612	price	3000	PROBABLE: notice 58407 says «See in-game»; the reruns of the same weekly cycle B0602/B0603 Ira, B0609 Ava, B0610 Gula (wiki Shop/2019, non-VIP, same banner layout) are 3000
 B0612	draw_size	x10	banner art N58407 (KH13 forum thread 121748 of 2019-10-20, the 10/18 deals; no VIP tag: KHIII Medal+ x2, Aced Trait Medal x1, 5★+ x7, Power Gem x2, Limited VIP Coin x10)
 B0612	rarity_mix	6★:3 5★:7 Other:2	banner art N58407 (KH13 forum thread 121748 of 2019-10-20, the 10/18 deals; no VIP tag: KHIII Medal+ x2, Aced Trait Medal x1, 5★+ x7, Power Gem x2, Limited VIP Coin x10); as B0602-B0610 (wiki 6★:3 5★:7 Other:2)
+B0284	featured	trait medal #2	notice 39400 (the notice row B0285, excluded as its duplicate 24-11): Trait Medal #2 for Sephiroth [EX+] can also be received from this deal
+B0288	featured	trait medal #3	notice 39402 (the notice row B0289, excluded as its duplicate 24-11): Trait Medal #3 for KH II Cloud [EX+] can also be received from this deal
