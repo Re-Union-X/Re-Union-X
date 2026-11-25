@@ -88,6 +88,7 @@ enemies = json.load(open(cfg['enemies'], encoding='utf-8'))
 # event quest rows (server/make-event-enemies.js, Task 2b) never answer a name lookup («Werewolf» target stays 1612011505)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import event_enemy_ids  # noqa: E402
+from special_room import named_room  # noqa: E402
 enemies = event_enemy_ids.without_event_rows(enemies)
 rooms = json.load(open(cfg['rooms'], encoding='utf-8-sig'))
 tmpl = open(cfg['template'], 'rb').read()
@@ -152,6 +153,11 @@ def cls_path(folder):
 def room_folder(name, world):
     if name in rooms:
         return rooms[name]
+    return hash_folder(name, world)
+
+
+def hash_folder(name, world):
+    """a room of the world chosen by the name's hash (stable): the rooms of no known name"""
     pre = WORLD.get(world, 'DB')
     cand = [f for f in folders if f.startswith(pre + '_')] or [f for f in folders if f.startswith('DB_')]
     base = [f for f in cand if f.endswith('_00_00')] or cand
@@ -1639,7 +1645,10 @@ if generated:
         # «Underground Waterway x4» (rooms played several times in the catalogue) -> the room name
         room_name = re.sub(r'\s+x\d+$', '', sp.get('room') or sp['name'])
         coded = next((c for c in sp.get('roomCodes', []) if usable_room(c)), None) if is_event else None
-        folder = coded or special_rooms.get(room_name) or room_folder(room_name, sp['world'])
+        # I-318: a room name only names a room of the quest's world (special_room.py: «Warehouse» of Agrabah is not the Daybreak
+        # Town Warehouse of story_rooms.json); "<name>@<world>" aliases in special_rooms.json
+        named = named_room(room_name, sp['world'], special_rooms, rooms)
+        folder = coded or named or hash_folder(room_name, sp['world'])
         groups = [{'members': [(x['name'], x.get('n', 1), x.get('reward', 1), x.get('enemyId'))
                                for x in (g if isinstance(g, list) else [g])], 'target': False, 'room': room_name}
                   for g in sp.get('enemies', [])]
@@ -1676,7 +1685,7 @@ if generated:
                 sp.get('chanceRate') if is_event else None)
         names = [m[0] for g in groups for m in g['members'] if not m[3]]
         report.append(dict({'mission': 0, 'stageId': sid, 'name': sp['name'], 'room': room_name, 'folder': folder,
-                            'exact_room': bool(coded) or room_name in rooms or room_name in special_rooms, 'enemies': len(ens), 'chests': len(chests),
+                            'exact_room': bool(coded) or named is not None, 'enemies': len(ens), 'chests': len(chests),
                             'drops': sum(e[6] != 1 for e in ens),
                             'unknown_enemies': sorted({n for n in names if n.lower().strip() not in by_name})},
                            **({'event': True, 'censusId': sp.get('censusId')} if is_event else {'special': True}),
