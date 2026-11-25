@@ -599,8 +599,8 @@
   "I-290": {
    "thread": "1574029638198370357",
    "msg": "1574029638198370357",
-   "group": "OPEN",
-   "hash": "da761e3e67960f4b",
+   "group": "CLOSED",
+   "hash": "b93d4aa763037e70",
    "name": "I-290 · Crash on «Powerful Medals Pt. 1» after the tutorial draw"
   },
   "I-294": {
@@ -711,57 +711,57 @@
   "I-312": {
    "thread": "1574873845083414751",
    "msg": "1574873845083414751",
-   "group": "OPEN",
-   "hash": "aa516e0e2c7f554a",
+   "group": "CLOSED",
+   "hash": "ea72e7fb88589f54",
    "name": "I-312 · Special «5★ Evolve Medals: Power»: objective «Defeat 30 or more enemies» impossible"
   },
   "I-313": {
    "thread": "1574873848799830080",
    "msg": "1574873848799830080",
-   "group": "OPEN",
-   "hash": "8467ad48ca89f682",
+   "group": "CLOSED",
+   "hash": "aaa84ae42d731da6",
    "name": "I-313 · Special quests: the map thumbnails of the quest list do not match the map played"
   },
   "I-314": {
    "thread": "1574873851412873331",
    "msg": "1574873851412873331",
-   "group": "OPEN",
-   "hash": "b68be7138b2497db",
+   "group": "CLOSED",
+   "hash": "405a9bce915e45a9",
    "name": "I-314 · Spirit «Rank Up!» popup: a line in Japanese"
   },
   "I-315": {
    "thread": "1574873854457675937",
    "msg": "1574873854457675937",
-   "group": "OPEN",
-   "hash": "fd38243eab4dd80e",
+   "group": "CLOSED",
+   "hash": "aef8d39eea79926a",
    "name": "I-315 · Avatar: wrong legs during combat"
   },
   "I-316": {
    "thread": "1575041115201994813",
    "msg": "1575041115201994813",
-   "group": "OPEN",
-   "hash": "e2c8f930a3ef64cf",
+   "group": "CLOSED",
+   "hash": "683cdfddd8fc5dc4",
    "name": "I-316 · Event and raid quests: the map thumbnails of the quest list do not match the map played"
   },
   "I-317": {
    "thread": "1575057110298005507",
    "msg": "1575057110298005507",
-   "group": "OPEN",
-   "hash": "ce986762518033c3",
+   "group": "CLOSED",
+   "hash": "2ec06573921322fd",
    "name": "I-317 · Quest-list thumbnails: leftover rooms without an icon in the quest's world"
   },
   "I-318": {
    "thread": "1575058949714214983",
    "msg": "1575058949714214983",
-   "group": "OPEN",
-   "hash": "99adb9c656f0b6e9",
+   "group": "CLOSED",
+   "hash": "f7daed1d65faa4d6",
    "name": "I-318 · Raid maps in the wrong room: Agrabah «Warehouse» in Daybreak Town, «Path to the Chateau»…"
   },
   "I-319": {
    "thread": "1575147812264349770",
    "msg": "1575147812264349770",
-   "group": "OPEN",
-   "hash": "6732074add68bced",
+   "group": "CLOSED",
+   "hash": "af22cc43cc71c1e7",
    "name": "I-319 · «Approx. 0.00 KB» on the Download prompt after switching to a save with an older master"
   }
  }
