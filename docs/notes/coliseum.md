@@ -94,7 +94,7 @@ The client finds a tier by scanning head..term for the row whose `round` equals 
 | 126 | POST `/colosseum/start` | `rank, stageCount, stageId, userKeybladeId` (the chosen element) | `userData.userPoint`, `colosseumInfo`, `userColosseum` (stages and `colosseumRank` not read here), `userTreasures[]`, `startColosseumData{rank, stageCount, stageId, userKeybladeId (uint64)}`, `campaigns[]` (int array) |
 | 127 | POST `/colosseum/retire` | `burst` | `userKeyblades[]`, `userData.stageResumption{resumptionStatus, stageId, raidId, colosseumStageId}` |
 | 128 | POST `/colosseum/clear` | `isSkip` (bool, = all waves cleared in one turn), `enemyDeadNumber`, `mimicDeadNumber`, `maximumDamage`, `guiltBurstMaximumDamage`, `userKeybladeId`, `burst`, `lux`, `rank`, `stageCount`, `stageId` | `userData.userPoint`, `userData.userDetail`, `clearColosseums[]{rank, stageCount}` (**never empty**), `userMaterials[]`, `userMedals[]`, `userSkills[]`, `userTitles[]`, `userKeyblades[]`, `userDecks[]`, `userAvatarParts[]`, `userKeybladeSubslots[]`, `getLux` (uint64), `userData.stageResumption` |
-| 139/140/180 | GET `/ranking/colosseum`, `/own`, `/border` | - | `{rankingDatas[], rankingStatus, rankingTermStart, rankingTermEnd}`; each entry = the usual ranking user fields + `userColosseum{userRank, userStageCount, userStageTotalCount}` + `arrivalTime` (date) |
+| 139/140/180 | GET `/ranking/colosseum`, `/own`, `/border` | - | `{rankingDatas[], rankingStatus, rankingTermStart, rankingTermEnd}`; each entry = the full player record of the High Score ranking (userData, userAvatar, rank, userMedals, userSkills, userKeyblade, petBaseSlotMedal, supportUserMedals, supportUserSkills, pet, emblemIds; bench 25-11) + `userColosseum{userRank, userStageCount, userStageTotalCount}` + `arrivalTime` (date) |
 
 Behaviour read from the client:
 
@@ -115,18 +115,20 @@ Behaviour read from the client:
   with amount 0 as an end marker.
 - `Base_Colosseum_Rank` / `base_colosseum_rank` is just the Coliseum-rank widget of the profile page.
 
-Screens the client loads that are still missing on our server: `AdventureTop2_Colosseum_Button/_Panel/_Target`,
-`Colosseum_MainPanel`, `BattleResultColosseumScene`, `RankingColosseumScene_ver1301`, plus the non-layout assets
-`ActMapColosseumAnim` (armature), `img/colosseum/*` (Colosseum01-03 plists, ClassNum, RoundNum, Rank_Num) and
-`img/adventure/stage/OC_Colosseum_Panel(B).png`. Present: `BattleResultRankUPScene_ver103`, `Colosseum_FieldMenu_ver350`.
+Screens and assets the client loads: served since resources 185 (Coliseum Part 1 Task 4, see «Bench probe 2026-11-25»).
+`AdventureTop2_Colosseum_Button/_Panel/_Target`, `Colosseum_MainPanel`, `BattleResultColosseumScene` and
+`RankingColosseumScene_ver1301` are the JP 4.3.1 originals (recon/tools/jp_coco_layouts.txt); `ActMapColosseumAnim`,
+`img/colosseum/*`, `img/adventure/stage/OC_Colosseum_Panel(B).png`, `cocostudio/Colosseum_bg01.png` and
+`lwf/adventure/Colosseum_Open` the WW 2016 copies (recon/tools/originals.tsv). Already present: `BattleResultRankUPScene_ver103`,
+`Colosseum_FieldMenu_ver350`.
 
 Also: `/mypage rankingRewards.rankingColosseum`, profile `userColosseumRanking`, record `colosseumRankingHighest`,
 `stageAchievement.colosseumRank`, `lastPlayColosseumSphereBoardId`.
 
 ## Missing before implementation
 
-1. Bench probe: what the colosseumStages elements are exactly (one per tier, or current round plus the shortcut target),
-   where 125 is called, the screen after an `isSkip` clear, status 1 with an empty list.
+1. ~~Bench probe~~ done 2026-11-25 (one element per playable round; 125 behind Tier Rewards; result screens: see «Bench
+   probe 2026-11-25»). Still open: status 1 with an empty list.
 2. Stats for the Coliseum enemy variants (rebuild as for raids).
 3. Stage files for the WW months not in the JP data (regenerate from the wiki lineups, mark as a deviation).
 4. Coliseum boards (rows, node costs).
@@ -185,3 +187,49 @@ WW gameplay videos of 2016-2017 (round-select screens, boards, ranking screens).
   reached; tie-break by that time still probable. Notice brackets 2016-06 .. 2016-11 equal the wiki except the two lowest
   brackets of 2016-07 (notice: 5-star Chip/Dale x1).
 - **Enemy stats.** No other enemy master exists on disk; the 2019 ids and the month-specific copies stay probable/weak.
+
+## Bench probe 2026-11-25
+
+Coliseum Part 1 Task 4 on the bench (WW 4.3.1 client, LDPlayer instance 0): resources **185** (incremental on 184),
+master revision **392**, probe save `coli1` (kbslots cut at story quest 200: Shop week 2016-04, season 800, deck ATK ~940k).
+Screenshots (local, not in the repository): `D:\Progetto_Restauro_KH_UX\tmp\coli_p1\shots\coli_*.png`.
+
+Resources: `recon/tools/import_colosseum_stages.py` copies the 80 `cl_stg` files of the 40 Part 1 stages (seasons 800-1100,
+stage sets JP 2015-07/10/11/12) from the WW 2016 bundle, all of which it holds (the JP copy of 20151108 has a corrupt enemy id
+1510228138 in its first record and JP lacks the 20150708/09 STG headers, so the WW copy wins). All 40 stages: room
+`OC_0001_00_00`, 2-4 waves, every enemy id in the master. Layouts and images as listed under «Client schema» above.
+The Coliseum Boards button icon `World_Ico8A/8B` exists in no source (the 2016 files are copies of World_Ico2A/2B, the tornado
+world icon): the Multi Board icon `World_Ico10A/B` is served under those names (declared substitute).
+
+What the client does (all proven on the bench):
+
+- **Entry**: Quests tile -> «Select a mode.» popup -> Coliseum -> GET `/colosseum` (124). The screen shows «Ends in 4 days»,
+  Tier, «Round x/y» (`arrivalStageCount`), AP cost, the round's TARGETS with levels, the round carousel (one cell per
+  `colosseumStages` element, the cursor on the last one), the ranking goal strip («Goal: 300000th», then «Current: ... Goal: ...»)
+  and the side buttons Ranking / Tier Rewards / Coliseum Boards. A first visit lists only Tier 1 Round 1.
+- **Enemy level** = the global round number (Round 1: LV 1, Round 19: LV 19, Tier 3 Round 2 = round 37: LV 37) with the stage
+  files' levels 1..10: the 1.0.1 rule (`lvPerLoop` x floor((round-1)/`loopStageCount`) + file level) is what the 4.3.1 client
+  shows; the open conflict with the footage is closed (they agree).
+- **Battle**: the arena is a field walk (held drag) with the waves standing apart; the start / «ALL 1 TURN TRIUMPHS!
+  N ROUNDS UNLOCKED» animations of `ActMapColosseumAnim` play. A one-turn clear sends 128 with `isSkip` 1.
+- **One-turn clear of Round 1**: window 2..19 (`excellentUnlockCount` 18): the carousel lists every playable round 2..19.
+  One-turn clear of Round 19: 18 rounds paid (2..19), window 20..37, crossing into Tier 2 and Tier 3 (the list shows
+  «Tier 3, Round 2/15» as the last cell).
+- **Result** (`BattleResultColosseumScene`): Lux page, then «Congratulations!» with one row per `clearColosseums` entry
+  («Tier 1, Round N Complete!» + Coliseum Coin x per-round amount), animated one row at a time (18 rows ~ 40 s), the tier rewards
+  at the end («Tier 1 Complete!» Coliseum Coin x30 + Moogle, «Tier 2 Complete!» x40 + Moogle) and «TIER 1 ▷ 3» when the
+  clear crossed tiers. A clear that skipped two tiers (Round 37 from window 20..37) pays every skipped round and both tier
+  rewards in one screen.
+- **Tier Rewards** button: GET `/colosseum/reward/list` (125); tiers 1 and 2 show «CLEAR!» after the skipped-tier clear. The
+  endless last tier (no tier reward) has no row; the end-marker rows of the master cause no problem.
+- **Rewards** button (ranking brackets): «50001st - 300000th» + Moogle x1, from the `ranking`/`rankingReward` rows.
+- **Ranking** button: 139, 140 and 180 in sequence. The element needs the **full player record** (the High Score parser) +
+  `userColosseum` + `arrivalTime`: with the short Lux record the client showed «A server error has occurred. (200 ERROR :139)»
+  (fixed in server.js, test-colosseum-routes.js `wiring_start_clear`). The «Me» row shows Tier / round x/y / «N minutes ago».
+  With rank 0 (no bracket reached) the row draws the third-place crown; from the first bracket on it shows «50001st».
+- **Give Up** (Options -> Give Up -> OK) and a **loss** (HP 0, also Bag O' Coins escaping) both send `/colosseum/retire` (127)
+  straight away (no Continue popup) and return to the list, unchanged; the AP is spent.
+- `userColosseum` fields display sensibly (Tier 3, 3/15 in the ranking row after clearing round 38).
+- Not probed: a multi-turn clear (the probe deck one-shots every wave; the rule is covered by colosseum-rules tests), the
+  Coliseum Boards button (Task 5), and the season end. Each clear response carries the whole inventory (~1 MB on this save):
+  the client stays on a black screen ~30 s before the result.

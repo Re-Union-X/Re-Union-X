@@ -5245,8 +5245,10 @@ function colosseum() {
     beginBattle: (userKeybladeId) => { player.currentUserKeybladeId = Number(userKeybladeId) || USER_KEYBLADE_ID; },
     grantItem: grantRaidItem,
     addPresent: (r, text) => addPresent(r.type, r.id || 0, r.num, text, r.skillId || undefined, undefined, r.skillLv || undefined),
-    element: (now, rank, userColosseum, arrivalTime) => ({ userData: { user: userObject(now), userDetail: userDetailData() }, userAvatar: userAvatarData(),
-      lux: player.lux || 0, rank, userColosseum, arrivalTime }),
+    // ranking element (139/140/180): the client's full player-record parser (the one of the High Score ranking: userMedals, userSkills,
+    // userKeyblade, petBaseSlotMedal, supportUser*, pet, emblemIds) + userColosseum + arrivalTime; with the short Lux record the
+    // Ranking button answered «200 ERROR :139» (bench 25-11)
+    element: (now, rank, userColosseum, arrivalTime) => ({ ...hscElement(now, player.lux || 0, rank), userColosseum, arrivalTime }),
     titleIds: () => player.titles || [],
     log: (l) => console.log(l),
   });

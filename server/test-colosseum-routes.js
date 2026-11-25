@@ -331,7 +331,10 @@ function wiring() {
     assert.strictEqual(c.getLux, 10);
     const r = call(t.colosseum().ranking, '/ranking/colosseum/own').colosseumRankingOwn;
     assert.deepStrictEqual(r.rankingDatas[0].userColosseum, { userRank: 1, userStageCount: 1, userStageTotalCount: 1 });
-    for (const k of ['userData', 'userAvatar', 'rank', 'arrivalTime']) assert.ok(k in r.rankingDatas[0], k);
+    // the client's full player-record parser (as High Score): without these keys «200 ERROR :139» (bench 25-11)
+    for (const k of ['userData', 'userAvatar', 'rank', 'userMedals', 'userSkills', 'userKeyblade', 'petBaseSlotMedal', 'supportUserMedals', 'supportUserSkills',
+      'pet', 'emblemIds', 'arrivalTime']) assert.ok(k in r.rankingDatas[0], k);
+    assert.strictEqual(typeof r.rankingDatas[0].arrivalTime, 'string');
     p.ap = ap;
   });
   fs.rmSync(dir, { recursive: true, force: true });
