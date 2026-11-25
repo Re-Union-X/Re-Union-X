@@ -291,6 +291,23 @@ const jpFixture = (more = null) => eventFixture([
 const jpEntry = (out, key) => out.index.entries.find((e) => e.key === key);
 
 const tests = {
+  // I-316 (user 25-11): the raid quest's thumbnail is the icon of the room its map was generated in (raid map report), when served
+  raid_stage_thumbnail_of_the_map_room() {
+    const plain = build();
+    const m = plain.maps[0], s0 = plain.stageRows.find((s) => s.stageId === m.stageId);
+    assert.ok(m && s0, 'a raid map and its stage');
+    const rep = [{ stageId: m.stageId, room: m.room, folder: 'WL_0020_00_00' }];
+    const withThumb = (report, thumbs) => {
+      const f = fixture();
+      return mr.buildRaid({ ...f, thumbOf: mr.raidThumbOf(report, thumbs) }).stageRows.find((s) => s.stageId === m.stageId).thumbId;
+    };
+    assert.strictEqual(withThumb(rep, new Set([`${s0.worldId}_200000`])), 200000, 'icon of the map room');
+    assert.strictEqual(withThumb(rep, new Set(['99_200000'])), s0.thumbId, 'icon not served: unchanged');
+    assert.strictEqual(withThumb([{ ...rep[0], room: 'Another Room' }], new Set([`${s0.worldId}_200000`])), s0.thumbId, 'stale report row: unchanged');
+    assert.strictEqual(withThumb(rep, null), s0.thumbId, 'no icon list: unchanged');
+    const t = mr.raidThumbOf([{ stageId: 980390, room: 'Morning Dew Grove: Fallen Tree', folder: 'WL_0020_00_00' }], new Set(['3_200000']));
+    assert.deepStrictEqual([t(980390, 'Morning Dew Grove: Fallen Tree', 3), t(980390, 'Morning Dew Grove: Fallen Tree', 1), t(980391, 'x', 3)], [200000, null, null]);
+  },
   // the stage row copies a story row of the world (storyRefs): its hideIcon (a story boss quest's hidden target) must not reach
   // the raid quests, whose card would show the target as «???» (bench 23-11-2026); a donor stage row keeps its own value
   raid_stage_hide_icon() {

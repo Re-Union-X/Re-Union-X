@@ -883,7 +883,22 @@ function storyRefs(stages) {
   return { story, byWorld, of: (w) => byWorld.get(w) || story[story.length - 1] };
 }
 
-function buildRaid({ census, values, rewards, orig2016, boards, eventRewards, master, models, config, ids, notices = null, boosters: boosterIndex }) {
+// I-316 (user 25-11): quest-list thumbnail of a raid quest = the icon of the room its map was generated in (gen_story_maps.py raid
+// report: {stageId, room, folder}), stage_select_ico_<worldId>_<thumbId> (make-story-oltre.js thumbForRoom), only when that icon is
+// served (thumbs: make-story-oltre.js readThumbs) and the report row is of the same room name (a stale report changes nothing).
+// -> (map stage id, room name, worldId) -> thumbId or null (the story row's thumbId stays)
+function raidThumbOf(report, thumbs) {
+  const { thumbForRoom } = require('./make-story-oltre');
+  const byStage = new Map((Array.isArray(report) ? report : []).filter((r) => r && Number.isInteger(r.stageId)).map((r) => [r.stageId, r]));
+  return (mapStageId, room, worldId) => {
+    const r = byStage.get(mapStageId);
+    if (!r || !thumbs || r.room !== room) return null;
+    const t = thumbForRoom(r.folder);
+    return t !== null && thumbs.has(`${worldId}_${t}`) ? t : null;
+  };
+}
+
+function buildRaid({ census, values, rewards, orig2016, boards, eventRewards, master, models, config, ids, notices = null, boosters: boosterIndex, thumbOf = () => null }) {
   checkRanges(master);
   census = applyJpCensus(census, config.jpCensus); // corrections of the JP rows (jpCensus), before anything reads the census
   if (config.jpRaids && config.jpRaids.served === false) census = { ...census, rows: (census.rows || []).map((r) => (isJpRow(r) ? { ...r, jpOff: true } : r)) };
@@ -1172,6 +1187,9 @@ function buildRaid({ census, values, rewards, orig2016, boards, eventRewards, ma
         validClearGetTitle: 0, clearGetTitle: 0, validClearGetSphere: 0, clearGetSphere: 0, resetClearGet: 0, validClearGetItem: 0, clearGetItemType: [], clearGetItemId: [],
         clearGetAssignSkillType: [], clearGetAssignSkillId: [], clearGetAssignSkillLv: [], clearGetItemNum: [], resetSubMission: 0, combinedSubmissionFlag: 0, raidBoss: entry.settingId,
         ...subs };
+      // I-316: the thumbnail of the room the map was generated in (a JP raid: its donor's map), not the story row's
+      const th = thumbOf(stage.stageBinId, map, stageWorld);
+      if (th !== null && th !== undefined) stage.thumbId = th;
       out.stageRows.push(stage);
       stageIds.push(entry.stageId);
       // map: one target plus two, each worth raidPoint 3000 (enemy row 100); `world` is the room's world, for the room choice
@@ -1451,7 +1469,13 @@ function patch(masterDir, opts = {}) {
     try { notices = readJson(file, null); } catch (e) { console.warn(e.message); notices = null; }
     if (!notices) console.warn(`raid: ${file} not readable (node server/make-raid-notices.js): no Details button on the raid banners`);
   }
-  const out = buildRaid({ ...sources, master, models, config: opts.config || loadConfig(), ids: readIds(idsFile), notices });
+  // I-316: the raid map report and the served icons (outside the repo; KHUX_RAID_GEN_REPORT, KHUX_RESOURCE_NAMES, KHUX_JP_ROOT);
+  // none -> thumbnails unchanged
+  const thumbOf = opts.thumbOf || (opts.sources ? () => null : raidThumbOf(
+    readJson(process.env.KHUX_RAID_GEN_REPORT || path.join('D:', path.sep, 'Progetto_Restauro_KH_UX', 'stage_gen', 'raid_report.json'), null),
+    require('./make-story-oltre').readThumbs(process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv',
+      process.env.KHUX_JP_ROOT || require('./local-paths').localPath('jp_data'))));
+  const out = buildRaid({ ...sources, master, models, config: opts.config || loadConfig(), ids: readIds(idsFile), notices, thumbOf });
   const added = { stage: out.stageRows, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...out.evStageRows], raidSetting: out.settingRows, raidEnemy: out.enemyRows, raidReward: out.rewardRows, raidEnemyAttack: out.attackRows,
     sphere: out.sphereRows, sphereArray: out.arrayRows, sphereMasu: out.masuRows };
   for (const [t, rows] of Object.entries(added)) fs.writeFileSync(path.join(masterDir, `${t}.json`), JSON.stringify([...master[t], ...rows]));
@@ -1521,4 +1545,4 @@ if (require.main === module) {
   else patch(process.argv[2] || path.join(__dirname, 'master_data'));
 }
 
-module.exports = { applyJpCensus, storyPlan, storyKeys, evStageRow, EVSTAGE_MAX_STAGES, storyRefs, buildRaid, applyLux, atLevel, eventPeriods, eventTierRows, EVENT_FAMILIES, patch, allocateIds, deduceStats, readSources, parseCorrections, parsePartHp, tierHp, stepDate, DEFAULT_SRC, DEFAULT_2016 };
+module.exports = { applyJpCensus, storyPlan, storyKeys, evStageRow, EVSTAGE_MAX_STAGES, storyRefs, buildRaid, raidThumbOf, applyLux, atLevel, eventPeriods, eventTierRows, EVENT_FAMILIES, patch, allocateIds, deduceStats, readSources, parseCorrections, parsePartHp, tierHp, stepDate, DEFAULT_SRC, DEFAULT_2016 };
