@@ -219,12 +219,11 @@ const tests = {
   },
   kept_season_wins() {
     const w = world();
-    w.week.shopFrom = '2016-06-02';
     w.player.colosseum = { kept: 900 };
     assert.strictEqual(w.c.liveSeason().id, 900);
     assert.strictEqual(w.call('list').colosseumInfo.colosseumStageId, 900);
     w.player.colosseum.kept = 4242; // not served: the story season
-    assert.strictEqual(w.c.liveSeason().id, 1000);
+    assert.strictEqual(w.c.liveSeason().id, 800);
   },
   season_progress_kept_apart() {
     const w = world();
@@ -374,16 +373,49 @@ const tests = {
     delete after[0][1100];
     assert.strictEqual(JSON.stringify(after), before);
   },
-  // a season kept from a later Story (save switch, story going back) stays inert: the story season plays (as a kept raid)
-  catalog_kept_inert_before_its_month() {
+  // ruling 10: the kept season plays whatever the story month, also when the Shop rotation loops back onto or before it; its row
+  // stays 'kept' with its Remove button
+  catalog_kept_through_loop_back() {
     const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    assert.strictEqual(w.c.keep(800).code, 200);
+    const check = (shopFrom, shopTo, story) => {
+      w.week = { storyQuest: 200, shopFrom, shopTo };
+      assert.deepStrictEqual([w.c.liveSeason().id, w.c.liveSeason().kept], [800, true], shopFrom);
+      assert.strictEqual(w.call('list').colosseumInfo.colosseumStageId, 800, `124 ${shopFrom}`);
+      const st = Object.fromEntries(w.c.catalogRows().map((r) => [r.colosseumStageId, r.state]));
+      assert.deepStrictEqual(st, story, shopFrom);
+      // the end shown is the kept season's (the week's end), never the story season's month end
+      assert.deepStrictEqual(w.c.closeDate(NOW), { colosseumStageId: 800, date: fmt(clock.weekEnd(NOW)) });
+    };
+    check('2016-05-05', '2016-05-11', { 800: 'kept', 900: 'now', 1000: 'later', 1100: 'later' }); // loop back to May
+    check('2016-04-07', '2016-04-13', { 800: 'kept', 900: 'later', 1000: 'later', 1100: 'later' }); // to the kept season's own month
+    check('2016-03-03', '2016-03-09', { 800: 'kept', 900: 'later', 1000: 'later', 1100: 'later' }); // before it
+    // the page offers Remove on the kept row
+    const html = require('./colosseum-pages').catalogPage(w.c.catalogRows(), { unlocked: true });
+    assert.ok(html.includes('data-pin="/web/colosseum/unkeep"'), 'Remove on the kept row');
     w.week = { storyQuest: 200, shopFrom: '2016-05-05', shopTo: '2016-05-11' };
-    w.player.colosseum = { kept: 1000 };
-    assert.deepStrictEqual([w.c.liveSeason().id, w.c.liveSeason().kept], [900, false]);
-    assert.strictEqual(w.c.catalogCard(1000).state, 'later');
-    assert.strictEqual(w.player.colosseum.kept, 1000, 'the keep itself is left in the save');
-    w.week = { storyQuest: 200, shopFrom: '2016-07-07', shopTo: '2016-07-13' };
-    assert.strictEqual(w.c.liveSeason().id, 1000, 'live again once its month is past');
+    assert.deepStrictEqual(w.c.unkeep(), { code: 200, body: { ok: true } });
+    assert.deepStrictEqual([w.c.liveSeason().id, w.c.liveSeason().kept], [900, false], 'the story season');
+  },
+  // keep of the kept season and unkeep with nothing kept change nothing: an unfinished round is not dropped
+  catalog_keep_noop() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    w.start(1, 1);
+    const fight = w.player.colosseum.fight;
+    assert.ok(fight, 'a round started (story season 1000)');
+    const saves = w.saves;
+    assert.deepStrictEqual(w.c.unkeep(), { code: 200, body: { ok: true } });
+    assert.strictEqual(w.player.colosseum.fight, fight, 'unkeep with nothing kept: the round stays');
+    w.c.keep(800);
+    w.start(1, 1);
+    const f2 = w.player.colosseum.fight;
+    const saves2 = w.saves;
+    assert.deepStrictEqual(w.c.keep(800), { code: 200, body: { ok: true } });
+    assert.strictEqual(w.player.colosseum.fight, f2, 'keeping the kept season again: the round stays');
+    assert.strictEqual(w.saves, saves2, 'nothing saved');
+    assert.ok(saves >= 0);
   },
   // the Coliseum Catalog banner of the Events tab (evStage 6000 of make-colosseum.js, eventType 0, a tap opens its Training
   // Grounds quest): only with its master row and once the Coliseum is open

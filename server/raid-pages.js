@@ -172,10 +172,7 @@ hide($('jpi'),s!=='jp');var sp=$('span');if(sp)sp.textContent=attr(sp,'data-'+s)
 function secChips(){[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){var n=0;[].forEach.call(box.children,function(o){var ss=attr(o,'data-sec'),h=ss!==null&&(' '+ss+' ').indexOf(' '+cur.sec+' ')<0;hide(o,h);if(!h&&attr(o,'data-v')!=='all')n++;});
 var hd=box.previousSibling;hide(box,n<2);if(hd&&hd.tagName==='H4')hide(hd,n<2);});}
 // after a keep / remove: the kept row gold, the previous one back to «can be kept», the «Replaces» lines
-function setRow(r,st){var pc=PILL[st];r.st=st;r.el.setAttribute('data-show',st);r.el.className='row '+pc[0]+(/ hide/.test(r.el.className)?' hide':'');var s=q(r.el,'.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
-var b=q(r.el,'.pk');if(b)kxSet(b,r.id,st==='kept');}
-window.kxRow=function(id,on){var name='',i,r;for(i=0;i<rows.length;i++){r=rows[i];if(r.st==='kept')setRow(r,'can');if(r.id===id){setRow(r,on?'kept':'can');if(on)name=attr(r.el,'data-name');}}
-for(i=0;i<rows.length;i++){var x=q(rows[i].el,'.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';x.style.display=name&&rows[i].st==='can'?'':'none';}}render();};
+kxRows(rows.map(function(r){return r.el;}),PILL,{onSet:function(el,st){for(var i=0;i<rows.length;i++)if(rows[i].el===el)rows[i].st=st;},after:function(){render();}});
 [].forEach.call(rows,function(r){r.el.onclick=function(e){var t=e.target;while(t&&t!==r.el){if(t.tagName==='A')return;t=t.parentNode;}location.href=attr(r.el,'data-href');};});
 function sync(){[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){var g=attr(box,'data-g');[].forEach.call(box.children,function(o){o.className=o.className.replace(/ on/g,'')+(attr(o,'data-v')===dr[g]?' on':'');});});
 $('fok').textContent='Show '+plural(count(dr),'result');}
@@ -211,9 +208,8 @@ function searchOf(row, ctx) {
     .filter((x) => x && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase())).join(' | ');
 }
 const keptRow = (rows, ctx) => rows.find((r) => calendar.rowState(r, ctx) === 'kept');
-// «Replaces: <kept raid>» over a Keep button; hidden on the kept row, which gets it back when another raid is kept (kxRow)
-const replacesLine = (st, kept) => (st.button === null ? ''
-  : `<div class="rp"${st.button === 1 && kept ? '' : ' style="display:none"'}>${st.button === 1 && kept ? `Replaces: ${esc(titleOf(kept))}` : ''}</div>`);
+// «Replaces: <kept raid>» over a Keep button (catalog-pages.js replacesLine, shared with the Event and Coliseum Catalogs)
+const replacesLine = (st, kept) => parts.replacesLine(st, kept ? titleOf(kept) : null);
 
 
 function catalogPage(index, ctx = {}) {

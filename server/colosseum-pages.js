@@ -47,18 +47,9 @@ function progressOf(row) {
   return row.userStageTotalCount ? `Cleared up to Tier ${row.userRank}, Round ${row.userStageCount}${coins}` : `Not played yet${coins}`;
 }
 
-// ES5, no external script: after a keep / remove the kept row gold, the previous one back to «can be kept», the «Replaces» lines
-const JS = `(function(){
-var PILL=__PILL__;
-function attr(el,a){return el&&el.getAttribute?el.getAttribute(a):null;}
-function q(el,s){return el.querySelector(s);}
-var rows=[].map.call(document.querySelectorAll('#rows .row'),function(el){return {el:el,id:attr(el,'data-eid'),st:attr(el,'data-show')};});
-function setRow(r,st){var pc=PILL[st];r.st=st;r.el.setAttribute('data-show',st);r.el.className='row '+pc[0];var s=q(r.el,'.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
-var b=q(r.el,'.pk');if(b)kxSet(b,r.id,st==='kept');}
-window.kxRow=function(id,on){var name='',i,r;for(i=0;i<rows.length;i++){r=rows[i];if(r.st==='kept')setRow(r,'can');}
-for(i=0;i<rows.length;i++){r=rows[i];if(r.id===id){setRow(r,on?'kept':'can');if(on)name=attr(r.el,'data-name');}}
-for(i=0;i<rows.length;i++){var x=q(rows[i].el,'.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';x.style.display=name&&rows[i].st==='can'?'':'none';}}};
-})();`;
+// ES5: after a keep / remove the kept row gold, the previous one back to «can be kept», the «Replaces» lines (catalog-pages.js
+// kxRows of keepJs, shared with the Raid and Event Catalogs)
+const JS = "kxRows([].slice.call(document.querySelectorAll('#rows .row')),__PILL__);";
 
 function catalogPage(rows, ctx = {}) {
   const keptRow = rows.find((r) => r.state === 'kept');
@@ -66,8 +57,7 @@ function catalogPage(rows, ctx = {}) {
     const st = statusOf(row, ctx, keptRow), name = esc(titleOf(row));
     const boards = (row.boardIds || []).map((id) => (ctx.boardName ? ctx.boardName(id) : null)).filter(Boolean);
     const line = `${plural(row.tiers, 'tier')} · ${apText(row)}${boards.length ? ` · Boards: ${boards.map(esc).join(' · ')}` : ''}`;
-    const replaces = st.button === null ? ''
-      : `<div class="rp"${st.button === 1 && keptRow ? '' : ' style="display:none"'}>${st.button === 1 && keptRow ? `Replaces: ${esc(titleOf(keptRow))}` : ''}</div>`;
+    const replaces = parts.replacesLine(st, keptRow ? titleOf(keptRow) : null);
     const button = st.button === null ? ''
       : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(on){kxRow(b.getAttribute(\'data-id\'),on);})"', '', WHERE)}</div>`;
     return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-show="${row.state}" data-name="${name}">`

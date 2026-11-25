@@ -195,8 +195,8 @@ function boardStatus(e, st, ctx = {}) {
 }
 const keptOf = (entries, ctx) => entries.find((e) => rowState(e, ctx) === 'kept');
 // «Replaces: <kept event>» over a Keep button; hidden on the kept row, which gets it back when another event is kept (kxRow)
-const replacesLine = (st, kept) => (st.button === null ? ''
-  : `<div class="rp"${st.button === 1 && kept ? '' : ' style="display:none"'}>${st.button === 1 && kept ? `Replaces: ${esc(catName(kept))}` : ''}</div>`);
+// (catalog-pages.js replacesLine, shared with the Raid and Coliseum Catalogs)
+const replacesLine = (st, kept) => parts.replacesLine(st, kept ? catName(kept) : null);
 // every served quest with its objectives done (ctx.stageDone, the crown rule of the Special and Raid Catalogs)
 const doneOf = (e, ctx) => !!ctx.stageDone && servedOf(e).length > 0 && servedOf(e).every((q) => ctx.stageDone(q.stageId));
 // an informative notice, not a playable event (calendar-util.js informative, shared with make-events.js): not in the catalogue,
@@ -218,10 +218,8 @@ var rows=[].slice.call(document.querySelectorAll('.row'));
 function href(el){return __HREF__+attr(el,'data-eid')+__QUERY__;}
 function nameOf(el){var n=el.querySelector('.nm');return n?n.textContent:'';}
 window.kxK=function(b){return kxKeep(b,function(on){kxRow(b.getAttribute('data-id'),on);});};
-function setRow(el,st){var pc=PILL[st];el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');var s=el.querySelector('.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
-var b=el.querySelector('.pk');if(b)kxSet(b,attr(el,'data-eid'),st==='kept');}
-window.kxRow=function(id,on){var name='',i,el;for(i=0;i<rows.length;i++){el=rows[i];if(attr(el,'data-show')==='kept')setRow(el,'can');if(attr(el,'data-eid')===id){setRow(el,on?'kept':'can');if(on)name=nameOf(el);}}
-for(i=0;i<rows.length;i++){var x=rows[i].querySelector('.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';x.style.display=name&&attr(rows[i],'data-show')==='can'?'':'none';}}if(window.kxRender)kxRender();};
+var afterKeep=function(){if(window.kxRender)kxRender();};
+kxRows(rows,PILL,{name:nameOf,after:afterKeep});
 rows.forEach(function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el){if(t.tagName==='A')return;t=t.parentNode;}location.href=href(el);};});
 })();`;
 

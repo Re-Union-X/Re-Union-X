@@ -4,14 +4,16 @@
 //   124 GET /colosseum (list), 125 GET /colosseum/reward/list (rewardList), 126 POST /colosseum/start, 127 POST /colosseum/retire,
 //   128 POST /colosseum/clear, 139/140/180 GET /ranking/colosseum, /own, /border (ranking).
 // Seasons: make-colosseum.js SEASONS (WW 2016-04 .. 2016-07 = colosseumStageId 800 .. 1100) whose colosseumStage row is served.
-// One live season (liveSeason): the kept one (player.colosseum.kept, Coliseum Catalog) while it is served and a past month of the
-// story clock (catalog state 'kept', as a kept raid: a season kept from a later Story stays inert), else the season of the story
-// clock (storyCtx().shopFrom month); none below story quest 130 or in a month with no served season (status 2, «This event
+// One live season (liveSeason): the kept one (player.colosseum.kept, Coliseum Catalog) whenever one is kept and served, whatever the
+// month of the story clock (spec «the kept season is the one the Coliseum tile plays until it is un-kept»; controller ruling 10: the
+// Shop rotation loops back inside a story tranche, a kept season never goes inert), else the season of the story clock
+// (storyCtx().shopFrom month); none below story quest 130 or in a month with no served season (status 2, «This event
 // is unavailable.»). Per season state: colosseum-rules.js seasonState (player.colosseum.seasons[id]).
 // Coliseum Catalog (Task 6, colosseum-pages.js): one row per served season with the state of the Raid / Event Catalogs
-// (calendar-util.js rowState on the season's month: now = the season of the story clock, can = a past month, kept, other = a month
-// the Shop week reaches but not the season, later); keep (a 'can' season only) / unkeep change player.colosseum.kept and nothing
-// else (each season keeps its own progress, coins and boards). catalogEvents: its banner (evStage 6000 of make-colosseum.js) for
+// (calendar-util.js rowState on the season's month: now = the season of the story clock, can = a past month, other = a month the
+// Shop week reaches but not the season, later; the kept season is always 'kept', with its Remove button, even when the story month
+// loops onto or before it); keep (a 'can' season only) / unkeep change player.colosseum.kept and nothing else (each season keeps its
+// own progress, coins and boards); keeping the kept season again or removing with nothing kept changes nothing. catalogEvents: its banner (evStage 6000 of make-colosseum.js) for
 // the Events tab, once the Coliseum is open.
 // Rules: a loss / retire changes nothing and refunds no AP; a clear inside the window pays the cleared and skipped rounds and the
 // completed tiers (colosseum-rules.js clear); a 128 outside the window (double tap, stale screen) pays nothing and answers the
@@ -69,7 +71,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   function liveSeason() {
     if (!unlocked()) return null;
     const kept = root().kept ? season(root().kept) : null;
-    if (kept && rowState(kept) === 'kept') return { ...kept, kept: true };
+    if (kept) return { ...kept, kept: true };
     const s = seasonOfMonth(storyMonth());
     return s ? { ...s, kept: false } : null;
   }
@@ -297,8 +299,9 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     const { shopFrom, shopTo } = storyWeek(), story = seasonOfMonth(storyMonth());
     return { shopFrom, shopTo, current: story ? [story.id] : [], kept: root().kept || null, unlocked: unlocked() };
   }
-  // now / can / kept / other / later of a served season (calendar-util.js rowState, the Raid and Event Catalogs' rule)
-  function rowState(s, c = catalogCtx()) { return calendar.rowState(monthRow(s), c); }
+  // now / can / other / later of a served season (calendar-util.js rowState, the Raid and Event Catalogs' rule); 'kept' for the kept
+  // season whatever its month (ruling 10: it plays until it is removed, so its row always offers Remove)
+  function rowState(s, c = catalogCtx()) { return c.kept === s.id ? 'kept' : calendar.rowState(monthRow(s), { ...c, kept: null }); }
   function catalogCard(id, c = catalogCtx()) {
     const s = season(id);
     if (!s) return null;
@@ -317,6 +320,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   function keep(id) {
     const s = season(id);
     if (!s) return { code: 404, body: { ok: false, why: 'unknown season' } };
+    if (root().kept === s.id) return { code: 200, body: { ok: true } }; // already kept: no change (an unfinished round stays)
     const c = catalogCtx();
     if (!c.unlocked) return { code: 409, body: { ok: false, why: 'locked' } };
     const why = rowState(s, { ...c, kept: null });
@@ -328,7 +332,8 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     return { code: 200, body: { ok: true } };
   }
   function unkeep() {
-    if (root().kept) log(`[colosseum] Coliseum Catalog: season ${root().kept} removed`);
+    if (!root().kept) return { code: 200, body: { ok: true } }; // nothing kept: no change (an unfinished round stays)
+    log(`[colosseum] Coliseum Catalog: season ${root().kept} removed`);
     root().kept = null;
     root().fight = null;
     savePlayer();

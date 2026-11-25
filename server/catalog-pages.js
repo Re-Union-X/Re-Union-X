@@ -20,6 +20,25 @@ const keepLabel = (where = 'Events') => `${icon('pin')}Keep in ${where}`, remove
 const KEEP_LABEL = keepLabel(), REMOVE_LABEL = removeLabel();
 const keepButton = (base, id, on, extra = '', cls = '', where = 'Events') => `<a href="#" class="pk${cls}" data-id="${id}" data-on="${on}" data-pin="${on === 1 ? `${base}/keep/${id}` : `${base}/unkeep`}"${extra}>${on === 1 ? keepLabel(where) : removeLabel(where)}</a>`;
 
+// After a keep / remove on a catalogue list (Raid, Event and Coliseum Catalogs): kxRows(rows, PILL, o) defines window.kxRow(id, on),
+// which turns the kept row gold, the previous kept row back to «can be kept» (PILL {kept, can}: [row class, pill html]) and
+// rewrites the «Replaces: <name>» lines (replacesLine). rows: the row elements (data-eid, data-show; a « hide» class is kept);
+// o.name(el): the name of a row (default its data-name); o.onSet(el, state): after a row changed state (a page's own row model);
+// o.after(): after every keep / remove (a page's render). ES5.
+const KEEP_ROWS_JS = "function kxRows(rows,PILL,o){o=o||{};"
+  + "function nm(el){return o.name?o.name(el):el.getAttribute('data-name');}"
+  + "function setRow(el,st){var pc=PILL[st];el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');"
+  + "var s=el.querySelector('.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}"
+  + "var b=el.querySelector('.pk');if(b)kxSet(b,el.getAttribute('data-eid'),st==='kept');if(o.onSet)o.onSet(el,st);}"
+  + "window.kxRow=function(id,on){var name='',i,el;for(i=0;i<rows.length;i++){el=rows[i];if(el.getAttribute('data-show')==='kept')setRow(el,'can');"
+  + "if(el.getAttribute('data-eid')===id){setRow(el,on?'kept':'can');if(on)name=nm(el);}}"
+  + "for(i=0;i<rows.length;i++){var x=rows[i].querySelector('.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';"
+  + "x.style.display=name&&rows[i].getAttribute('data-show')==='can'?'':'none';}}if(o.after)o.after();};}";
+// «Replaces: <kept item>» over a Keep button (st.button 1, Keep; 0, Remove; null, none); hidden on the kept row, which gets it back
+// when another item is kept (kxRow). keptName: the name of the kept item, or null when none is kept
+const replacesLine = (st, keptName) => (st.button === null ? ''
+  : `<div class="rp"${st.button === 1 && keptName ? '' : ' style="display:none"'}>${st.button === 1 && keptName ? `Replaces: ${esc(keptName)}` : ''}</div>`);
+
 // keep / remove (XHR POST, as the Special catalogue): the element carries data-pin (URL) and data-on (1 keep, 0 remove)
 const keepJs = (base, noun, where = 'Events') => `var KX_KEEP=${JSON.stringify(keepLabel(where))},KX_REMOVE=${JSON.stringify(removeLabel(where))};`
   + `function kxSet(el,id,kept){el.setAttribute("data-pin",kept?"${base}/unkeep":"${base}/keep/"+id);`
@@ -28,7 +47,8 @@ const keepJs = (base, noun, where = 'Events') => `var KX_KEEP=${JSON.stringify(k
   + 'function kxKeep(el,onOk){var on=el.getAttribute("data-on")==="1",box=document.getElementById("pinmsg"),x=new XMLHttpRequest();x.open("POST",el.getAttribute("data-pin"));'
   + `x.onload=function(){if(x.status===200){if(on)kxSay(box,"pinmsg","Kept!","Leave and re-enter ${where} to see it.");else kxSay(box,"pinmsg off","Removed.","Leave and re-enter ${where}.");if(onOk)onOk(on);}`
   + `else kxSay(box,"pinmsg err","Could not change ${where}","This ${noun} cannot be kept.");};`
-  + 'x.onerror=function(){kxSay(box,"pinmsg err","Could not reach the server","Try again.");};x.send("");return false;}';
+  + 'x.onerror=function(){kxSay(box,"pinmsg err","Could not reach the server","Try again.");};x.send("");return false;}'
+  + KEEP_ROWS_JS;
 
 // The Filters of a catalogue (Raid Catalog 03-11, Event Catalog 13-11: «filters like the Raid Catalog»): the «⚙ Filters» button of
 // the header, the chips of a group and the sheet (FIND with its hint, the groups, Reset / «Show N results»). Styles: special-pages
@@ -306,5 +326,5 @@ const UNPACK_JS = 'function kxImgs(){var a=document.querySelectorAll("#rows .row
   + '(function(){var d=JSON.parse(document.getElementById("kxrows").textContent),o=[],i,r;for(i=0;i<d.r.length;i++){r=d.r[i];'
   + 'o.push(r[6]+d.t[r[0]].replace(/\u0001([sdneyt])/g,function(x,k){if(k==="s"){var s=[],j;for(j=0;j<r[1].length;j++)s.push(d.w[r[1][j]]);return s.join(" | ");}return k==="d"?r[2]:k==="n"?r[3]:k==="e"?r[4]:k==="t"?r[7]:r[5];}).replace(/\u0002(\\d)/g,function(x,k){return r[8][k];}));}'
   + 'document.getElementById("rows").innerHTML=o.join("");})();';
-module.exports = { PAGE_HEAD, pill, backBar, KEEP_LABEL, REMOVE_LABEL, keepButton, keepJs, RULE_CSS, SRV_CSS, FOLD_CSS, ONC_CSS, NOTICE_CSS, rebuiltValues, srvFrame,
+module.exports = { PAGE_HEAD, pill, backBar, KEEP_LABEL, REMOVE_LABEL, keepButton, keepJs, KEEP_ROWS_JS, replacesLine, RULE_CSS, SRV_CSS, FOLD_CSS, ONC_CSS, NOTICE_CSS, rebuiltValues, srvFrame,
   noticeCard, parseNotice, noticeBlocks, packCatalog, expandCatalog, UNPACK_JS, FILTER_BUTTON, optLabel, filterOpts, optLabels, filterSheet };
