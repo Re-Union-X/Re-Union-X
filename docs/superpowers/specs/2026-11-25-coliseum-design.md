@@ -125,8 +125,8 @@ tester package.
 
 ## Left to the builder
 
-- The exact web page and banner of the Coliseum Catalog (follow the Event / Raid Catalog design; place its banner with
-  the other catalog banners in the Events tab unless the bench shows a better place).
+- The exact web page and banner of the Coliseum Catalog (follow the Event / Raid Catalog design). **Placement (user
+  25-11): first catalog banner of the Events tab, before the Raid Catalog.**
 - Threshold values per bracket from the cutoff data, documented with sources. Where a season or bracket has no cutoff,
   interpolate from the nearest seasons of the same era (same tier structure); every season gets `rankingReward` rows.
   Declared in the Notice. *(my call)*
