@@ -1,11 +1,13 @@
 """Banners of the Special tab (640x140 PNG) and their -kept copies (spec 2026-10-30-special-tab-design.md 4, 10).
 
     python -I recon/tools/make_special_banners.py [--index F] [--rules F] [--src D] [--out D] [--enemies D]
-        [--mode palette|full] [--section all|special|raid|event] [--raid-index F] [--raid-img D]
-        [--event-index F] [--event-config F] [--event-img D]
+        [--mode palette|full] [--section all|special|raid|event|colosseum] [--raid-index F] [--raid-img D]
+        [--event-index F] [--event-config F] [--event-img D] [--colosseum-img D]
         -> server/game_data/special_img/<evStageId>.png and <evStageId>-kept.png (git-ignored)
         -> raid section: server/game_data/raid_img/8000.png (Raid Catalog banner) and <evStageId>-kept.png (git-ignored)
         -> event section: server/game_data/event_img/20000.png (Event Catalog banner) and <evStageId>-kept.png (git-ignored)
+        -> colosseum section: server/game_data/colosseum_img/6000.png (Coliseum Catalog banner) and <colosseumStageId>.png
+           (the season cards of the catalogue page; git-ignored)
 
 Event section (Events Part 1, Task 6; run after make_event_banners.py, whose event cards it reads; not part of «all»): the
 Event Catalog banner (server/event_config.json catalogEvStage, 20000), its own design (user 06-11: never the Raid Catalog
@@ -1185,6 +1187,110 @@ def build_avatar(evstage, event_img, cards_dir=None, coin=None):
     return path
 
 
+# ---- Coliseum Catalog (Coliseum Part 1, Task 6; user 25-11: the first catalog banner of the Events tab) ----
+# Our own card in the catalogue family (gold title, white subtitle, TRAINING sticker, square gold frame: family_finish), composed of
+# original pieces of the game UI as the other catalogue cards: the Olympus Coliseum panel of the story map (OC_Colosseum_Panel, the
+# Hercules statue before the arena: WW 2016 copy, else the JP 4.3.1 PanelB), the Coliseum Coin (reward type 17,
+# img/incentive/IncentiveIcon_17.png) and the Tier 1 crown of the Coliseum screens (img/colosseum/Colosseum_Rank_Num1.png), on the
+# blue of the Olympus sky with gold rays (apart from the violet Special, red Raid, teal Event and gold Avatar Board cards). Local game
+# files only (never in the repo); a missing piece is left out with a WARNING. Also one card per season (<colosseumStageId>.png, the
+# rows of the catalogue page): the same art with the month as title and no TRAINING sticker (a season card is not tapped in the
+# Events tab). Output: server/game_data/colosseum_img (git-ignored). After a change bump COLOSSEUM_IMG_VERSION (server/make-colosseum.js),
+# then the master revision.
+COLOSSEUM_CATALOG_EV = 6000
+COLOSSEUM_CATALOG_TITLE, COLOSSEUM_CATALOG_SUB = 'COLISEUM CATALOG', 'Tap: Training Grounds · Details: all seasons'
+COLOSSEUM_SEASON_SUB = 'Coliseum season'
+COLOSSEUM_TOP, COLOSSEUM_BOT = (70, 150, 226), (10, 36, 104)     # Olympus sky blue -> deep navy
+COLOSSEUM_INK = (10, 30, 80)
+COLOSSEUM_TITLE_RIGHT = 440      # the title ends here: the art keeps the right part of the card
+BUNDLE2016 = os.path.join(ROOT, 'tmp', 'thethiny_x', 'bundle2016', 'files')
+COLOSSEUM_PANEL_B16 = os.path.join(BUNDLE2016, 'img', 'adventure', 'stage', 'OC_Colosseum_Panel.png')
+COLOSSEUM_MAKE = os.path.join(REPO, 'server', 'make-colosseum.js')
+MONTHS = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+
+
+def colosseum_pieces():
+    """{'panel', 'coin', 'crown'}: paths of the original pieces (None when not on disk)"""
+    panel = COLOSSEUM_PANEL_B16 if os.path.exists(COLOSSEUM_PANEL_B16) else jp_img('adventure', 'stage', 'OC_Colosseum_PanelB.png')
+    return {'panel': panel, 'coin': jp_img('incentive', 'IncentiveIcon_17.png'), 'crown': jp_img('colosseum', 'Colosseum_Rank_Num1.png')}
+
+
+def colosseum_art(pieces=None):
+    """640x140 RGBA of the Coliseum cards' art (no lettering): blue sky gradient with gold rays and a warm glow, the Coliseum panel
+    of the story map tilted on the right, the Coliseum Coin large over its lower left corner, the Tier crown over its lower right"""
+    _ART_BOXES.clear()
+    pieces = pieces if pieces is not None else colosseum_pieces()
+    im = background(COLOSSEUM_TOP, COLOSSEUM_BOT, ray=(255, 226, 140), centre=(540, 66), n=18, ray_alpha=34)
+    glow = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse((420, -10, 640, 150), fill=(255, 236, 170, 150))
+    im = Image.alpha_composite(im, inner_clip(glow.filter(ImageFilter.GaussianBlur(20))))
+    panel = art(pieces.get('panel'), 145, 'Coliseum panel')
+    if panel is not None:
+        p = panel.resize((int(panel.width * 118 / panel.height), 118), Image.LANCZOS).rotate(-5, Image.BICUBIC, expand=True)
+        im = paste_shadowed(im, p, (558 - p.width / 2, 72 - p.height / 2), blur=4, alpha=130, colour=(0, 10, 40))
+    coin = art(pieces.get('coin'), 86, 'Coliseum Coin')
+    if coin is not None:
+        c = coin.resize((76, 76), Image.LANCZOS)
+        im = paste_shadowed(im, c, (458, 58), blur=3, alpha=120, colour=(40, 20, 0))
+    crown = art(pieces.get('crown'), 114, 'Tier crown')
+    if crown is not None:
+        k = crown.resize((int(crown.width * 40 / crown.height), 40), Image.LANCZOS).rotate(8, Image.BICUBIC, expand=True)
+        im = paste_shadowed(im, k, (578, 88), blur=2, alpha=110, colour=(40, 20, 0))
+    sp = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    ds = ImageDraw.Draw(sp)
+    for x, y, r in ((452, 28, 3), (612, 30, 3), (500, 20, 2), (470, 128, 2)):
+        ds.polygon([(x, y - r * 3), (x + r, y), (x, y + r * 3), (x - r, y)], fill=(255, 255, 255, 220))
+        ds.polygon([(x - r * 3, y), (x, y - r), (x + r * 3, y), (x, y + r)], fill=(255, 255, 255, 220))
+    im = Image.alpha_composite(im, sp)
+    return left_shade(im, (4, 16, 56), 150, 400)
+
+
+def colosseum_option(style='A', pieces=None):
+    """640x140 RGBA of the Coliseum Catalog card (evStage 6000): colosseum_art + the family finish"""
+    if style != 'A':
+        raise ValueError('colosseum style %r' % style)
+    return family_finish(colosseum_art(pieces), COLOSSEUM_CATALOG_TITLE, COLOSSEUM_CATALOG_SUB, COLOSSEUM_INK, COLOSSEUM_TITLE_RIGHT)
+
+
+def colosseum_season_card(month, pieces=None):
+    """640x140 RGBA of one season's card (the rows of the Coliseum Catalog page): the catalogue art, the month in the gold title
+    lettering (e.g. APRIL 2016), the subtitle and the gold frame; no TRAINING sticker"""
+    y, m = month.split('-')
+    im = colosseum_art(pieces)
+    title = '%s %s' % (MONTHS[int(m) - 1], y)
+    px = 46
+    while px > 28 and 20 + ImageDraw.Draw(im).textlength(title, font=title_font(px)) + 6 > COLOSSEUM_TITLE_RIGHT:
+        px -= 1
+    gold_text(im, (20, 52), title, title_font(px), outline=6)
+    ImageDraw.Draw(im).text((22, 108), COLOSSEUM_SEASON_SUB, font=make_shop_art.font(19), anchor='lm', fill=(255, 255, 255, 255),
+                            stroke_width=3, stroke_fill=COLOSSEUM_INK + (255,))
+    ImageDraw.Draw(im).rectangle((1, 1, 638, 138), outline=FAMILY_GOLD, width=3)
+    im.info['pieces'] = list(_ART_BOXES)
+    _ART_BOXES.clear()
+    return im
+
+
+def colosseum_seasons(make_js=COLOSSEUM_MAKE):
+    """[(month, colosseumStageId)] of SEASONS in server/make-colosseum.js (the served seasons)"""
+    import re
+    with open(make_js, encoding='utf-8') as f:
+        text = f.read()
+    block = re.search(r'const SEASONS = \[(.*?)\];', text, re.S)
+    if not block:
+        raise ValueError('SEASONS not found in %s' % make_js)
+    return [(mo, int(i)) for mo, i in re.findall(r"month:\s*'(\d{4}-\d\d)',\s*colosseumStageId:\s*(\d+)", block.group(1))]
+
+
+def build_colosseum(out_dir, seasons=None, pieces=None):
+    """writes out_dir/6000.png (the Coliseum Catalog banner) and <colosseumStageId>.png per season; -> counts catalog / seasons"""
+    os.makedirs(out_dir, exist_ok=True)
+    save_catalog(colosseum_option('A', pieces), os.path.join(out_dir, '%d.png' % COLOSSEUM_CATALOG_EV))
+    seasons = colosseum_seasons() if seasons is None else seasons
+    for month, sid in seasons:
+        save_catalog(colosseum_season_card(month, pieces), os.path.join(out_dir, '%d.png' % sid))
+    return {'catalog': 1, 'seasons': len(seasons)}
+
+
 # ---- Raid option B variants (user 06-11: «Raid B, improved»): dark red / black, raid board cells, one big boss ----
 RAID_B_VARIANTS = ('B1', 'B2', 'B3', 'B4')
 
@@ -1424,9 +1530,10 @@ def main():
     ap.add_argument('--rules', default=os.path.join(REPO, 'server', 'special_periods.json'),
                     help='campaigns[key].reconstruct: banners rebuilt from local sources (originals lost)')
     ap.add_argument('--mode', choices=['palette', 'full'], default='palette')
-    ap.add_argument('--section', choices=['all', 'special', 'raid', 'event'], default='all',
+    ap.add_argument('--section', choices=['all', 'special', 'raid', 'event', 'colosseum'], default='all',
                     help='special: the Special tab banners; raid: the Raid Catalog banner and the kept raid cards; '
-                         'event (not in all): the Event Catalog banner and the kept event cards')
+                         'event (not in all): the Event Catalog banner and the kept event cards; '
+                         'colosseum (not in all): the Coliseum Catalog banner and the season cards')
     ap.add_argument('--raid-index', default=os.path.join(REPO, 'server', 'game_data', 'raids.json'))
     ap.add_argument('--raid-rigs', default=RAID_RIGS, help='raid boss rigs lwf/character/raid (LWF + textures) for the Raid Catalog banner')
     ap.add_argument('--catalog-only', action='store_true', help='raid section: only the Raid Catalog banner, not the kept raid cards')
@@ -1437,6 +1544,8 @@ def main():
     ap.add_argument('--event-coin', help='Event Coin icon of the Event Catalog banner (default: local JP data img/incentive/IncentiveIcon_15.png)')
     ap.add_argument('--event-img', default=os.path.join(REPO, 'server', 'game_data', 'event_img'),
                     help='the event cards of make_event_banners.py (run it first); output goes here too')
+    ap.add_argument('--colosseum-img', default=os.path.join(REPO, 'server', 'game_data', 'colosseum_img'),
+                    help='colosseum section: output folder of the Coliseum Catalog banner 6000.png and the season cards')
     ap.add_argument('--catalog-style', help='build only these catalogue cards in the chosen option, e.g. special=B,raid=A,event=C '
                     '(Catalog options: A/B/C each; 7000 in --out, 8000 in --raid-img, 20000 in --event-img)')
     ap.add_argument('--raid-b-sheets', help='write raid_b_variants.png and raid_family.png (Raid B variants B1-B4) in this folder')
@@ -1457,6 +1566,10 @@ def main():
             os.makedirs(os.path.dirname(targets[k]), exist_ok=True)
             save_catalog(im, targets[k])
             print('catalog %s: option %s -> %s (bump its image version, then the master revision)' % (k, st, targets[k]))
+        return
+    if a.section == 'colosseum':
+        cr = build_colosseum(a.colosseum_img)
+        print('colosseum banners: %d catalog, %d season cards -> %s' % (cr['catalog'], cr['seasons'], a.colosseum_img))
         return
     if a.section == 'event':
         with open(a.event_index, encoding='utf-8') as f:

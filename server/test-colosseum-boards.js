@@ -223,7 +223,9 @@ function wiring() {
     assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [], 'story below 130: no Coliseum board');
   });
   run('wiring_list_check_update', () => {
-    const q = t.masterRows('stage').find((r) => r.stageKind === 1 && r.id === 140);
+    // story quest 450 (Shop week of August 2016): every served season is past, so a kept one is live (a season kept from a later
+    // Story stays inert, routes-colosseum.js liveSeason, Task 6)
+    const q = t.masterRows('stage').find((r) => r.stageKind === 1 && r.id === 450);
     p.stageScores = { ...(p.stageScores || {}), [q.stageId]: 1 };
     p.colosseum = { kept: 800 };
     assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [CID], 'the April board only');

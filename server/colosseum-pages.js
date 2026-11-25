@@ -1,0 +1,90 @@
+// Coliseum Catalog web page (Coliseum Part 1 Task 6; spec docs/superpowers/specs/2026-11-25-coliseum-design.md «Coliseum Catalog»,
+// «Kept season»): WebView opened from the Details button of the Coliseum Catalog banner (evStage 6000 of make-colosseum.js), the
+// first catalog banner of the Events tab (user 25-11). Pure HTML, no player or master access: server.js passes the rows
+// (routes-colosseum.js catalogRows: one per served season, oldest first, with its catalog state) and the context.
+// Same look and parts as the Raid / Event Catalogs (raid-pages.js catalogPage; catalog-pages.js PAGE_HEAD, pill, Keep / Remove button
+// and script; special-pages.js CSS and icons), so the phone layout of phone-css.js (#rows>.row cards, 70 %) applies unchanged.
+// One row per season: its card (game_data/colosseum_img/<colosseumStageId>.png, make_special_banners.py --section colosseum), the
+// month, tiers / AP / Coliseum Boards, the player's progress in that season, ONE status line and at most ONE Keep / Remove button.
+// Only playable rows (served seasons); no Filters (four seasons) and no details page (everything is on the row).
+// ctx: {unlocked (story quest 130 reached), imgVersion, boardName(sphereBoardId) -> name | null, unlockQuestOf(row) -> N | null}.
+'use strict';
+const special = require('./special-pages');
+const parts = require('./catalog-pages');
+
+const { CSS: SPECIAL_CSS, esc, monthYear, icon } = special;
+const { PAGE_HEAD, pill, keepJs } = parts;
+const BASE = '/web/colosseum', WHERE = 'the Coliseum';
+const UNLOCK_QUEST = 130; // routes-colosseum.js UNLOCK_QUEST (not required here: the page module stays free of the routes)
+
+// the page's own lines: the progress line of a row (Coliseum gold), the intro box
+const CSS = SPECIAL_CSS + '.pg{color:#ffcd4a;font-size:14px;margin-top:2px}.lk{background:#06283e;border-radius:6px;padding:8px 10px;margin:6px 0;color:#ffcd4a;font-size:15px}';
+
+// the pills the page script writes after a keep / remove: [row class, html]
+const PILLS = { kept: ['pinned', `${icon('pin')}Kept: the Coliseum plays this season`], can: ['can', `${icon('pin')}Past season — can be kept`] };
+const titleOf = (row) => `Coliseum · ${monthYear(`${row.month}-01`)}`;
+const imgOf = (ctx, id) => `${BASE}/img/v${ctx.imgVersion || 1}/${id}.png`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const apText = (r) => (r.apMin === r.apMax ? `${r.apMin} AP per round` : `${r.apMin}–${r.apMax} AP per round`);
+
+// Status of a row: cls (side bar), pill (status line), button (1 Keep, 0 Remove, null none)
+function statusOf(row, ctx, keptRow) {
+  const open = ctx.unlocked !== false;
+  if (row.state === 'kept') return { cls: 'pinned', pill: pill(PILLS.kept[0], '', PILLS.kept[1]), button: open ? 0 : null };
+  if (row.state === 'can') return { cls: 'can', pill: pill(PILLS.can[0], '', PILLS.can[1]), button: open ? 1 : null };
+  if (row.state === 'now') {
+    return { cls: 'now', pill: pill('now', 'now', keptRow ? 'Season of your Story (it plays again when you remove the kept season)' : 'Season of your Story now'), button: null };
+  }
+  if (row.state === 'other') return { cls: 'other', pill: pill('other', '', 'Its month starts this week: not the season yet'), button: null };
+  const q = ctx.unlockQuestOf ? ctx.unlockQuestOf(row) : undefined;
+  const text = q === undefined || q === null ? 'Reached later in the Story' : `Unlocks at Story Quest ${q}`;
+  return { cls: 'off', pill: pill('off', 'later', text), button: null };
+}
+
+// the player's progress in a season: the last round cleared (tier / round in tier) and the season's Coliseum Coins
+function progressOf(row) {
+  const coins = row.coins ? ` · ${row.coins} Coliseum Coin${row.coins === 1 ? '' : 's'}` : '';
+  return row.userStageTotalCount ? `Cleared up to Tier ${row.userRank}, Round ${row.userStageCount}${coins}` : `Not played yet${coins}`;
+}
+
+// ES5, no external script: after a keep / remove the kept row gold, the previous one back to «can be kept», the «Replaces» lines
+const JS = `(function(){
+var PILL=__PILL__;
+function attr(el,a){return el&&el.getAttribute?el.getAttribute(a):null;}
+function q(el,s){return el.querySelector(s);}
+var rows=[].map.call(document.querySelectorAll('#rows .row'),function(el){return {el:el,id:attr(el,'data-eid'),st:attr(el,'data-show')};});
+function setRow(r,st){var pc=PILL[st];r.st=st;r.el.setAttribute('data-show',st);r.el.className='row '+pc[0];var s=q(r.el,'.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}
+var b=q(r.el,'.pk');if(b)kxSet(b,r.id,st==='kept');}
+window.kxRow=function(id,on){var name='',i,r;for(i=0;i<rows.length;i++){r=rows[i];if(r.st==='kept')setRow(r,'can');}
+for(i=0;i<rows.length;i++){r=rows[i];if(r.id===id){setRow(r,on?'kept':'can');if(on)name=attr(r.el,'data-name');}}
+for(i=0;i<rows.length;i++){var x=q(rows[i].el,'.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';x.style.display=name&&rows[i].st==='can'?'':'none';}}};
+})();`;
+
+function catalogPage(rows, ctx = {}) {
+  const keptRow = rows.find((r) => r.state === 'kept');
+  const html = rows.map((row) => {
+    const st = statusOf(row, ctx, keptRow), name = esc(titleOf(row));
+    const boards = (row.boardIds || []).map((id) => (ctx.boardName ? ctx.boardName(id) : null)).filter(Boolean);
+    const line = `${plural(row.tiers, 'tier')} · ${apText(row)}${boards.length ? ` · Boards: ${boards.map(esc).join(' · ')}` : ''}`;
+    const replaces = st.button === null ? ''
+      : `<div class="rp"${st.button === 1 && keptRow ? '' : ' style="display:none"'}>${st.button === 1 && keptRow ? `Replaces: ${esc(titleOf(keptRow))}` : ''}</div>`;
+    const button = st.button === null ? ''
+      : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(on){kxRow(b.getAttribute(\'data-id\'),on);})"', '', WHERE)}</div>`;
+    return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-show="${row.state}" data-name="${name}">`
+      + `<div class="im"><img width="320" height="70" src="${imgOf(ctx, row.colosseumStageId)}" alt=""></div>`
+      + `<div class="info"><span class="nm">${name}</span><div class="d">${line}</div><div class="pg">${esc(progressOf(row))}</div>${st.pill}${replaces}${button}</div></div>\n`;
+  }).join('');
+  const locked = ctx.unlocked === false
+    ? `<div class="lk">${icon('lock')}The Coliseum opens at Story Quest ${UNLOCK_QUEST}: then a past season can be kept here.</div>` : '';
+  const js = JS.replace('__PILL__', JSON.stringify(PILLS));
+  return PAGE_HEAD('Coliseum Catalog', CSS) + '<body>'
+    + '<div class="hdr"><h1>Coliseum Catalog</h1></div>'
+    + '<p class="n">Every Coliseum season of this server, one per month as in the original game. The Coliseum plays the season of your Story; '
+    + 'a past season can be kept here, one at a time, and the Coliseum then plays it until you remove it. Each season keeps its own progress, '
+    + 'Coliseum Coins and Coliseum Boards. The Coliseum Catalog is an addition of this server.</p>'
+    + locked
+    + `<div id="rows">${html || '<p class="n">No Coliseum season is served yet.</p>'}</div>`
+    + `<div id="pinmsg" class="pinmsg"></div><script>${keepJs(BASE, 'season', WHERE)}</script><script>${js}</script></body></html>`;
+}
+
+module.exports = { catalogPage, statusOf, progressOf, PILLS };

@@ -38,6 +38,7 @@ function world(opts = {}) {
     rankingReward: [rewardRow(30100, 1, 1000, [[3, 90125, 3, 1101, 15]]), rewardRow(30101, 1001, 5000000, [[3, 90016, 1]]), rewardRow(30800, 1, 10000000, [[3, 90016, 1]])],
   };
   w.weeksAhead = null; // (week) -> shopFrom, null = the same shopFrom every week
+  w.stageStates = {};
   w.c = routesColosseum({
     player: w.player, savePlayer: () => { w.saves++; }, masterRows: (t) => (w.tables[t] || []).slice(), storyWeek: () => w.week,
     shopFromAtWeek: (wk) => (w.weeksAhead ? w.weeksAhead(wk) : w.week.shopFrom),
@@ -55,6 +56,7 @@ function world(opts = {}) {
     battlePoints: (gp, burst) => { const l = Number(gp?.lux) || 0; w.lux += l; w.burst = burst; return l; }, beginBattle: (k) => { w.keyblade = k; },
     grantItem: (it) => w.grants.push(it), addPresent: (it, text) => w.presents.push({ ...it, text }),
     element: (now, rank, uc, arrival) => ({ userData: { user: { userId: 1 } }, rank, userColosseum: uc, arrivalTime: arrival }),
+    stageState: (id) => w.stageStates[id] || { score: 0, playStatus: 0, clearMissionIds: [] }, webBase: 'http://web.test',
     log: (m) => w.logs.push(m),
   });
   w.call = (fn, ...a) => { w.sent = null; w.c[fn]({}, ...a); return w.sent; };
@@ -217,11 +219,12 @@ const tests = {
   },
   kept_season_wins() {
     const w = world();
+    w.week.shopFrom = '2016-06-02';
     w.player.colosseum = { kept: 900 };
     assert.strictEqual(w.c.liveSeason().id, 900);
     assert.strictEqual(w.call('list').colosseumInfo.colosseumStageId, 900);
     w.player.colosseum.kept = 4242; // not served: the story season
-    assert.strictEqual(w.c.liveSeason().id, 800);
+    assert.strictEqual(w.c.liveSeason().id, 1000);
   },
   season_progress_kept_apart() {
     const w = world();
@@ -299,6 +302,109 @@ const tests = {
     w.c.unkeep();
     assert.strictEqual(w.player.colosseum.kept, null);
   },
+
+  // ---- Coliseum Catalog (Task 6): the Raid / Event Catalog states (calendar-util.js rowState) on the season months ----
+  catalog_states() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    const st = () => Object.fromEntries(w.c.catalogRows().map((r) => [r.colosseumStageId, r.state]));
+    assert.deepStrictEqual(w.c.catalogRows().map((r) => [r.colosseumStageId, r.month]), [[800, '2016-04'], [900, '2016-05'], [1000, '2016-06'], [1100, '2016-07']]);
+    assert.deepStrictEqual(st(), { 800: 'can', 900: 'can', 1000: 'now', 1100: 'later' });
+    // a Shop week spanning two months counts for the month it starts in: July is reached but not the season (other, no keep)
+    w.week = { storyQuest: 200, shopFrom: '2016-06-27', shopTo: '2016-07-03' };
+    assert.deepStrictEqual(st(), { 800: 'can', 900: 'can', 1000: 'now', 1100: 'other' });
+    assert.deepStrictEqual(w.c.keep(1100), { code: 409, body: { ok: false, why: 'other' } });
+    // the catalog card: tiers, AP, boards and the player's progress of that season
+    const r = w.c.catalogRows().find((x) => x.colosseumStageId === 800);
+    assert.strictEqual(r.tiers, 3);
+    assert.deepStrictEqual([r.apMin, r.apMax], [3, 5]);
+    assert.deepStrictEqual(r.boardIds, [2200001]);
+    assert.deepStrictEqual([r.coins, r.userRank, r.userStageCount, r.userStageTotalCount], [0, 1, 0, 0]);
+  },
+  catalog_keep_past_season() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    assert.strictEqual(w.c.liveSeason().id, 1000, 'the story season');
+    assert.deepStrictEqual(w.c.keep(800), { code: 200, body: { ok: true } });
+    assert.strictEqual(w.player.colosseum.kept, 800);
+    assert.deepStrictEqual([w.c.liveSeason().id, w.c.liveSeason().kept], [800, true]);
+    assert.strictEqual(w.call('list').colosseumInfo.colosseumStageId, 800, '124 plays the kept season');
+    const st = Object.fromEntries(w.c.catalogRows().map((r) => [r.colosseumStageId, r.state]));
+    assert.deepStrictEqual(st, { 800: 'kept', 900: 'can', 1000: 'now', 1100: 'later' });
+    // keeping another past season replaces it
+    assert.strictEqual(w.c.keep(900).code, 200);
+    assert.strictEqual(w.c.liveSeason().id, 900);
+    assert.strictEqual(w.c.catalogCard(800).state, 'can');
+  },
+  catalog_keep_refused() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    assert.deepStrictEqual(w.c.keep(1000), { code: 409, body: { ok: false, why: 'now' } }, 'the current season');
+    assert.deepStrictEqual(w.c.keep(1100), { code: 409, body: { ok: false, why: 'later' } });
+    assert.deepStrictEqual(w.c.keep(4242), { code: 404, body: { ok: false, why: 'unknown season' } });
+    w.week.storyQuest = 120;
+    assert.deepStrictEqual(w.c.keep(800), { code: 409, body: { ok: false, why: 'locked' } }, 'Coliseum not open yet');
+    assert.strictEqual((w.player.colosseum || {}).kept || null, null, 'nothing kept');
+  },
+  catalog_unkeep_returns_to_story() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    w.c.keep(800);
+    assert.deepStrictEqual(w.c.unkeep(), { code: 200, body: { ok: true } });
+    assert.strictEqual(w.player.colosseum.kept, null);
+    assert.deepStrictEqual([w.c.liveSeason().id, w.c.liveSeason().kept], [1000, false]);
+    assert.strictEqual(w.c.catalogCard(800).state, 'can');
+  },
+  // keep / unkeep never reset nor move a season's progress, coins or boards (user 25-11, option 1)
+  catalog_keep_keeps_progress() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    w.player.colosseum = { seasons: { 800: { last: 4, open: 5, coins: 77, cleared: [1, 2, 3, 4], tierRewards: [1], bestAt: '2026-11-01T00:00:00.000Z', boardIds: [2200001] },
+      1000: { last: 1, open: 2, coins: 3, cleared: [1], tierRewards: [], bestAt: null, boardIds: [] } } };
+    w.player.colosseumSphere = { 800: { 2200001: { id: 1, unlock: [1, 2] } } };
+    const before = JSON.stringify([w.player.colosseum.seasons, w.player.colosseumSphere]);
+    w.c.keep(800);
+    assert.strictEqual(w.c.coinsOf(), 77, 'the kept season resumes with its coins');
+    const card = w.c.catalogCard(800);
+    assert.deepStrictEqual([card.userRank, card.userStageCount, card.coins], [2, 1, 77], 'Tier 2 Round 1 (fixture: Tier 1 = 3 rounds)');
+    w.c.keep(900); w.c.unkeep();
+    assert.strictEqual(w.c.coinsOf(), 3, 'back to the story season and its coins');
+    const after = JSON.parse(JSON.stringify([w.player.colosseum.seasons, w.player.colosseumSphere]));
+    delete after[0][900]; // the state of a season only read (seasonState fills its defaults), not changed
+    delete after[0][1100];
+    assert.strictEqual(JSON.stringify(after), before);
+  },
+  // a season kept from a later Story (save switch, story going back) stays inert: the story season plays (as a kept raid)
+  catalog_kept_inert_before_its_month() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-05-05', shopTo: '2016-05-11' };
+    w.player.colosseum = { kept: 1000 };
+    assert.deepStrictEqual([w.c.liveSeason().id, w.c.liveSeason().kept], [900, false]);
+    assert.strictEqual(w.c.catalogCard(1000).state, 'later');
+    assert.strictEqual(w.player.colosseum.kept, 1000, 'the keep itself is left in the save');
+    w.week = { storyQuest: 200, shopFrom: '2016-07-07', shopTo: '2016-07-13' };
+    assert.strictEqual(w.c.liveSeason().id, 1000, 'live again once its month is past');
+  },
+  // the Coliseum Catalog banner of the Events tab (evStage 6000 of make-colosseum.js, eventType 0, a tap opens its Training
+  // Grounds quest): only with its master row and once the Coliseum is open
+  catalog_banner() {
+    const w = world();
+    assert.deepStrictEqual(w.c.catalogEvents(), [], 'no evStage row: no banner');
+    w.tables.evStage = [{ eventStageId: 6000, validStageId: 1, stageId: [970000, 0, 0, 0, 0], eventType: 0, detailUrl: '/web/colosseum/catalog' }];
+    w.tables.stage = [{ stageId: 970000, useAp: 0 }];
+    const [b, ...rest] = w.c.catalogEvents();
+    assert.deepStrictEqual(rest, []);
+    assert.strictEqual(b.eventStageId, 6000);
+    assert.strictEqual(b.eventType, 0);
+    assert.strictEqual(b.bannerUrl, `http://web.test/web/colosseum/img/v${routesColosseum.COLOSSEUM_IMG_VERSION}/6000.png`);
+    assert.deepStrictEqual(b.stages, [{ stageId: 970000, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] }]);
+    assert.deepStrictEqual([b.status, b.isLock, b.newStageId, b.showIcon, b.complete], [1, 0, 0, 1, 0]);
+    assert.strictEqual(b.endTime, fmt(clock.weekEnd(NOW)));
+    w.stageStates[970000] = { score: 9, playStatus: 2, clearMissionIds: [1, 2, 3] };
+    assert.strictEqual(w.c.catalogEvents()[0].complete, 1, 'crown: every objective of the Training Grounds done');
+    w.week.storyQuest = 120;
+    assert.deepStrictEqual(w.c.catalogEvents(), [], 'no banner before the Coliseum opens (story quest 130)');
+  },
 };
 
 let failed = 0;
@@ -314,6 +420,8 @@ function wiring() {
   if (!rows.some((r) => r.colosseumStageId === 800)) { console.log('wiring: skipped (no Coliseum rows in master_data)'); return; }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-colosseum-routes-'));
   process.env.KHUX_SAVE = path.join(dir, 'save.json');
+  process.env.KHUX_COLOSSEUM_IMG = path.join(dir, 'img'); // the Coliseum Catalog cards (game_data/colosseum_img)
+  fs.mkdirSync(process.env.KHUX_COLOSSEUM_IMG);
   delete process.env.KHUX_REAL_NOW;
   delete process.env.KHUX_SERVER_TIME;
   const log = console.log, warn = console.warn;
@@ -380,6 +488,49 @@ function wiring() {
       'pet', 'emblemIds', 'arrivalTime']) assert.ok(k in r.rankingDatas[0], k);
     assert.strictEqual(typeof r.rankingDatas[0].arrivalTime, 'string');
     p.ap = ap;
+  });
+  // Coliseum Catalog (Task 6): /web/colosseum/ pages, cards and the Keep / Remove POSTs, the banner first in the Events tab
+  run('wiring_catalog_web', () => {
+    const web = (url) => { const o = { code: 0, body: null, type: '' }; quiet(() => t.respondColosseumWeb({ writeHead(c, h) { o.code = c; o.type = (h || {})['Content-Type']; }, end(x) { o.body = x; } }, url)); return o; };
+    const post = (url) => { const o = { code: 0, body: null }; quiet(() => t.respondColosseumPost({ writeHead(c) { o.code = c; }, end(x) { o.body = JSON.parse(x.toString('utf8')); } }, url)); return o; };
+    assert.strictEqual(t.route('/web/colosseum/catalog'), 'colosseumweb');
+    assert.strictEqual(t.route('/web/colosseum/keep/900'), 'colosseumweb');
+    // story quest 300 (Shop week of May 2016): April can be kept, May is the season of the Story
+    const q = t.masterRows('stage').find((r) => r.stageKind === 1 && r.id === 300);
+    p.stageScores = { ...(p.stageScores || {}), [q.stageId]: 1 };
+    p.colosseum = { seasons: (p.colosseum || {}).seasons };
+    const page = web('/web/colosseum/catalog');
+    assert.strictEqual(page.code, 200);
+    const html = page.body.toString('utf8');
+    assert.ok(html.includes('<h1>Coliseum Catalog</h1>') && html.includes('<style data-phone>'), 'the catalog page with the phone layout');
+    for (const id of [800, 900, 1000, 1100]) assert.ok(html.includes(`id="q${id}"`), `season ${id} listed`);
+    // the cards: game_data/colosseum_img/<id>.png; none: 404
+    fs.writeFileSync(path.join(process.env.KHUX_COLOSSEUM_IMG, '6000.png'), 'banner');
+    const img = web('/web/colosseum/img/v1/6000.png');
+    assert.deepStrictEqual([img.code, img.type, img.body.toString()], [200, 'image/png', 'banner']);
+    assert.strictEqual(web('/web/colosseum/img/v1/900.png').code, 404);
+    assert.strictEqual(web('/web/colosseum/nothing').code, 404);
+    // keep / unkeep follow the catalog states of the story week
+    const rows = t.colosseum().catalogRows();
+    assert.deepStrictEqual(rows.map((r) => [r.colosseumStageId, r.state]), [[800, 'can'], [900, 'now'], [1000, 'later'], [1100, 'later']]);
+    assert.deepStrictEqual(post('/web/colosseum/keep/900'), { code: 409, body: { ok: false, why: 'now' } });
+    assert.deepStrictEqual(post('/web/colosseum/keep/800'), { code: 200, body: { ok: true } });
+    assert.deepStrictEqual([p.colosseum.kept, t.colosseum().liveSeason().id], [800, 800]);
+    assert.ok(web('/web/colosseum/catalog').body.toString('utf8').includes('data-pin="/web/colosseum/unkeep"'), 'the page shows the kept season');
+    assert.deepStrictEqual(post('/web/colosseum/unkeep'), { code: 200, body: { ok: true } });
+    assert.deepStrictEqual([p.colosseum.kept, t.colosseum().liveSeason().id], [null, 900]);
+    assert.deepStrictEqual(post('/web/colosseum/keep/31'), { code: 404, body: { ok: false, why: 'unknown season' } });
+    assert.strictEqual(post('/web/colosseum/other').code, 404);
+  });
+  run('wiring_events_tab_first', () => {
+    if (!t.masterRows('evStage').some((r) => r.eventStageId === 6000)) { console.log('  (no evStage 6000 in master_data: run make-colosseum.js; banner check skipped)'); return; }
+    let b = null;
+    quiet(() => t.respondStageEvent({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, { eventCategory: 2 }));
+    assert.strictEqual(b.events[0].eventStageId, 6000, 'the Coliseum Catalog banner first');
+    assert.strictEqual(b.events[0].eventType, 0);
+    assert.ok(b.events[0].bannerUrl.endsWith(`/web/colosseum/img/v${routesColosseum.COLOSSEUM_IMG_VERSION}/6000.png`));
+    const raidCat = b.events.findIndex((e) => e.eventStageId === 8000);
+    if (raidCat >= 0) assert.strictEqual(raidCat, 1, 'then the Raid Catalog');
   });
   fs.rmSync(dir, { recursive: true, force: true });
 }

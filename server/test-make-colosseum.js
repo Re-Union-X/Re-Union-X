@@ -216,6 +216,36 @@ test('patch is idempotent and keeps foreign rows', () => {
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+// Coliseum Catalog banner (Task 6): evStage 6000, eventType 0, Details -> /web/colosseum/catalog, a tap opens the Training Grounds
+// (stage 970000 of make-special, as the Raid and Event Catalog banners); none without that stage
+test('Coliseum Catalog banner row (evStage 6000)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
+  try {
+    const w = (t, rows) => fs.writeFileSync(path.join(dir, `${t}.json`), JSON.stringify(rows));
+    const J = (t) => JSON.parse(fs.readFileSync(path.join(dir, `${t}.json`), 'utf8'));
+    w('stage', [{ stageId: 1010, id: 1, stageKind: 1 }]);
+    w('evStage', [{ eventStageId: 6000, stale: true }, { eventStageId: 8000, eventType: 0 }]);
+    const src = fixture(); delete src.masterEnemyIds;
+    mc.patch(dir, { src, seasons: S800 });
+    assert.deepStrictEqual(J('evStage').map((r) => r.eventStageId), [8000], 'no Training Grounds stage: no banner, the old row dropped');
+    w('stage', [{ stageId: 970000, id: 9001, stageKind: 1, useAp: 0 }]);
+    mc.patch(dir, { src, seasons: S800 });
+    const first = fs.readFileSync(path.join(dir, 'evStage.json'), 'utf8');
+    mc.patch(dir, { src, seasons: S800 });
+    assert.strictEqual(fs.readFileSync(path.join(dir, 'evStage.json'), 'utf8'), first, 'idempotent');
+    const ev = J('evStage');
+    assert.deepStrictEqual(ev.map((r) => r.eventStageId), [8000, mc.CATALOG_EV]);
+    assert.strictEqual(mc.CATALOG_EV, 6000);
+    const r = ev[1];
+    assert.strictEqual(r.eventType, 0);
+    assert.strictEqual(r.eventCategory, 2);
+    assert.strictEqual(r.detailUrl, '/web/colosseum/catalog');
+    assert.deepStrictEqual([r.validStageId, r.stageId, r.stageStartId, r.stageEndId], [1, [970000], 970000, 970000]);
+    assert.strictEqual(r.bannerUrl, `/web/colosseum/img/v${require('./routes-colosseum').COLOSSEUM_IMG_VERSION}/6000.png`);
+    assert.strictEqual(r.endTime, mc.END);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('a foreign row inside our ranges stops the run', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
   try {

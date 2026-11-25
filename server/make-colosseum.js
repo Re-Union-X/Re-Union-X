@@ -11,7 +11,8 @@
 // - ranking (category 4, ids 4009-4012) + rankingReward (its brackets, ids = the ranking's startRank..endRank): the client's
 //   «Rewards» button crashes for a season whose rankingId has no rankingReward rows;
 // - sphere / sphereArray / sphereMasu: the 1.1.3 Coliseum boards (type 3) of the season (SEASON_BOARDS), arryId and masuId
-//   renumbered to the sphereBoardId (the 1.1.3 3200001+/4200001+ ids fall in the Raid Boards' range 3000000-3999999).
+//   renumbered to the sphereBoardId (the 1.1.3 3200001+/4200001+ ids fall in the Raid Boards' range 3000000-3999999);
+// - evStage 6000: the Coliseum Catalog banner of the Events tab (Task 6, CATALOG_EV), not a 1.1.3 row.
 // Every array is cut to its valid* count, the rest zeroed (the 1.1.3 array tails hold decoder garbage), and padded to the
 // 4.3.1 schema length (recon/out/master_types_ww431.json). Dates as make-raid.js writes its rows (START / END): the server
 // decides which season is live (story clock or kept season), the original month stays in SEASONS.
@@ -55,6 +56,11 @@ const SEASON_BOARDS = { 800: [2200001], 900: [2200002, 2200023], 1000: [2210029,
 // the «Tier N Bonus» boards (1.1.3 boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum
 // Board!»; routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
 const BONUS_TIER = { 2200023: 10, 2210031: 10, 2210035: 10 };
+// Coliseum Catalog banner (Task 6; user 25-11: the first catalog banner of the Events tab): evStage CATALOG_EV, eventType 0,
+// Details -> CATALOG_URL (colosseum-pages.js), a tap opens the Training Grounds quest CATALOG_STAGE of make-special (the stage of
+// the Raid and Event Catalog banners too); the card game_data/colosseum_img/6000.png (recon/tools/make_special_banners.py
+// --section colosseum). After a change of the cards bump COLOSSEUM_IMG_VERSION, then the master revision.
+const CATALOG_EV = 6000, CATALOG_STAGE = 970000, CATALOG_URL = '/web/colosseum/catalog', COLOSSEUM_IMG_VERSION = 1;
 const RANGES = {
   colosseumStage: ['colosseumStageId', 1, 9999], colosseum: ['colosseumId', 1, 99999],
   stage: ['id', 81001, 81999], // stageKind 3, stageId YYYYMMNN
@@ -198,6 +204,16 @@ function readMaster(file) {
   try { return JSON.parse(text); } catch (e) { throw new Error(`colosseum: ${file} is corrupt: ${e.message}`); }
 }
 
+// the Coliseum Catalog banner row of evStage (make-raid.js evStageRow, as the Raid / Event Catalog banners), null without the
+// Training Grounds stage in the master
+function catalogEvStage(masterStage) {
+  if (!(masterStage || []).some((r) => r.stageId === CATALOG_STAGE)) return null;
+  const { evStageRow } = require('./make-raid');
+  const row = evStageRow(CATALOG_EV, [CATALOG_STAGE], { eventType: 0, detailUrl: CATALOG_URL });
+  row.bannerUrl = `/web/colosseum/img/v${COLOSSEUM_IMG_VERSION}/${CATALOG_EV}.png`;
+  return row;
+}
+
 // Drops our previous rows (everything inside RANGES; a stage row there must be a Coliseum one), appends the season rows.
 // opts: src (the 1.1.3 tables, tests), seasons. Returns the seasonRows output, null when off or without the 1.1.3 data.
 function patch(masterDir, opts = {}) {
@@ -218,6 +234,11 @@ function patch(masterDir, opts = {}) {
   const clash = master.stage.find((r) => stageIds.has(r.stageId));
   if (clash) throw new Error(`colosseum: stageId ${clash.stageId} already in the master (id ${clash.id})`);
   for (const t of TABLES) fs.writeFileSync(path.join(masterDir, `${t}.json`), JSON.stringify([...master[t], ...out[t]]));
+  // evStage: our banner row replaced (none without the Training Grounds stage), the other rows kept
+  const ev = readMaster(path.join(masterDir, 'evStage.json')).filter((r) => r.eventStageId !== CATALOG_EV);
+  const banner = catalogEvStage(master.stage);
+  fs.writeFileSync(path.join(masterDir, 'evStage.json'), JSON.stringify(banner ? [...ev, banner] : ev));
+  if (!banner) console.warn(`colosseum: no Coliseum Catalog banner: the Training Grounds stage ${CATALOG_STAGE} is not in the master (make-special first)`);
   console.log(`colosseum: ${out.colosseumStage.length} seasons (${(opts.seasons || SEASONS).map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
     + `+${out.enemy.length} enemies, +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
   return out;
@@ -225,4 +246,4 @@ function patch(masterDir, opts = {}) {
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { SEASONS, SEASON_BOARDS, BONUS_TIER, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
+module.exports = { SEASONS, SEASON_BOARDS, BONUS_TIER, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };

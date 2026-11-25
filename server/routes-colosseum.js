@@ -4,9 +4,15 @@
 //   124 GET /colosseum (list), 125 GET /colosseum/reward/list (rewardList), 126 POST /colosseum/start, 127 POST /colosseum/retire,
 //   128 POST /colosseum/clear, 139/140/180 GET /ranking/colosseum, /own, /border (ranking).
 // Seasons: make-colosseum.js SEASONS (WW 2016-04 .. 2016-07 = colosseumStageId 800 .. 1100) whose colosseumStage row is served.
-// One live season (liveSeason): the kept one (player.colosseum.kept, Coliseum Catalog) when it is served, else the season of the
-// story clock (storyCtx().shopFrom month); none below story quest 130 or in a month with no served season (status 2, «This event
+// One live season (liveSeason): the kept one (player.colosseum.kept, Coliseum Catalog) while it is served and a past month of the
+// story clock (catalog state 'kept', as a kept raid: a season kept from a later Story stays inert), else the season of the story
+// clock (storyCtx().shopFrom month); none below story quest 130 or in a month with no served season (status 2, «This event
 // is unavailable.»). Per season state: colosseum-rules.js seasonState (player.colosseum.seasons[id]).
+// Coliseum Catalog (Task 6, colosseum-pages.js): one row per served season with the state of the Raid / Event Catalogs
+// (calendar-util.js rowState on the season's month: now = the season of the story clock, can = a past month, kept, other = a month
+// the Shop week reaches but not the season, later); keep (a 'can' season only) / unkeep change player.colosseum.kept and nothing
+// else (each season keeps its own progress, coins and boards). catalogEvents: its banner (evStage 6000 of make-colosseum.js) for
+// the Events tab, once the Coliseum is open.
 // Rules: a loss / retire changes nothing and refunds no AP; a clear inside the window pays the cleared and skipped rounds and the
 // completed tiers (colosseum-rules.js clear); a 128 outside the window (double tap, stale screen) pays nothing and answers the
 // current state with the requested round in clearColosseums (never empty).
@@ -19,7 +25,8 @@
 'use strict';
 const rules = require('./colosseum-rules');
 const ranked = require('./ranked-rewards');
-const { SEASONS, rankedOf } = require('./make-colosseum');
+const calendar = require('./calendar-util');
+const { SEASONS, SEASON_BOARDS, CATALOG_EV, COLOSSEUM_IMG_VERSION, rankedOf } = require('./make-colosseum');
 const { bracketText } = require('./routes-hsc');
 
 const UNLOCK_QUEST = 130; // story quest that opens the Coliseum (notices, bench; the tile popup's test)
@@ -32,14 +39,16 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const monthName = (m) => `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
 const avatarType = (t) => t === 19 || t === 20 || t === 23;
 
-// deps: player, savePlayer, masterRows, storyWeek () -> {storyQuest, shopFrom}, shopFromAtWeek (realWeekIndex) -> shopFrom (no side
+// deps: player, savePlayer, masterRows, storyWeek () -> {storyQuest, shopFrom, shopTo}, shopFromAtWeek (realWeekIndex) -> shopFrom (no side
 // effect), realNow, serverTime, serverTimeAt, clock {weekIndex, weekEnd, weekStartOf}, userPointData, userDetailData,
 // stageResumptionData, inventoryBlocks, inventorySnapshot (now) -> snapshot before the rewards, userKeybladesData, send, ret, apNow, changeAp, campaignIds, battlePoints (getPoint, burst) ->
 // lux, beginBattle (userKeybladeId), grantItem ({type, id, num, skillId, skillLv}), addPresent ({type, id, num, skillId, skillLv}, text),
-// element (now, rank, userColosseum, arrivalTime) -> ranking entry, titleIds () -> owned title ids, log
+// element (now, rank, userColosseum, arrivalTime) -> ranking entry, titleIds () -> owned title ids, stageState (stageId) -> {score,
+// playStatus, clearMissionIds} (the catalog banner's Training Grounds), webBase (banner URLs), log
 function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAtWeek = null, realNow, serverTime, serverTimeAt, clock,
   userPointData, userDetailData, stageResumptionData, inventoryBlocks, inventorySnapshot = () => null, userKeybladesData, send, ret, apNow, changeAp, campaignIds = () => [],
-  battlePoints, beginBattle = () => {}, grantItem, addPresent, element, titleIds = () => player.titles || [], log = console.log }) {
+  battlePoints, beginBattle = () => {}, grantItem, addPresent, element, titleIds = () => player.titles || [],
+  stageState = () => ({ score: 0, playStatus: 0, clearMissionIds: [] }), webBase = '', log = console.log }) {
   const root = () => (player.colosseum ||= {});
   const stageRow = (id) => masterRows('colosseumStage').find((r) => r.colosseumStageId === id) || null;
   // a season served: in SEASONS and with its colosseumStage + tier rows
@@ -60,7 +69,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   function liveSeason() {
     if (!unlocked()) return null;
     const kept = root().kept ? season(root().kept) : null;
-    if (kept) return { ...kept, kept: true };
+    if (kept && rowState(kept) === 'kept') return { ...kept, kept: true };
     const s = seasonOfMonth(storyMonth());
     return s ? { ...s, kept: false } : null;
   }
@@ -277,21 +286,34 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     send(res, 200, { ret: ret(), [key]: { ...base, rankingDatas: rows, lastRank: rank } });
   }
 
-  // Coliseum Catalog (Task 6 builds the page on these): a served season can be kept when it is a past month of the story clock
+  // ---- Coliseum Catalog (Task 6) ----
+  // a season as a catalogue row of calendar-util.js: its month, from the 1st to the last day
+  const monthRow = (s) => {
+    const [y, m] = s.month.split('-').map(Number);
+    return { censusId: s.id, start: `${s.month}-01`, end: new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10), available: true };
+  };
+  // the context of rowState: the story's Shop week, the season of the story clock (the one listed «now») and the kept season
   function catalogCtx() {
-    return { storyMonth: storyMonth(), unlocked: unlocked(), kept: root().kept || null, live: (liveSeason() || {}).id || null };
+    const { shopFrom, shopTo } = storyWeek(), story = seasonOfMonth(storyMonth());
+    return { shopFrom, shopTo, current: story ? [story.id] : [], kept: root().kept || null, unlocked: unlocked() };
   }
-  function rowState(s, c = catalogCtx()) {
-    if (c.kept === s.id) return 'kept';
-    if (s.month === c.storyMonth) return 'now';
-    return s.month < c.storyMonth ? 'can' : 'later';
-  }
-  function catalogCard(id) {
+  // now / can / kept / other / later of a served season (calendar-util.js rowState, the Raid and Event Catalogs' rule)
+  function rowState(s, c = catalogCtx()) { return calendar.rowState(monthRow(s), c); }
+  function catalogCard(id, c = catalogCtx()) {
     const s = season(id);
     if (!s) return null;
-    const st = rules.seasonState(player, s.id);
-    return { colosseumStageId: s.id, month: s.month, state: rowState(s), coins: st.coins, ...userColosseum(s, st.last), tierRewards: [...st.tierRewards].sort((a, b) => a - b) };
+    const st = rules.seasonState(player, s.id), aps = s.tiers.map((t) => Number(t.ap) || 0);
+    return { colosseumStageId: s.id, month: s.month, state: rowState(s, c), tiers: s.tiers.length, apMin: Math.min(...aps), apMax: Math.max(...aps),
+      boardIds: [...(SEASON_BOARDS[s.id] || [])], coins: st.coins, ...userColosseum(s, st.last), tierRewards: [...st.tierRewards].sort((a, b) => a - b) };
   }
+  // the rows of the catalogue page: every served season, oldest first
+  function catalogRows() {
+    const c = catalogCtx();
+    return SEASONS.map((x) => catalogCard(x.colosseumStageId, c)).filter(Boolean);
+  }
+  // POST /web/colosseum/keep/<colosseumStageId> and /web/colosseum/unkeep: {code, body {ok, why?}}. Only a past season ('can') of an
+  // open Coliseum can be kept (else why: locked, now, other, later); keeping one replaces the previous. Neither touches any
+  // season's progress, coins or boards; a round started and not finished is dropped (it belonged to the other season).
   function keep(id) {
     const s = season(id);
     if (!s) return { code: 404, body: { ok: false, why: 'unknown season' } };
@@ -306,16 +328,37 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     return { code: 200, body: { ok: true } };
   }
   function unkeep() {
+    if (root().kept) log(`[colosseum] Coliseum Catalog: season ${root().kept} removed`);
     root().kept = null;
     root().fight = null;
     savePlayer();
     return { code: 200, body: { ok: true } };
   }
+  // The Coliseum Catalog banner for /stage/event category 2 (events-tab-order.js lists it first): its evStage row (make-colosseum.js
+  // CATALOG_EV: eventType 0, Details -> /web/colosseum/catalog, a tap opens its Training Grounds quest), as the Raid Catalog banner;
+  // none without the row or before the Coliseum opens (story quest 130). Crown: every objective of the Training Grounds done.
+  function catalogEvents(realMs = realNow()) {
+    if (!unlocked()) return [];
+    const ev = masterRows('evStage').find((r) => r.eventStageId === CATALOG_EV);
+    if (!ev) return [];
+    const ids = (ev.stageId || []).slice(0, ev.validStageId || 0).filter(Boolean);
+    if (!ids.length) return [];
+    const stageRows = masterRows('stage');
+    const stages = ids.map((stageId) => {
+      const st = stageState(stageId), row = stageRows.find((r) => r.stageId === stageId);
+      return { stageId, useAp: Number(row && row.useAp) || 0, score: st.score, playStatus: st.playStatus, clearMissionIds: st.clearMissionIds || [] };
+    });
+    return [{ stages, eventStageId: CATALOG_EV, showIcon: 1, bannerUrl: `${webBase}/web/colosseum/img/v${COLOSSEUM_IMG_VERSION}/${CATALOG_EV}.png`, eventType: 0,
+      status: 1, endTime: serverTimeAt(clock.weekEnd(realMs)), newStageId: 0, isLock: 0,
+      complete: stages.every((x) => [1, 2, 3].every((m) => (x.clearMissionIds || []).includes(m))) ? 1 : 0 }];
+  }
 
   return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, tierReached, addCoins, closeDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
+    catalogRows, catalogEvents,
     seasons: () => SEASONS.map((x) => season(x.colosseumStageId)).filter(Boolean) };
 }
 
 module.exports = routesColosseum;
 module.exports.RANKING_KEYS = KEYS;
 module.exports.UNLOCK_QUEST = UNLOCK_QUEST;
+module.exports.COLOSSEUM_IMG_VERSION = COLOSSEUM_IMG_VERSION;
