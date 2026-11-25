@@ -15,8 +15,8 @@
 // loops onto or before it); keep (a 'can' season only) / unkeep change player.colosseum.kept and nothing else (each season keeps its
 // own progress, coins and boards); keeping the kept season again or removing with nothing kept changes nothing. catalogEvents: its banner (evStage 6000 of make-colosseum.js) for
 // the Events tab, once the Coliseum is open.
-// Rules: a loss / retire changes nothing and refunds no AP; a clear inside the window pays the cleared and skipped rounds and the
-// completed tiers (colosseum-rules.js clear); a 128 outside the window (double tap, stale screen) pays nothing and answers the
+// Rules: a 126 resent for the round already started answers it again without a second AP charge; a loss / retire changes nothing and refunds no AP; a clear inside the window pays the cleared and skipped rounds and the
+// completed tiers (colosseum-rules.js clear; a medal that does not fit the medal storage goes to the Presents); a 128 outside the window (double tap, stale screen) pays nothing and answers the
 // current state with the requested round in clearColosseums (never empty).
 // Ranking: the original leaderboard as score thresholds on the best progress `last` (make-colosseum.js rankedOf, ranked-rewards.js):
 // a bracket reached pays the difference into the Presents once (settle, at 128 and at every ranking request).
@@ -30,6 +30,7 @@ const ranked = require('./ranked-rewards');
 const calendar = require('./calendar-util');
 const { SEASONS, SEASON_BOARDS, CATALOG_EV, COLOSSEUM_IMG_VERSION, rankedOf } = require('./make-colosseum');
 const { bracketText } = require('./routes-hsc');
+const { deliverReward } = require('./raid-rewards');
 
 const UNLOCK_QUEST = 130; // story quest that opens the Coliseum (notices, bench; the tile popup's test)
 const STATUS_OPEN = 1, STATUS_UNAVAILABLE = 2;
@@ -46,11 +47,12 @@ const avatarType = (t) => t === 19 || t === 20 || t === 23;
 // stageResumptionData, inventoryBlocks, inventorySnapshot (now) -> snapshot before the rewards, userKeybladesData, send, ret, apNow, changeAp, campaignIds, campaignAp (tier AP) -> AP under the day's
 // Coliseum AP campaign (campaigns.js colosseumAp), battlePoints (getPoint, burst) ->
 // lux, beginBattle (userKeybladeId), grantItem ({type, id, num, skillId, skillLv}), addPresent ({type, id, num, skillId, skillLv}, text),
+// medalCount () / medalCap () -> the medal storage (a medal that does not fit goes to the Presents, as raid-rewards.js deliverReward),
 // element (now, rank, userColosseum, arrivalTime) -> ranking entry, titleIds () -> owned title ids, stageState (stageId) -> {score,
 // playStatus, clearMissionIds} (the catalog banner's Training Grounds), webBase (banner URLs), log
 function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAtWeek = null, realNow, serverTime, serverTimeAt, clock,
   userPointData, userDetailData, stageResumptionData, inventoryBlocks, inventorySnapshot = () => null, userKeybladesData, send, ret, apNow, changeAp, campaignIds = () => [], campaignAp = (ap) => ap,
-  battlePoints, beginBattle = () => {}, grantItem, addPresent, element, titleIds = () => player.titles || [],
+  battlePoints, beginBattle = () => {}, grantItem, addPresent, medalCount = () => 0, medalCap = () => Infinity, element, titleIds = () => player.titles || [],
   stageState = () => ({ score: 0, playStatus: 0, clearMissionIds: [] }), webBase = '', log = console.log }) {
   const root = () => (player.colosseum ||= {});
   const stageRow = (id) => masterRows('colosseumStage').find((r) => r.colosseumStageId === id) || null;
@@ -195,17 +197,21 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     const open = st ? rules.playable(s.tiers, st).some((p) => p.tier === tier && p.round === round) : false;
     const t = s && s.tiers.find((x) => x.tier === tier);
     const ap = t ? campaignAp(Number(t.ap) || 0) : 0;
-    if (!open || apNow() < ap) {
+    // a 126 resent for the round already started (same season, tier and round, not cleared or retired yet): the same answer, no
+    // second AP charge
+    const f = root().fight;
+    const repeat = open && !!f && f.season === s.id && f.tier === tier && f.round === round;
+    if (!open || (!repeat && apNow() < ap)) {
       // missing fields on purpose: the client stops with an error instead of playing a round the server does not count
       log(`[colosseum] start refused: season ${s ? s.id : 'none'}, tier ${body?.rank} round ${body?.stageCount}, AP ${apNow()} of ${ap}`);
       return send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) } });
     }
-    if (ap) changeAp(-ap);
+    if (ap && !repeat) changeAp(-ap);
     const userKeybladeId = Number(body?.userKeybladeId) || 0;
-    root().fight = { season: s.id, tier, round, stageId: Number(body?.stageId) || 0 };
+    if (!repeat) root().fight = { season: s.id, tier, round, stageId: Number(body?.stageId) || 0 };
     beginBattle(userKeybladeId);
     savePlayer();
-    log(`[colosseum] ${s.id}: tier ${tier} round ${round} started (-${ap} AP)`);
+    log(`[colosseum] ${s.id}: tier ${tier} round ${round} started (${repeat ? 'repeated request, no AP' : `-${ap} AP`})`);
     send(res, 200, {
       ret: ret(),
       userData: { userPoint: userPointData(now) },
@@ -240,7 +246,19 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
         // non-coin items of the cleared rounds and of the completed tiers (coins are in st.coins already)
         const items = [...out.cleared.flatMap((c) => s.tiers.find((x) => x.tier === c.tier).roundReward), ...out.tierItems.flatMap((x) => x.items)]
           .filter((it) => it.type !== COIN);
-        for (const it of items) { grantItem(it); if (avatarType(it.type)) avatar = true; }
+        // a medal that does not fit the medal storage goes to the Presents (raid-rewards.js deliverReward, the raids and Coliseum boards)
+        let medals = medalCount();
+        const cap = medalCap();
+        for (const it of items) {
+          if (deliverReward(it, { medalCount: medals, cap }) === 'present') {
+            addPresent(it, `Coliseum ${monthName(s.month)}: medal storage full`);
+            log(`[colosseum] ${s.id}: medal ${it.id} x${it.num || 1} to the Presents (storage full)`);
+            continue;
+          }
+          grantItem(it);
+          if (it.type === 3) medals += it.num || 1;
+          if (avatarType(it.type)) avatar = true;
+        }
         settle(s, st);
         log(`[colosseum] ${s.id}: tier ${tier} round ${round} cleared${body?.isSkip ? ' in one turn' : ''}: ${out.cleared.length} round(s), +${out.coins} coins`
           + `${out.tierRewards.length ? `, tier reward(s) ${out.tierRewards.join(', ')}` : ''}; window ${st.last + 1}..${st.open}`);
@@ -302,12 +320,15 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   }
   // now / can / other / later of a served season (calendar-util.js rowState, the Raid and Event Catalogs' rule); 'kept' for the kept
   // season whatever its month (ruling 10: it plays until it is removed, so its row always offers Remove)
-  function rowState(s, c = catalogCtx()) { return c.kept === s.id ? 'kept' : calendar.rowState(monthRow(s), { ...c, kept: null }); }
+  const baseState = (s, c) => calendar.rowState(monthRow(s), { ...c, kept: null });
+  function rowState(s, c = catalogCtx()) { return c.kept === s.id ? 'kept' : baseState(s, c); }
   function catalogCard(id, c = catalogCtx()) {
     const s = season(id);
     if (!s) return null;
     const st = rules.seasonState(player, s.id), aps = s.tiers.map((t) => Number(t.ap) || 0);
-    return { colosseumStageId: s.id, month: s.month, state: rowState(s, c), tiers: s.tiers.length, apMin: Math.min(...aps), apMax: Math.max(...aps),
+    // base: the row's state with nothing kept (now / can / other / later), which the page restores after a Remove (a kept season can
+    // sit on the story month or later, ruling 10)
+    return { colosseumStageId: s.id, month: s.month, state: rowState(s, c), base: baseState(s, c), tiers: s.tiers.length, apMin: Math.min(...aps), apMax: Math.max(...aps),
       boardIds: [...(SEASON_BOARDS[s.id] || [])], coins: st.coins, ...userColosseum(s, st.last), tierRewards: [...st.tierRewards].sort((a, b) => a - b) };
   }
   // the rows of the catalogue page: every served season, oldest first

@@ -49,6 +49,13 @@ assert.strictEqual(c.apWith(4, 3500), 2, 'the original power would cost 2 (why t
 // «0 AP!» Coliseum kind unchanged
 const zero = mc.buildCampaigns({ kinds: [kind({ power: 0, displayText: '0 AP!', stageType: 7, days: [D] })] }, ctx).rows;
 assert.ok(zero.length === 1 && zero[0].power === 0 && zero[0].stageType === 7, 'the 0 AP! Coliseum kind keeps power 0');
+// only the original «1 AP» rows (power 3500) are served at 2000 (ruling 11, final review M3): any other scope-7 AP rate is untouched
+for (const power of [5000, 2500, 3000]) {
+  const other = mc.buildCampaigns({ kinds: [kind({ power, displayText: 'other colo', stageType: 7, days: [D] })] }, ctx).rows;
+  assert.ok(other.length === 1 && other[0].power === power && other[0].stageType === 7, `a scope-7 AP row of power ${power} is not rewritten`);
+}
+const dropRate = mc.buildCampaigns({ kinds: [kind({ type: 1, power: 3500, displayText: 'drop colo', stageType: 7, days: [D] })] }, ctx).rows;
+assert.ok(dropRate.length === 1 && dropRate[0].power === 3500, 'a scope-7 row of another type keeps power 3500');
 assert.strictEqual(out.dropped.multi, 1, 'co-op scope (Union Cross) not served');
 const luxStory = out.rows.filter((r) => r.type === 10 && r.stageType === 5);
 assert.strictEqual(luxStory.length, 1, 'Lux on every story quest kept as stageType 5');

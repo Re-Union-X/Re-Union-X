@@ -193,7 +193,7 @@ WW gameplay videos of 2016-2017 (round-select screens, boards, ranking screens).
 
 Coliseum Part 1 Task 4 on the bench (WW 4.3.1 client, LDPlayer instance 0): resources **185** (incremental on 184),
 master revision **392**, probe save `coli1` (kbslots cut at story quest 200: Shop week 2016-04, season 800, deck ATK ~940k).
-Screenshots (local, not in the repository): `D:\Progetto_Restauro_KH_UX\tmp\coli_p1\shots\coli_*.png`.
+Screenshots are local only (not in the repository).
 
 Resources: `recon/tools/import_colosseum_stages.py` copies the 80 `cl_stg` files of the 40 Part 1 stages (seasons 800-1100,
 stage sets JP 2015-07/10/11/12) from the WW 2016 bundle, all of which it holds (the JP copy of 20151108 has a corrupt enemy id

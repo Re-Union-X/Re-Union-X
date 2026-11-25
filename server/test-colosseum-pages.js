@@ -21,6 +21,38 @@ const rowHtml = (html, id) => {
   return html.slice(i, j < 0 ? undefined : j);
 };
 
+// The keep script of the page (catalog-pages.js keepJs + kxRows) on a minimal DOM of its rows (ES5 in vm, as in the WebView): each row
+// with its pill (.s), «Replaces» line (.rp) and Keep / Remove button (.pk). kx(id, on) = a keep (1) / remove (0) answered 200.
+function fakeRows(html) {
+  const dec = (v) => v.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  const attrsOf = (tag) => Object.fromEntries([...tag.matchAll(/([\w-]+)="([^"]*)"/g)].map((m) => [m[1], dec(m[2])]));
+  const mk = (tag) => {
+    const e = { attrs: attrsOf(tag), innerHTML: '', textContent: '', style: {}, q: {} };
+    e.className = e.attrs.class || '';
+    e.getAttribute = (k) => (k in e.attrs ? e.attrs[k] : null);
+    e.setAttribute = (k, v) => { e.attrs[k] = String(v); };
+    e.querySelector = (sel) => e.q[sel] || null;
+    return e;
+  };
+  const rows = [...html.matchAll(/<div class="row [^"]*"[^>]*>/g)].map((m) => {
+    const el = mk(m[0]), h = rowHtml(html, el.attrs['data-eid']);
+    const s = /<span class="s ([^"]*)">([\s\S]*?)<\/span>(?=<div class="rp"|<div>|<\/div>)/.exec(h);
+    el.q['.s'] = mk(`<span class="s ${s[1]}">`); el.q['.s'].innerHTML = s[2];
+    const rp = /<div class="rp"([^>]*)>([^<]*)<\/div>/.exec(h);
+    if (rp) { el.q['.rp'] = mk(`<div class="rp"${rp[1]}>`); el.q['.rp'].textContent = rp[2]; el.q['.rp'].style.display = /display:none/.test(rp[1]) ? 'none' : ''; }
+    const pk = /<a href="#" class="pk[^"]*"[^>]*>/.exec(h);
+    if (pk) el.q['.pk'] = mk(pk[0]);
+    return el;
+  });
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+  const win = {};
+  require('vm').runInNewContext(scripts, { window: win, document: { querySelectorAll: (sel) => (sel === '#rows .row' ? rows : []), getElementById: () => null } });
+  const row = (id) => rows.find((r) => r.attrs['data-eid'] === String(id));
+  const view = (id) => { const r = row(id), b = r.q['.pk'];
+    return { show: r.attrs['data-show'], cls: r.className, pill: r.q['.s'].innerHTML, button: b && b.style.display !== 'none' ? b.attrs['data-pin'] : null }; };
+  return { rows, row, view, kx: (id, on) => win.kxRow(String(id), on) };
+}
+
 const tests = {
   lists_every_season() {
     const html = pages.catalogPage(ROWS, CTX);
@@ -49,6 +81,40 @@ const tests = {
     // the shared keep script (catalog-pages.js keepJs): POSTs under /web/colosseum
     assert.ok(html.includes('function kxKeep(') && html.includes('"/web/colosseum/unkeep"'));
     assert.ok(html.includes('id="pinmsg"'));
+  },
+  // after a Remove or a keep of another season, the old kept row returns to its own state (data-base: now / later ...), not to
+  // «can be kept» (final review M2, ruling 10: a kept season can sit on the story month or later)
+  keep_script_restores_base() {
+    const rows = [row(800, '2016-04', 'can', { base: 'can' }), row(900, '2016-05', 'kept', { base: 'now' }), row(1000, '2016-06', 'other', { base: 'other' }),
+      row(1100, '2016-07', 'later', { base: 'later' })];
+    const html = pages.catalogPage(rows, CTX);
+    assert.ok(rowHtml(html, 900).includes('data-base="now"') && rowHtml(html, 800).includes('data-base="can"'));
+    const p = fakeRows(html);
+    assert.strictEqual(p.view(900).button, '/web/colosseum/unkeep');
+    // keep April: May goes back to the season of the Story, no button, «plays again when you remove»
+    p.kx(800, 1);
+    assert.deepStrictEqual([p.view(800).show, p.view(800).button], ['kept', '/web/colosseum/unkeep']);
+    assert.deepStrictEqual([p.view(900).show, p.view(900).cls, p.view(900).button], ['now', 'row now', null]);
+    assert.ok(p.view(900).pill.includes('Season of your Story (it plays again when you remove the kept season)'), p.view(900).pill);
+    assert.ok(!p.view(900).pill.includes('can be kept'));
+    // remove April: April can be kept again, May is the season of the Story now
+    p.kx(800, 0);
+    assert.deepStrictEqual([p.view(800).show, p.view(800).button], ['can', '/web/colosseum/keep/800']);
+    assert.ok(p.view(800).pill.includes('Past season — can be kept'));
+    assert.deepStrictEqual([p.view(900).show, p.view(900).button], ['now', null]);
+    assert.ok(p.view(900).pill.includes('Season of your Story now'), p.view(900).pill);
+    assert.deepStrictEqual([p.view(1000).show, p.view(1100).show], ['other', 'later'], 'rows never kept are untouched');
+    // a kept season later than the Story (the rotation looped back): Remove restores its own «later» line
+    const q = fakeRows(pages.catalogPage([row(800, '2016-04', 'now', { base: 'now' }), row(1100, '2016-07', 'kept', { base: 'later' })], CTX));
+    assert.ok(q.view(800).pill.includes('it plays again when you remove'));
+    q.kx(1100, 0);
+    assert.deepStrictEqual([q.view(1100).show, q.view(1100).cls, q.view(1100).button], ['later', 'row off', null]);
+    assert.ok(q.view(1100).pill.includes('Unlocks at Story Quest 250'), q.view(1100).pill);
+    assert.ok(q.view(800).pill.includes('Season of your Story now'));
+    // a row without data-base (older rows) falls back to «can be kept», as the Raid / Event Catalogs
+    const r = fakeRows(pages.catalogPage([row(800, '2016-04', 'kept'), row(900, '2016-05', 'can')], CTX));
+    r.kx(900, 1);
+    assert.deepStrictEqual([r.view(800).show, r.view(800).button], ['can', '/web/colosseum/keep/800']);
   },
   progress_line() {
     const html = pages.catalogPage(ROWS, CTX);

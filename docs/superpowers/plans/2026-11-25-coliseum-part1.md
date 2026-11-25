@@ -130,7 +130,7 @@ private `private\events\sources\coliseum\` (RULES.md, COLISEUM.md, RELUX_COLISEU
   - `locked before 130`: story 120 → `/colosseum` status 2.
   - `unserved month`: shopFrom 2016-08-04 → status 2, `start` refused with `{ret}` error, no AP spent.
   - `list`: shopFrom 2016-04-07 → `colosseumInfo.colosseumStageId` 800, status 1, `colosseumStages` = the window
-    (`rank`, `stageCount`, `stageId`, `useAp`), `userColosseum{userRank, userStageCount, userStageTotalCount}`.
+    (`rank`, `stageCount`, `stageId`, `useAp` = the tier's raw AP: the client applies the scope-7 campaign itself), `userColosseum{userRank, userStageCount, userStageTotalCount}`.
   - `start spends AP`: tier AP taken, `startColosseumData` echoes the request, `userKeybladeId` uint64.
   - `retire keeps progress`: state and AP unchanged after 127.
   - `clear pays`: 128 for the window round → `clearColosseums` non-empty, coins in `userData.userPoint.colosseumSpherePoint`,

@@ -13,6 +13,8 @@ const tiers = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [row(3, 0, 2, 5, 
 const T = (tier, round) => ({ tier, round });
 const view = (st) => R.playable(tiers, st).map((p) => `T${p.tier}R${p.round}`);
 const fresh = () => R.seasonState({}, 7);
+// the season state: board progress lives in player.colosseumSphere, never here (final review M5: no dead boardIds field)
+assert.deepStrictEqual(Object.keys(fresh()).sort(), ['bestAt', 'cleared', 'coins', 'last', 'open', 'tierRewards']);
 
 assert.deepStrictEqual(tiers.map((t) => t.tier), [1, 2, 3], 'tiersOf sorts by round');
 assert.strictEqual(R.globalRound(tiers, 2, 2), 7);

@@ -95,8 +95,9 @@ tester package.
 
 - **Round list (`/colosseum` 124):** the playable rounds = the unlocked window of the current tier/round, one
   `colosseumStages` element per playable round (`rank` = tier, `stageCount` = round in tier, `stageId` = the stage of that
-  round, cycled through the season's set by `loopStageCount`, `useAp` = the tier's AP or the campaign AP). Exact shape
-  confirmed by the Part 1 bench probe.
+  round, cycled through the season's set by `loopStageCount`, `useAp` = the tier's raw AP, never the campaign AP: the 4.3.1
+  client applies the day's scope-7 AP campaign to `useAp` itself, benched 1 AP shown under the «1 AP» campaign; only 126
+  `/colosseum/start` charges the campaign AP server-side). Exact shape confirmed by the Part 1 bench probe.
 - **Loss (`/colosseum/retire` 127):** progress unchanged; AP not refunded.
 - **Shortcut state machine (RULES.md Q3, proven):** the save holds, per season, the last round cleared (`last`) and the
   end of the unlocked window (`open`). A one-turn clear (`isSkip` 1) of round r sets `open` = r + N (N = the tier's

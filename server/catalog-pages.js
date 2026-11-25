@@ -21,17 +21,23 @@ const KEEP_LABEL = keepLabel(), REMOVE_LABEL = removeLabel();
 const keepButton = (base, id, on, extra = '', cls = '', where = 'Events') => `<a href="#" class="pk${cls}" data-id="${id}" data-on="${on}" data-pin="${on === 1 ? `${base}/keep/${id}` : `${base}/unkeep`}"${extra}>${on === 1 ? keepLabel(where) : removeLabel(where)}</a>`;
 
 // After a keep / remove on a catalogue list (Raid, Event and Coliseum Catalogs): kxRows(rows, PILL, o) defines window.kxRow(id, on),
-// which turns the kept row gold, the previous kept row back to «can be kept» (PILL {kept, can}: [row class, pill html]) and
-// rewrites the «Replaces: <name>» lines (replacesLine). rows: the row elements (data-eid, data-show; a « hide» class is kept);
-// o.name(el): the name of a row (default its data-name); o.onSet(el, state): after a row changed state (a page's own row model);
-// o.after(): after every keep / remove (a page's render). ES5.
+// which turns the kept row gold, the previous kept row back to its own state and rewrites the «Replaces: <name>» lines
+// (replacesLine). The state a row returns to: its data-base (the row's state with nothing kept, server-side; the Coliseum Catalog,
+// whose kept season can sit on the story month or later, ruling 10), else «can» (the Raid / Event Catalogs: a kept item is always a
+// past one). PILL {kept, can, ...}: [row class, pill html]; a row's own data-bcls / data-bpill (its base class and pill html) win over
+// PILL for its base state. A Keep / Remove button shows only on a kept or «can» row. rows: the row elements (data-eid, data-show; a
+// « hide» class is kept); o.name(el): the name of a row (default its data-name); o.onSet(el, state): after a row changed state (a
+// page's own row model); o.after(): after every keep / remove (a page's render). ES5.
 const KEEP_ROWS_JS = "function kxRows(rows,PILL,o){o=o||{};"
   + "function nm(el){return o.name?o.name(el):el.getAttribute('data-name');}"
-  + "function setRow(el,st){var pc=PILL[st];el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');"
+  + "function bs(el){return el.getAttribute('data-base')||'can';}"
+  + "function setRow(el,st){var pc=PILL[st],bp=el.getAttribute('data-bpill');if(st!=='kept'&&bp!==null)pc=[el.getAttribute('data-bcls')||st,bp];"
+  + "el.setAttribute('data-show',st);el.className='row '+pc[0]+(/ hide/.test(el.className)?' hide':'');"
   + "var s=el.querySelector('.s');if(s){s.className='s s-'+pc[0];s.innerHTML=pc[1];}"
-  + "var b=el.querySelector('.pk');if(b)kxSet(b,el.getAttribute('data-eid'),st==='kept');if(o.onSet)o.onSet(el,st);}"
-  + "window.kxRow=function(id,on){var name='',i,el;for(i=0;i<rows.length;i++){el=rows[i];if(el.getAttribute('data-show')==='kept')setRow(el,'can');"
-  + "if(el.getAttribute('data-eid')===id){setRow(el,on?'kept':'can');if(on)name=nm(el);}}"
+  + "var b=el.querySelector('.pk');if(b){kxSet(b,el.getAttribute('data-eid'),st==='kept');if(b.style)b.style.display=st==='kept'||st==='can'?'':'none';}"
+  + "if(o.onSet)o.onSet(el,st);}"
+  + "window.kxRow=function(id,on){var name='',i,el;for(i=0;i<rows.length;i++){el=rows[i];if(el.getAttribute('data-show')==='kept')setRow(el,bs(el));"
+  + "if(el.getAttribute('data-eid')===id){setRow(el,on?'kept':bs(el));if(on)name=nm(el);}}"
   + "for(i=0;i<rows.length;i++){var x=rows[i].querySelector('.rp');if(x){x.textContent=name?'Replaces\\u003a '+name:'';"
   + "x.style.display=name&&rows[i].getAttribute('data-show')==='can'?'':'none';}}if(o.after)o.after();};}";
 // «Replaces: <kept item>» over a Keep button (st.button 1, Keep; 0, Remove; null, none); hidden on the kept row, which gets it back

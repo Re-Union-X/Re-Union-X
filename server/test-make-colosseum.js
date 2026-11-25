@@ -254,8 +254,24 @@ test('a foreign row inside our ranges stops the run', () => {
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('the 1.1.3 folder comes from opts.dir / the command line before KHUX_COLOSSEUM_SRC and the default', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-')), saved = process.env.KHUX_COLOSSEUM_SRC;
+  const warn = console.warn, said = [];
+  console.warn = (m) => said.push(m);
+  try {
+    process.env.KHUX_COLOSSEUM_SRC = path.join(dir, 'not-this-one');
+    assert.strictEqual(mc.patch(dir, { dir: path.join(dir, 'empty') }), null, 'an unreadable folder writes nothing');
+    assert.ok(said.some((m) => m.includes(path.join(dir, 'empty'))), 'the folder of opts.dir is the one read');
+    assert.ok(!fs.existsSync(path.join(dir, 'colosseum.json')));
+  } finally {
+    console.warn = warn;
+    if (saved === undefined) delete process.env.KHUX_COLOSSEUM_SRC; else process.env.KHUX_COLOSSEUM_SRC = saved;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('real_113 (the four seasons from the 1.1.3 master)', () => {
-  const src = mc.readSource(mc.DEFAULT_2016, null);
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016, null);
   if (!src) { results.push('skip real_113: 1.1.3 master not on disk'); return; }
   src.masterEnemyIds = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).map((r) => r.enemyId);
   const out = mc.seasonRows(src);

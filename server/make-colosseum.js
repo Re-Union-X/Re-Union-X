@@ -42,6 +42,8 @@
 const fs = require('fs');
 const path = require('path');
 
+// the 1.1.3 data folder when neither the command line (argv[3]) nor KHUX_COLOSSEUM_SRC names one: the local default of the other
+// generators (make-raid.js DEFAULT_2016, the same folder); a missing folder only skips the Coliseum rows
 const DEFAULT_2016 = 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data';
 const START = '2015-01-01 00:00:00', END = '2030-12-31 23:59:59';
 const SEASONS = [
@@ -215,10 +217,11 @@ function catalogEvStage(masterStage) {
 }
 
 // Drops our previous rows (everything inside RANGES; a stage row there must be a Coliseum one), appends the season rows.
-// opts: src (the 1.1.3 tables, tests), seasons. Returns the seasonRows output, null when off or without the 1.1.3 data.
+// opts: dir (the 1.1.3 data folder; else KHUX_COLOSSEUM_SRC, else DEFAULT_2016), src (the 1.1.3 tables, tests), seasons. Returns the
+// seasonRows output, null when off or without the 1.1.3 data.
 function patch(masterDir, opts = {}) {
   if (process.env.KHUX_COLOSSEUM === '0') { console.log('colosseum: off (KHUX_COLOSSEUM=0)'); return null; }
-  const dir = process.env.KHUX_COLOSSEUM_SRC || DEFAULT_2016;
+  const dir = opts.dir || process.env.KHUX_COLOSSEUM_SRC || DEFAULT_2016;
   const src = opts.src || readSource(dir);
   if (!src) { console.warn(`colosseum: skipped, the 1.1.3 master under ${dir} is not readable: no Coliseum rows`); return null; }
   const master = Object.fromEntries(TABLES.map((t) => [t, readMaster(path.join(masterDir, `${t}.json`))]));
@@ -244,6 +247,7 @@ function patch(masterDir, opts = {}) {
   return out;
 }
 
-if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
+// node make-colosseum.js [master_dir] [1.1.3 data folder]
+if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
 module.exports = { SEASONS, SEASON_BOARDS, BONUS_TIER, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };

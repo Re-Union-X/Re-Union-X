@@ -55,6 +55,7 @@ function world(opts = {}) {
     apNow: () => w.ap, changeAp: (d) => { w.ap += d; }, campaignIds: () => [7], campaignAp: opts.campaignAp,
     battlePoints: (gp, burst) => { const l = Number(gp?.lux) || 0; w.lux += l; w.burst = burst; return l; }, beginBattle: (k) => { w.keyblade = k; },
     grantItem: (it) => w.grants.push(it), addPresent: (it, text) => w.presents.push({ ...it, text }),
+    medalCount: opts.medalCount, medalCap: opts.medalCap,
     element: (now, rank, uc, arrival) => ({ userData: { user: { userId: 1 } }, rank, userColosseum: uc, arrivalTime: arrival }),
     stageState: (id) => w.stageStates[id] || { score: 0, playStatus: 0, clearMissionIds: [] }, webBase: 'http://web.test',
     log: (m) => w.logs.push(m),
@@ -124,6 +125,7 @@ const tests = {
     assert.strictEqual(w.keyblade, 3);
     // a round outside the window, or too little AP: refused, nothing spent
     assert.deepStrictEqual(keys(w.start(1, 2)), ['ret', 'userData']);
+    w.call('retire', {}); // a repeated start of the running round is answered (start_repeated_charges_once): drop it first
     w.ap = 2;
     assert.deepStrictEqual(keys(w.start(1, 1)), ['ret', 'userData']);
     assert.strictEqual(w.ap, 2);
@@ -194,6 +196,41 @@ const tests = {
     assert.deepStrictEqual(w.grants.map((g) => [g.type, g.id, g.num]), [[3, 90013, 1], [3, 90015, 2]]);
     assert.deepStrictEqual(w.call('list').colosseumStages, [{ rank: 3, stageCount: 1, stageId: 20150701, useAp: 5 }]);
   },
+  start_repeated_charges_once() {
+    // a 126 resent for the round already started (same season, tier, round): the same answer, no second AP charge (final review M1)
+    const w = world();
+    const a = w.start(1, 1);
+    assert.strictEqual(w.ap, 97);
+    const b = w.start(1, 1);
+    assert.strictEqual(w.ap, 97, 'a repeated start is not charged again');
+    assert.deepStrictEqual(keys(b), keys(a));
+    assert.deepStrictEqual(b.startColosseumData, a.startColosseumData);
+    // even with less AP left than the round costs, the repeated start of the running round is answered
+    w.ap = 1;
+    assert.deepStrictEqual(b.startColosseumData, w.start(1, 1).startColosseumData);
+    assert.strictEqual(w.ap, 1);
+    // the round then clears once; a new start after the clear is charged again
+    w.ap = 100;
+    w.clear(1, 1);
+    w.start(1, 2);
+    assert.strictEqual(w.ap, 97, 'the next round costs its AP');
+  },
+  clear_medal_storage_full() {
+    // the tier reward medal with the medal storage full goes to the Presents (as raid-rewards.js deliverReward, final review M4)
+    const full = (x) => x.presents.filter((p) => p.text.includes('medal storage full')).map((p) => [p.id, p.num]);
+    const w = world({ medalCount: () => 500, medalCap: () => 500 });
+    w.start(1, 1); w.clear(1, 1, true); w.start(1, 3); w.clear(1, 3);
+    assert.deepStrictEqual(w.grants, [], 'nothing granted into a full box');
+    assert.deepStrictEqual(full(w), [[90013, 1]], 'tier medal to the Presents');
+    assert.strictEqual(w.presents.find((x) => x.text.includes('storage full')).text, 'Coliseum April 2016: medal storage full');
+    assert.strictEqual(w.c.coinsOf(), 33, 'coins still paid');
+    // one free slot, tier 1 and tier 2 rewards paid by one clear: medal 90013 fills the slot, medal 90015 x2 overflows
+    const v = world({ medalCount: () => 499, medalCap: () => 500 });
+    v.player.colosseum = { seasons: { 800: { last: 3, open: 4 } } };
+    v.start(2, 1); v.clear(2, 1); v.start(2, 2); v.clear(2, 2);
+    assert.deepStrictEqual(v.grants.map((g) => [g.type, g.id, g.num]), [[3, 90013, 1]], 'the medal that fits is granted');
+    assert.deepStrictEqual(full(v), [[90015, 2]], 'the storage counted as filled by it');
+  },
   clear_wrong_round() {
     const w = world();
     w.start(1, 1);
@@ -204,7 +241,7 @@ const tests = {
   },
   reward_list_sorted() {
     const w = world();
-    w.player.colosseum = { seasons: { 800: { last: 5, open: 6, coins: 0, cleared: [], tierRewards: [2, 1], bestAt: null, boardIds: [] } } };
+    w.player.colosseum = { seasons: { 800: { last: 5, open: 6, coins: 0, cleared: [], tierRewards: [2, 1], bestAt: null } } };
     const b = w.call('rewardList');
     assert.deepStrictEqual(keys(b), ['ret', 'getRewardRankIds']);
     assert.deepStrictEqual(b.getRewardRankIds, [1, 2]);
@@ -325,6 +362,7 @@ const tests = {
     const st = () => Object.fromEntries(w.c.catalogRows().map((r) => [r.colosseumStageId, r.state]));
     assert.deepStrictEqual(w.c.catalogRows().map((r) => [r.colosseumStageId, r.month]), [[800, '2016-04'], [900, '2016-05'], [1000, '2016-06'], [1100, '2016-07']]);
     assert.deepStrictEqual(st(), { 800: 'can', 900: 'can', 1000: 'now', 1100: 'later' });
+    assert.ok(w.c.catalogRows().every((r) => r.base === r.state), 'nothing kept: base = state');
     // a Shop week spanning two months counts for the month it starts in: July is reached but not the season (other, no keep)
     w.week = { storyQuest: 200, shopFrom: '2016-06-27', shopTo: '2016-07-03' };
     assert.deepStrictEqual(st(), { 800: 'can', 900: 'can', 1000: 'now', 1100: 'other' });
@@ -374,8 +412,8 @@ const tests = {
   catalog_keep_keeps_progress() {
     const w = world();
     w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
-    w.player.colosseum = { seasons: { 800: { last: 4, open: 5, coins: 77, cleared: [1, 2, 3, 4], tierRewards: [1], bestAt: '2026-11-01T00:00:00.000Z', boardIds: [2200001] },
-      1000: { last: 1, open: 2, coins: 3, cleared: [1], tierRewards: [], bestAt: null, boardIds: [] } } };
+    w.player.colosseum = { seasons: { 800: { last: 4, open: 5, coins: 77, cleared: [1, 2, 3, 4], tierRewards: [1], bestAt: '2026-11-01T00:00:00.000Z' },
+      1000: { last: 1, open: 2, coins: 3, cleared: [1], tierRewards: [], bestAt: null } } };
     w.player.colosseumSphere = { 800: { 2200001: { id: 1, unlock: [1, 2] } } };
     const before = JSON.stringify([w.player.colosseum.seasons, w.player.colosseumSphere]);
     w.c.keep(800);
@@ -395,18 +433,21 @@ const tests = {
     const w = world();
     w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
     assert.strictEqual(w.c.keep(800).code, 200);
-    const check = (shopFrom, shopTo, story) => {
+    const check = (shopFrom, shopTo, story, base800) => {
       w.week = { storyQuest: 200, shopFrom, shopTo };
       assert.deepStrictEqual([w.c.liveSeason().id, w.c.liveSeason().kept], [800, true], shopFrom);
       assert.strictEqual(w.call('list').colosseumInfo.colosseumStageId, 800, `124 ${shopFrom}`);
       const st = Object.fromEntries(w.c.catalogRows().map((r) => [r.colosseumStageId, r.state]));
       assert.deepStrictEqual(st, story, shopFrom);
+      // base: the state of each row with nothing kept (the page restores it after a Remove, final review M2)
+      const base = Object.fromEntries(w.c.catalogRows().map((r) => [r.colosseumStageId, r.base]));
+      assert.deepStrictEqual(base, { ...story, 800: base800 }, `base ${shopFrom}`);
       // the end shown is the kept season's (the week's end), never the story season's month end
       assert.deepStrictEqual(w.c.closeDate(NOW), { colosseumStageId: 800, date: fmt(clock.weekEnd(NOW)) });
     };
-    check('2016-05-05', '2016-05-11', { 800: 'kept', 900: 'now', 1000: 'later', 1100: 'later' }); // loop back to May
-    check('2016-04-07', '2016-04-13', { 800: 'kept', 900: 'later', 1000: 'later', 1100: 'later' }); // to the kept season's own month
-    check('2016-03-03', '2016-03-09', { 800: 'kept', 900: 'later', 1000: 'later', 1100: 'later' }); // before it
+    check('2016-05-05', '2016-05-11', { 800: 'kept', 900: 'now', 1000: 'later', 1100: 'later' }, 'can'); // loop back to May
+    check('2016-04-07', '2016-04-13', { 800: 'kept', 900: 'later', 1000: 'later', 1100: 'later' }, 'now'); // to the kept season's own month
+    check('2016-03-03', '2016-03-09', { 800: 'kept', 900: 'later', 1000: 'later', 1100: 'later' }, 'later'); // before it
     // the page offers Remove on the kept row
     const html = require('./colosseum-pages').catalogPage(w.c.catalogRows(), { unlocked: true });
     assert.ok(html.includes('data-pin="/web/colosseum/unkeep"'), 'Remove on the kept row');

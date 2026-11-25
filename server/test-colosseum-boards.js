@@ -256,7 +256,7 @@ function wiring() {
     assert.deepStrictEqual(ids(call(t.respondSphereCheck, HOME).userSphere.userSphereDatas), [SCROOGE], 'the home check: Scrooge only');
     // Tier 9 complete (season 900: rounds 1-119 = Tiers 1-9): Tier 10 Round 1 playable
     const st = p.colosseum.seasons[900] || (p.colosseum.seasons[900] = {});
-    Object.assign(st, { last: 119, open: 120, coins: 0, cleared: [], tierRewards: [], bestAt: null, boardIds: [] });
+    Object.assign(st, { last: 119, open: 120, coins: 0, cleared: [], tierRewards: [], bestAt: null });
     assert.deepStrictEqual(ids(call(t.respondSphereCheck, HOME).userSphere.userSphereDatas), [BONUS], 'announced by the next check');
     assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [SCROOGE, BONUS]);
     p.colosseum.kept = 800;

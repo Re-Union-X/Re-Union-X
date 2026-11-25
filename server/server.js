@@ -5274,6 +5274,8 @@ function colosseum() {
     beginBattle: (userKeybladeId) => { player.currentUserKeybladeId = Number(userKeybladeId) || USER_KEYBLADE_ID; },
     grantItem: grantRaidItem,
     addPresent: (r, text) => addPresent(r.type, r.id || 0, r.num, text, r.skillId || undefined, undefined, r.skillLv || undefined),
+    // a reward medal that does not fit the medal storage goes to the Presents (as the raids and the Coliseum boards)
+    medalCount: () => stackedMedalList().length, medalCap: maxMedal,
     // ranking element (139/140/180): the client's full player-record parser (the one of the High Score ranking: userMedals, userSkills,
     // userKeyblade, petBaseSlotMedal, supportUser*, pet, emblemIds) + userColosseum + arrivalTime; with the short Lux record the
     // Ranking button answered «200 ERROR :139» (bench 25-11)

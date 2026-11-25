@@ -20,8 +20,10 @@ const UNLOCK_QUEST = 130; // routes-colosseum.js UNLOCK_QUEST (not required here
 // the page's own lines: the progress line of a row (Coliseum gold), the intro box
 const CSS = SPECIAL_CSS + '.pg{color:#ffcd4a;font-size:14px;margin-top:2px}.lk{background:#06283e;border-radius:6px;padding:8px 10px;margin:6px 0;color:#ffcd4a;font-size:15px}';
 
-// the pills the page script writes after a keep / remove: [row class, html]
-const PILLS = { kept: ['pinned', `${icon('pin')}Kept: the Coliseum plays this season`], can: ['can', `${icon('pin')}Past season — can be kept`] };
+// the pills the page script writes after a keep / remove: [row class, html]; now / nowKept: the season of the Story with nothing
+// kept / while another season is kept (the script rewrites it after every keep / remove)
+const PILLS = { kept: ['pinned', `${icon('pin')}Kept: the Coliseum plays this season`], can: ['can', `${icon('pin')}Past season — can be kept`],
+  now: ['now', `${icon('now')}Season of your Story now`], nowKept: ['now', `${icon('now')}Season of your Story (it plays again when you remove the kept season)`] };
 const titleOf = (row) => `Coliseum · ${monthYear(`${row.month}-01`)}`;
 const imgOf = (ctx, id) => `${BASE}/img/v${ctx.imgVersion || 1}/${id}.png`;
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -32,9 +34,7 @@ function statusOf(row, ctx, keptRow) {
   const open = ctx.unlocked !== false;
   if (row.state === 'kept') return { cls: 'pinned', pill: pill(PILLS.kept[0], '', PILLS.kept[1]), button: open ? 0 : null };
   if (row.state === 'can') return { cls: 'can', pill: pill(PILLS.can[0], '', PILLS.can[1]), button: open ? 1 : null };
-  if (row.state === 'now') {
-    return { cls: 'now', pill: pill('now', 'now', keptRow ? 'Season of your Story (it plays again when you remove the kept season)' : 'Season of your Story now'), button: null };
-  }
+  if (row.state === 'now') { const p = keptRow ? PILLS.nowKept : PILLS.now; return { cls: 'now', pill: pill(p[0], '', p[1]), button: null }; }
   if (row.state === 'other') return { cls: 'other', pill: pill('other', '', 'Its month starts this week: not the season yet'), button: null };
   const q = ctx.unlockQuestOf ? ctx.unlockQuestOf(row) : undefined;
   const text = q === undefined || q === null ? 'Reached later in the Story' : `Unlocks at Story Quest ${q}`;
@@ -47,9 +47,15 @@ function progressOf(row) {
   return row.userStageTotalCount ? `Cleared up to Tier ${row.userRank}, Round ${row.userStageCount}${coins}` : `Not played yet${coins}`;
 }
 
-// ES5: after a keep / remove the kept row gold, the previous one back to «can be kept», the «Replaces» lines (catalog-pages.js
-// kxRows of keepJs, shared with the Raid and Event Catalogs)
-const JS = "kxRows([].slice.call(document.querySelectorAll('#rows .row')),__PILL__);";
+// ES5: after a keep / remove the kept row gold, the previous one back to its own state (data-base, data-bcls, data-bpill: a kept
+// season can sit on the story month or later, ruling 10), the «Replaces» lines (catalog-pages.js kxRows of keepJs, shared with the
+// Raid and Event Catalogs), then the line of the season of the Story (whether another season is kept)
+const JS = "var PILL=__PILL__,R=[].slice.call(document.querySelectorAll('#rows .row'));"
+  + "kxRows(R,PILL,{after:function(){var k=false,i,s;for(i=0;i<R.length;i++)if(R[i].getAttribute('data-show')==='kept')k=true;"
+  + "for(i=0;i<R.length;i++)if(R[i].getAttribute('data-show')==='now'){s=R[i].querySelector('.s');if(s)s.innerHTML=PILL[k?'nowKept':'now'][1];}}});";
+// the state a row returns to when it is not kept (routes-colosseum.js catalogCard base; a row without one: «can» when kept)
+const baseOf = (row) => row.base || (row.state === 'kept' ? 'can' : row.state);
+const pillInner = (html) => html.slice(html.indexOf('>') + 1, html.lastIndexOf('</span>'));
 
 function catalogPage(rows, ctx = {}) {
   const keptRow = rows.find((r) => r.state === 'kept');
@@ -60,7 +66,9 @@ function catalogPage(rows, ctx = {}) {
     const replaces = parts.replacesLine(st, keptRow ? titleOf(keptRow) : null);
     const button = st.button === null ? ''
       : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(on){kxRow(b.getAttribute(\'data-id\'),on);})"', '', WHERE)}</div>`;
-    return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-show="${row.state}" data-name="${name}">`
+    const base = baseOf(row), bst = base === row.state ? st : statusOf({ ...row, state: base }, ctx, keptRow);
+    return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-show="${row.state}" data-name="${name}"`
+      + ` data-base="${esc(base)}" data-bcls="${esc(bst.cls)}" data-bpill="${esc(pillInner(bst.pill))}">`
       + `<div class="im"><img width="320" height="70" src="${imgOf(ctx, row.colosseumStageId)}" alt=""></div>`
       + `<div class="info"><span class="nm">${name}</span><div class="d">${line}</div><div class="pg">${esc(progressOf(row))}</div>${st.pill}${replaces}${button}</div></div>\n`;
   }).join('');

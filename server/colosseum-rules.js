@@ -3,7 +3,8 @@
 //
 // A season is {stage: <colosseumStage row>, tiers: <colosseum rows of that season>}. Rounds form one global
 // sequence n = 1, 2, 3 ... across the tiers (tier t starts after the finite rounds of tiers before it; the last
-// tier is endless, rounds 0). Per season a player has {last, open, coins, cleared, tierRewards, bestAt, boardIds}:
+// tier is endless, rounds 0). Per season a player has {last, open, coins, cleared, tierRewards, bestAt} (its board
+// progress lives in player.colosseumSphere, routes-colosseum-boards.js):
 // the playable window is last+1 .. open. Clearing round r inside the window:
 //   one turn   -> open = r + N (N = excellentUnlockCount of the tier of r, counted across tier boundaries)
 //   more turns -> open = r + 1
@@ -48,7 +49,6 @@ function seasonState(save, colosseumStageId) {
   if (!st.cleared) st.cleared = [];
   if (!st.tierRewards) st.tierRewards = [];
   if (st.bestAt === undefined) st.bestAt = null;
-  if (!st.boardIds) st.boardIds = [];
   return st;
 }
 
