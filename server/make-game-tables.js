@@ -1137,6 +1137,10 @@ require('./make-ev-campaign').patch(OUT);
 // Bonus Times of the story day (Events Part 9a, make-campaigns.js): evCampaign rows 96000-97999 and campaign_days.json from the
 // private campaign calendar (KHUX_CAMPAIGN_CALENDAR; without it no Bonus Time row)
 require('./make-campaigns').patch(OUT);
+// Coliseum (Coliseum Part 1, make-colosseum.js): the seasons 2016-04 .. 2016-07 from the 1.1.3 master (KHUX_COLOSSEUM_SRC):
+// colosseumStage, colosseum, stage kind 3 (id 81001+), ranking 4009-4012 + rankingReward, Coliseum boards (sphere 2200001+).
+// KHUX_COLOSSEUM=0 turns it off
+require('./make-colosseum').patch(OUT);
 // Limited, returning and level avatar boards (Events Part 7, avatar-boards.js): the 6 skills of the donated master (KHUX_DONOR_MASTER,
 // label skillFromDonor) into skill.json, then the rows of the private board records (KHUX_AVATAR_BOARDS; without it no board)
 // after the Raid and Event Boards: sphere 5000000+ (event_ids.json avatarBoards) and the level boards 2100119-2100126;
