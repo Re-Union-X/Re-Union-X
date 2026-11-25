@@ -1,0 +1,169 @@
+"""Original stage files of the served Coliseum seasons (Coliseum Part 1, Task 4), as import_event_stages.py does for events.
+
+    python -I recon/tools/import_colosseum_stages.py [--master D] [--b2016 D] [--jp D] [--out D] [--report F]
+
+The client loads `stage/cl_stg<stageId 8 digits>.bin` + `cl_stg<stageId>_00.bin` (one part, room OC_0001_00_00) for the
+`stageId` of `startColosseumData` (docs/notes/coliseum.md). The stage ids of a season are the first `validStage` entries of
+its `colosseumStage.stageId` row (server/master_data/colosseumStage.json, written by server/make-colosseum.js).
+
+Sources, in order of preference (files copied byte for byte, never renamed or edited):
+  1. b2016: the WW English 2016 bundle stage/ folder (private_tools ref_work bundle2016/files/stage). The WW client shipped
+     these files; for the Part 1 sets it holds all 80 files. The JP copy of 20151108 has a corrupt enemy id in its first
+     record (1510228138) and its 20150708/20150709 STG headers are missing, so the WW copy wins wherever it exists.
+  2. jp: the JP 4.3.1 stage/ folder (`<name>.<8-digit entry id>.bin`: the highest revision wins).
+A stage is read back with mapfile.py (the client's format) and checked: STG and every part present, coherent (check_stage),
+every room served (import_event_stages.served_rooms), every enemy id in the master enemy table. A stage failing a check is
+left out and reported (never invented); the run then exits 1, so the build stops instead of serving a season whose round
+would crash the client.
+Output: <out>/cl_stg*.bin (the resource staging stage_gen/files/stage). cl_stg files there not in the current set are
+removed (only this script writes cl_stg files). Report: <report> (default <out>/../colosseum_stages.json).
+"""
+import argparse
+import json
+import os
+import re
+import shutil
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mapfile  # noqa: E402
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(HERE))
+D = os.path.dirname(os.path.dirname(REPO))
+CL_RE = re.compile(r'^cl_stg(\d{8})(?:_(\d\d))?(?:\.(\d{8}))?\.bin$')
+
+
+def iter_cl_files(root):
+    """{(stageId, part|None): path} of a folder; with revision suffixes the highest wins (as mapfile.iter_stage_files)."""
+    best = {}
+    if not root or not os.path.isdir(root):
+        return {}
+    for f in os.listdir(root):
+        m = CL_RE.match(f)
+        if not m:
+            continue
+        key = (int(m.group(1)), int(m.group(2)) if m.group(2) is not None else None)
+        rev = int(m.group(3)) if m.group(3) else -1
+        if key not in best or best[key][0] < rev:
+            best[key] = (rev, os.path.join(root, f))
+    return {k: v[1] for k, v in best.items()}
+
+
+def client_names(sid, nparts):
+    return ['cl_stg%08d.bin' % sid] + ['cl_stg%08d_%02d.bin' % (sid, k) for k in range(nparts)]
+
+
+def season_stage_ids(rows):
+    """[(colosseumStageId, stageId)] of the served seasons, in master order, first validStage ids of each."""
+    out = []
+    for r in rows:
+        for sid in (r.get('stageId') or [])[:r.get('validStage') or 0]:
+            if sid:
+                out.append((r['colosseumStageId'], sid))
+    return out
+
+
+def pick(sid, sources):
+    """-> (source name, {(sid, part): path}) of the first source holding the STG and every part it declares, else
+    (None, why per source)."""
+    tried = {}
+    for name, files in sources:
+        if (sid, None) not in files:
+            tried[name] = 'STG absent'
+            continue
+        try:
+            stg = mapfile.parse_stg(open(files[(sid, None)], 'rb').read())
+        except mapfile.FormatError as e:
+            tried[name] = 'STG unreadable: %s' % e
+            continue
+        miss = [k for k in range(stg['parts']) if (sid, k) not in files]
+        if miss:
+            tried[name] = 'parts absent: %s' % miss
+            continue
+        return name, {k: v for k, v in files.items() if k[0] == sid}, tried
+    return None, None, tried
+
+
+def run(seasons, sources, rooms, enemy_ids, out):
+    os.makedirs(out, exist_ok=True)
+    stages, keep = [], set()
+    for season, sid in seasons:
+        st = {'season': season, 'stageId': sid}
+        stages.append(st)
+        src, files, tried = pick(sid, sources)
+        if tried:
+            st['tried'] = tried
+        if not src:
+            st.update(status='skipped', why='no source holds the STG and all its parts')
+            continue
+        try:
+            stg, parts = mapfile.load_stage(files, sid)
+            bad, warn = mapfile.check_stage(stg, parts)
+        except mapfile.FormatError as e:
+            bad, warn, parts = [str(e)], [], []
+        rs = sorted({p['room'] for p in parts})
+        ids = sorted({e['enemyId'] for p in parts for e in p['enemies']})
+        st.update(source=src, rooms=rs, enemies=ids, levels=sorted({e['level'] for p in parts for e in p['enemies']}),
+                  waves=sum(len([t for t in p['teams'] if not t['flags'] & 0x20]) for p in parts))
+        if warn:
+            st['warnings'] = warn
+        unserved = [r for r in rs if r not in rooms]
+        missing = [i for i in ids if i not in enemy_ids]
+        if bad or unserved or missing:
+            st.update(status='skipped', why='; '.join(bad + ['room not served: %s' % r for r in unserved] +
+                                                       ['enemy not in the master: %s' % missing] * bool(missing)))
+            continue
+        names = client_names(sid, stg['parts'])
+        for name, key in zip(names, [(sid, None)] + [(sid, k) for k in range(stg['parts'])]):
+            dst = os.path.join(out, name)
+            data = open(files[key], 'rb').read()
+            if not (os.path.exists(dst) and open(dst, 'rb').read() == data):
+                with open(dst, 'wb') as f:
+                    f.write(data)
+            keep.add(name)
+        st.update(status='imported', files=names)
+    removed = []
+    for f in os.listdir(out):
+        if CL_RE.match(f) and f not in keep:
+            os.remove(os.path.join(out, f))
+            removed.append(f)
+    by = {}
+    for st in stages:
+        by[st['status']] = by.get(st['status'], 0) + 1
+    return {'summary': {'stages': len(stages), 'by_status': by, 'files': len(keep), 'removed': removed,
+                        'sources': {n: sum(1 for s in stages if s.get('source') == n) for n, _ in sources}},
+            'stages': stages}
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--master', default=os.path.join(REPO, 'server', 'master_data'))
+    ap.add_argument('--b2016', help='WW 2016 bundle stage/ folder (default: private_tools ref_work bundle2016/files/stage)')
+    ap.add_argument('--jp', help='JP 4.3.1 stage/ folder (default: private_tools jp_data/stage)')
+    ap.add_argument('--out', default=os.path.join(D, 'stage_gen', 'files', 'stage'))
+    ap.add_argument('--report')
+    a = ap.parse_args(argv)
+    if not a.jp or not a.b2016:
+        import private_tools
+        a.jp = a.jp or private_tools.local_path('jp_data', 'stage')
+        a.b2016 = a.b2016 or private_tools.local_path('ref_work', 'bundle2016', 'files', 'stage')
+    rows = lambda n: json.load(open(os.path.join(a.master, n + '.json'), encoding='utf-8'))
+    seasons = season_stage_ids(rows('colosseumStage'))
+    sources = [('bundle2016', iter_cl_files(a.b2016)), ('jp431', iter_cl_files(a.jp))]
+    from import_event_stages import served_rooms
+    rep = run(seasons, sources, served_rooms(), {r['enemyId'] for r in rows('enemy')}, a.out)
+    report = a.report or os.path.join(os.path.dirname(os.path.abspath(a.out)), '..', 'colosseum_stages.json')
+    with open(report, 'w', encoding='utf-8') as f:
+        json.dump(rep, f, indent=1)
+    s = rep['summary']
+    print('colosseum stages: %d, %s, %d files -> %s; sources %s; removed %d old; report %s' % (
+        s['stages'], s['by_status'], s['files'], a.out, s['sources'], len(s['removed']), os.path.normpath(report)))
+    bad = [st for st in rep['stages'] if st['status'] != 'imported']
+    for st in bad:
+        print('  season %s stage %s: %s (%s)' % (st['season'], st['stageId'], st['why'], st.get('tried')))
+    return 1 if bad else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

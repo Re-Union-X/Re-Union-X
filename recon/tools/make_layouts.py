@@ -851,19 +851,7 @@ LAYOUTS = {
         I('Title2', 620, 392, 70, 56, 'Deck_Medal_New.png', s9=False, visible=False),
         L('Txt_PvP_off', 620, 220, 260, 60, '', 18, opts=dict(hAlignment=1, vAlignment=1)),
         B('Close_Button', 790, 510, 64, 64, 'But_Close', None)])),
-    # Pulsanti laterali del Colosseo (dopo GET /colosseum; posizione):
-    # Button_Ranking/Txt (103300021 «Ranking»), Button_Reward/Txt (103300022 «Tier Rewards»),
-    # Button_Colosseum_Board/Txt (103300023 «Coliseum Boards»); tocchi. Dal
-    # pulsante laterale originale AdventureTop2_Multi_Button, terzo pulsante clonato.
-    'AdventureTop2_Colosseum_Button.json': ('copy', 'AdventureTop2_Multi_Button.json',
-                                            {'Button_Mu_Board': 'Button_Colosseum_Board',
-                                             'Button_Last_Member': 'Button_Ranking'}, False, [
-        ('clone', 'Button_Ranking', 'Button_Reward', 'Panel_1'),
-        ('opts', 'Button_Reward', dict(y=248, visible=True))]),
-    # Celle della mappa del Colosseo (tipo 3 della vista dei pannelli: Cursor,
-    # FaceBook_PhotoPanel facoltativo): stessi widget della cella delle quest
-    # AdventureTop2_Adv_Panel_ver120 (originale).
-    'AdventureTop2_Colosseum_Panel.json': ('copy', 'AdventureTop2_Adv_Panel_ver120.json', {}, False, []),
+    # AdventureTop2_Colosseum_Button / _Panel: the JP 4.3.1 originals since 25-11-2026 (jp_coco_layouts.txt, Coliseum Part 1).
     # Costo del deck superato su «Begin» (da
     # quando trova il costo > maxDeckCost; anche
     # ). Cerca: 4Line_Label (103000020 «Exceeds

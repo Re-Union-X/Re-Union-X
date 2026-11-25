@@ -22652,3 +22652,23 @@ cocostudio/publish/ScorePrize01.png	jp
 #     so the client drew the icon and text with no plate. JP 4.3.1 has both (blue 128x72 plate, like But04 of Traits).
 cocostudio/publish/But26_Off.png	jp
 cocostudio/publish/But26_On.png	jp
+
+# 63. Coliseum (PvE Coliseum Part 1, Task 4, 25-11-2026; docs/notes/coliseum.md): map armature (Colosseum_Start /
+#     All1Turn / Lose / Clear, same movements in JP and 2016), particle plists, tier/round numbers, map panels, the open
+#     animation of the map. JP 4.3.1 first, then the WW English 2016 copy where it exists (it wins).
+cocostudio/publish/ActMapColosseumAnim.ExportJson	jp
+cocostudio/publish/ActMapColosseumAnim0.plist	jp
+cocostudio/publish/ActMapColosseumAnim0.png	jp
+cocostudio/publish/ActMapColosseumAnim.ExportJson	b16
+cocostudio/publish/ActMapColosseumAnim0.plist	b16
+cocostudio/publish/ActMapColosseumAnim0.png	b16
+img/colosseum/*	jp
+img/colosseum/*	b16
+img/adventure/stage/OC_Colosseum_PanelB.png	jp
+img/adventure/stage/OC_Colosseum_Panel*.png	b16
+cocostudio/Colosseum_bg01.png	b16,jp
+lwf/adventure/Colosseum_Open/	b16
+#     Coliseum Boards button of AdventureTop2_Colosseum_Button: World_Ico8A/8B are absent everywhere (2016 copies =
+#     placeholders World_Ico2A/2B): the Multi Board icon in their place (declared substitute, jp_coco_layouts.txt)
+cocostudio/publish/World_Ico8A.png	jp	cocostudio/publish/World_Ico10A.png
+cocostudio/publish/World_Ico8B.png	jp	cocostudio/publish/World_Ico10B.png
