@@ -11,7 +11,7 @@
 // by it; then last = r. A round outside the window changes nothing (ok:false).
 //
 // Persisted state is plain JSON: `cleared` is a sorted array of the global rounds played in person (not a Set),
-// the save keeps seasons in save.colosseum[colosseumStageId].
+// the save keeps seasons in save.colosseum.seasons[colosseumStageId] (save.colosseum also holds `kept`).
 // Extra result field (beyond the brief): clear() returns `tierItems` [{tier, items:[{type,id,assignType,skillId,
 // skillLv,num}]}], the full reward slots of the completed tiers, so the routes can grant non-coin items.
 // `coins` counts type-17 slots only (round coins and tier coins).
@@ -37,7 +37,7 @@ function tiersOf(season) {
 }
 
 function seasonState(save, colosseumStageId) {
-  const all = save.colosseum || (save.colosseum = {});
+  const all = ((save.colosseum ||= {}).seasons ||= {});
   const st = all[colosseumStageId] || (all[colosseumStageId] = {});
   if (st.last === undefined) st.last = 0;
   if (st.open === undefined) st.open = 1;
@@ -85,7 +85,7 @@ function clear(tiers, st, { tier, round, oneTurn }, nowIso) {
   const none = { ok: false, cleared: [], coins: 0, tierRewards: [], tierItems: [], st };
   let ti;
   try { ti = tierIndex(tiers, tier); } catch (e) { return none; }
-  if (!(round >= 1) || (tiers[ti].rounds && round > tiers[ti].rounds)) return none;
+  if (!Number.isInteger(round) || !Number.isInteger(tier) || round < 1 || (tiers[ti].rounds && round > tiers[ti].rounds)) return none;
   const r = globalRound(tiers, tier, round);
   if (r <= st.last || r > st.open) return none;
   const cleared = [], tierItems = [];

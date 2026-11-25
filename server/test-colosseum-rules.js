@@ -83,4 +83,31 @@ assert.strictEqual(R.seasonState(save, 1).last, 1); assert.strictEqual(R.seasonS
 assert.strictEqual(b.last, 0); assert.strictEqual(b.coins, 0);
 assert.strictEqual(R.seasonState(save, 2), b);
 assert.doesNotThrow(() => JSON.parse(JSON.stringify(save)));
+
+// seasons live under save.colosseum.seasons; kept next to it is never a season
+const sv = { colosseum: { kept: { 7: true } } };
+const k = R.seasonState(sv, 7);
+assert.strictEqual(k.last, 0); assert.deepStrictEqual(sv.colosseum.kept, { 7: true });
+assert.strictEqual(sv.colosseum.seasons[7], k); assert.deepStrictEqual(Object.keys(sv.colosseum).sort(), ['kept', 'seasons']);
+
+// non-integer tier/round rejected, nothing changes
+st = fresh(); const s0 = JSON.stringify(st);
+for (const bad of [{ tier: 1, round: 1.5 }, { tier: 1.2, round: 1 }, { tier: 1, round: '1' }, { tier: 1, round: NaN }]) {
+  assert.strictEqual(R.clear(tiers, st, bad, 'T8').ok, false);
+}
+assert.strictEqual(JSON.stringify(st), s0);
+
+// one-turn jump crossing two tiers pays both tier rewards
+const big = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [row(1, 2, 5, 1, 30), row(2, 2, 2, 3, 40), row(3, 0, 2, 5, 0)] });
+st = fresh();
+R.clear(big, st, { tier: 1, round: 1, oneTurn: true }, 'T9'); // open = 6
+res = R.clear(big, st, { tier: 3, round: 2, oneTurn: false }, 'T9'); // global 6, pays 2..6
+assert(res.ok); assert.deepStrictEqual(res.tierRewards, [1, 2]); assert.strictEqual(res.coins, 1 + 3 + 3 + 5 + 5 + 30 + 40);
+assert.deepStrictEqual(st.tierRewards, [1, 2]);
+
+// skip 0 one-turn opens exactly one round
+const z = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [row(1, 5, 0, 1, 0)] });
+st = fresh();
+R.clear(z, st, { tier: 1, round: 1, oneTurn: true }, 'T10');
+assert.deepStrictEqual(R.playable(z, st).map((p) => p.round), [2]);
 console.log('colosseum-rules: ok');
