@@ -13,6 +13,7 @@ const md = [
 const r = parseIssues(md);
 assert.deepStrictEqual([...r.values()].map((x) => `${x.id}:${x.group}:${x.area}`), ['I-9:OPEN:Battle', 'I-8:CLOSED:Battle', 'I-7:ON HOLD:Battle', 'I-2:CLOSED:Shop']);
 assert.strictEqual(group('IN PROGRESS'), 'IN PROGRESS');
+assert.strictEqual(group('FIXED 25-11, benched OK by the user 25-11'), 'CLOSED');
 const d = postMessage(r.get('I-9'), 'abc').embeds[0];
 assert.ok(d.description.startsWith('*ctx 10-11*\n• one\n• two\n• three'));
 assert.strictEqual(d.fields[0].value, 'partly; remains: x');

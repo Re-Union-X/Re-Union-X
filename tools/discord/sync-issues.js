@@ -28,10 +28,11 @@ const COLORS = { OPEN: 0xe0435a, 'IN PROGRESS': 0xd29922, 'TO VERIFY': 0x2aa7d6,
 
 const plain = (s) => String(s).replace(/\*\*|~~|`/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/<br\s*\/?>/g, ' ').replace(/\s+/g, ' ').trim();
 
-// The status cell starts with the status word(s); DONE counts as CLOSED.
+// The status cell starts with the status word(s); DONE and FIXED count as CLOSED (a FIXED row stays in the Open table
+// until it is moved, but the issue is solved: it showed as OPEN on Discord).
 function group(status) {
   const s = plain(status).toUpperCase();
-  if (s.startsWith('DONE')) return 'CLOSED';
+  if (s.startsWith('DONE') || s.startsWith('FIXED')) return 'CLOSED';
   return GROUPS.find((g) => s.startsWith(g)) || 'OPEN';
 }
 
