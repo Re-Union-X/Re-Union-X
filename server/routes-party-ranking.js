@@ -14,7 +14,7 @@
 // - High score, 135/136/179 (highscoreRanking,...Own,...Border): server/routes-hsc.js (elemento = record completo del giocatore).
 // - Party, 137/138/184 (partyRanking,...Own,...Border): rankingDatas, rankingStatus,
 //   lastRank, updateTime, nextUpdateTime.
-// - Colosseo, 139/140/180 (colosseumRanking,...Own,...Border), come Lux.
+// - Coliseum, 139/140/180 (colosseumRanking,...Own,...Border): server/routes-colosseum.js.
 // Un solo giocatore sul server: le classifiche Lux hanno lui al 1° posto, le altre sono vuote.
 //
 // Party: 83 /party, 86 /party/member/list, 81 PUT /party/notice e 24 /payment/info hanno gia' uno
@@ -42,11 +42,10 @@ const LUX_KEYS = {
   '/ranking/weekly/user/own': 'luxRankingWeeklyOwn', '/ranking/monthly/user/own': 'luxRankingMonthlyOwn',
   '/ranking/lux': 'luxRanking', '/ranking/lux/own': 'luxRanking', '/ranking/lux/border': 'luxRankingBorder',
 };
-// High Score (135/136/179) is answered by routes-hsc.js (Events Part 8 Task 5)
+// High Score (135/136/179) is answered by routes-hsc.js (Events Part 8 Task 5), the Coliseum (139/140/180) by routes-colosseum.js
+// (Coliseum Part 1 Task 3)
 const EMPTY_KEYS = {
   '/ranking/party': 'partyRanking', '/ranking/party/own': 'partyRankingOwn', '/ranking/party/border': 'partyRankingBorder',
-  '/ranking/colosseum': 'colosseumRanking', '/ranking/colosseum/own': 'colosseumRankingOwn',
-  '/ranking/colosseum/border': 'colosseumRankingBorder',
 };
 
 function routePartyRanking(p) {

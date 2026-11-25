@@ -297,7 +297,7 @@ function wiring() {
       const up = call(t.respondUser, {}).userData.userPoint;
       for (const k of USERPOINT_KEYS) assert.ok(k in up, `userPoint.${k} missing`);
       assert.strictEqual(up.stageSpherePoint, 0, 'old_save_defaults: no Event Coins');
-      assert.strictEqual(up.colosseumSpherePoint, 0);
+      assert.strictEqual(up.colosseumSpherePoint, t.colosseum().coinsOf(), 'Coliseum Coins of the live season');
     });
     run('grantItem_15_without_set', () => {
       const raidBefore = p.raidSpherePoint || 0;

@@ -680,10 +680,9 @@ The screens have their own APIs, described in the area files: medals
   `GET /user/notice` (241, `raidNotice {isSelfRaid, isOthersRaid}` uint mandatory) ->
   `GET /colosseum` (124) -> map (stages only with status 1) + `AdventureTop2_Colosseum_Button`
   (status 2 = «This event is unavailable.»). «PVP» leads to the PvP tab.
-- **Master tables `colosseum` and `colosseumStage` empty** (offline 5.0.1): the client has no rows for
-  the Colosseum stages, so the server replies status 2 and no stages (`respondColosseum`).
-  To play it the master rows are needed (to be rebuilt) and `stage/cl_stg%05d_%02d.bin` (none
-  served) for the map `AdventureTop2_Colosseum_Target`, then 126 start / 128 clear.
+- **Master tables `colosseum` and `colosseumStage`**: written by `server/make-colosseum.js` (seasons 2016-04 .. 2016-07);
+  routes 124-128 and 139/140/180 in `server/routes-colosseum.js` (Coliseum Part 1, [coliseum.md](coliseum.md)).
+  Before that the tables were empty (offline 5.0.1) and the server replied status 2 with no stages.
 
 <a id="pvp"></a>
 ## Coliseum PvP (actions 194-205)

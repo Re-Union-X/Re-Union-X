@@ -16,13 +16,16 @@
 // skillLv,num}]}], the full reward slots of the completed tiers, so the routes can grant non-coin items.
 // `coins` counts type-17 slots only (round coins and tier coins).
 const COIN = 17;
+// reward slots of a row: the tier reward fields are int[4]; the per-round stageReward* fields are plain ints in the 4.3.1 schema
+// (recon/out/master_types_ww431.json), read as one slot
 const slots = (row, p, validKey) => {
   const n = row[validKey] || 0, out = [];
+  const at = (f, i) => { const v = row[p + f]; return Array.isArray(v) ? v[i] : i === 0 ? v : undefined; };
   for (let i = 0; i < n; i++) {
-    const num = (row[p + 'Num'] || [])[i];
+    const num = at('Num', i);
     if (!num) continue;
-    out.push({ type: row[p + 'Type'][i], id: row[p + 'Id'][i], assignType: (row[p + 'AssignType'] || [])[i] || 0,
-      skillId: (row[p + 'SkillId'] || [])[i] || 0, skillLv: (row[p + 'SkillLv'] || [])[i] || 0, num });
+    out.push({ type: at('Type', i), id: at('Id', i) || 0, assignType: at('AssignType', i) || 0,
+      skillId: at('SkillId', i) || 0, skillLv: at('SkillLv', i) || 0, num });
   }
   return out;
 };

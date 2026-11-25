@@ -3,8 +3,9 @@
 Research for the next game mode after raids (I-054 entry screen done, I-059 gameplay open). Facts only; the detailed
 per-month data and the sources stay in the private event catalogue (`private\events\sources\coliseum\COLISEUM.md`).
 Tags: **proven** = read from original data/code or two agreeing primary sources; **probable** = one good source or
-strong inference; **unknown** = not found yet. Current server state: [server.md](server.md#colosseo) (`respondColosseum`
-answers status 2 «This event is unavailable.»).
+strong inference; **unknown** = not found yet. Current server state: `server/routes-colosseum.js` (Coliseum Part 1 Task 3)
+answers 124-128 and 139/140/180 for the served seasons 2016-04 .. 2016-07; status 2 «This event is unavailable.» below story
+quest 130 or in a month with no served season.
 
 ## Rules
 

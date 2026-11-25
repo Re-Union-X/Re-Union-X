@@ -110,4 +110,11 @@ const z = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [row(1, 5, 0, 1, 0)] 
 st = fresh();
 R.clear(z, st, { tier: 1, round: 1, oneTurn: true }, 'T10');
 assert.deepStrictEqual(R.playable(z, st).map((p) => p.round), [2]);
+
+// the served master's per-round reward fields are plain ints (4.3.1 schema), the tier reward fields int[4]
+const scalar = { ...row(1, 3, 1, 7, 30), stageRewardType: 17, stageRewardId: 0, stageRewardAssignType: 1, stageRewardSkillId: 0, stageRewardSkillLv: 1, stageRewardNum: 7 };
+const sc = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [scalar] });
+assert.deepStrictEqual(sc[0].roundReward, [{ type: 17, id: 0, assignType: 1, skillId: 0, skillLv: 1, num: 7 }]);
+st = fresh();
+assert.strictEqual(R.clear(sc, st, { tier: 1, round: 1, oneTurn: false }, 'T11').coins, 7);
 console.log('colosseum-rules: ok');

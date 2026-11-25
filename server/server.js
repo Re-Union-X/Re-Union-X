@@ -38,6 +38,7 @@ const infoAlbum = require('./routes-info-album');
 const routesRaid = require('./routes-raid'); // raid routes (docs/notes/raid.md)
 const routesEvents = require('./routes-events'); // event quest routes (docs/notes/events.md)
 const routesHsc = require('./routes-hsc'); // High Score Challenges (Events Part 8 Task 5)
+const routesColosseum = require('./routes-colosseum'); // PvE Coliseum (Coliseum Part 1 Task 3)
 const { eventsTabOrder } = require('./events-tab-order'); // Events tab order (user 10-11)
 const eventBoardRoutes = require('./routes-event-boards'); // Event Coins and Event Boards (type 4)
 const raidPages = require('./raid-pages'); // Raid Catalog web pages (Task 9)
@@ -260,7 +261,12 @@ function route(url) {
   if (p === '/stage/pickup') return 'stagepickup';
   if (p === '/user/notice') return 'usernotice';
   if (p === '/user/option' || p === '/user/option/update') return 'useroption';
+  // PvE Coliseum (actions 124-128, routes-colosseum.js)
   if (p === '/colosseum') return 'colosseum';
+  if (p === '/colosseum/start') return 'colosseumstart';
+  if (p === '/colosseum/clear') return 'colosseumclear';
+  if (p === '/colosseum/retire') return 'colosseumretire';
+  if (p === '/colosseum/reward/list') return 'colosseumrewardlist';
   if (p === '/user/point' || p === '/user/sphere/reset') return 'userpoint';
   if (p === '/user/stone') return 'userstone';
   if (p === '/user/shop') return 'usershop'; // userBenefits (VIP, I-134)
@@ -273,6 +279,7 @@ function route(url) {
   if (p === '/ranking/reward/check') return 'rankingrewardcheck';
   if (p === '/stage/highscore/reward/list') return 'hscrewardlist'; // High Score Rewards list (action 112, routes-hsc.js)
   if (routesHsc.HSC_KEYS[p]) return 'hscranking'; // High Score rankings (actions 135/136/179, routes-hsc.js)
+  if (routesColosseum.RANKING_KEYS[p]) return 'colosseumranking'; // Coliseum rankings (actions 139/140/180, routes-colosseum.js)
   if (routePartyRanking(p)) return routePartyRanking(p);
   if (chatRoutes.routeChat(p)) return chatRoutes.routeChat(p);
   // Coliseum PvP (azioni 194-205): respondPvp
@@ -739,6 +746,13 @@ function servedMasterRows(name, realMs) {
       return rows.map((r) => ab.servedRow(r, ctx, kept));
     } catch (e) { console.log(`[avatar boards] served rows: ${e.message}`); return rows; }
   }
+  // colosseumStage: the live season's row ends when the season does (routes-colosseum.js closeDate: «Ends in %s»), in fake time
+  if (name === 'colosseumStage') {
+    try {
+      const c = colosseum().closeDate(realMs);
+      return c ? rows.map((r) => (r.colosseumStageId === c.colosseumStageId ? { ...r, closeDate: c.date, rankingCloseDate: c.date } : r)) : rows;
+    } catch (e) { console.log(`[colosseum] served rows: ${e.message}`); return rows; }
+  }
   if (name === 'moogleshop') {
     const end = clock.fakeString(clock.weekStartOf(clock.weekIndex(realMs) + 1), clock.twinOffset(realMs));
     return rows.map((r) => (r.display ? { ...r, endDate: end } : r));
@@ -805,6 +819,8 @@ function masterBody(name) {
   // sphere: the served type-2 rows follow the kept event (Event Catalog, a keep can change mid-session), the story week and the
   // real week of their countdown, and the avatar board index (servedMasterRows)
   if (name === 'sphere') key += `:${sphereServedKey()}`;
+  // colosseumStage: the live season and its end (a keep can change mid-session)
+  if (name === 'colosseumStage') { try { const c = colosseum().closeDate(sessionRealMs()); key += `:col${c ? `${c.colosseumStageId}@${c.date}` : '-'}`; } catch (e) { key += `:err${Date.now()}`; } }
   // evStage: the HSC rows served open follow the listed cards (a keep can change mid-session)
   // evMedalList: the phantom's merged list follows the same listed cards (I-287)
   if (name === 'evStage' || name === 'evMedalList') { const ids = hscListedIds(sessionRealMs()); key += `:hsc${ids ? [...ids].sort((a, b) => a - b).join(',') : 'all'}`; }
@@ -2386,7 +2402,8 @@ function userPointData(now) {
     lastApDatetime: serverTimeAt(ap.time), // da qui il client conta la ricarica
     // stageSpherePoint (Event Coins, routes-event-boards.js): the balance of the focus board set. Every key stays: a missing one
     // (colosseumSpherePoint, bench 08-11) makes the client show «200 ERROR :1» (test-event-board-routes.js userpoint_keys)
-    stageSpherePoint: eventCoinPoint(), raidSpherePoint: player.raidSpherePoint || 0, colosseumSpherePoint: 0,
+    // colosseumSpherePoint: the Coliseum Coins of the live season (routes-colosseum.js)
+    stageSpherePoint: eventCoinPoint(), raidSpherePoint: player.raidSpherePoint || 0, colosseumSpherePoint: colosseumCoinPoint(),
     // da qui in poi uint
     specialPoint: 0, stageSkipTicket: player.stageSkipTicket || 0, superSkipTicket: player.superSkipTicket || 0, vipPoint: 0,
     // livello del Burst (pulsante rosso in battaglia, una volta per missione; il client non
@@ -2699,6 +2716,7 @@ function grantItem(type, id, num, ctx = {}) {
   else if (type === 15) eventBoards().addCoins(ctx.coinSet || null, num); // false (and a log line) without a set
   else if (type === 26) player.stageSkipTicket = (player.stageSkipTicket || 0) + num; // Skip Ticket (testo 102600058)
   else if (type === 28) player.superSkipTicket = (player.superSkipTicket || 0) + num; // Skip Ticket+ (102600065, «Force Skip»)
+  else if (type === 17) colosseum().addCoins(num); // Coliseum Coins: the live season (routes-colosseum.js); none live: logged, not paid
   // 11 Lux (testo 100200001)
   else if (type === 11) player.lux = (player.lux || 0) + num;
   else if (type === 5 && id) {
@@ -2799,9 +2817,11 @@ function userDetailData() {
   };
 }
 
-// userData.stageResumption: 0 = niente da riprendere.
+// userData.stageResumption: 0 = niente da riprendere. colosseumStageId: the live Coliseum season (routes-colosseum.js), 0 without one
 function stageResumptionData() {
-  return { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 };
+  let colosseumStageId = 0;
+  try { colosseumStageId = colosseum().liveSeason()?.id || 0; } catch (e) { console.log(`[colosseum] stageResumption: ${e.message}`); }
+  return { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId };
 }
 
 // prezzo del Continue in jewel: misc 113 (100), letto dal popup PopupNormal_Continue
@@ -5212,6 +5232,29 @@ function eventBoards() {
 function eventCoinPoint() {
   try { return eventBoards().stagePoint(); } catch (e) { console.log(`[event boards] stagePoint: ${e.message}`); return 0; }
 }
+// PvE Coliseum (Coliseum Part 1 Task 3, server/routes-colosseum.js): player.colosseum, the season of the story clock or the kept one
+var colosseumMemo = null; // var: userPointData, grantItem and stageResumptionData can run before this line
+function colosseum() {
+  return colosseumMemo ??= routesColosseum({
+    player, savePlayer, masterRows, realNow, serverTime, serverTimeAt, clock, userPointData, userDetailData, stageResumptionData, inventoryBlocks, userKeybladesData, send, ret,
+    storyWeek: () => { const c = storyCtx(); return { storyQuest: c.storyQuest, shopFrom: c.shopFrom }; },
+    // the Shop week of another real week (season end, routes-colosseum.js seasonBounds): the rotation of storyCtx, without its save
+    shopFromAtWeek: (week) => gachaData.shopWindow(gachaCatalog(), stageNumber(lastStoryStageId()), week, (player.gacha || {}).rot).from,
+    apNow: () => apState().ap, changeAp, campaignIds: () => servedCampaignIds(),
+    battlePoints: (getPoint, burst) => raidBattlePoints(getPoint, burst),
+    beginBattle: (userKeybladeId) => { player.currentUserKeybladeId = Number(userKeybladeId) || USER_KEYBLADE_ID; },
+    grantItem: grantRaidItem,
+    addPresent: (r, text) => addPresent(r.type, r.id || 0, r.num, text, r.skillId || undefined, undefined, r.skillLv || undefined),
+    element: (now, rank, userColosseum, arrivalTime) => ({ userData: { user: userObject(now), userDetail: userDetailData() }, userAvatar: userAvatarData(),
+      lux: player.lux || 0, rank, userColosseum, arrivalTime }),
+    titleIds: () => player.titles || [],
+    log: (l) => console.log(l),
+  });
+}
+// userPoint.colosseumSpherePoint: an error here must never break GET /user (every userPoint key is required)
+function colosseumCoinPoint() {
+  try { return colosseum().coinsOf(); } catch (e) { console.log(`[colosseum] coinsOf: ${e.message}`); return 0; }
+}
 var raidRoutes = null; // var: respondStageStart can run before this line
 function raid() {
   return raidRoutes ??= routesRaid({
@@ -5506,21 +5549,7 @@ function respondRaidPost(res, url) {
 
 // GET /user/notice (azione 241): raidNotice {isSelfRaid, isOthersRaid} uint,
 // obbligatori. Il client lo chiede scegliendo «Coliseum» nel popup PvP_SelectWindow.
-// GET /colosseum (azione 124): colosseumInfo {colosseumStageId int, status int},
-// colosseumStages[] ({stageId, useAp, rank, stageCount} int), colosseumRank uint,
-// userColosseum {userRank, userStageCount, userStageTotalCount} int. status 1 = in corso
-// (stage da colosseumStages), 2 = «This event is unavailable.»
-// (Txt_Description). Le tabelle master colosseum/colosseumStage della 5.0.1 sono
-// vuote: senza righe il Colosseo non si puo' giocare, quindi status 2 e nessuno stage.
-function respondColosseum(res) {
-  send(res, 200, {
-    ret: ret(),
-    colosseumInfo: { colosseumStageId: 0, status: 2 },
-    colosseumStages: [],
-    colosseumRank: 0,
-    userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
-  });
-}
+// GET /colosseum (action 124) and the other PvE Coliseum actions: routes-colosseum.js (colosseum())
 // Coliseum PvP, stato «vuoto» ma valido (nessun avversario, nessuna classifica). Risposte
 // (un campo obbligatorio mancante = «200 ERROR :<id>»):
 // - GET /pvp (195): pvp {pvpId, playNumber, pvpPoint, pvpClass,
@@ -5927,7 +5956,13 @@ function handler(scheme) {
   if (kind === 'stageevent') return respondStageEvent(res, entry.bodyDecoded);
   if (kind === 'usernotice') return raid().notice(res);
   if (kind === 'useroption') return respondUserOption(res, entry.bodyDecoded);
-  if (kind === 'colosseum') return respondColosseum(res);
+  // PvE Coliseum (actions 124-128, 139/140/180): server/routes-colosseum.js
+  if (kind === 'colosseum') return colosseum().list(res);
+  if (kind === 'colosseumrewardlist') return colosseum().rewardList(res);
+  if (kind === 'colosseumstart') return colosseum().start(res, entry.bodyDecoded);
+  if (kind === 'colosseumretire') return colosseum().retire(res, entry.bodyDecoded);
+  if (kind === 'colosseumclear') return colosseum().clear(res, entry.bodyDecoded);
+  if (kind === 'colosseumranking') return colosseum().ranking(res, req.url.split('?')[0].toLowerCase());
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive): the raid AP 0 campaign in the bonus hours
       if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: servedCampaignIds() });
       if (kind === 'luxuptime') return respondLuxUpTime(res, req.method);
@@ -6269,6 +6304,7 @@ module.exports._test = {
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
   eventRoutes, eventIndex, // server/test-event-routes.js
   hsc, // server/test-hsc-routes.js
+  colosseum, // server/test-colosseum-routes.js
   eventBoards, // server/test-event-board-routes.js
   avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
   respondEventWeb, respondEventPost, respondAvatarWeb, respondAvatarPost, migrateAvatarKeep, // server/test-event-pages.js
