@@ -742,6 +742,13 @@
    "group": "OPEN",
    "hash": "e2c8f930a3ef64cf",
    "name": "I-316 · Event and raid quests: the map thumbnails of the quest list do not match the map played"
+  },
+  "I-317": {
+   "thread": "1575057110298005507",
+   "msg": "1575057110298005507",
+   "group": "OPEN",
+   "hash": "bf92669a0cc636cd",
+   "name": "I-317 · Quest-list thumbnails: leftover rooms without an icon in the quest's world"
   }
  }
 }
