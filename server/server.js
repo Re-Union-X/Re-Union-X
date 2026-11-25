@@ -525,7 +525,9 @@ function respondResourceSize(res, req) {
   // Con le risorse gia' all'ultima versione e solo il master vecchio si annuncia il master (somma dei file di MASTER_DIR):
   // il client mostra comunque «Tap "Download"...» a ogni cambio di revisione (anche con 0: «Approx. 0.00 KB», banco 26-10)
   // e scarica solo le 106 tabelle, mai i pacchetti; prima annunciava i 4,28 GB delle risorse.
-  const masterCurrent = Number(req?.masterRevision) >= sessionRevision();
+  // Current = the SAME revision: a game holding a higher one (a save switched to one with an older master) downloads
+  // the tables too, so it gets their size instead of «Approx. 0.00 KB» (bench 25-11).
+  const masterCurrent = Number(req?.masterRevision) === sessionRevision();
   const resourcesCurrent = Number(req?.resourceRevision) >= latestResourceVersion();
   // resources to download: the bytes of the plan from the game's revision (mode 2 = only the appended packs);
   // KHUX_RESOURCE_SIZE overrides it (bench tests)

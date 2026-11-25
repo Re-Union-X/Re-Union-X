@@ -72,7 +72,9 @@ process.env.KHUX_RESOURCE_SIZE = '5';
 const rs = call(t.respondResourceSize, { masterRevision: r0, resourceRevision: 1e9 });
 const rsOld = call(t.respondResourceSize, { masterRevision: r0 - 1, resourceRevision: 1e9 });
 const rsRes = call(t.respondResourceSize, { masterRevision: r0, resourceRevision: 0 });
+const rsNew = call(t.respondResourceSize, { masterRevision: r0 + 1, resourceRevision: 1e9 });
 delete process.env.KHUX_RESOURCE_SIZE;
+check(rsNew.size === t.masterBytes() && rsNew.size > 0, `resourcesize with a higher master revision (save switch): ${rsNew.size}`);
 check(rsRes.size === 5, `resourcesize con le risorse vecchie: ${rsRes.size}`);
 check(rs.size === 0 && rsOld.size === t.masterBytes() && rsOld.size > 0, `resourcesize a sessione aperta: ${rs.size} / ${rsOld.size}`);
 // login successivo: revisione e master nuovi
