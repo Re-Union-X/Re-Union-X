@@ -735,6 +735,13 @@
    "group": "OPEN",
    "hash": "ae4c7f9dfeb97c2f",
    "name": "I-315 · Avatar: wrong legs during combat"
+  },
+  "I-316": {
+   "thread": "1575041115201994813",
+   "msg": "1575041115201994813",
+   "group": "OPEN",
+   "hash": "abebfc560ce6ba39",
+   "name": "I-316 · Event quests: the map thumbnails of the quest list do not match the map played"
   }
  }
 }
