@@ -43,12 +43,13 @@ const avatarType = (t) => t === 19 || t === 20 || t === 23;
 
 // deps: player, savePlayer, masterRows, storyWeek () -> {storyQuest, shopFrom, shopTo}, shopFromAtWeek (realWeekIndex) -> shopFrom (no side
 // effect), realNow, serverTime, serverTimeAt, clock {weekIndex, weekEnd, weekStartOf}, userPointData, userDetailData,
-// stageResumptionData, inventoryBlocks, inventorySnapshot (now) -> snapshot before the rewards, userKeybladesData, send, ret, apNow, changeAp, campaignIds, battlePoints (getPoint, burst) ->
+// stageResumptionData, inventoryBlocks, inventorySnapshot (now) -> snapshot before the rewards, userKeybladesData, send, ret, apNow, changeAp, campaignIds, campaignAp (tier AP) -> AP under the day's
+// Coliseum AP campaign (campaigns.js colosseumAp), battlePoints (getPoint, burst) ->
 // lux, beginBattle (userKeybladeId), grantItem ({type, id, num, skillId, skillLv}), addPresent ({type, id, num, skillId, skillLv}, text),
 // element (now, rank, userColosseum, arrivalTime) -> ranking entry, titleIds () -> owned title ids, stageState (stageId) -> {score,
 // playStatus, clearMissionIds} (the catalog banner's Training Grounds), webBase (banner URLs), log
 function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAtWeek = null, realNow, serverTime, serverTimeAt, clock,
-  userPointData, userDetailData, stageResumptionData, inventoryBlocks, inventorySnapshot = () => null, userKeybladesData, send, ret, apNow, changeAp, campaignIds = () => [],
+  userPointData, userDetailData, stageResumptionData, inventoryBlocks, inventorySnapshot = () => null, userKeybladesData, send, ret, apNow, changeAp, campaignIds = () => [], campaignAp = (ap) => ap,
   battlePoints, beginBattle = () => {}, grantItem, addPresent, element, titleIds = () => player.titles || [],
   stageState = () => ({ score: 0, playStatus: 0, clearMissionIds: [] }), webBase = '', log = console.log }) {
   const root = () => (player.colosseum ||= {});
@@ -193,7 +194,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     const st = s && stateOf(s);
     const open = st ? rules.playable(s.tiers, st).some((p) => p.tier === tier && p.round === round) : false;
     const t = s && s.tiers.find((x) => x.tier === tier);
-    const ap = t ? Number(t.ap) || 0 : 0;
+    const ap = t ? campaignAp(Number(t.ap) || 0) : 0;
     if (!open || apNow() < ap) {
       // missing fields on purpose: the client stops with an error instead of playing a round the server does not count
       log(`[colosseum] start refused: season ${s ? s.id : 'none'}, tier ${body?.rank} round ${body?.stageCount}, AP ${apNow()} of ${ap}`);

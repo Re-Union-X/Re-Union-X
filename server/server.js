@@ -5269,7 +5269,7 @@ function colosseum() {
     storyWeek: () => { const c = storyCtx(); return { storyQuest: c.storyQuest, shopFrom: c.shopFrom, shopTo: c.shopTo }; },
     // the Shop week of another real week (season end, routes-colosseum.js seasonBounds): the rotation of storyCtx, without its save
     shopFromAtWeek: (week) => gachaData.shopWindow(gachaCatalog(), stageNumber(lastStoryStageId()), week, (player.gacha || {}).rot).from,
-    apNow: () => apState().ap, changeAp, campaignIds: () => servedCampaignIds(),
+    apNow: () => apState().ap, changeAp, campaignIds: () => servedCampaignIds(), campaignAp: (ap) => campaigns().colosseumAp(ap),
     battlePoints: (getPoint, burst) => raidBattlePoints(getPoint, burst),
     beginBattle: (userKeybladeId) => { player.currentUserKeybladeId = Number(userKeybladeId) || USER_KEYBLADE_ID; },
     grantItem: grantRaidItem,

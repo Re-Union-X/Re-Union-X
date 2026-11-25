@@ -62,7 +62,10 @@ Screens accept: story 2, 4, 5, 9-19; event 2, 4, 6; co-op 4, 20; Coliseum 2, 4, 
   - AP kinds never list story or Proud quests: they cost 0 AP here, and the client could show 1.
   - Scopes 4 and 6 become explicit lists of the stages of the events running that day. They are never served as broad
     scopes, which would also take the Special quests.
-  - Coliseum (7) and co-op (20) scopes are not served.
+  - The co-op (20) scope is not served. The Coliseum scope (7) is served as such since Coliseum Part 1 (25-11-2026, master
+    revision 393): «1 AP» (power 3500) on 2016-05-19..31 and 2016-06-16..22 (1.1.3 rows) and «0 AP!» on 2016-11-01..03; the
+    server charges `campaigns.js colosseumAp(tier AP)` at `/colosseum/start` (the first scope-7 AP row of the story day, same
+    rounding as the client's `apWith`: a 3-5 AP round costs 2 AP under the «1 AP» row).
   - Each day lists its AP rows first, lowest power first.
 - `server/campaigns.js`: the ids of the story day (`weekDateAt` of the Shop week on today's Pacific weekday), the AP charged, and
   the server-side factors.

@@ -39,7 +39,10 @@ const byList = (ids) => out.rows.filter((r) => r.type === 7 && r.power === 0 && 
 assert.strictEqual(out.rows.filter((r) => r.type === 1 && r.validStageId === 1 && r.stageId[0] === 1010).length, 1, 'story id kept on a drop kind, unknown event id dropped');
 assert.ok(!out.rows.some((r) => r.type === 7 && r.stageId.slice(0, r.validStageId).some((x) => x >= 1010 && x <= 39159)), 'AP kinds never list story stages (they cost 0 AP)');
 assert.strictEqual(out.dropped.storyFree, 3, 'story id of the Half AP list, stageType 5 and 19 AP kinds');
-assert.strictEqual(out.dropped.colosseum, 1, 'Coliseum scope not served');
+assert.strictEqual(out.dropped.colosseum, undefined, 'Coliseum scope served (Coliseum Part 1)');
+const colo = out.rows.filter((r) => r.stageType === 7);
+assert.ok(colo.length === 1 && colo[0].type === 7 && colo[0].power === 3500 && colo[0].validStageId === 0 && out.days[D].includes(colo[0].campaignId),
+  'the 1 AP Coliseum kind kept as scope 7 on its day');
 assert.strictEqual(out.dropped.multi, 1, 'co-op scope (Union Cross) not served');
 const luxStory = out.rows.filter((r) => r.type === 10 && r.stageType === 5);
 assert.strictEqual(luxStory.length, 1, 'Lux on every story quest kept as stageType 5');
@@ -56,7 +59,7 @@ assert.strictEqual(four.length, 2, 'stageType 4 split 5 + 2');
 assert.ok(four.every((r) => r.stageType === 2), 'stageType 4 never served');
 assert.ok(four.every((r) => out.days[D].includes(r.campaignId)), 'both rows listed on D');
 assert.ok(!out.rows.some((r) => r.stageType === 4), 'no stageType 4 row');
-const oneAp = out.rows.filter((r) => r.power === 3500);
+const oneAp = out.rows.filter((r) => r.power === 3500 && r.stageType !== 7);
 assert.ok(oneAp.length === 1 && oneAp[0].stageType === 2 && oneAp[0].stageId[0] === 4000010, 'every-event-quest scope (6) narrowed to the event stages of the day');
 // ids, formats, determinism
 out.rows.forEach((r, i) => assert.strictEqual(r.campaignId, mc.CAMPAIGN_BASE + i, 'ids in order'));

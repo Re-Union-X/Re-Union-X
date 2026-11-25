@@ -65,10 +65,11 @@ delete process.env.KHUX_VIP;
 // 3. functionFlags bit 4 (letto una volta al login) e la scheda Events vuota
 check(t.ret().functionFlags === 4, `functionFlags ${t.ret().functionFlags}`);
 // raid events (eventType 2), event quests (eventType 3, Events Part 1), the Raid Catalog banner (evStage 8000, raids Part 2 Task 9)
-// and the Event Catalog banner (eventType 0) when the indexes have them; no Special banner (nor the Avatar Board Catalog)
+// and the Event Catalog banner (eventType 0) when the indexes have them, the Coliseum Catalog banner (evStage 6000, Coliseum Part 1,
+// from story quest 130); no Special banner (nor the Avatar Board Catalog)
 check(ev(2).events.every((e) => !e.bannerUrl.includes('/web/special/') && e.eventStageId !== avatarCatId
-  && (e.eventType === 2 || e.eventType === 3 || (e.eventType === 0 && (e.eventStageId === 8000 || e.eventStageId === evCatalogId)))),
-  'Events (eventCategory 2): only raid and event quests, the Raid and Event Catalog banners');
+  && (e.eventType === 2 || e.eventType === 3 || (e.eventType === 0 && (e.eventStageId === 8000 || e.eventStageId === 6000 || e.eventStageId === evCatalogId)))),
+  'Events (eventCategory 2): only raid and event quests, the Coliseum, Raid and Event Catalog banners');
 
 // 4. drop dei nemici: tipi per posizione della riga del POI; uid e conteggi attesi si ricavano dal POI e dalle righe
 // reward lette qui (non dalla disposizione della mappa generata)
@@ -136,7 +137,8 @@ check(evRows.length > 0 && evRows.every((r) => r.bannerUrl.startsWith(t.WEB_BASE
 check(evRows.find((r) => r.eventStageId === 7000)?.detailUrl === t.WEB_BASE + '/web/special/catalog', 'evStage 7000 detailUrl');
 const isRaidEv = (id) => id >= 8001 && id <= 8999; // raid banners: Details = the original notice (make-raid.js, ce87672)
 const isEventEv = (id) => id >= 20000; // event banners (make-events.js): Details = the original notice, or a catalogue page
-check(evRows.filter((r) => r.eventStageId !== 7000 && r.eventStageId !== 8000 && !isRaidEv(r.eventStageId) && !isEventEv(r.eventStageId)).every((r) => r.detailUrl === ''), 'detailUrl vuoti cambiati');
+check(evRows.find((r) => r.eventStageId === 6000)?.detailUrl === t.WEB_BASE + '/web/colosseum/catalog', 'evStage 6000 detailUrl (Coliseum Catalog)');
+check(evRows.filter((r) => r.eventStageId !== 7000 && r.eventStageId !== 8000 && r.eventStageId !== 6000 && !isRaidEv(r.eventStageId) && !isEventEv(r.eventStageId)).every((r) => r.detailUrl === ''), 'detailUrl vuoti cambiati');
 check(evRows.filter((r) => isEventEv(r.eventStageId)).every((r) => r.detailUrl === (r.eventStageId === evCatalogId ? t.WEB_BASE + '/web/event/catalog'
   : r.eventStageId === avatarCatId ? t.WEB_BASE + '/web/avatar/catalog' : r.detailUrl && `${t.WEB_BASE}/web/event/notice/${r.eventStageId}`)), 'evStage event detailUrl: vuoto, la notizia o il catalogo, assoluto');
 check(evRows.filter((r) => isRaidEv(r.eventStageId)).every((r) => r.detailUrl === '' || r.detailUrl === `${t.WEB_BASE}/web/raid/notice/${r.eventStageId}`), 'evStage raid detailUrl: vuoto o la notizia, assoluto');

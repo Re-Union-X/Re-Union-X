@@ -17,8 +17,10 @@ const SERVER_APPLIES = new Set([DROP, AP, LUX, FUSION_EXP, FUSION_MUNNY, SP_ATK]
 // ids of the day; [] without a day or a table
 const activeIds = (dayIso, daysTable) => (dayIso && daysTable && Array.isArray(daysTable[dayIso]) ? [...daysTable[dayIso]] : []);
 
-// served scopes (make-campaigns.js narrows the others): 2 explicit list, 5 every story quest (Lux only)
+// served scopes (make-campaigns.js narrows the others): 2 explicit list, 5 every story quest (Lux only), 7 every Coliseum stage
 const STORY_FIRST = 1010, STORY_LAST = 39159, EVERY_STORY = 5;
+// 7 every Coliseum stage: AP only, applied by routes-colosseum.js through colosseumAp (Coliseum Part 1)
+const EVERY_COLOSSEUM = 7;
 const takes = (r, stageId) => (r.stageType === LIST ? (r.stageId || []).slice(0, r.validStageId || 0).includes(stageId)
   : r.stageType === EVERY_STORY && stageId >= STORY_FIRST && stageId <= STORY_LAST);
 
@@ -87,12 +89,19 @@ function campaignRoutes(deps) {
     const own = ids0.filter((id) => rows.has(id) && applies.has(rows.get(id).type));
     return effectsFor(own, rows, stageId);
   }
+  // AP of a Coliseum round (scope 7, every Coliseum stage) under the day's AP campaign: the first listed AP row of scope 7
+  // (the day table lists the lowest power first), as for the stages of the other screens
+  function colosseumAp(useAp, ms = deps.realNow()) {
+    const rows = byId();
+    const r = dayIds(ms).map((id) => rows.get(id)).find((x) => x && x.type === AP && x.stageType === EVERY_COLOSSEUM);
+    return apWith(Number(useAp) || 0, r ? r.power : null);
+  }
   function stageAp(stageId, ms = deps.realNow()) {
     const raid = deps.raidStageAp(stageId, ms);
     if (raid !== undefined && raid !== null) return raid;
     return apWith(Number(deps.useAp(stageId)) || 0, effects(stageId, ms).apPower);
   }
-  return { ids, dayIds, effects, stageAp };
+  return { ids, dayIds, effects, stageAp, colosseumAp };
 }
 
 module.exports = { campaignRoutes, activeIds, effectsFor, apWith, SERVER_APPLIES, AP, LUX, DROP, FUSION_EXP, FUSION_MUNNY, SP_ATK };

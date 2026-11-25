@@ -791,6 +791,29 @@ const RAW_NOTICES = [
       ...raidJpLines(raidNoticeFacts()),
       '## Raids not here yet',
       ...raidNoticeLines(raidNoticeFacts())] },
+  // Coliseum Part 1 (25-11): routes-colosseum.js, routes-colosseum-boards.js, colosseum-pages.js, make-colosseum.js; spec
+  // docs/superpowers/specs/2026-11-25-coliseum-design.md, notes docs/notes/coliseum.md. Season = month of the Story week (user
+  // 25-11, choice A), kept season until removed (ruling 10), thresholds interpolated from the 2016-08 cutoffs (ruling 5),
+  // World_Ico8A/8B = the Multi Board icon (no source has it), Coliseum AP campaigns of the 1.1.3 calendar (make-campaigns.js)
+  { date: '11/25', tag: 'IMPORTANT', title: 'Coliseum',
+    body: ['The **Coliseum** is back in **Quests** from **Story Quest 130**: the monthly seasons of the Olympus arena with their Tiers and Rounds, the original enemies and maps, the one-turn shortcut, Coliseum Coins, Tier Rewards, the Coliseum Boards and the ranking rewards. The first four seasons are here: **April, May, June and July 2016**.',
+      '## Seasons',
+      'The season follows your **Story** like the Shop: the Coliseum plays the season of the month of your **Story week** {not original} (the original changed season on the 1st of every real month). A week that spans two months counts for the month it starts in, and when your Story week goes back to an earlier month the Coliseum goes back to that season too. In a Story week whose month has no season here yet, the Coliseum is unavailable.',
+      'Each season keeps **its own progress, Coliseum Coins and Coliseum Boards** in your save {not original}. In the original game every new month started from Tier 1 with 0 coins and the coins of the old season were lost; here, going back to a season resumes it where you left it. A season played for the first time starts at **Tier 1, Round 1** with 0 coins, as in the original.',
+      '## Rounds and AP',
+      'As in the original game, a lost or abandoned round can be tried again as often as you like, and the AP paid to start it is not given back. Clearing every wave in one turn unlocks the next rounds at once, also across tiers; when you clear a later round, the rounds and tiers you skipped pay their coins and Tier Rewards.',
+      'Rounds cost their original **3 to 5 AP**. The Coliseum AP campaigns of 2016 are back on their original days of your Story week: **1 AP** from May 19 to 31 and from June 16 to 22, 2016, and **0 AP!** on November 1-3, 2016. Like the other Bonus Times, the reduced cost is worked out from the campaign\'s original rate.',
+      '## Ranking',
+      'There is only one player on this server, so the monthly ranking cannot be a real ranking. Each reward bracket of a season is a **score threshold** instead {not original}, on the original measure: the furthest round you cleared. Reach a threshold and its rewards go to your **Present Box**, once; the Ranking screen lists the thresholds.',
+      'The thresholds are {rebuilt}: no ranking cutoff of these four seasons survives, so they are interpolated from the only worldwide 2016 cutoffs on record (recordings of the August 2016 ranking) and adjusted to the number of rounds of each season. In May 2016 every ranked player got the same reward, as in the original: one cleared round is enough.',
+      '## Coliseum Catalog',
+      'The **Coliseum Catalog** is {not original}: it is an addition of this server, like the Event and Raid Catalogs. Its banner is the **first of the Events tab** and appears from Story Quest 130, when the Coliseum opens; tap it to open the Training Grounds, and its **Details** button lists every season here with its tiers, AP, Coliseum Boards and your progress.',
+      'One **past season** at a time can be **kept**: the Coliseum then plays the kept season until you **remove** it, whatever your Story week, also when your Story week goes back to an earlier month. Only past seasons can be kept: not the season of your Story week, nor a month your Story week has only just reached. Keeping or removing a season loses nothing, since each season keeps its progress and coins.',
+      'The Coliseum Catalog banner and the season cards are our own design {not original}, made from original pieces of the game: the Olympus arena panel, the Coliseum Coin and the Tier crown.',
+      '## Graphics',
+      'The maps of the four seasons are the original ones, from the 2016 worldwide game files. The icon of the **Coliseum Boards** button is not in any surviving game file: the **Multi Board** icon stands in for it {not original}.',
+      '## Not here yet',
+      'The seasons from August 2016 to June 2021 will come in later updates. The **PvP Coliseum** is not available yet.'] },
   // Events Part 1 Task 8 (07-11): event quests, Event Catalog, kept event, short windows, coins, no raid spawns (user decision 07-11,
   // notice 49535), counts and labels from events.json (eventNoticeFacts); docs/notes/events.md
   // Events Part 1 Task 8 (07-11) and later parts: the event notice, split in 7 (plan 2026-11-23-notices-readable): eventNotices()

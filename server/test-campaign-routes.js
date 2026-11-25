@@ -54,6 +54,16 @@ assert.strictEqual(w.routes.stageAp(RAID_STAGE, MON), 90, 'a raid stage keeps th
 assert.strictEqual(world({ days: {} }).routes.stageAp(EVENT, MON), 10, 'no Bonus Time that day');
 assert.strictEqual(world({ days: {}, bench: [96000] }).routes.stageAp(EVENT, MON), 0, 'bench ids are applied too');
 
+// Coliseum Part 1: the scope 7 AP campaign (every Coliseum stage) on the Coliseum round AP, the 1 AP campaign of 2016-05-19
+const colo = (rows, ids) => { const x = world({ days: { '2017-01-02': ids } }); x.evCampaign.push(...rows); return x; };
+assert.strictEqual(colo([row(96010, 7, 3500, 7)], [96010]).routes.colosseumAp(3, MON), 2, '3 AP x 3500 rounded up, as apWith');
+assert.strictEqual(colo([row(96010, 7, 0, 7)], [96010]).routes.colosseumAp(5, MON), 0, '0 AP campaign');
+assert.strictEqual(colo([row(96010, 7, 3500, 7)], []).routes.colosseumAp(3, MON), 3, 'not that day: the tier AP');
+assert.strictEqual(w.routes.colosseumAp(3, MON), 3, 'AP rows of other scopes do not touch the Coliseum');
+assert.strictEqual(colo([row(96010, 7, 0, 7), row(96011, 7, 3500, 7)], [96010, 96011]).routes.colosseumAp(4, MON), 0, 'first listed scope 7 AP row');
+assert.strictEqual(colo([row(96010, 10, 20000, 7)], [96010]).routes.colosseumAp(3, MON), 3, 'a scope 7 Lux row is not an AP row');
+assert.strictEqual(colo([row(96010, 7, 3500, 7)], [96010]).routes.stageAp(EVENT, MON), 10, 'scope 7 never applies to other stages');
+
 // effects: the types the server applies (Lux at /stage/clear, drops, fusion; AP above)
 assert.deepStrictEqual(w.routes.effects(EVENT, MON), { apPower: 0, lux: 2, drop: 2, fusionExp: 2, fusionMunny: 0.5, spAtk: null }, 'server-side types apply once');
 assert.strictEqual(w.routes.effects(OTHER, MON).lux, 1, 'no Lux campaign on that stage');

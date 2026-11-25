@@ -1,6 +1,7 @@
 # Coliseum (PvE) - spec summary
 
-Research for the next game mode after raids (I-054 entry screen done, I-059 gameplay open). Facts only; the detailed
+Research and state of the PvE Coliseum (I-054 entry screen done; I-059 gameplay: **Part 1 served**, seasons 2016-04 .. 2016-07,
+see «Part 1 summary» at the end). Facts only; the detailed
 per-month data and the sources stay in the private event catalogue (`private\events\sources\coliseum\COLISEUM.md`).
 Tags: **proven** = read from original data/code or two agreeing primary sources; **probable** = one good source or
 strong inference; **unknown** = not found yet. Current server state: `server/routes-colosseum.js` (Coliseum Part 1 Task 3)
@@ -235,3 +236,35 @@ What the client does (all proven on the bench):
   caught fading; expected `excellentUnlockCount`, unconfirmed).
 - 128 now sends only the inventory rows its rewards touched (snapshot before the rewards, as the other reward routes); at
   first it sent the whole inventory (~1 MB on this save) and the client stayed on a black screen ~30 s before the result.
+
+## Part 1 summary (25 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-25-coliseum-part1.md`, spec `docs/superpowers/specs/2026-11-25-coliseum-design.md`.
+Served: master revision **393**, resources **185** (no resource change after Task 4: the Coliseum Catalog banner and season cards
+are server images, `game_data/colosseum_img`, like the raid catalog cards).
+
+- **Seasons** 2016-04 (800), 2016-05 (900), 2016-06 (1000), 2016-07 (1100): `server/make-colosseum.js` (1.1.3 master rows, wired
+  in make-game-tables.js), stage files from the WW 2016 bundle (`recon/tools/import_colosseum_stages.py`).
+- **Rules** `server/colosseum-rules.js`, **routes** `server/routes-colosseum.js` (124-128, 139/140/180): live season = the kept season
+  when one is kept (it plays until removed, also when the Story week loops back), else the month of the Story week; per-season
+  progress, coins and boards in the save; ranking brackets as score thresholds interpolated from the 2016-08 cutoffs, paid into
+  the Presents once.
+- **Boards** `server/routes-colosseum-boards.js` (sphere type 3, shared core `server/sphere-board-core.js`): the live season's boards,
+  bought with its coins; «Tier 10 Bonus» boards wait for Tier 10.
+- **Coliseum Catalog** (`server/colosseum-pages.js`, evStage 6000, first banner of the Events tab from story quest 130): every
+  served season, keep one past season.
+- **AP campaigns**: the Coliseum scope (stageType 7) of the campaign calendar is served (`make-campaigns.js`): «1 AP» (power 3500)
+  on 2016-05-19..31 and 2016-06-16..22, «0 AP!» on 2016-11-01..03; `/colosseum/start` charges `campaigns.js colosseumAp`
+  (client rounding: a 3-5 AP round costs 2 AP under «1 AP»; not yet seen on the bench).
+- **Notice** «Coliseum» (11/25, IMPORTANT) declares the deviations; FAQ of the help page updated.
+
+Bench smoke 25-11 (master 393, save `coli1`; screenshots local in `D:\Progetto_Restauro_KH_UX	mp\coli_p1	ask7\shots\`):
+the Coliseum notice is listed first; the Events tab shows the Coliseum Catalog banner first, then the Raid Catalog and the Event
+Catalog; the Coliseum Catalog page lists the four seasons (April «Season of your Story now» with its progress and coins, May-July
+locked at story quests 251 / 301 / 376); the Raid and Event Catalog pages open, and on a copy of an advanced save their Keep and
+Remove buttons swap the row in place (shared row script of Task 6). At the first home after the update the client showed
+«Unlocked a Coliseum Board!» for the April board (6★ Cid) with an **empty card picture**: the type-3 board popup exists, but the
+board card image is not served yet.
+
+Still to bench with the user: a full season run (normal clear, one-turn window, skip across a tier, loss + retry, board purchase,
+kept season from the Catalog, threshold Present) and the «1 AP» campaign cost on the Coliseum screen.

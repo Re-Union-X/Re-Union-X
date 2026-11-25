@@ -52,7 +52,7 @@ function world(opts = {}) {
         .filter((m) => !snap || (m.userMedalId >= 100 + w.grants.slice(0, snap.grants).filter((g) => g.type === 3).length)), userTitles: (w.player.titles || []).map((titleId, i) => ({ userTitleId: i + 1, titleId })),
       userKeyblades: [{ userKeybladeId: 1 }], userDecks: [{ deckId: 1 }], userAvatarParts: [{ p: 1 }], subslotMaxNum: 3, userKeybladeSubslots: [] }),
     userKeybladesData: () => [{ userKeybladeId: 1 }], send: (res, code, body) => { w.sent = body; }, ret: () => ({ ok: 1 }),
-    apNow: () => w.ap, changeAp: (d) => { w.ap += d; }, campaignIds: () => [7],
+    apNow: () => w.ap, changeAp: (d) => { w.ap += d; }, campaignIds: () => [7], campaignAp: opts.campaignAp,
     battlePoints: (gp, burst) => { const l = Number(gp?.lux) || 0; w.lux += l; w.burst = burst; return l; }, beginBattle: (k) => { w.keyblade = k; },
     grantItem: (it) => w.grants.push(it), addPresent: (it, text) => w.presents.push({ ...it, text }),
     element: (now, rank, uc, arrival) => ({ userData: { user: { userId: 1 } }, rank, userColosseum: uc, arrivalTime: arrival }),
@@ -127,6 +127,16 @@ const tests = {
     w.ap = 2;
     assert.deepStrictEqual(keys(w.start(1, 1)), ['ret', 'userData']);
     assert.strictEqual(w.ap, 2);
+  },
+  start_campaign_ap() {
+    // the day's Coliseum AP campaign (campaigns.js colosseumAp): 1 AP campaign of 2016-05-19 = tier 3 AP x 3500 -> 2
+    const w = world({ campaignAp: (ap) => Math.max(1, Math.ceil((ap * 3500) / 10000)) });
+    w.ap = 2;
+    assert.deepStrictEqual(keys(w.start(1, 1)), ['ret', 'userData', 'colosseumInfo', 'userColosseum', 'userTreasures', 'startColosseumData', 'campaigns'], '2 AP are enough');
+    assert.strictEqual(w.ap, 0, 'the campaign AP is charged');
+    const z = world({ campaignAp: () => 0 });
+    z.start(1, 1);
+    assert.strictEqual(z.ap, 100, '0 AP campaign: nothing charged');
   },
   retire_keeps_progress() {
     const w = world();
@@ -555,14 +565,15 @@ function wiring() {
     assert.strictEqual(post('/web/colosseum/other').code, 404);
   });
   run('wiring_events_tab_first', () => {
-    if (!t.masterRows('evStage').some((r) => r.eventStageId === 6000)) { console.log('  (no evStage 6000 in master_data: run make-colosseum.js; banner check skipped)'); return; }
+    // a master with the Coliseum rows has the catalog row too (make-colosseum.js catalogEvStage, full make-game-tables run)
+    assert.ok(t.masterRows('evStage').some((r) => r.eventStageId === 6000), 'evStage 6000 (Coliseum Catalog) in master_data');
     let b = null;
     quiet(() => t.respondStageEvent({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, { eventCategory: 2 }));
     assert.strictEqual(b.events[0].eventStageId, 6000, 'the Coliseum Catalog banner first');
     assert.strictEqual(b.events[0].eventType, 0);
     assert.ok(b.events[0].bannerUrl.endsWith(`/web/colosseum/img/v${routesColosseum.COLOSSEUM_IMG_VERSION}/6000.png`));
     const raidCat = b.events.findIndex((e) => e.eventStageId === 8000);
-    if (raidCat >= 0) assert.strictEqual(raidCat, 1, 'then the Raid Catalog');
+    assert.strictEqual(raidCat, 1, 'then the Raid Catalog');
   });
   fs.rmSync(dir, { recursive: true, force: true });
 }
