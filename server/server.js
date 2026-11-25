@@ -41,6 +41,7 @@ const routesHsc = require('./routes-hsc'); // High Score Challenges (Events Part
 const routesColosseum = require('./routes-colosseum'); // PvE Coliseum (Coliseum Part 1 Task 3)
 const { eventsTabOrder } = require('./events-tab-order'); // Events tab order (user 10-11)
 const eventBoardRoutes = require('./routes-event-boards'); // Event Coins and Event Boards (type 4)
+const colosseumBoardRoutes = require('./routes-colosseum-boards'); // Coliseum boards (type 3, Coliseum Part 1 Task 5)
 const raidPages = require('./raid-pages'); // Raid Catalog web pages (Task 9)
 const eventPages = require('./event-pages'); // Event Catalog web pages (Events Part 1, Task 5)
 const legalPages = require('./legal-pages');
@@ -3147,10 +3148,11 @@ function sphereBoards() {
   }
   return player.sphere;
 }
-// userSphereBoardId: one sequence for the standard, Raid (type 5) and Event Boards (type 4)
+// userSphereBoardId: one sequence for the standard, Raid (type 5), Event (type 4) and Coliseum boards (type 3, per season)
 // (an avatar board's state also holds the userSphereBoardId of its KEPT twin, twinId: Task 6c)
 const nextUserSphereId = () => Math.max(0, ...[...Object.values(player.sphere || {}), ...Object.values(player.raidSphere || {}),
-  ...Object.values(player.eventSphere || {}), ...Object.values(player.avatarSphere || {})].map((s) => Math.max(s.id, s.twinId || 0))) + 1;
+  ...Object.values(player.eventSphere || {}), ...Object.values(player.avatarSphere || {}),
+  ...Object.values(player.colosseumSphere || {}).flatMap((box) => Object.values(box))].map((s) => Math.max(s.id, s.twinId || 0))) + 1;
 
 // Raid Boards (type 5, master rows of make-raid.js / raid-boards.js; client path docs/notes/bacheche.md «Raid Boards»).
 // player.raidSphere[sphereBoardId] = {id, unlock[], getDatetime}, made when the board is first handed out and kept for good,
@@ -3167,7 +3169,7 @@ function raidSphereBoards() {
 }
 // an avatar board's KEPT twin answers with the original's progress under its own userSphereBoardId (avatar-boards.js sphereOf)
 const sphereState = (sphereBoardId) => sphereBoards()[sphereBoardId] || (player.raidSphere || {})[sphereBoardId] || (player.eventSphere || {})[sphereBoardId]
-  || avatarBoards().sphereOf(player, sphereBoardId);
+  || colosseumBoards().stateOf(sphereBoardId) || avatarBoards().sphereOf(player, sphereBoardId);
 
 function userSphereData(sphereBoardId) {
   const s = sphereState(sphereBoardId);
@@ -3189,7 +3191,10 @@ function userSphereAll({ setSent = false } = {}) {
   // the avatar boards listed now: on sale (type 2, only ever sent by this list), bought, handed out, level (avatar-boards.js)
   let avatarIds = [];
   try { avatarIds = avatarBoards().list(player, avatarCtx(), avatarKept(), { setSent }); } catch (e) { console.log(`[avatar boards] list: ${e.message}`); }
-  return { userSphereDatas: [...Object.keys(sphereBoards()).map(Number), ...raidIds, ...eventIds, ...avatarIds].map(userSphereData), notChargedSphereBoardIds: [] };
+  // the Coliseum boards of the live season (routes-colosseum-boards.js)
+  let colosseumIds = [];
+  try { colosseumIds = colosseumBoards().list({ setSent }); } catch (e) { console.log(`[colosseum boards] list: ${e.message}`); }
+  return { userSphereDatas: [...Object.keys(sphereBoards()).map(Number), ...raidIds, ...eventIds, ...avatarIds, ...colosseumIds].map(userSphereData), notChargedSphereBoardIds: [] };
 }
 
 // POST /user/sphere/check (azioni 60/61): ogni voce di userSphereDatas e' per il client una
@@ -3226,9 +3231,14 @@ function respondSphereCheck(res, req) {
   // avatar boards: a board on sale is never in this answer (every entry pops «Unlocked an Avatar Board!»)
   let av = { add: [], close: [] };
   try { av = avatarBoards().check(player, req || {}, avatarCtx(), avatarKept()); } catch (e) { console.log(`[avatar boards] check: ${e.message}`); }
+  // Coliseum boards (type 3): the live season's, as the Event Boards (routes-colosseum-boards.js check)
+  let co = { add: [], close: [] };
+  try { co = colosseumBoards().check(req || {}); } catch (e) { console.log(`[colosseum boards] check: ${e.message}`); }
+  if (co.add.length || co.close.length) console.log(`[colosseum boards] check ${JSON.stringify(req)}: +${co.add.join(',') || '-'} closed ${co.close.join(',') || '-'}`);
   savePlayer();
-  const userSphere = { userSphereDatas: [...fresh.map(userSphereData), ...add.map(userSphereData), ...ev.add.map(userSphereData), ...av.add.map(userSphereData)], notChargedSphereBoardIds: [] };
-  send(res, 200, { ret: ret(), userSphere, closeEventSphereBoardIds: [...close, ...ev.close, ...av.close] });
+  const userSphere = { userSphereDatas: [...fresh.map(userSphereData), ...add.map(userSphereData), ...ev.add.map(userSphereData), ...av.add.map(userSphereData),
+    ...co.add.map(userSphereData)], notChargedSphereBoardIds: [] };
+  send(res, 200, { ret: ret(), userSphere, closeEventSphereBoardIds: [...close, ...ev.close, ...av.close, ...co.close] });
 }
 
 // premio di un nodo (rewardSelect di sphereMasu): 12 HP, 21 AP, 22 costo del deck (bonus sommati
@@ -3287,6 +3297,20 @@ function respondSphereUpdate(res, req) {
       ret: ret(),
       userData: { userPoint: userPointData(now), userDetail: userDetailData() },
       userSphere: { userSphereDatas: es ? [userSphereData(boardId)] : [], notChargedSphereBoardIds: [] },
+      ...inventoryBlocks(now, snap),
+    });
+  }
+  // Coliseum boards (type 3): routes-colosseum-boards.js update (the live season's boards, its Coliseum Coins, each reward once)
+  if (board?.type === 3) {
+    const r = colosseumBoards().update(boardId, req?.releaseMasuId, !!req?.allOpen);
+    console.log(r.ok ? `[sphere] Coliseum board ${boardId}: nodes ${r.nodes.join(',')} (-${r.cost} Coliseum Coins, season ${r.season})`
+      : `[sphere] unlock refused: Coliseum board ${boardId} (${r.why})`);
+    const cs = colosseumBoards().stateOf(boardId);
+    savePlayer();
+    return send(res, 200, {
+      ret: ret(),
+      userData: { userPoint: userPointData(now), userDetail: userDetailData() },
+      userSphere: { userSphereDatas: cs ? [userSphereData(boardId)] : [], notChargedSphereBoardIds: [] },
       ...inventoryBlocks(now, snap),
     });
   }
@@ -5253,6 +5277,17 @@ function colosseum() {
     log: (l) => console.log(l),
   });
 }
+// Coliseum boards (type 3, Coliseum Part 1 Task 5, routes-colosseum-boards.js): the live season's boards, bought with its coins;
+// a medal cell with the medal storage full goes to the Presents
+var colosseumBoardsMemo = null; // var: userSphereAll and nextUserSphereId can run before this line
+function colosseumBoards() {
+  return colosseumBoardsMemo ??= colosseumBoardRoutes({
+    player, master: masterRows, colosseum, grantSphereReward, now: realNow, nextUserSphereId,
+    medalCount: () => stackedMedalList().length, medalCap: maxMedal,
+    addPresent: (r, text) => addPresent(r.type, r.id || 0, r.num, text, r.skillId || undefined),
+    log: (l) => console.log(l),
+  });
+}
 // userPoint.colosseumSpherePoint: an error here must never break GET /user (every userPoint key is required)
 function colosseumCoinPoint() {
   try { return colosseum().coinsOf(); } catch (e) { console.log(`[colosseum] coinsOf: ${e.message}`); return 0; }
@@ -6306,7 +6341,7 @@ module.exports._test = {
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
   eventRoutes, eventIndex, // server/test-event-routes.js
   hsc, // server/test-hsc-routes.js
-  colosseum, inventoryBlocks, serverTime, // server/test-colosseum-routes.js
+  colosseum, colosseumBoards, inventoryBlocks, serverTime, // server/test-colosseum-routes.js, test-colosseum-boards.js
   eventBoards, // server/test-event-board-routes.js
   avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
   respondEventWeb, respondEventPost, respondAvatarWeb, respondAvatarPost, migrateAvatarKeep, // server/test-event-pages.js

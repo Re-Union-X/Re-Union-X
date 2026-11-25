@@ -66,6 +66,15 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   }
   const stateOf = (s) => rules.seasonState(player, s.id);
   const coinsOf = () => { const s = liveSeason(); return s ? stateOf(s).coins : 0; };
+  // Coliseum boards (routes-colosseum-boards.js): n coins of the live season; false (nothing spent) when short or no season live
+  function spendCoins(num) {
+    const s = liveSeason(), n = Number(num);
+    if (!s || !Number.isFinite(n) || n < 0) return false;
+    const st = stateOf(s);
+    if (st.coins < n) return false;
+    st.coins -= n;
+    return true;
+  }
   // reward type 17 outside a Coliseum clear (grantItem of server.js): into the live season
   function addCoins(num) {
     const s = liveSeason(), n = Number(num) || 0;
@@ -296,7 +305,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     return { code: 200, body: { ok: true } };
   }
 
-  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, addCoins, closeDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
+  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, addCoins, closeDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
     seasons: () => SEASONS.map((x) => season(x.colosseumStageId)).filter(Boolean) };
 }
 

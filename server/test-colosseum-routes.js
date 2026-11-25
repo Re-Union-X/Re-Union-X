@@ -239,6 +239,23 @@ const tests = {
     w.week.shopFrom = '2016-08-04';
     assert.strictEqual(w.c.addCoins(5), false, 'no live season: not paid');
   },
+  // spendCoins (Coliseum boards, Task 5): the live season's coins; short -> false, nothing spent
+  spend_coins() {
+    const w = world();
+    w.c.addCoins(10);
+    assert.strictEqual(w.c.spendCoins(11), false);
+    assert.strictEqual(w.c.coinsOf(), 10, 'nothing spent');
+    assert.strictEqual(w.c.spendCoins(4), true);
+    assert.strictEqual(w.c.coinsOf(), 6);
+    assert.strictEqual(w.player.colosseum.seasons[800].coins, 6);
+    assert.strictEqual(w.c.spendCoins(0), true, 'a free node');
+    assert.strictEqual(w.c.spendCoins(-1), false, 'never a refund');
+    w.week.shopFrom = '2016-05-05';
+    assert.strictEqual(w.c.spendCoins(1), false, 'May has no coins');
+    assert.strictEqual(w.player.colosseum.seasons[800].coins, 6, 'April untouched');
+    w.week.shopFrom = '2016-08-04';
+    assert.strictEqual(w.c.spendCoins(0), false, 'no live season');
+  },
   close_date() {
     const w = world();
     // the Shop week moves into May two real weeks from now: the season ends that Monday
