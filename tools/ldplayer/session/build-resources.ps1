@@ -162,6 +162,10 @@ if ($LASTEXITCODE) { throw 'make_enemy_moves fallito' }
 # keyblade) e win_levelup; nell'indice unito vincerebbe l'OBB (I-091)
 python -I recon\tools\prefer_addnl.py "$D\ipa431\names_addnl.tsv" "$D\ipa431\addnl.mp4" "$sg\files"
 if ($LASTEXITCODE) { throw 'prefer_addnl fallito' }
+# I-315: the 5.0.1 Supernova burst motions (abl_50xxx) bake a fixed black boot in place of the left_foot movie
+# the client fills with the worn outfit; no 4.3.1 copy exists, so the LWFs are patched into stage_gen\files
+python -I recon\tools\fix_baked_leg.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" "$sg\files"
+if ($LASTEXITCODE) { throw 'fix_baked_leg failed' }
 # testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
 # scritti a mano: dove c'e' l'originale prevale, tranne i segnaposto «[id]» dell'IPA (es. i
 # filtri Supernova 106240205-215) quando make_layouts.py ha gia' scritto un testo

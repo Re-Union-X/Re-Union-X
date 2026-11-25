@@ -326,6 +326,21 @@ versions (LWF and texture together: the 5.0.1 `_1.png` is the boot) are now in `
 effects, all back to 4.3.1: in bwait the keyblade hand is drawn above the upper arm; btlEnd is 5 frames (was 112);
 dead1 80 frames (was 57), dead3 21 (was 26). dead2 (shadow timing) and knockback (`ikNode_*` wrappers) differ without
 a baked leg: left as they are.
+**I-315, Supernova motions (25-11):** the same boot (38x87) is baked in 13 5.0.1 burst motions
+`lwf/burst/motion/abl_50xxx`, which have no 4.3.1 copy (neither in the addnl nor in JP 4.3.1). Form A, as above, an
+unnamed movie in place of `left_foot`: abl_50071 (frames 40-62), 50151 (25-66, two depths), 50211 (25-62), 50231
+(25-62), 50241 (25-62), 50271 (25-43), 50331 (12-49, two depths), 50351 (25-54, plus a second copy of the character
+at depth 158), 50471 (25-74), 50501 (25-49). Form B, a movie still named `left_foot` that holds the boot and
+`left_shoes_c` but no `left_foot_b` / `left_foot_c`: abl_50041, 50051, 50061 (frames 35-60), the generic Supernovas
+of most SN medals (50051 is SN++ Illus. KH III Xion's, superBurst 4002028). Baked and good movie are the same symbol
+(`left_shoes_c` at the same offset), so `recon/tools/fix_baked_leg.py` (in `build-resources.ps1` after
+`prefer_addnl.py`) patches the LWF: in every rig movie (one with a `left_leg` child) the place records of the baked
+movie get the object of the file's good `left_foot` movie (blend bits kept) and, for form A, the instance name
+`left_foot`; matrices, frame counts and every other byte stay as they are (checked, together with the expected list
+`EXPECTED`). The patched LWFs go to `stage_gen\files` (served last); the textures stay the OBB ones (the boot texture
+is no longer drawn). abl_50211 straddles two OBB pieces (`res_bulk.py` cannot read it; the tool reads across
+pieces). `lwf/avatar/motion/dark_light_movie` has the same boot but no good `left_foot` movie inside: not patched (not
+a battle motion).
 
 <a id="suoni-jp"></a>
 ## Sound effects of the LWFs from JP 4.3.1 (I-152)
