@@ -1439,6 +1439,37 @@ const tests = {
     assert.deepStrictEqual([withT.served, withT.reason], [false, 'mapUnusable'], JSON.stringify(withT));
     assert.deepStrictEqual([noT.served, noT.reason], [false, 'mapUnusable']);
   },
+  // I-316 (user 25-11): the quest-list thumbnail is the icon of the room the quest starts in (imported map: rooms[0]; generated map:
+  // the gen report's folder), only when that icon is served; otherwise (or without the icon list) the story row's thumbId stays
+  thumbnail_of_the_played_room() {
+    const recs = records();
+    for (const x of [...recs[0].quests, ...recs[1].quests]) x.drops = { enemies: [], chests: [] };
+    const poi = (id) => ({ enemies: [{ uid: 2, enemyId: id, reward: 1, map: 0 }], chests: [] });
+    const maps = { status: new Map([[700001, { status: 'imported', rooms: ['DB_0010_01_00', 'DB_0000_00_00'] }], [700002, { status: 'imported', rooms: ['DW_0002_00_00'] }],
+      [740260, { status: 'imported', rooms: ['DW_0006_01_00'] }]]), poi: { 700001: poi(501), 700002: poi(501), 740260: poi(502) } };
+    const thumbs = new Set(['1_100100', '2_20000']); // DB_0010_01_00 of world 1, DW_0002_00_00 of world 2 (DW_0006_01_00 not served)
+    const run = (t) => {
+      const out = me.buildEvents(recs, CONFIG, { ...master(), reward: [{ rewardId: 1 }] }, undefined, undefined, maps, null, { thumbs: t });
+      return out.index.entries.flatMap((e) => e.quests).map((x) => (out.stage.find((s) => s.stageId === x.stageId) || {}).thumbId);
+    };
+    assert.deepStrictEqual(run(thumbs), [100100, 20000, 40000], 'first room of the map when its icon is served, else the story row');
+    assert.deepStrictEqual(run(undefined), [40000, 40000, 40000], 'no icon list: unchanged');
+    // generated map: the folder gen_story_maps.py built it in
+    const g = genQuest(702100);
+    const gen =(m, t) => {
+      const out = me.buildEvents([record('E-W', [g])], CONFIG, master(), undefined, {}, m, null, { eventEnemyIds: [], thumbs: t });
+      const q = entry(out, 'E-W').quests[0];
+      return [q.served, (out.stage.find((s) => s.stageId === q.stageId) || {}).thumbId];
+    };
+    const sid = entry(me.buildEvents([record('E-W', [g])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] }), 'E-W').quests[0].stageId;
+    const gmS = (rooms) => ({ status: new Map(), poi: {}, generated: new Set([sid]), genRooms: rooms });
+    assert.deepStrictEqual(gen(gmS(new Map([[sid, 'DG_0100_02_00']])), new Set(['1_1000200'])), [true, 1000200]);
+    assert.deepStrictEqual(gen(gmS(new Map([[sid, 'DG_0100_02_00']])), new Set(['1_0'])), [true, 40000], 'icon not served');
+    assert.deepStrictEqual(gen(gmS(new Map()), new Set(['1_1000200'])), [true, 40000], 'room unknown');
+    // playedThumb on its own
+    const pt = me.playedThumb({ status: new Map([[7, { rooms: ['ED_0001_02_00'] }]]), genRooms: new Map([[9, 'AG_0003_11_00']]) }, new Set(['8_10200', '4_31100']));
+    assert.deepStrictEqual([pt(false, 1, 7, 8), pt(true, 9, 9, 4), pt(true, 9, 9, 7), pt(false, 1, 8, 8), me.playedThumb(null, new Set())(false, 1, 7, 8)], [10200, 31100, null, null, null]);
+  },
   map_generate_later() {
     const later = genQuest(702200, { map: { key: 702200, stageBinId: 0, status: 'incomplete: STG header absent', source: 'generateLater' } });
     const out = me.buildEvents([record('E-L', [later, quest(702201, 1, [501])])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });

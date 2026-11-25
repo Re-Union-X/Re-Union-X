@@ -57,6 +57,10 @@
 // row's bgmField / bgmBattle / bgmBoss, which the client plays as audio/<id>.akb) replaces it: q.bgm {field, battle, boss} of the
 // record, else the private overlay event_bgm.json (opts.bgm / KHUX_EVENT_BGM / next to community_bonus.json) {quests: {"<donor
 // stage id>": {bgm: [field, battle, boss]}}} by the quest's stageId (or donorStageOfLaterRun); neither: the story row's music.
+// Quest-list thumbnail (I-316, user 25-11): the copied story row's thumbId shows a room of the world, not the quest's map. It becomes
+// the icon of the room the quest starts in (stage_select_ico_<worldId>_<thumbId>, make-story-oltre.js thumbForRoom): the first room
+// of the imported map (report.json rooms[0], part 00) or the folder of the generated map (gen_report.json `folder`), only when that
+// icon is served (opts.thumbs, make-story-oltre.js readThumbs; none -> the story row's thumbId, as before), as make-special (I-313).
 // High Score Challenges (Part 8 Task 6, type config.hsc.type): evStage rows eventCategory 4, the master tables ranking,
 // rankingReward, evScoreReward, evMedalList and the index entry.hsc block (see hscPrepare / hscRows below).
 // Wired in make-game-tables.js after make-raid. KHUX_EVENTS=0 turns it off; without KHUX_EVENT_SRC it warns and writes nothing.
@@ -1123,6 +1127,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
   const masterRewardKey = new Map((master.reward || []).map((r) => [r.rewardId, JSON.stringify((r.type || []).map((ty, k) => [ty, (r.id || [])[k] || 0, (r.num || [])[k], (r.odds || [])[k]]))]));
   const refs = storyRefs(master.stage);
   if (!refs.story.length) throw new Error('events: no story rows in the stage table');
+  const thumbOf = playedThumb(maps, opts.thumbs || null);
   // map key -> a stage row of the master that loads it (stageBinId, or its own id when the bin is 0)
   const byMap = new Map();
   for (const s of master.stage || []) byMap.set(s.stageBinId || s.stageId, s);
@@ -1544,6 +1549,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       const r = q.restrictions || {};
       const ref = refs.of(q.worldId);
       const room = genEntry ? { name: genEntry.room } : (q.room || [])[0] || {};
+      const thumb = thumbOf(gen, stageId, mapKey, q.worldId);
       const before = quizDrama ? quizDrama.ids : [];
       put(out.stage, { ...JSON.parse(JSON.stringify(ref)), stageId, stageBinId: mapKey, id: stageId, name: ordinalName(q.name, donorRow, q0.stageId), mapName: room.name || ref.mapName, useAp: q.ap,
         chapterId: Math.floor(stageId / 1000), worldId: q.worldId, onlyDrama: 0, stageKind: STAGE_KIND, noPartner: r.noPartner || 0,
@@ -1555,7 +1561,8 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         addLevel: genEntry ? 0 : q.addLevel || 0, holdKeyblade: r.holdKeyblade || 0, hardmodeRequire: r.hardmodeRequire || 0,
         hardmodeName: r.hardmodeName || 'strDummy', hardmodeComparison: r.hardmodeComparison === undefined ? 1 : r.hardmodeComparison, hardmodeNum: r.hardmodeNum || 0,
         validClearGetTitle: 0, clearGetTitle: 0, validClearGetSphere: 0, clearGetSphere: 0, resetClearGet: 0, ...firstClearOf(q), resetSubMission: 0,
-        ...questSubs(q, key), combinedSubmissionFlag: q.combined ? 1 : 0, raidBoss: 0, ...questMusic(q0, bgmOver) });
+        ...questSubs(q, key), combinedSubmissionFlag: q.combined ? 1 : 0, raidBoss: 0, ...questMusic(q0, bgmOver),
+        ...(thumb !== null ? { thumbId: thumb } : {}) });
       if (hasStage(q0) && !builtQuests.has(q0.stageId)) builtQuests.set(q0.stageId, { stageId, censusId: rec.censusId, sig, setKey: entry.boardSetKey || null, item, hsc: !!hsc });
       markServed(stageId);
     }
@@ -1818,6 +1825,23 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
   return out;
 }
 
+// I-316: (generated?, stageId, map key, worldId) -> the thumbId of the room the quest starts in, or null (unknown room or icon not
+// served: the story row's thumbId stays). maps: loadMaps (status rooms, genRooms); thumbs: Set of '<worldId>_<thumbId>' or null
+function playedThumb(maps, thumbs) {
+  const { thumbForRoom } = require('./make-story-oltre');
+  return (gen, stageId, mapKey, worldId) => {
+    if (!maps || !thumbs) return null;
+    const room = gen ? (maps.genRooms || new Map()).get(stageId) : (((maps.status || new Map()).get(mapKey) || {}).rooms || [])[0];
+    const t = thumbForRoom(room);
+    return t !== null && thumbs.has(`${worldId}_${t}`) ? t : null;
+  };
+}
+// the served stage icons (resource index + JP data, outside the repo, as make-special.js defaultThumbOf); none -> null
+function defaultThumbs() {
+  return require('./make-story-oltre').readThumbs(process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv',
+    process.env.KHUX_JP_ROOT || require('./local-paths').localPath('jp_data'));
+}
+
 // A missing file gives dflt where the caller allows it (dflt undefined: it stops the run); a corrupt one always stops it.
 function readJson(p, dflt) {
   let text;
@@ -1845,14 +1869,17 @@ const MAPS_DIR = process.env.KHUX_EVENT_MAPS || path.join('D:', path.sep, 'Proge
 const GEN_REPORT = (dir) => process.env.KHUX_EVENT_GEN_REPORT || path.join(dir, 'gen_report.json');
 function loadMaps(dir) {
   const gen = readJson(GEN_REPORT(dir), null);
-  const generated = new Set((Array.isArray(gen) ? gen : []).filter((r) => r && r.event && Number.isInteger(r.stageId)).map((r) => r.stageId));
+  const genList = (Array.isArray(gen) ? gen : []).filter((r) => r && r.event && Number.isInteger(r.stageId));
+  const generated = new Set(genList.map((r) => r.stageId));
+  // the room each generated map starts in (its first folder: I-316 thumbnails)
+  const genRooms = new Map(genList.filter((r) => r.folder).map((r) => [r.stageId, r.folder]));
   const rep = readJson(path.join(dir, 'report.json'), null);
-  if (!rep) { console.warn(`events: no map import report in ${dir} (recon/tools/import_event_stages.py): no event quest is served`); return { status: new Map(), poi: {}, generated }; }
+  if (!rep) { console.warn(`events: no map import report in ${dir} (recon/tools/import_event_stages.py): no event quest is served`); return { status: new Map(), poi: {}, generated, genRooms }; }
   // levelShifted: the import applied the level shift of the map item (event_maps.json levelShift) to the copied map
   // partSources: the parts filled from their JP dedup-stub source ({client name: {from, reconstructed, basis}}, mapRestoreLabels)
   return { status: new Map((rep.stages || []).map((s) => [s.key, { status: s.status, why: s.why || '', rooms: s.rooms || [], levelShifted: !!s.levelShifted, layoutTwin: !!s.layoutTwin,
     ...(s.partSources ? { partSources: s.partSources } : {}) }])),
-    poi: readJson(path.join(dir, 'stage_poi_events.json'), {}), generated };
+    poi: readJson(path.join(dir, 'stage_poi_events.json'), {}), generated, genRooms };
 }
 // The records: a file (a list of records) or a folder (every *.json except the anchors file, sorted by name, concatenated).
 // The anchors sidecar is next to the file, or inside the folder.
@@ -1935,7 +1962,9 @@ function patch(masterDir, opts = {}) {
   let avatarBoards = opts.avatarBoards;
   if (avatarBoards === undefined) avatarBoards = process.env.KHUX_AVATAR_BOARDS ? readJson(process.env.KHUX_AVATAR_BOARDS) : null;
   if (!avatarBoards && !opts.records) console.warn('events: KHUX_AVATAR_BOARDS not set (the private avatar board records): no BOARD entry in the Event Catalog');
-  const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters, avatarBoards, randomSquads: readJson(path.join(__dirname, 'random_squads.json'), {}) });
+  const out = buildEvents(records, config, master, readIds(idsFile), readJson(anchorsFile, {}), maps, boardSets, { dramas, bonus, bgm, builtBoosters, avatarBoards, randomSquads: readJson(path.join(__dirname, 'random_squads.json'), {}),
+    // I-316: the served stage icons (opts.thumbs in the tests; records given in opts without thumbs: thumbnails unchanged)
+    thumbs: opts.thumbs !== undefined ? opts.thumbs : (opts.records ? null : defaultThumbs()) });
   const added = { stage: out.stage, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...(out.avatarCatalogEvStage ? [out.avatarCatalogEvStage] : []), ...out.evStage], reward: out.reward,
     sphere: out.sphere, sphereArray: out.sphereArray, sphereMasu: out.sphereMasu, ...Object.fromEntries(Object.keys(HSC_TABLES).map((t) => [t, out[t]])) };
   const clashR = out.reward.find((r) => master.reward.some((m) => m.rewardId === r.rewardId));
@@ -1991,4 +2020,4 @@ function patch(masterDir, opts = {}) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
 module.exports = { buildEvents, informativeEntry, questMusic, ordinalName, patch, readRecords, anchorsPathOf, REASONS, allocateIds, allocateRows, labelIds, mapRestoreLabels, daysOf, swapEnemies, dropRows, GENERATED_LABELS, NOT_SERVED,
-  applyDatesOf, aliasRewardTypes, genMapOf, mergeCompletion, loadMaps, UNION_IDS };
+  applyDatesOf, aliasRewardTypes, genMapOf, mergeCompletion, loadMaps, playedThumb, UNION_IDS };
