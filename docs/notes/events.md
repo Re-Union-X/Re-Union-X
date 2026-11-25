@@ -1343,7 +1343,7 @@ Plan `docs/superpowers/plans/2026-11-22-events-part10b-generated-maps.md`, ledge
   the 2021 master); battle multiplier checked by the user (+26% medal: 36,291 -> 45,051 on the same hit).
 - **Notice:** «Events» section «High Score Challenges» (`eventHscLines`). JP logo «SCORE BONUS MEDAL» kept (user choice).
 - **Open:** PvP Rankings unreachable (known PvP crash); Coliseum «Tier Rewards» `GET /colosseum/reward/list` unhandled
-  («200 ERROR :125», separate issue); new-game crash after naming reported by a tester on the companion app (not reproduced
+  («200 ERROR :125», separate issue); new-game crash after naming reported by a tester (not reproduced
   server-side, waiting for a log); `test-special-server` fails also before this part («VIP fissata senza VIP»).
 
 ## Event Board card pictures (14 November 2026)
