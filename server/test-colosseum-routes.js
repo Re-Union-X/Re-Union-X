@@ -44,7 +44,11 @@ function world(opts = {}) {
     realNow: () => w.now, serverTime: () => fmt(w.now), serverTimeAt: fmt, clock,
     userPointData: (now) => ({ now, ap: w.ap, lux: w.lux, colosseumSpherePoint: w.c.coinsOf() }), userDetailData: () => ({ detail: 1 }),
     stageResumptionData: () => ({ resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 }),
-    inventoryBlocks: () => ({ userMaterials: [], userMedals: [{ userMedalId: 9 }], userSkills: [], userTitles: (w.player.titles || []).map((titleId, i) => ({ userTitleId: i + 1, titleId })),
+    // inventory snapshot model: the owned medal 9 + one medal row per granted medal; with a snapshot only the rows added since
+    inventorySnapshot: () => ({ grants: w.grants.length }),
+    inventoryBlocks: (now, snap) => ({ userMaterials: [], userSkills: [],
+      userMedals: [{ userMedalId: 9 }, ...w.grants.filter((g) => g.type === 3).map((g, i) => ({ userMedalId: 100 + i, medalId: g.id }))]
+        .filter((m) => !snap || (m.userMedalId >= 100 + w.grants.slice(0, snap.grants).filter((g) => g.type === 3).length)), userTitles: (w.player.titles || []).map((titleId, i) => ({ userTitleId: i + 1, titleId })),
       userKeyblades: [{ userKeybladeId: 1 }], userDecks: [{ deckId: 1 }], userAvatarParts: [{ p: 1 }], subslotMaxNum: 3, userKeybladeSubslots: [] }),
     userKeybladesData: () => [{ userKeybladeId: 1 }], send: (res, code, body) => { w.sent = body; }, ret: () => ({ ok: 1 }),
     apNow: () => w.ap, changeAp: (d) => { w.ap += d; }, campaignIds: () => [7],
@@ -158,6 +162,9 @@ const tests = {
     assert.deepStrictEqual(c.clearColosseums, [{ rank: 1, stageCount: 2 }, { rank: 1, stageCount: 3 }]);
     assert.strictEqual(c.userData.userPoint.colosseumSpherePoint, 1 + 2 + 30);
     assert.deepStrictEqual(w.grants.map((g) => [g.type, g.id, g.num]), [[3, 90013, 1]], 'tier medal granted, coins not granted twice');
+    // only the rows changed by this clear (snapshot before the rewards): the tier medal, not the untouched medal 9
+    assert.deepStrictEqual(c.userMedals.map((m) => m.medalId), [90013], 'delta medal rows only');
+    assert.deepStrictEqual(b.userMedals, [], 'a round with no medal reward sends no medal rows');
     // a retried 128 for the same round: nothing more
     const d = w.clear(1, 3);
     assert.strictEqual(d.userData.userPoint.colosseumSpherePoint, 33);
@@ -332,6 +339,9 @@ function wiring() {
     const r = call(t.colosseum().ranking, '/ranking/colosseum/own').colosseumRankingOwn;
     assert.deepStrictEqual(r.rankingDatas[0].userColosseum, { userRank: 1, userStageCount: 1, userStageTotalCount: 1 });
     // the client's full player-record parser (as High Score): without these keys «200 ERROR :139» (bench 25-11)
+    // 128 sends only the rows its rewards touched (inventorySnapshot wired): a round-coin clear changes no medal
+    assert.deepStrictEqual(c.userMedals, [], 'no full medal list in 128');
+    assert.ok(t.inventoryBlocks(t.serverTime()).userMedals.length > 0, 'the player owns medals');
     for (const k of ['userData', 'userAvatar', 'rank', 'userMedals', 'userSkills', 'userKeyblade', 'petBaseSlotMedal', 'supportUserMedals', 'supportUserSkills',
       'pet', 'emblemIds', 'arrivalTime']) assert.ok(k in r.rankingDatas[0], k);
     assert.strictEqual(typeof r.rankingDatas[0].arrivalTime, 'string');

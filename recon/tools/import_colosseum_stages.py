@@ -16,7 +16,7 @@ every room served (import_event_stages.served_rooms), every enemy id in the mast
 left out and reported (never invented); the run then exits 1, so the build stops instead of serving a season whose round
 would crash the client.
 Output: <out>/cl_stg*.bin (the resource staging stage_gen/files/stage). cl_stg files there not in the current set are
-removed (only this script writes cl_stg files). Report: <report> (default <out>/../colosseum_stages.json).
+removed (only this script writes cl_stg files). Report: <report> (default <out>/../../colosseum_stages.json, i.e. stage_gen/colosseum_stages.json for the default --out).
 """
 import argparse
 import json

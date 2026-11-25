@@ -5236,7 +5236,7 @@ function eventCoinPoint() {
 var colosseumMemo = null; // var: userPointData, grantItem and stageResumptionData can run before this line
 function colosseum() {
   return colosseumMemo ??= routesColosseum({
-    player, savePlayer, masterRows, realNow, serverTime, serverTimeAt, clock, userPointData, userDetailData, stageResumptionData, inventoryBlocks, userKeybladesData, send, ret,
+    player, savePlayer, masterRows, realNow, serverTime, serverTimeAt, clock, userPointData, userDetailData, stageResumptionData, inventoryBlocks, inventorySnapshot, userKeybladesData, send, ret,
     storyWeek: () => { const c = storyCtx(); return { storyQuest: c.storyQuest, shopFrom: c.shopFrom }; },
     // the Shop week of another real week (season end, routes-colosseum.js seasonBounds): the rotation of storyCtx, without its save
     shopFromAtWeek: (week) => gachaData.shopWindow(gachaCatalog(), stageNumber(lastStoryStageId()), week, (player.gacha || {}).rot).from,
@@ -6306,7 +6306,7 @@ module.exports._test = {
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
   eventRoutes, eventIndex, // server/test-event-routes.js
   hsc, // server/test-hsc-routes.js
-  colosseum, // server/test-colosseum-routes.js
+  colosseum, inventoryBlocks, serverTime, // server/test-colosseum-routes.js
   eventBoards, // server/test-event-board-routes.js
   avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
   respondEventWeb, respondEventPost, respondAvatarWeb, respondAvatarPost, migrateAvatarKeep, // server/test-event-pages.js

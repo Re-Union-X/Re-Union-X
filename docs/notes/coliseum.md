@@ -231,5 +231,7 @@ What the client does (all proven on the bench):
   straight away (no Continue popup) and return to the list, unchanged; the AP is spent.
 - `userColosseum` fields display sensibly (Tier 3, 3/15 in the ranking row after clearing round 38).
 - Not probed: a multi-turn clear (the probe deck one-shots every wave; the rule is covered by colosseum-rules tests), the
-  Coliseum Boards button (Task 5), and the season end. Each clear response carries the whole inventory (~1 MB on this save):
-  the client stays on a black screen ~30 s before the result.
+  Coliseum Boards button (Task 5), the season end, and the number shown by «ALL 1 TURN TRIUMPHS! N ROUNDS UNLOCKED» (only
+  caught fading; expected `excellentUnlockCount`, unconfirmed).
+- 128 now sends only the inventory rows its rewards touched (snapshot before the rewards, as the other reward routes); at
+  first it sent the whole inventory (~1 MB on this save) and the client stayed on a black screen ~30 s before the result.

@@ -34,11 +34,11 @@ const avatarType = (t) => t === 19 || t === 20 || t === 23;
 
 // deps: player, savePlayer, masterRows, storyWeek () -> {storyQuest, shopFrom}, shopFromAtWeek (realWeekIndex) -> shopFrom (no side
 // effect), realNow, serverTime, serverTimeAt, clock {weekIndex, weekEnd, weekStartOf}, userPointData, userDetailData,
-// stageResumptionData, inventoryBlocks, userKeybladesData, send, ret, apNow, changeAp, campaignIds, battlePoints (getPoint, burst) ->
+// stageResumptionData, inventoryBlocks, inventorySnapshot (now) -> snapshot before the rewards, userKeybladesData, send, ret, apNow, changeAp, campaignIds, battlePoints (getPoint, burst) ->
 // lux, beginBattle (userKeybladeId), grantItem ({type, id, num, skillId, skillLv}), addPresent ({type, id, num, skillId, skillLv}, text),
 // element (now, rank, userColosseum, arrivalTime) -> ranking entry, titleIds () -> owned title ids, log
 function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAtWeek = null, realNow, serverTime, serverTimeAt, clock,
-  userPointData, userDetailData, stageResumptionData, inventoryBlocks, userKeybladesData, send, ret, apNow, changeAp, campaignIds = () => [],
+  userPointData, userDetailData, stageResumptionData, inventoryBlocks, inventorySnapshot = () => null, userKeybladesData, send, ret, apNow, changeAp, campaignIds = () => [],
   battlePoints, beginBattle = () => {}, grantItem, addPresent, element, titleIds = () => player.titles || [], log = console.log }) {
   const root = () => (player.colosseum ||= {});
   const stageRow = (id) => masterRows('colosseumStage').find((r) => r.colosseumStageId === id) || null;
@@ -196,6 +196,8 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   // POST /colosseum/clear (128)
   function clear(res, body) {
     const now = serverTime(), fight = root().fight;
+    // only the rows the rewards touch (as every other reward route): the full lists were ~1 MB, ~30 s of black screen (bench 25-11)
+    const snap = inventorySnapshot(now);
     const titlesBefore = new Set(titleIds());
     const tier = int(body?.rank), round = int(body?.stageCount);
     const s = fight ? season(fight.season) : null;
@@ -222,7 +224,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     // never empty: the round asked for when nothing was cleared now (a retried or stale request)
     if (!clearColosseums.length) clearColosseums = [{ rank: Number.isFinite(tier) ? tier : 0, stageCount: Number.isFinite(round) ? round : 0 }];
     savePlayer();
-    const inv = inventoryBlocks(now);
+    const inv = inventoryBlocks(now, snap);
     send(res, 200, {
       ret: ret(),
       userData: { userPoint: userPointData(now), userDetail: userDetailData(), stageResumption: stageResumptionData() },
