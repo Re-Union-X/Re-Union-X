@@ -87,7 +87,7 @@ function helpPage() {
 // Credits in the game's own style (user 12-11): the blue of the game's pages, cyan section titles with the square, gold
 // key words, cards with the side bar of the catalogues, pills like the game's tags; the testers in the purple of their
 // Discord role. Same people as the site's Credits section, with no links (rules above).
-const TESTERS = ['aryna', 'Bepporn', 'Cynical', 'Drybomber', 'LuxHollow', 'Luxe', 'Maria', 'Pizzino Ossicino-Cristian', 'Richard(GUSTU)', 'Yozora Leonstrife']; // Trusted role, 24-11 (thethiny is above)
+const TESTERS = ['aryna', 'Bepporn', 'Cynical', 'D3ADLY', 'Drybomber', 'LuxHollow', 'Luxe', 'Maria', 'numnums', 'Pizzino Ossicino-Cristian', 'Richard(GUSTU)', 'Yozora Leonstrife']; // Trusted role, 25-11 (thethiny is above)
 const CREDITS_CSS = '<style>body{margin:0;background:#043654;color:#fff;font:17px/1.6 sans-serif;letter-spacing:.3px;padding:8px 14px 40px}'
   + 'h1{font-size:24px;margin:8px 0 0;text-align:center;letter-spacing:1px}.sub{text-align:center;color:#b9cfdc;font-size:14px;margin:0 0 10px}'
   + 'h2{color:#00d4ed;font-size:18px;margin:20px 0 6px}h2:before{content:"\\25A0  "}b.g{color:#ffcd4a}'
