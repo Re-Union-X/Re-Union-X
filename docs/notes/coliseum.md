@@ -274,3 +274,51 @@ kept season from the Catalog, threshold Present).
 Fix round 1 (master revision 394): with the «1 AP» row forced (`relogin.ps1 -Campaigns <its id>`), the Coliseum screen of Tier 4
 (4 AP) shows «AP 1» and the «1 AP» balloon under Begin; Start charged 1 AP (170 -> 169, server log `tier 4 round 5 started
 (-1 AP)`), Give Up left the progress unchanged.
+
+## Bench walk 2026-11-25
+
+Walk of Part 1 on the bench (WW 4.3.1 client, master revision 394, resources 185) on scratch copies of the probe save:
+the April 2016 season (800) from Tier 3 Round 12, then a copy of the advanced save cut at story quest 320 (Story week June 2016,
+season 1000) for the Catalog keep. Screenshots are local only.
+
+Verified (as designed):
+
+- **Loss + retry**: a weak deck lost Tier 3 Round 12; `/colosseum/retire` sent by the client, list unchanged (window 47..55), AP spent.
+- **Multi-turn clear** (first time on the bench): Tier 3 Round 12 won in several turns inside an open one-turn window 47..55 ->
+  server `window 48..48`, the list shows only Round 13 (Ruling 9: the window shrinks to the next round). Result «Tier 3, Round 12
+  Complete!» Coin x5.
+- **One-turn clear**: Round 13 -> window 49..57 (Tier 3 `excellentUnlockCount` 9, across into Tier 4 Round 7). The client plays
+  «1 TURN TRIUMPH!» per wave and «ALL 1 TURN TRIUMPHS! ROUNDS UNLOCKED» at the end, but **draws no number** before «ROUNDS»
+  (the `Round_NumL*` bones show the blank `Colosseum_RoundNum00` frame; the digits must come from client code, not found yet).
+- **Skip across a tier**: Tier 4 Round 6 from the 49..57 window -> 8 rounds paid (49..56), «TIER 3 ▷ 4», the rows of every skipped
+  round and «Tier 3 Complete!» Coin x50 + Moogle x2 (+102 coins in all); Tier Rewards shows Tier 3 «CLEAR!»; new window 57..62.
+- **Coliseum Boards**: list with the season's board (6★ Cid, 302 coins); nodes bought for 20, 60, 30 and 30 coins (Huey medal and
+  others granted, coins 302 -> 162); the 200-coin node with 162 coins: the client greys out Unlock and sends nothing. The May season
+  shows only 6★ Scrooge before Tier 10 (the Tier 10 Bonus board is hidden). Not reached: Tier 10 (its board appearing).
+- **Board card picture** (empty in the «Unlocked a Coliseum Board!» popup and in the board list / board screen): the client draws
+  `img/sphere_incentive/<sphereBoardId>.png` (as for the avatar boards, originals.tsv sections 56/57), and no Coliseum card is served.
+  The WW 2016 files hold `2200001.png` .. `2200020.png` (April 6★ Cid = 2200001, May 6★ Scrooge = 2200002 among them); 2200023 (May Tier 10 Bonus)
+  and 2210029-2210035 (June / July KH Chip, Moogle and Tier 10 Bonus) exist in no source on disk. Fix = an originals.tsv line plus a resource build (not done in
+  the walk).
+- **Ranking threshold**: clearing round 65 reached the 10,001st-50,000th threshold (score 65): the difference (Scrooge x1) went to
+  the Presents once and «Current: 10001st Goal: 10000th» updated. Ranking «Me» / Top 10 / Border Rank lists (border rows at progress
+  135 / 94 / 65 / 33 shown as Tier 6 65/999, Tier 6 24/999, Tier 5 5/10, Tier 2 13/15), Rewards popup with the goal and current
+  brackets. The Present text showed «10,001st50,000th»: the game font of the Present Box drops the en dash. **Fixed**: the bracket
+  text uses « - » as the client's own Rewards popup (`routes-hsc.js bracketText`, shared with the High Score Challenge; tests in
+  test-colosseum-routes.js and test-hsc-routes.js); the next paid bracket showed «1st - 5,000,000th» in the server log.
+- **Coliseum Catalog** (story quest 320, June season played to Tier 1 Round 1, 1 coin): Keep May 2016 -> the row turns into
+  «Kept: the Coliseum plays this season» + Remove, April gets «Replaces: Coliseum · May 2016», June «it plays again when you remove
+  the kept season», all in place; the Coliseum then plays May (Tier 1 Round 1, 0 coins); one round played (window 2..19, 1 coin);
+  Remove -> rows back in place, the Coliseum plays June again with its window 2..19 and coin; Keep again -> May with its progress.
+- **Raid Catalog and Event Catalog** Keep / Remove swap the row in place (Queen Bee on the quest-320 copy, «Try the High Score
+  Challenge!» on a copy of the advanced save).
+- **«Coliseum» notice** opens and reads well (summary, sections).
+
+Open (not changed in the walk):
+
+- The «N» of «ALL 1 TURN TRIUMPHS! N ROUNDS UNLOCKED» is not drawn (cause in client code; the server cannot set it).
+- Kept season: the Coliseum screen shows «Ends in 3688 days» (the kept season's far close date) and, in May 2016, «Goal:
+  10000000th» before the first round (one bracket only). Cosmetic, both follow from the rules.
+- The Quests tile shows «PVE ---» even with a ranked bracket (the tile reads a rank the server does not send yet).
+- Rank 0 «Me» row: third-place crown (known); what the original showed is not in the notes.
+- The ranking header bar shows «---» above «Ends in N days».

@@ -27,7 +27,8 @@ const ordinal = (n) => {
   const s = Number(n).toLocaleString('en-US'), m100 = n % 100, m10 = n % 10;
   return s + (m100 >= 11 && m100 <= 13 ? 'th' : m10 === 1 ? 'st' : m10 === 2 ? 'nd' : m10 === 3 ? 'rd' : 'th');
 };
-const bracketText = (b) => (b.startRank === b.endRank ? ordinal(b.startRank) : `${ordinal(b.startRank)}–${ordinal(b.endRank)}`);
+// ASCII ' - ' as in the client's own Rewards popup: the game font of the Present Box has no en dash (it drops it)
+const bracketText = (b) => (b.startRank === b.endRank ? ordinal(b.startRank) : `${ordinal(b.startRank)} - ${ordinal(b.endRank)}`);
 const needed = (t) => t.score;
 const parseTime = (s) => Date.parse(String(s).replace(' ', 'T') + 'Z');
 

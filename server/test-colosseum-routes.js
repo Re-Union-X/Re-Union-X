@@ -260,6 +260,8 @@ const tests = {
     w.start(1, 1); w.clear(1, 1);
     assert.deepStrictEqual(w.presents.map((p) => [p.type, p.id, p.num]), [[3, 90016, 1]], 'the open bracket paid at the clear');
     assert.ok(/^Coliseum April 2016: /.test(w.presents[0].text), w.presents[0].text);
+    // the Present Box draws the comment with the game font, which has no en dash (bench 25-11: «10,001st50,000th»)
+    assert.ok(/^[ -~]*$/.test(w.presents[0].text) && / - /.test(w.presents[0].text), w.presents[0].text);
     w.now += 60000;
     const top = (w.sent = null, w.c.ranking({}, '/ranking/colosseum'), w.sent).colosseumRanking;
     assert.deepStrictEqual(top.rankingDatas.map((x) => [x.rank, x.userColosseum.userStageTotalCount, x.arrivalTime]), [[1001, 1, fmt(NOW + 60000)]]);
