@@ -1215,6 +1215,16 @@ def colosseum_pieces():
     return {'panel': panel, 'coin': jp_img('incentive', 'IncentiveIcon_17.png'), 'crown': jp_img('colosseum', 'Colosseum_Rank_Num1.png')}
 
 
+def smooth_rotate(im, angle, ss=4):
+    """im rotated by angle with anti-aliased edges (user 25-11: the tilted Coliseum preview had jagged borders): a transparent
+    margin, the turn done at ss x the size, then scaled back down with LANCZOS"""
+    big = im.convert('RGBA').resize((im.width * ss, im.height * ss), Image.LANCZOS)
+    pad = Image.new('RGBA', (big.width + 4 * ss, big.height + 4 * ss), (0, 0, 0, 0))
+    pad.paste(big, (2 * ss, 2 * ss))
+    r = pad.rotate(angle, Image.BICUBIC, expand=True)
+    return r.resize((round(r.width / ss), round(r.height / ss)), Image.LANCZOS)
+
+
 def colosseum_art(pieces=None):
     """640x140 RGBA of the Coliseum cards' art (no lettering): blue sky gradient with gold rays and a warm glow, the Coliseum panel
     of the story map tilted on the right, the Coliseum Coin large over its lower left corner, the Tier crown over its lower right"""
@@ -1226,7 +1236,7 @@ def colosseum_art(pieces=None):
     im = Image.alpha_composite(im, inner_clip(glow.filter(ImageFilter.GaussianBlur(20))))
     panel = art(pieces.get('panel'), 145, 'Coliseum panel')
     if panel is not None:
-        p = panel.resize((int(panel.width * 118 / panel.height), 118), Image.LANCZOS).rotate(-5, Image.BICUBIC, expand=True)
+        p = smooth_rotate(panel.resize((int(panel.width * 118 / panel.height), 118), Image.LANCZOS), -5)
         im = paste_shadowed(im, p, (558 - p.width / 2, 72 - p.height / 2), blur=4, alpha=130, colour=(0, 10, 40))
     coin = art(pieces.get('coin'), 86, 'Coliseum Coin')
     if coin is not None:
