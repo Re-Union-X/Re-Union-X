@@ -677,11 +677,9 @@ function mapsOf(index, stageRows, rewardRows, masterRows, L) {
 const readJson = (p, dflt) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return dflt; } };
 // the room maps of the repo and the served icons (resource index + JP data: outside the repo; none -> thumbnails unchanged)
 function defaultThumbOf() {
-  const so = require('./make-story-oltre');
   const tools = path.join(__dirname, '..', 'recon', 'tools');
-  const thumbs = so.readThumbs(process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv',
-    process.env.KHUX_JP_ROOT || require('./local-paths').localPath('jp_data'));
-  return thumbForSpecial(readJson(path.join(tools, 'special_rooms.json'), {}), readJson(path.join(tools, 'story_rooms.json'), {}), thumbs);
+  return thumbForSpecial(readJson(path.join(tools, 'special_rooms.json'), {}), readJson(path.join(tools, 'story_rooms.json'), {}),
+    require('./quest-thumbs').defaultServed());
 }
 // Spirit parts: server/tables/petParts.json (make-pet-parts.js, copied into the master after this generator runs), else
 // the master folder's copy
@@ -690,14 +688,18 @@ const petPartsTable = (masterDir) => readJson(path.join(__dirname, 'tables', 'pe
 // appends the rows to the master tables (own rows of a previous run dropped first) and writes game_data/special.json
 // Returns null (nothing written) with KHUX_SPECIAL=0 or without the private catalogue.
 // I-313: room name -> thumbId of the quest list, as recon/tools/gen_story_maps.py picks the map's room (special_rooms.json, then
-// story_rooms.json): XX_AAAA_BB_CC -> stage_select_ico_<worldId>_<thumbId> (make-story-oltre.js thumbForRoom), only when that icon
-// is served (thumbs: make-story-oltre.js readThumbs; null = unknown -> no change)
+// story_rooms.json; «Underground Waterway x4» -> «Underground Waterway», as gen_story_maps.py): XX_AAAA_BB_CC ->
+// stage_select_ico_<worldId>_<thumbId>, only when that icon is served (thumbs: quest-thumbs.js readServed; null = unknown -> no
+// change). I-317: the closest served icon of the room and the copies of a room of another world (quest-thumbs.js picker; the
+// copies in the returned function's .copies)
 function thumbForSpecial(specialRooms, storyRooms, thumbs) {
-  const { thumbForRoom } = require('./make-story-oltre');
-  return (room, worldId) => {
-    const t = thumbForRoom((specialRooms || {})[room] || (storyRooms || {})[room]);
-    return t !== null && thumbs && thumbs.has(`${worldId}_${t}`) ? t : null;
+  const pick = require('./quest-thumbs').picker(thumbs);
+  const f = (room, worldId) => {
+    const name = String(room || '').replace(/\s+x\d+$/, '');
+    return pick((specialRooms || {})[name] || (storyRooms || {})[name], worldId);
   };
+  f.copies = pick.copies;
+  return f;
 }
 
 function patch(masterDir, opts = {}) {
@@ -728,9 +730,10 @@ function patch(masterDir, opts = {}) {
   const foreignEnemy = allEnemy.filter((r) => isOwnEnemy(r) && r.name !== (r.enemyId === DUMMY_ENEMY_ID ? DUMMY_NAME : TRAINING.target));
   if (foreignEnemy.length) throw new Error(`special: enemy row ${foreignEnemy[0].enemyId} («${foreignEnemy[0].name}») is not a training enemy`);
   const enemy = allEnemy.filter((r) => !isOwnEnemy(r));
+  const thumbOf = opts.thumbOf || defaultThumbOf();
   const out = build(rules, catalogue, { stage, reward, enemy, medal: t('medal'), material: t('material'), skill: t('skill'),
     title: t('title'), keyblade: t('keyblade'), avatarParts: t('avatarParts'), enemyAttack: t('enemyAttack'), petParts: petPartsTable(masterDir) },
-    { thumbOf: opts.thumbOf || defaultThumbOf() });
+    { thumbOf });
   fs.writeFileSync(path.join(masterDir, 'stage.json'), JSON.stringify([...stage, ...out.stageRows]));
   fs.writeFileSync(path.join(masterDir, 'evStage.json'), JSON.stringify([...evStage, ...out.evStageRows]));
   fs.writeFileSync(path.join(masterDir, 'reward.json'), JSON.stringify([...reward, ...out.rewardRows]));
@@ -738,6 +741,8 @@ function patch(masterDir, opts = {}) {
   fs.mkdirSync(gameData, { recursive: true });
   fs.writeFileSync(path.join(gameData, 'special.json'), JSON.stringify(out.index, null, 1));
   fs.writeFileSync(path.join(gameData, 'special_maps.json'), JSON.stringify(out.maps, null, 1));
+  // I-317: icons of rooms of another world copied under the row's world (tools/ldplayer/session/build-resources.ps1)
+  fs.writeFileSync(path.join(gameData, 'special_thumbs.tsv'), require('./quest-thumbs').copyLines(thumbOf.copies, 'Special quest'));
   console.log(`special: +${out.stageRows.length} stage (stageKind ${STAGE_KIND}), +${out.evStageRows.length} evStage, +${out.rewardRows.length} reward, `
     + `+${out.enemyRows.length} enemy (training); `
     + `${out.report.stopgaps.length} stopgap objectives, ${out.report.titleFallbacks.length} titles -> Avatar Coin x5`);

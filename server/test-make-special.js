@@ -210,6 +210,10 @@ check(index.catalog.dummyEnemyId === ms.DUMMY_ENEMY_ID && (index.catalog.rewardI
   check(t0 && t0.thumbId === 0 && t1 && t1.thumbId === 60000 && t2 && t2.thumbId === a1.thumbId - a1.thumbId + b.thumbId, `thumbnail of the room ${[t0 && t0.thumbId, t1 && t1.thumbId, t2 && t2.thumbId]}`);
   check(ms.thumbForSpecial({ 'Fountain Square': 'DB_0000_00_00' }, { Avenue: 'DB_0006_00_00' }, new Set(['1_0', '1_60000']))('Avenue', 1) === 60000
     && ms.thumbForSpecial({}, {}, new Set(['1_0']))('Avenue', 1) === null && ms.thumbForSpecial({}, { Avenue: 'DB_0006_00_00' }, null)('Avenue', 1) === null, 'thumbForSpecial');
+  // I-317: «Underground Waterway x4» is the room «Underground Waterway» (as gen_story_maps.py); a room of another world -> a copy
+  const tfs = ms.thumbForSpecial({ 'Underground Waterway': 'DB_0018_01_00', Glade: 'DW_0000_00_00' }, {}, new Set(['1_180100', '2_0', '3_0']));
+  check(tfs('Underground Waterway x4', 1) === 180100 && tfs('Glade', 3) === 20000000 && JSON.stringify([...tfs.copies]) === '[["3_20000000","2_0"]]',
+    `thumbForSpecial I-317 ${[tfs('Underground Waterway x4', 1), tfs('Glade', 3), JSON.stringify([...tfs.copies])]}`);
   // I-312 (tester 24-11): «Defeat N or more enemies» needs N enemies on the map (target included): padded with normal enemies,
   // groups of at most 5
   const ovN = ['Defeat 17 or more enemies -> Avatar Coin x5', 'Complete without having to continue -> Avatar Coin x5', 'Defeat Great Pretender x 1 -> Mythril Shard x1'];

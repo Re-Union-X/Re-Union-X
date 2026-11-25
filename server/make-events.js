@@ -1163,7 +1163,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
   const isHsc = (rec) => !!config.hsc && rec.type === config.hsc.type;
   const out = { evStage: [], stage: [], reward: [], sphere: [], sphereArray: [], sphereMasu: [], ranking: [], rankingReward: [], evScoreReward: [], evMedalList: [],
     poi: {}, maps: [], genMaps: [], ids: allIds, anchors: allAnchors, skipped: [],
-    boardReport: eb ? eb.report : null, index: { entries: [], reasons: {}, boardSets: {} } };
+    boardReport: eb ? eb.report : null, index: { entries: [], reasons: {}, boardSets: {} }, thumbCopies: thumbOf.copies };
   const used = new Set();
   const builtMaps = new Map(); // map key -> our stage id built on it in this run
 
@@ -1825,21 +1825,23 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
   return out;
 }
 
-// I-316: (generated?, stageId, map key, worldId) -> the thumbId of the room the quest starts in, or null (unknown room or icon not
-// served: the story row's thumbId stays). maps: loadMaps (status rooms, genRooms); thumbs: Set of '<worldId>_<thumbId>' or null
+// I-316: (generated?, stageId, map key, worldId) -> the thumbId of the room the quest starts in, or null (unknown room or no icon:
+// the story row's thumbId stays). maps: loadMaps (status rooms, genRooms); thumbs: Set of '<worldId>_<thumbId>' or null.
+// I-317: the closest served icon of that room, a room of another world through a copied icon (quest-thumbs.js picker; the copies
+// in the returned function's .copies, written to game_data/event_thumbs.tsv by patch)
 function playedThumb(maps, thumbs) {
-  const { thumbForRoom } = require('./make-story-oltre');
-  return (gen, stageId, mapKey, worldId) => {
+  const pick = require('./quest-thumbs').picker(thumbs);
+  const f = (gen, stageId, mapKey, worldId) => {
     if (!maps || !thumbs) return null;
     const room = gen ? (maps.genRooms || new Map()).get(stageId) : (((maps.status || new Map()).get(mapKey) || {}).rooms || [])[0];
-    const t = thumbForRoom(room);
-    return t !== null && thumbs.has(`${worldId}_${t}`) ? t : null;
+    return pick(room, worldId);
   };
+  f.copies = pick.copies;
+  return f;
 }
-// the served stage icons (resource index + JP data, outside the repo, as make-special.js defaultThumbOf); none -> null
+// the served stage icons (resource index, JP data and the 2016 bundle, outside the repo: quest-thumbs.js defaultServed); none -> null
 function defaultThumbs() {
-  return require('./make-story-oltre').readThumbs(process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv',
-    process.env.KHUX_JP_ROOT || require('./local-paths').localPath('jp_data'));
+  return require('./quest-thumbs').defaultServed();
 }
 
 // A missing file gives dflt where the caller allows it (dflt undefined: it stops the run); a corrupt one always stops it.
@@ -1988,6 +1990,8 @@ function patch(masterDir, opts = {}) {
   fs.writeFileSync(path.join(gameData, 'event_maps.json'), JSON.stringify(out.maps, null, 1));
   // Event Board card pictures (event-boards.js artLines), imported by tools/ldplayer/session/build-resources.ps1
   fs.writeFileSync(path.join(gameData, 'event_board_art.tsv'), eventBoards.artLines(out.boardArt || []));
+  // I-317: icons of rooms of another world copied under the row's world (tools/ldplayer/session/build-resources.ps1)
+  fs.writeFileSync(path.join(gameData, 'event_thumbs.tsv'), require('./quest-thumbs').copyLines(out.thumbCopies, 'event quest'));
   // the generated maps (Part 5 Task 3): the list of recon/tools/gen_story_maps.py, config key `events` (the «special» list shape)
   fs.writeFileSync(path.join(gameData, 'event_gen_maps.json'), JSON.stringify(out.genMaps, null, 1));
   // anchors first (only grow: allocateIds never changes one), so ids are never written with keys whose anchor is not saved

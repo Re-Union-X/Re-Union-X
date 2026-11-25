@@ -306,7 +306,9 @@ const tests = {
     assert.strictEqual(withThumb([{ ...rep[0], room: 'Another Room' }], new Set([`${s0.worldId}_200000`])), s0.thumbId, 'stale report row: unchanged');
     assert.strictEqual(withThumb(rep, null), s0.thumbId, 'no icon list: unchanged');
     const t = mr.raidThumbOf([{ stageId: 980390, room: 'Morning Dew Grove: Fallen Tree', folder: 'WL_0020_00_00' }], new Set(['3_200000']));
-    assert.deepStrictEqual([t(980390, 'Morning Dew Grove: Fallen Tree', 3), t(980390, 'Morning Dew Grove: Fallen Tree', 1), t(980391, 'x', 3)], [200000, null, null]);
+    // I-317: the same room on a world-1 row (a raid moved to another world) -> a copy of the world-3 icon (t.copies)
+    assert.deepStrictEqual([t(980390, 'Morning Dew Grove: Fallen Tree', 3), t(980390, 'Morning Dew Grove: Fallen Tree', 1), t(980391, 'x', 3)], [200000, 30200000, null]);
+    assert.deepStrictEqual([...t.copies], [['1_30200000', '3_200000']]);
   },
   // the stage row copies a story row of the world (storyRefs): its hideIcon (a story boss quest's hidden target) must not reach
   // the raid quests, whose card would show the target as «???» (bench 23-11-2026); a donor stage row keeps its own value

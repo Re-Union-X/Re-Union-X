@@ -1468,7 +1468,14 @@ const tests = {
     assert.deepStrictEqual(gen(gmS(new Map()), new Set(['1_1000200'])), [true, 40000], 'room unknown');
     // playedThumb on its own
     const pt = me.playedThumb({ status: new Map([[7, { rooms: ['ED_0001_02_00'] }]]), genRooms: new Map([[9, 'AG_0003_11_00']]) }, new Set(['8_10200', '4_31100']));
-    assert.deepStrictEqual([pt(false, 1, 7, 8), pt(true, 9, 9, 4), pt(true, 9, 9, 7), pt(false, 1, 8, 8), me.playedThumb(null, new Set())(false, 1, 7, 8)], [10200, 31100, null, null, null]);
+    // I-317: a room of another world (AG_0003_11_00 on a world-7 row) -> a copy of its icon under the row's world (pt.copies)
+    assert.deepStrictEqual([pt(false, 1, 7, 8), pt(true, 9, 9, 4), pt(true, 9, 9, 7), pt(false, 1, 8, 8), me.playedThumb(null, new Set())(false, 1, 7, 8)], [10200, 31100, 40031100, null, null]);
+    assert.deepStrictEqual([...pt.copies], [['7_40031100', '4_31100']]);
+    // I-317: a generated map in a room of another world -> the copy's thumbId on the row, the copy in out.thumbCopies
+    assert.deepStrictEqual(gen(gmS(new Map([[sid, 'DW_0002_00_00']])), new Set(['2_20000', '1_20000'])), [true, 20020000]);
+    const cp = me.buildEvents([record('E-W', [g])], CONFIG, master(), undefined, {}, gmS(new Map([[sid, 'DW_0002_00_00']])), null,
+      { eventEnemyIds: [], thumbs: new Set(['2_20000']) });
+    assert.deepStrictEqual([...cp.thumbCopies], [['1_20020000', '2_20000']]);
   },
   map_generate_later() {
     const later = genQuest(702200, { map: { key: 702200, stageBinId: 0, status: 'incomplete: STG header absent', source: 'generateLater' } });

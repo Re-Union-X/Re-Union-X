@@ -886,16 +886,19 @@ function storyRefs(stages) {
 // I-316 (user 25-11): quest-list thumbnail of a raid quest = the icon of the room its map was generated in (gen_story_maps.py raid
 // report: {stageId, room, folder}), stage_select_ico_<worldId>_<thumbId> (make-story-oltre.js thumbForRoom), only when that icon is
 // served (thumbs: make-story-oltre.js readThumbs) and the report row is of the same room name (a stale report changes nothing).
-// -> (map stage id, room name, worldId) -> thumbId or null (the story row's thumbId stays)
+// -> (map stage id, room name, worldId) -> thumbId or null (the story row's thumbId stays). I-317: the closest served icon of that
+// room, a room of another world (the Castle of Dreams raids on world 1) through a copied icon (quest-thumbs.js picker; the copies in
+// the returned function's .copies, written to game_data/raid_thumbs.tsv by patch)
 function raidThumbOf(report, thumbs) {
-  const { thumbForRoom } = require('./make-story-oltre');
+  const pick = require('./quest-thumbs').picker(thumbs);
   const byStage = new Map((Array.isArray(report) ? report : []).filter((r) => r && Number.isInteger(r.stageId)).map((r) => [r.stageId, r]));
-  return (mapStageId, room, worldId) => {
+  const f = (mapStageId, room, worldId) => {
     const r = byStage.get(mapStageId);
     if (!r || !thumbs || r.room !== room) return null;
-    const t = thumbForRoom(r.folder);
-    return t !== null && thumbs.has(`${worldId}_${t}`) ? t : null;
+    return pick(r.folder, worldId);
   };
+  f.copies = pick.copies;
+  return f;
 }
 
 function buildRaid({ census, values, rewards, orig2016, boards, eventRewards, master, models, config, ids, notices = null, boosters: boosterIndex, thumbOf = () => null }) {
@@ -1469,12 +1472,11 @@ function patch(masterDir, opts = {}) {
     try { notices = readJson(file, null); } catch (e) { console.warn(e.message); notices = null; }
     if (!notices) console.warn(`raid: ${file} not readable (node server/make-raid-notices.js): no Details button on the raid banners`);
   }
-  // I-316: the raid map report and the served icons (outside the repo; KHUX_RAID_GEN_REPORT, KHUX_RESOURCE_NAMES, KHUX_JP_ROOT);
+  // I-316: the raid map report and the served icons (outside the repo; KHUX_RAID_GEN_REPORT, quest-thumbs.js defaultServed);
   // none -> thumbnails unchanged
   const thumbOf = opts.thumbOf || (opts.sources ? () => null : raidThumbOf(
     readJson(process.env.KHUX_RAID_GEN_REPORT || path.join('D:', path.sep, 'Progetto_Restauro_KH_UX', 'stage_gen', 'raid_report.json'), null),
-    require('./make-story-oltre').readThumbs(process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv',
-      process.env.KHUX_JP_ROOT || require('./local-paths').localPath('jp_data'))));
+    require('./quest-thumbs').defaultServed()));
   const out = buildRaid({ ...sources, master, models, config: opts.config || loadConfig(), ids: readIds(idsFile), notices, thumbOf });
   const added = { stage: out.stageRows, evStage: [...(out.catalogEvStage ? [out.catalogEvStage] : []), ...out.evStageRows], raidSetting: out.settingRows, raidEnemy: out.enemyRows, raidReward: out.rewardRows, raidEnemyAttack: out.attackRows,
     sphere: out.sphereRows, sphereArray: out.arrayRows, sphereMasu: out.masuRows };
@@ -1489,6 +1491,8 @@ function patch(masterDir, opts = {}) {
   fs.writeFileSync(path.join(gameData, 'raid_maps.json'), JSON.stringify(out.maps, null, 1));
   // card pictures of the Raid Boards: read by build-resources.ps1 (import_originals.py), docs/notes/bacheche.md «Raid Boards»
   fs.writeFileSync(path.join(gameData, 'raid_board_art.tsv'), raidBoards.artLines(out.boardArt || []));
+  // I-317: icons of rooms of another world copied under the row's world (tools/ldplayer/session/build-resources.ps1)
+  fs.writeFileSync(path.join(gameData, 'raid_thumbs.tsv'), require('./quest-thumbs').copyLines(thumbOf.copies, 'raid quest'));
   const on = out.index.entries.filter((e) => e.available).length;
   const rows = [...new Set(out.index.entries.filter((e) => e.available).map((e) => e.censusId))];
   console.log(`raid: ${rows.length} census rows with an available tier, calendar ${out.index.entries.map((e) => e.start).sort()[0] || '-'} to `

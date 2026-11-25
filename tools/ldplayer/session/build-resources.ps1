@@ -380,6 +380,16 @@ if (Test-Path server\game_data\event_board_art.tsv) {
     "$jpData" "$sg\files" --loc "$D\raid_loc" --report "$sg\originals_event_boards.json"
   if ($LASTEXITCODE) { throw 'import_originals (Event Board cards) fallito' }
 }
+# I-317: quest-list icons of Special / event / raid rooms of another world, copied under the stage row's world
+# (stage_select_ico_<row world>_<W * 10000000 + thumb>; lists written by server/quest-thumbs.js copyLines from make-special.js,
+# make-events.js, make-raid.js)
+foreach ($qt in @('special', 'event', 'raid')) {
+  if (Test-Path "server\game_data\${qt}_thumbs.tsv") {
+    python -I recon\tools\import_originals.py "server\game_data\${qt}_thumbs.tsv" "$refWork\bundle2016\files" `
+      "$jpData" "$sg\files" --report "$sg\originals_${qt}_thumbs.json"
+    if ($LASTEXITCODE) { throw "import_originals ($qt quest thumbnails) fallito" }
+  }
+}
 # suoni se_<nome> dei LWF originali appena importati (KeyBlade_Evolution/StepUp, training_SE dei pet): la
 # ricerca di import_jp_coco e' girata prima, sui LWF generati senza eventi (banco 19-10: evoluzione muta)
 # -Append: the raid LWFs not copied into stage_gen are read from raid_gen\files (the same files); the sound names of
