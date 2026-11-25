@@ -52,6 +52,9 @@ const SEASONS = [
 // type-3 boards of each season: 1.1.3 sphere rows (their startDatetime month, checked), = the wiki board list (6★ Cid
 // 04/16; 6★ Scrooge + Tier 10 Bonus 3390 05/16; KH Chip M/F + Tier 10 Bonus 3090 06/16; Moogle M/F + Tier 10 Bonus 07/16)
 const SEASON_BOARDS = { 800: [2200001], 900: [2200002, 2200023], 1000: [2210029, 2210030, 2210031], 1100: [2210033, 2210034, 2210035] };
+// the «Tier N Bonus» boards (1.1.3 boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum
+// Board!»; routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
+const BONUS_TIER = { 2200023: 10, 2210031: 10, 2210035: 10 };
 const RANGES = {
   colosseumStage: ['colosseumStageId', 1, 9999], colosseum: ['colosseumId', 1, 99999],
   stage: ['id', 81001, 81999], // stageKind 3, stageId YYYYMMNN
@@ -222,4 +225,4 @@ function patch(masterDir, opts = {}) {
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { SEASONS, SEASON_BOARDS, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
+module.exports = { SEASONS, SEASON_BOARDS, BONUS_TIER, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };

@@ -18,9 +18,9 @@
 //   a check whose checkTypes has 3 closes the boards no longer handed out (closeEventSphereBoardIds), GET /user/sphere
 //   drops the closed ones from the list (a new board is still sent by the next check). Coins and progress stay; a cell is paid once, the completion reward (index 22) once.
 'use strict';
+const core = require('./sphere-board-core');
 
 const TYPE = 4;
-const CELLS = 23;
 
 function eventBoardRoutes({ player, events, master, grantSphereReward, now, nextUserSphereId, log = (...m) => console.log(...m) }) {
   const sets = () => ((events.index() || {}).boardSets) || {};
@@ -46,12 +46,7 @@ function eventBoardRoutes({ player, events, master, grantSphereReward, now, next
   const setOfCensus = (cid) => Object.keys(sets()).find((k) => (sets()[k].censusIds || []).includes(cid)) || null;
   const state = (id) => (player.eventSphere || {})[id];
 
-  function nodesOf(board) {
-    const arr = master('sphereArray').find((r) => r.arryId === board.arryId);
-    const nodes = new Set();
-    for (const k of ['spCol0', 'spCol1', 'spCol2', 'spCol3', 'spCol4']) for (const v of arr?.[k] || []) if (v >= 1 && v <= CELLS) nodes.add(v);
-    return [...nodes].sort((a, b) => a - b);
-  }
+  const nodesOf = (board) => core.nodesOf(master, board);
   const complete = (id) => { const b = boardRow(id), s = state(id); return !!(b && s && nodesOf(b).every((n) => s.unlock.includes(n))); };
 
   // {week: [setKey] (a feeder event listed in the current story week), kept: setKey | null (the kept event's)}
@@ -110,31 +105,9 @@ function eventBoardRoutes({ player, events, master, grantSphereReward, now, next
   // raids: the client can hold only what it was sent, and a fresh save closes nothing (test-raid-boards.js close_event_boards)
   const known = () => [...new Set([...(player.eventSphereSent || []).map(Number), ...Object.keys(player.eventSphere || {}).map(Number)])].sort((a, b) => a - b);
 
-  // POST /user/sphere/check: {add: board ids to send, close: ids for closeEventSphereBoardIds}. checkTypes with 3 closes;
-  // otherwise a check whose boardTypes has 4 (or none given) adds the boards handed out since the last answer, once each
-  function check(body = {}) {
-    const types = (body.checkTypes || []).map(Number), boards = Array.isArray(body.boardTypes) ? body.boardTypes.map(Number) : null;
-    const act = active(), sent = new Set((player.eventSphereSent || []).map(Number));
-    if (types.includes(3)) {
-      const close = known().filter((id) => !act.includes(id));
-      player.eventSphereSent = [...sent].filter((id) => act.includes(id));
-      return { add: [], close };
-    }
-    if (boards && !boards.includes(TYPE)) return { add: [], close: [] };
-    const add = act.filter((id) => !sent.has(id));
-    player.eventSphereSent = [...sent, ...add];
-    return { add, close: [] };
-  }
-
-  // GET /user/sphere: the boards handed out now. setSent true drops from eventSphereSent the boards no longer handed out; a board
-  // handed out for the first time by the list is NOT marked as sent, so the next check still sends it once and the client pops
-  // «Unlocked an Event Board!» (bench 08-11, Task 7b: the login GET came before the home check and the popup never showed).
-  // 'merge' leaves eventSphereSent as it is
-  function list({ setSent = false } = {}) {
-    const act = active();
-    if (setSent === true) player.eventSphereSent = (player.eventSphereSent || []).map(Number).filter((id) => act.includes(id));
-    return act;
-  }
+  // POST /user/sphere/check {add, close} and GET /user/sphere (list) over player.eventSphereSent: sphere-board-core.js
+  // sentListProtocol (a board handed out first by the list is still sent once by the next check: «Unlocked an Event Board!»)
+  const { check, list } = core.sentListProtocol({ player, sentKey: 'eventSphereSent', type: TYPE, active, known });
 
   // POST /user/sphere/update on a type-4 board: {ok, why?, nodes, cost}. Refused (nothing changes) when the board is not handed
   // out (window, focus, chain), the node is not on the board or already open, or the set's balance is short
@@ -148,16 +121,14 @@ function eventBoardRoutes({ player, events, master, grantSphereReward, now, next
     const s = state(id), setKey = setOfBoard(id);
     const masu = master('sphereMasu').find((r) => r.masuId === board.masuId);
     const nodes = nodesOf(board);
-    const todo = allOpen ? nodes.filter((n) => !s.unlock.includes(n)) : [Number(releaseMasuId)].filter((n) => nodes.includes(n) && !s.unlock.includes(n));
-    const cost = todo.reduce((t, n) => t + ((masu && masu.spherePoint[n - 1]) || 0), 0);
+    const todo = core.nodesToOpen(nodes, s.unlock, releaseMasuId, allOpen);
+    const cost = core.costOf(masu, todo);
     if (!masu || !todo.length) return { ok: false, why: 'node', nodes: todo, cost };
     const balance = (player.eventCoins || {})[setKey] || 0;
     if (cost > balance) return { ok: false, why: `coins ${balance} < ${cost}`, nodes: todo, cost };
     player.eventCoins ||= {};
     player.eventCoins[setKey] = balance - cost;
-    const wasComplete = complete(id);
-    for (const n of todo) { s.unlock.push(n); grantSphereReward(masu, n - 1); }
-    if (!wasComplete && complete(id)) grantSphereReward(masu, CELLS - 1);
+    core.openNodes({ nodes, state: s, todo, pay: (i) => grantSphereReward(masu, i) });
     return { ok: true, nodes: todo, cost, setKey };
   }
 

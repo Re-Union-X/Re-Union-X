@@ -6,7 +6,7 @@
 const assert = require('assert');
 const fs = require('fs'); const os = require('os'); const path = require('path');
 const colosseumBoardRoutes = require('./routes-colosseum-boards');
-const { SEASON_BOARDS } = require('./make-colosseum');
+const { SEASON_BOARDS, BONUS_TIER } = require('./make-colosseum');
 const rb = require('./raid-boards');
 
 const HOME = { checkTypes: [1, 2], boardTypes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
@@ -32,13 +32,15 @@ const TABLES = () => ({
 });
 
 function world(opts = {}) {
-  const w = { live: opts.live === undefined ? 800 : opts.live, coins: {}, grants: [], presents: [], logs: [], nextId: 100, medals: opts.medals || 0, cap: opts.cap || 300 };
+  // reached: the highest tier reached per season (colosseum().tierReached of the live season); default Tier 10 everywhere
+  const w = { live: opts.live === undefined ? 800 : opts.live, reached: opts.reached || { 800: 10, 900: 10 }, coins: {}, grants: [], presents: [], logs: [], nextId: 100, medals: opts.medals || 0, cap: opts.cap || 300 };
   w.player = opts.player || {};
   w.tables = TABLES();
   // the colosseum() factory as far as the boards use it: the live season and its coins
   const col = {
     liveSeason: () => (w.live ? { id: w.live, month: { 800: '2016-04', 900: '2016-05' }[w.live] || '2016-06' } : null),
     coinsOf: () => (w.live ? w.coins[w.live] || 0 : 0),
+    tierReached: (t) => !!w.live && (w.reached[w.live] || 1) >= t,
     spendCoins: (n) => { if (!w.live || (w.coins[w.live] || 0) < n) return false; w.coins[w.live] -= n; return true; },
   };
   w.cb = colosseumBoardRoutes({
@@ -139,6 +141,28 @@ const tests = {
     assert.deepStrictEqual(w.player.colosseumSphereSent, [MAY1, MAY2]);
     assert.ok(w.player.colosseumSphere[800][APR], 'April progress kept');
   },
+  // a «Tier N Bonus» board (make-colosseum.js BONUS_TIER) is handed out only once Tier N of its season is reached (Tier N-1
+  // complete): before, it is not listed nor bought; then the next check announces it; it stays when the season comes back
+  bonus_board_after_tier() {
+    assert.strictEqual(BONUS_TIER[MAY2], 10, 'the second May board is the Tier 10 Bonus');
+    const w = world({ live: 900, reached: { 800: 1, 900: 9 } });
+    w.coins = { 900: 1000 };
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [MAY1], 'Tier 9: not listed');
+    assert.deepStrictEqual(w.cb.check(HOME), { add: [MAY1], close: [] });
+    const r = w.cb.update(MAY2, 1);
+    assert.deepStrictEqual([r.ok, r.why], [false, 'not handed out']);
+    assert.strictEqual(w.coins[900], 1000, 'nothing spent');
+    assert.strictEqual((w.player.colosseumSphere[900] || {})[MAY2], undefined, 'no state yet');
+    w.reached[900] = 10;
+    assert.deepStrictEqual(w.cb.check(HOME), { add: [MAY2], close: [] }, 'announced by the next check');
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [MAY1, MAY2]);
+    assert.strictEqual(w.cb.update(MAY2, 1).ok, true);
+    w.live = 800;
+    assert.deepStrictEqual(w.cb.check(CLOSE).close, [MAY1, MAY2]);
+    w.live = 900;
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [MAY1, MAY2], 'still listed when May comes back');
+    assert.deepStrictEqual(w.player.colosseumSphere[900][MAY2].unlock, [1]);
+  },
   // a medal cell with the medal storage full goes to the Presents (as the raid rewards), the coins are still spent
   medal_over_cap_to_presents() {
     const w = world({ medals: 300, cap: 300 });
@@ -186,6 +210,15 @@ function wiring() {
   const ids = (list) => list.map((d) => d.sphereBoardId).filter((id) => id >= 2200001 && id <= 2299999);
   const [CID] = SEASON_BOARDS[800];
 
+  // BONUS_TIER = the served type-3 boards named «Tier N Bonus», with that N
+  run('wiring_bonus_tier_map', () => {
+    const named = {};
+    for (const r of t.masterRows('sphere')) {
+      const m = r.type === 3 && /^Tier (\d+) Bonus$/.exec(r.boardName);
+      if (m) named[r.sphereBoardId] = Number(m[1]);
+    }
+    assert.deepStrictEqual(named, BONUS_TIER);
+  });
   run('wiring_no_live_season', () => {
     assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [], 'story below 130: no Coliseum board');
   });
@@ -216,7 +249,16 @@ function wiring() {
     // May: April's board closed and not listed, its progress kept
     p.colosseum.kept = 900;
     assert.ok(call(t.respondSphereCheck, CLOSE).closeEventSphereBoardIds.includes(CID), 'April closed');
-    assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), SEASON_BOARDS[900]);
+    const [SCROOGE, BONUS] = SEASON_BOARDS[900];
+    assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [SCROOGE], 'Tier 10 Bonus waits for Tier 10');
+    b = call(t.respondSphereUpdate, { sphereBoardId: BONUS, releaseMasuId: 2 });
+    assert.deepStrictEqual(b.userSphere.userSphereDatas, [], 'not bought before Tier 10');
+    assert.deepStrictEqual(ids(call(t.respondSphereCheck, HOME).userSphere.userSphereDatas), [SCROOGE], 'the home check: Scrooge only');
+    // Tier 9 complete (season 900: rounds 1-119 = Tiers 1-9): Tier 10 Round 1 playable
+    const st = p.colosseum.seasons[900] || (p.colosseum.seasons[900] = {});
+    Object.assign(st, { last: 119, open: 120, coins: 0, cleared: [], tierRewards: [], bestAt: null, boardIds: [] });
+    assert.deepStrictEqual(ids(call(t.respondSphereCheck, HOME).userSphere.userSphereDatas), [BONUS], 'announced by the next check');
+    assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [SCROOGE, BONUS]);
     p.colosseum.kept = 800;
     const back = quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas.find((d) => d.sphereBoardId === CID);
     assert.deepStrictEqual([back.unlockMasuIds, back.userSphereBoardId], [[2], uid], 'April comes back as it was');

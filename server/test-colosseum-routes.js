@@ -239,6 +239,23 @@ const tests = {
     w.week.shopFrom = '2016-08-04';
     assert.strictEqual(w.c.addCoins(5), false, 'no live season: not paid');
   },
+  // tierReached (Coliseum «Tier N Bonus» boards): Tier N of the live season is reached when Tier N-1 is complete (round 1 of Tier N
+  // playable); fixture: Tier 1 = rounds 1-3, Tier 2 = rounds 4-5, Tier 3 endless
+  tier_reached() {
+    const w = world();
+    assert.strictEqual(w.c.tierReached(1), true, 'Tier 1 from the start');
+    assert.strictEqual(w.c.tierReached(2), false);
+    w.player.colosseum.seasons[800].last = 3; w.player.colosseum.seasons[800].open = 4;
+    assert.strictEqual(w.c.tierReached(2), true, 'Tier 1 complete');
+    assert.strictEqual(w.c.tierReached(3), false);
+    w.player.colosseum.seasons[800].last = 5; w.player.colosseum.seasons[800].open = 6;
+    assert.strictEqual(w.c.tierReached(3), true);
+    assert.strictEqual(w.c.tierReached(10), false, 'no Tier 10 in this season');
+    w.week.shopFrom = '2016-05-05';
+    assert.strictEqual(w.c.tierReached(2), false, 'May: nothing cleared');
+    w.week.shopFrom = '2016-08-04';
+    assert.strictEqual(w.c.tierReached(1), false, 'no live season');
+  },
   // spendCoins (Coliseum boards, Task 5): the live season's coins; short -> false, nothing spent
   spend_coins() {
     const w = world();

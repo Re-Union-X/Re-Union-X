@@ -66,6 +66,13 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   }
   const stateOf = (s) => rules.seasonState(player, s.id);
   const coinsOf = () => { const s = liveSeason(); return s ? stateOf(s).coins : 0; };
+  // «Tier N Bonus» boards (routes-colosseum-boards.js): Tier N of the live season reached = round 1 of Tier N playable (Tier N-1
+  // complete: last >= the round before it); false without a live season or a Tier N
+  function tierReached(tier) {
+    const s = liveSeason();
+    if (!s || !s.tiers.some((t) => t.tier === Number(tier))) return false;
+    return stateOf(s).last >= rules.globalRound(s.tiers, Number(tier), 1) - 1;
+  }
   // Coliseum boards (routes-colosseum-boards.js): n coins of the live season; false (nothing spent) when short or no season live
   function spendCoins(num) {
     const s = liveSeason(), n = Number(num);
@@ -305,7 +312,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     return { code: 200, body: { ok: true } };
   }
 
-  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, addCoins, closeDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
+  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, tierReached, addCoins, closeDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
     seasons: () => SEASONS.map((x) => season(x.colosseumStageId)).filter(Boolean) };
 }
 
