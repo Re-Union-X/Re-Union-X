@@ -57,6 +57,9 @@ assert.strictEqual(world({ days: {}, bench: [96000] }).routes.stageAp(EVENT, MON
 // Coliseum Part 1: the scope 7 AP campaign (every Coliseum stage) on the Coliseum round AP, the 1 AP campaign of 2016-05-19
 const colo = (rows, ids) => { const x = world({ days: { '2017-01-02': ids } }); x.evCampaign.push(...rows); return x; };
 assert.strictEqual(colo([row(96010, 7, 3500, 7)], [96010]).routes.colosseumAp(3, MON), 2, '3 AP x 3500 rounded up, as apWith');
+// ruling 11: the served «1 AP» Coliseum row (power 2000, make-campaigns.js COLOSSEUM_ONE_AP) costs 1 AP on 3, 4 and 5 AP rounds
+const { COLOSSEUM_ONE_AP } = require('./make-campaigns');
+for (const ap of [3, 4, 5]) assert.strictEqual(colo([row(96010, 7, COLOSSEUM_ONE_AP, 7)], [96010]).routes.colosseumAp(ap, MON), 1, `1 AP campaign: ${ap} AP -> 1`);
 assert.strictEqual(colo([row(96010, 7, 0, 7)], [96010]).routes.colosseumAp(5, MON), 0, '0 AP campaign');
 assert.strictEqual(colo([row(96010, 7, 3500, 7)], []).routes.colosseumAp(3, MON), 3, 'not that day: the tier AP');
 assert.strictEqual(w.routes.colosseumAp(3, MON), 3, 'AP rows of other scopes do not touch the Coliseum');

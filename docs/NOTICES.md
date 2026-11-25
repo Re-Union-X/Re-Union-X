@@ -240,7 +240,9 @@ Each season keeps **its own progress, Coliseum Coins and Coliseum Boards** in yo
 
 As in the original game, a lost or abandoned round can be tried again as often as you like, and the AP paid to start it is not given back. Clearing every wave in one turn unlocks the next rounds at once, also across tiers; when you clear a later round, the rounds and tiers you skipped pay their coins and Tier Rewards.
 
-Rounds cost their original **3 to 5 AP**. The Coliseum AP campaigns of 2016 are back on their original days of your Story week: **1 AP** from May 19 to 31 and from June 16 to 22, 2016, and **0 AP!** on November 1-3, 2016. Like the other Bonus Times, the reduced cost is worked out from the campaign's original rate.
+Rounds cost their original **3 to 5 AP**. The Coliseum AP campaigns of 2016 are back on their original days of your Story week: **1 AP** from May 19 to 31 and from June 16 to 22, 2016, and **0 AP!** on November 1-3, 2016, for the Coliseum season being played (no November 2016 season is here yet, so it only reaches a kept season).
+
+The «1 AP» rate is (rebuilt): this version of the game rounds the original rate up to 2 AP on a round, so the rate is adjusted to keep 1 AP.
 
 ### Ranking — brackets became score thresholds
 

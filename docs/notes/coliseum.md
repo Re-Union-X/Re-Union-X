@@ -240,7 +240,7 @@ What the client does (all proven on the bench):
 ## Part 1 summary (25 November 2026)
 
 Plan `docs/superpowers/plans/2026-11-25-coliseum-part1.md`, spec `docs/superpowers/specs/2026-11-25-coliseum-design.md`.
-Served: master revision **393**, resources **185** (no resource change after Task 4: the Coliseum Catalog banner and season cards
+Served: master revision **394** (393 before the «1 AP» power fix), resources **185** (no resource change after Task 4: the Coliseum Catalog banner and season cards
 are server images, `game_data/colosseum_img`, like the raid catalog cards).
 
 - **Seasons** 2016-04 (800), 2016-05 (900), 2016-06 (1000), 2016-07 (1100): `server/make-colosseum.js` (1.1.3 master rows, wired
@@ -253,12 +253,14 @@ are server images, `game_data/colosseum_img`, like the raid catalog cards).
   bought with its coins; «Tier 10 Bonus» boards wait for Tier 10.
 - **Coliseum Catalog** (`server/colosseum-pages.js`, evStage 6000, first banner of the Events tab from story quest 130): every
   served season, keep one past season.
-- **AP campaigns**: the Coliseum scope (stageType 7) of the campaign calendar is served (`make-campaigns.js`): «1 AP» (power 3500)
-  on 2016-05-19..31 and 2016-06-16..22, «0 AP!» on 2016-11-01..03; `/colosseum/start` charges `campaigns.js colosseumAp`
-  (client rounding: a 3-5 AP round costs 2 AP under «1 AP»; not yet seen on the bench).
+- **AP campaigns**: the Coliseum scope (stageType 7) of the campaign calendar is served (`make-campaigns.js`): «1 AP» on
+  2016-05-19..31 and 2016-06-16..22, «0 AP!» on 2016-11-01..03; `/colosseum/start` charges `campaigns.js colosseumAp`.
+  The original «1 AP» row has power 3500, which the 4.3.1 client rounds up to 2 AP on a 3-5 AP round: the generator serves it
+  with power **2000** (ceil gives 1 AP on 3, 4 and 5 AP; controller ruling 11, declared {rebuilt} in the notice). The «0 AP!» row
+  only reaches a kept season (no November 2016 season is served yet).
 - **Notice** «Coliseum» (11/25, IMPORTANT) declares the deviations; FAQ of the help page updated.
 
-Bench smoke 25-11 (master 393, save `coli1`; screenshots local in `D:\Progetto_Restauro_KH_UX	mp\coli_p1	ask7\shots\`):
+Bench smoke 25-11 (master 393, save `coli1`):
 the Coliseum notice is listed first; the Events tab shows the Coliseum Catalog banner first, then the Raid Catalog and the Event
 Catalog; the Coliseum Catalog page lists the four seasons (April «Season of your Story now» with its progress and coins, May-July
 locked at story quests 251 / 301 / 376); the Raid and Event Catalog pages open, and on a copy of an advanced save their Keep and
@@ -267,4 +269,8 @@ Remove buttons swap the row in place (shared row script of Task 6). At the first
 board card image is not served yet.
 
 Still to bench with the user: a full season run (normal clear, one-turn window, skip across a tier, loss + retry, board purchase,
-kept season from the Catalog, threshold Present) and the «1 AP» campaign cost on the Coliseum screen.
+kept season from the Catalog, threshold Present).
+
+Fix round 1 (master revision 394): with the «1 AP» row forced (`relogin.ps1 -Campaigns <its id>`), the Coliseum screen of Tier 4
+(4 AP) shows «AP 1» and the «1 AP» balloon under Begin; Start charged 1 AP (170 -> 169, server log `tier 4 round 5 started
+(-1 AP)`), Give Up left the progress unchanged.

@@ -4,6 +4,7 @@
 'use strict';
 const assert = require('assert');
 const mc = require('./make-campaigns');
+const c = require('./campaigns');
 
 const kind = (o) => ({ type: 7, power: 0, displayText: '0 AP!', stageType: 2, stageIds: [], days: ['2017-01-02'], source: 'donor', notices: [], ...o, key: JSON.stringify(o) });
 const D = '2017-01-02', E = '2017-01-03';
@@ -41,8 +42,13 @@ assert.ok(!out.rows.some((r) => r.type === 7 && r.stageId.slice(0, r.validStageI
 assert.strictEqual(out.dropped.storyFree, 3, 'story id of the Half AP list, stageType 5 and 19 AP kinds');
 assert.strictEqual(out.dropped.colosseum, undefined, 'Coliseum scope served (Coliseum Part 1)');
 const colo = out.rows.filter((r) => r.stageType === 7);
-assert.ok(colo.length === 1 && colo[0].type === 7 && colo[0].power === 3500 && colo[0].validStageId === 0 && out.days[D].includes(colo[0].campaignId),
-  'the 1 AP Coliseum kind kept as scope 7 on its day');
+assert.ok(colo.length === 1 && colo[0].type === 7 && colo[0].power === mc.COLOSSEUM_ONE_AP && colo[0].displayText === '1 AP colo' && colo[0].validStageId === 0
+  && out.days[D].includes(colo[0].campaignId), 'the 1 AP Coliseum kind kept as scope 7 on its day, power 3500 -> 2000 (ruling 11)');
+for (const ap of [3, 4, 5]) assert.strictEqual(c.apWith(ap, colo[0].power), 1, `Coliseum 1 AP campaign: ${ap} AP round costs 1`);
+assert.strictEqual(c.apWith(4, 3500), 2, 'the original power would cost 2 (why the generator changes it)');
+// «0 AP!» Coliseum kind unchanged
+const zero = mc.buildCampaigns({ kinds: [kind({ power: 0, displayText: '0 AP!', stageType: 7, days: [D] })] }, ctx).rows;
+assert.ok(zero.length === 1 && zero[0].power === 0 && zero[0].stageType === 7, 'the 0 AP! Coliseum kind keeps power 0');
 assert.strictEqual(out.dropped.multi, 1, 'co-op scope (Union Cross) not served');
 const luxStory = out.rows.filter((r) => r.type === 10 && r.stageType === 5);
 assert.strictEqual(luxStory.length, 1, 'Lux on every story quest kept as stageType 5');

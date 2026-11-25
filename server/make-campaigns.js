@@ -32,6 +32,8 @@ const RAID_TYPES = new Set([6, 9]), RAID_SCOPES = new Set([3, 8]);
 const EVENT_SCOPES = new Set([4, 6]);
 const STORY_SCOPES = new Set([5, 19]);
 const AP = 7;
+// scope 7 (every Coliseum stage) and the power of its «1 AP» rows: ceil(ap x 2000 / 10000) = 1 for the 3-5 AP rounds of 2016
+const COLOSSEUM = 7, COLOSSEUM_ONE_AP = 2000;
 const STORY_FIRST = 1010, STORY_LAST = 39159;
 const CALENDAR = process.env.KHUX_CAMPAIGN_CALENDAR
   || 'D:/Progetto_Restauro_KH_UX/private/donations/relux_2026-11/verified/campaign_calendar_2021.json';
@@ -61,9 +63,12 @@ function buildCampaigns(calendar, ctx) {
     const x = content.get(key) || content.set(key, { k, stageType, ids, days: new Set() }).get(key);
     days.forEach((d) => x.days.add(d));
   };
-  for (const k of [...(calendar.kinds || [])].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))) {
+  for (let k of [...(calendar.kinds || [])].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))) {
     if (RAID_TYPES.has(k.type) || RAID_SCOPES.has(k.stageType)) { drop('raid'); continue; }
     if (k.stageType === 20) { drop('multi'); continue; }
+    // Coliseum «1 AP» (controller ruling 11): the original power 3500 rounds UP to 2 AP on a 3-5 AP round in the 4.3.1 client;
+    // served with COLOSSEUM_ONE_AP so client and server show and charge 1 AP ({rebuilt} in the Coliseum notice). «0 AP!» unchanged.
+    if (k.stageType === COLOSSEUM && k.type === AP && k.power > COLOSSEUM_ONE_AP) k = { ...k, power: COLOSSEUM_ONE_AP };
     if (STORY_SCOPES.has(k.stageType) && k.type === AP) { drop('storyFree'); continue; }
     if (k.stageType === LIST) {
       const ids = [];
@@ -135,4 +140,4 @@ function patch(masterDir, calendarFile = CALENDAR) {
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { buildCampaigns, contextOf, patch, CAMPAIGN_BASE, CAMPAIGN_MAX };
+module.exports = { buildCampaigns, contextOf, patch, CAMPAIGN_BASE, CAMPAIGN_MAX, COLOSSEUM_ONE_AP };

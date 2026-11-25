@@ -171,7 +171,7 @@ elux_2026-11erified\stage_story_2021.json): useAp 0 on all 979 (we had 3-25; wi
 | ID | Status | Title | Detail | Proof |
 |---|---|---|---|---|
 | I-056 | OPEN | Union Cross: room and match require a Photon server (UDP, master + game server); now only log `[photon]` on port 5055 | [union_cross](notes/union_cross.md#offline) | - |
-| I-059 | OPEN (Part 1 served) | Colosseum not playable: master `colosseum`/`colosseumStage` of 5.0.1 empty and `cl_stg` maps missing. **Part 1 (25-11-2026, master revision 393): seasons 2016-04 .. 2016-07 playable** (original rows and stage files, rules, Coliseum Boards, score thresholds, Coliseum Catalog, AP campaigns, «Coliseum» notice); user bench of a full season pending. Remaining: seasons 2016-08 .. 2021-06 (Parts 2-4), board card pictures in the «Unlocked a Coliseum Board!» popup | [coliseum](notes/coliseum.md#part-1-summary-25-november-2026) | e8ec1bc, Part 1 commits 9e0581f..HEAD |
+| I-059 | OPEN (Part 1 served) | Colosseum not playable: master `colosseum`/`colosseumStage` of 5.0.1 empty and `cl_stg` maps missing. **Part 1 (25-11-2026, master revision 394): seasons 2016-04 .. 2016-07 playable** (original rows and stage files, rules, Coliseum Boards, score thresholds, Coliseum Catalog, AP campaigns, «Coliseum» notice); user bench of a full season pending. Remaining: seasons 2016-08 .. 2021-06 (Parts 2-4), board card pictures in the «Unlocked a Coliseum Board!» popup | [coliseum](notes/coliseum.md#part-1-summary-25-november-2026) | e8ec1bc, Part 1 commits 9e0581f..HEAD |
 
 ### External
 

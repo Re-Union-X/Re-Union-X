@@ -129,11 +129,17 @@ const tests = {
     assert.strictEqual(w.ap, 2);
   },
   start_campaign_ap() {
-    // the day's Coliseum AP campaign (campaigns.js colosseumAp): 1 AP campaign of 2016-05-19 = tier 3 AP x 3500 -> 2
-    const w = world({ campaignAp: (ap) => Math.max(1, Math.ceil((ap * 3500) / 10000)) });
-    w.ap = 2;
-    assert.deepStrictEqual(keys(w.start(1, 1)), ['ret', 'userData', 'colosseumInfo', 'userColosseum', 'userTreasures', 'startColosseumData', 'campaigns'], '2 AP are enough');
-    assert.strictEqual(w.ap, 0, 'the campaign AP is charged');
+    // the day's Coliseum AP campaign (campaigns.js colosseumAp): the served «1 AP» row of 2016-05-19 (power 2000, ruling 11)
+    const { apWith } = require('./campaigns'), { COLOSSEUM_ONE_AP } = require('./make-campaigns');
+    for (const [tier, round] of [[1, 1], [2, 1], [3, 1]]) {
+      const w = world({ campaignAp: (ap) => apWith(ap, COLOSSEUM_ONE_AP) });
+      const tierAp = w.tables.colosseum.find((x) => x.colosseumId === 801 + tier - 1)?.ap;
+      if (tier > 1) { w.player.colosseum = { seasons: { 800: { last: tier === 2 ? 3 : 5, open: tier === 2 ? 4 : 6 } } }; }
+      w.ap = 1;
+      const b = w.start(tier, round);
+      assert.deepStrictEqual(keys(b), ['ret', 'userData', 'colosseumInfo', 'userColosseum', 'userTreasures', 'startColosseumData', 'campaigns'], `tier ${tier} (${tierAp} AP): 1 AP is enough`);
+      assert.strictEqual(w.ap, 0, `tier ${tier}: 1 AP charged`);
+    }
     const z = world({ campaignAp: () => 0 });
     z.start(1, 1);
     assert.strictEqual(z.ap, 100, '0 AP campaign: nothing charged');
