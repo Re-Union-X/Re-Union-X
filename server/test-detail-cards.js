@@ -29,6 +29,9 @@ assert.ok(bt.includes('<td class="bc"><img width="64" height="64" src="/x/1.png"
 assert.ok(bt.includes('<tr class="got"><td class="bc"><span class="nb"></span></td><td><span class="tn">B</span></td><td class="r">x</td>') && bt.includes(`<span class="yes">Completed${cards.CROWN}</span>`));
 assert.ok(bt.includes('<td class="r">Not served yet<small>held</small></td>') && bt.includes('<td>r4</td><td>—</td><td>—</td>'), 'not served; no node data');
 assert.ok(bt.includes('function kxNb('), 'the placeholder script');
+// img and why are escaped (a future caller cannot inject)
+const bx = cards.boardTable([{ id: 9, name: 'X', img: '/a"onerror="x', served: true, nodes: 1, unlocked: 0, coinsLeft: 1, coinsTotal: 1 }, { id: 8, name: 'Y', served: false, why: '<b>x</b>' }]);
+assert.ok(bx.includes('src="/a&quot;onerror=&quot;x"') && !bx.includes('<b>x</b>') && bx.includes('<small>&lt;b&gt;x&lt;/b&gt;</small>'), 'escaped img / why');
 // a quest block of the Special details
 const qb = cards.questBlock('Q', [['AP', '<span class="v">5</span>']], [['done', 'Objectives', '<table></table>'], ['medal', 'Drops', '<p>x</p>', cards.NG]]);
 assert.ok(qb.startsWith('<div class="qb"><h3 class="qh">Q</h3><div class="qs"><span class="st"><small>AP</small><b><span class="v">5</span></b></span></div><div class="qt"><h4>'));

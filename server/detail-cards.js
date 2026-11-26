@@ -113,10 +113,10 @@ const num = (n) => Number(n || 0).toLocaleString('en-US');
 function boardTable(rows, o = {}) {
   const cur = o.currency || 'Coins', heads = o.extraHeads || [];
   const body = rows.map((b) => {
-    const card = b.img ? `<img width="64" height="64" src="${b.img}" loading="lazy" alt="" onerror="kxNb(this)">` : NB;
+    const card = b.img ? `<img width="64" height="64" src="${esc(b.img)}" loading="lazy" alt="" onerror="kxNb(this)">` : NB;
     // an extra cell is html, or a whole cell when it starts with <td
     const name = `<span class="tn">${b.name}</span>${b.sub || ''}`, extra = (b.extra || []).map((x) => (String(x).startsWith('<td') ? x : `<td>${x}</td>`)).join('');
-    if (!b.served) return `<tr><td class="bc">${card}</td><td>${name}</td>${extra}<td>—</td><td class="r">Not served yet${b.why ? `<small>${b.why}</small>` : ''}</td></tr>`;
+    if (!b.served) return `<tr><td class="bc">${card}</td><td>${name}</td>${extra}<td>—</td><td class="r">Not served yet${b.why ? `<small>${esc(b.why)}</small>` : ''}</td></tr>`;
     // no node data (no progress lookup): dashes
     if (b.nodes == null) return `<tr><td class="bc">${card}</td><td>${name}</td>${extra}<td>—</td><td>—</td></tr>`;
     const done = b.nodes > 0 && b.unlocked >= b.nodes;
