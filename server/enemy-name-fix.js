@@ -2,13 +2,15 @@
 // tmp/events/unbuilt/remaining2): rows 11020 / 11021 are «Mega-Shadow» / «Gigas Shadow» in the WW donor enemy.json
 // (displayId 1020 / 1021, Mega / Gigas stats) and the only 1xxxx target rows of those names (13/13 and 15/15 target
 // placements on the JP 4.3.1 maps); ours named both «Shadow», so name lookups mixed them into the Shadow targets.
+// Rows 184 / 20184 (Coliseum Part 3, 26-11): the 1.1.3 rows carry the text code «sEnm_0157» as name; every other row of displayId
+// 184 is «Enraged Elk» (2017-09 Coliseum Tier 10 boss 20184, the story Enraged Elk 184).
 // make-game-tables.js applies it before writing enemy.json; alone, idempotent, it fixes server/master_data in place:
 //   node server/enemy-name-fix.js [master folder]
 'use strict';
 const fs = require('fs');
 const path = require('path');
 
-const ENEMY_NAME_FIX = { 11020: 'Mega-Shadow', 11021: 'Gigas Shadow' };
+const ENEMY_NAME_FIX = { 184: 'Enraged Elk', 11020: 'Mega-Shadow', 11021: 'Gigas Shadow', 20184: 'Enraged Elk' };
 
 // -> number of rows renamed
 function applyEnemyNameFix(enemies) {

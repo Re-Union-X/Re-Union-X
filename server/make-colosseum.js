@@ -329,9 +329,11 @@ const CORNER_FREE = (a) => [a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]].
 const BOARD_ART = { 2200001: 'b16', 2210037: 'jp:2200037.png', 2210038: 'jp:2200038.png', 2210040: 'jp:2200041.png', 2210041: 'jp:2200042.png',
   2210067: 'jp:2200017.png', 2210068: 'jp:2200018.png', 2210079: 'jp:2200095.png', 2210080: 'jp:2200096.png', 2210087: 'jp:2200105.png',
   2210088: 'jp:2200106.png', 2210091: 'jp:2200110.png', 2210092: 'jp:2200111.png', 2210095: 'jp:2200115.png',
-  ...Object.fromEntries([2210069, 2210070, 2210071, 2210072, 2210073, 2210074, 2210077, 2210078, 2210081, 2210082, 2210085, 2210086, 2210089,
+  ...Object.fromEntries([2210069, 2210070, 2210071, 2210072, 2210073, 2210074, 2210075, 2210076, 2210077, 2210078, 2210081, 2210082, 2210083, 2210084, 2210085, 2210086, 2210089,
     2210090, 2210093, 2210094, 2210096, 2210097, 2210098, 2210099, 2210100, 2210101, 2210102, 2210103, 2210104, 2210105, 2210106].map((id) => [id, 'loc'])) };
-const PENDING_ART = new Set([2210075, 2210076, 2210083, 2210084]); // Mango Sweetie M / F, Illusionist M / F (user review)
+// Mango Sweetie M / F 2210075 / 076 and Illusionist M / F 2210083 / 084: loc cards rebuilt from the small (144 px) wiki picture,
+// approved by the user 26-11; no board waits for its card now
+const PENDING_ART = new Set();
 function artLines(boardIds) {
   const head = ['# Coliseum Board card pictures, written by server/make-colosseum.js (BOARD_ART).',
     '# Columns as in originals.tsv. b16 = the worldwide 2016 file of the same id; jp = the JP 4.3.1 card of the same picture (another id);'

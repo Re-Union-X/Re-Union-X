@@ -27,7 +27,10 @@ check(byId.get(9301)?.poison === 10000, `9301 poison ${byId.get(9301)?.poison}`)
 // rows outside that set; both are checked by applyEnemyAttacks above
 const evIds = require('./make-event-enemies').eventIds();
 const donorAtt = new Set(Object.keys(require('./enemy-motion-fix').readOriginalMoves()?.attacks || {}).map(Number));
-const storyCited = new Set(enemies.filter((e) => !evIds.has(e.enemyId)).flatMap((e) => [...(e.skillId || []), ...(e.urgencySkillId || [])]));
+// Coliseum rows (make-colosseum.js: 20000-29999 and their month ids) bring the attacks of their original row, as the event rows
+const { monthBase } = require('./make-colosseum');
+const coli = (id) => (id >= 20000 && id <= 29999) || monthBase(id) !== null;
+const storyCited = new Set(enemies.filter((e) => !evIds.has(e.enemyId) && !coli(e.enemyId)).flatMap((e) => [...(e.skillId || []), ...(e.urgencySkillId || [])]));
 const storyStatus = atts.filter((a) => storyCited.has(a.enemyAttackId) && !donorAtt.has(a.enemyAttackId)
   && !(a.enemyAttackId >= 992070000 && a.enemyAttackId < 992080000) && (a.poison || a.deepPoison || a.sleep || a.paralysis));
 check(storyStatus.length === 39, `attacchi originali con stato ${storyStatus.length} != 39 (le righe 9920700xx delle mosse a 0, gli eventi e le mosse donate a parte)`);

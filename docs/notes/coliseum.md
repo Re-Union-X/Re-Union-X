@@ -161,6 +161,10 @@ Web and data side; details and per-id tables in the private dossier.
   reserved label: nothing is ever estimated silently. The check needs the stage enemy lists (stage import report,
   generated report, JP 4.3.1 parse); without them (a clean machine before its first resource build) the run is flagged
   as unchecked, not stopped, and `make-game-tables.js` prints a banner. In 2026-11, 93 ids over 130 stages: none missing.
+  **Part 3 order (26-11, replaces the one above):** the 1.1.3 row -> the raw ReLux row of the same id when its shape is `old`
+  (knots 1/35/100/300/999(/9999) or the 2017 month curve; never a `2019` revamp row or a `corrupt` one) -> month copy (a
+  `YYMM`/`1` + Coliseum id: the base row with the new id) -> variant rule from an original base (1.1.3, else raw ReLux `old`;
+  our master row only as a reported last fallback) -> stop. See «Part 3 summary».
 - **Tier rewards.** The 1.1.3 master does carry the tier medals (reward slots 1-2, Moogle and Cid medals) and matches
   the 2016-05 notice exactly (proven); 2016-12 .. 2018 from the wiki templates (probable). Reward type 32 appears only on
   the endless tier and on a trailing 0-round row of every season (an end / no-reward marker).
@@ -466,3 +470,61 @@ Resources 188, master revision 397, saves `colip2a` (August 2016), `colip2n` (No
   cards, so rows are shorter; the detail page is a set of section cards with a header band and icon (Season, Coliseum Boards,
   Tiers, Score thresholds, Maps), values in gold, rounds in cyan, taken / reached in green, not yet in a muted grey; its
   Keep / Remove button carries `pkd`, compact on phones (`phone-css.js` `.sb .pk.pkd`, never full width).
+
+## Part 3 summary (26 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-26-coliseum-part3.md`, ledger `.superpowers/sdd/2026-11-26-coliseum-part3/progress.md`.
+Master revision **398** (regenerated 26-11, HANDOFF recipe); resources and bench walk: pending (controller).
+
+- **Seasons**: 24 served, 2016-04 .. 2018-03. New: 2017-05 = 2100 (JP 4.3.1 set 2016-10), 2017-06 .. 2017-12 = 2200 .. 2800
+  (generated), 2018-01 .. 03 = 2900 .. 3100 (JP sets of the ReLux rows). All from the ReLux season extract.
+- **All master tiers** (user 26-11): every row of head..term is served, also for the Part 2 seasons. 2017-01 .. 03: 15 tiers
+  (Tiers 11-14 of 999 rounds, 15 endless), 2017-04: 21 tiers; from 2017-05: 22 tiers (10 as before, then 50 / 100 / 300
+  rounds, then nine of 999, the last endless), 9,561 rounds served. Thresholds count the rounds before the FIRST 999 tier.
+  A save in the old endless Tier 11 keeps its tier and round and goes on to Tier 12. 2017-02's extra 999 tiers pay 100 tier
+  coins each (the source; 1700 / 1900 / 2000 pay 900): served as in the source, to check on the bench.
+- **AP**: 0 on every round from 2017-05 (the ReLux rows).
+- **Generated maps 2017-06 .. 12** (`gen_colosseum_stages.py`, ids `2117MMNN`, 70 maps; 2016 output byte-identical): waves
+  from the khuxwiki rows; 262 wiki buffs dropped (per stage in `stage_gen/colosseum_gen/report.json`) plus the Ringmaster's
+  35-Hit counter; generator positions on 8 stages. Named bosses (map 10): Ringmaster 2017-06 = **20097** (rule from raw ReLux
+  base 97), Enraged Elk 2017-09 = **20184** (the 1.1.3 row, kept by the source order; its name was the text code `sEnm_0157`,
+  now «Enraged Elk» via `enemy-name-fix.js`, also row 184). 2017-05 set override: JP 2016-10 (wiki match 0.48).
+- **Enemy rows** (source order above): 48 new rows over 240 stages / 150 ids: raw ReLux old shape 12 (20114 Cerberus,
+  161020007 ..), month copies 6 (161020099 / 126 / 137 / 153 / 154, 120097 = copy of rule 20097), rule 30 (bases 1.1.3 or raw
+  ReLux old shape; none on a master clone). The raw ReLux table replaces the cleaned `coliseum_enemies.json` (its 20xxx rows
+  are 2019 values). No estimate. 20114 has displayId 114, which has no served graphics: the build gives it the Dark Road
+  Cerberus of `enemy_display_map.json` (5085), the other Cerberus rows use 112 (to check on the bench).
+- **Ranking**: prizes of 2017-05 .. 2018-03 from khuxwiki (featured skill on 6★ Scrooge, Chip & Dale, Cid, Magic Mirror, 5★
+  Chip & Dale; the month's avatar parts to rank 100,000; 2017-12 Santa Hat / Beard / Brows as **Spirit parts** (type 33),
+  `grantItem` now records a Spirit part also with the pet system off). Reward ids 35300 .. 35800.
+- **Thresholds, per-month calibration**: season-end border ranks of 2017 (r/KingdomHearts posts via the Arctic Shift archive,
+  u/xamaxin's 2017-10 / 11 / 12 posts; private `CUTOFFS_2017.md`, 23 points). A month with its own points gets its own curve
+  log10(round) = a + b log10(rank) (both a and b when its points span a decade of rank, else the era slope with its own
+  intercept), within x / ÷ 1.15 of its points; outside the ranks of its points the era slope continues from the nearest point
+  (guard, 2017-07 rank 100 = 1,131); months without data (2017-08, 2018-01 .. 03) use the era curve (a 3.5122, b -0.1509).
+  From 10,000 log-linear down to 1 round at rank 100,000 (~100,000 ranked players a month): the 50,001-100,000 bracket and
+  lower need 1 round. Values per month in the module comment of `make-colosseum.js`.
+- **Boards and cards**: 40 boards 2210067 .. 2210106 (7 months x 4, 4 months x 3); cards: JP twins (KH Dale, Buzz Cut, Trick
+  or Treat II, Natural / Long Side Tails, Blue Reinstar), khuxwiki previews (`loc`) for the others; Mango Sweetie M / F
+  (2210075 / 076) and Illusionist M / F (2210083 / 084) **rebuilt** from the small (144 px) wiki picture, approved by the
+  user 26-11 (`PENDING_ART` now empty). Puppy Medium / Puppy Bob: JP-only, not served.
+- **Coliseum Catalog**: 24 rows with board cards; each season has its detail page (Season, Coliseum Boards, Tiers, Score
+  thresholds, Maps: `mapsOf` = generated for 2017-06 .. 12, Japanese for 2017-05 and 2018).
+- **Event lookups** (`make-events.js` genLook): a Coliseum row (20000-29999 or a month id) answers a name only when the name
+  has no other row. Without it the rule row 21534 «Barrier Master» held 4 quests of EV-0682 / EV-0744 as `enemyAmbiguous`
+  against 11534 on the second regen.
+- **Regen note**: `make-game-tables.js` reads the previous `enemy.json`; the Coliseum rows are appended after the graphics /
+  attack passes, so the FIRST regen after new Coliseum enemies leaves them without display substitution and attacks; the
+  second run completes them (enemyAttack +16, 20114 -> 5085) and is idempotent (checked: a third run changes nothing).
+  Run the recipe twice after adding Coliseum enemies.
+- **Notice** «Coliseum»: 24 seasons, all tiers, 0 AP from 2017-05, per-month thresholds and the 1-round bracket, 2017-12
+  Spirit parts, maps (JP for 2017-05 / 2018, generated 2017-06 .. 12, buffs and the Ringmaster counter dropped, the two named
+  bosses), new section «Enemies» (original rows, month copies, the variant rule, no estimate), rebuilt cards, Puppy boards.
+
+Master regen diff (26-11, against `D:Progetto_Restauro_KH_UX	mpmaster_before_coli_p3`): colosseum +264 tiers,
+colosseumStage +11 (and term ids of 1700 / 1800 / 1900 / 2000 extended), stage +110, enemy +48 (and the names of 184 / 20184),
+enemyAttack +16 (attacks of the new rows), enemy_display_orig +48, ranking +11, rankingReward +88, sphere / sphereArray /
+sphereMasu +40 each. Nothing else changed (events identical).
+
+Bench walk (controller, pending): LV > 999 probe first, then 2017-05, 2017-06, 2017-09, 2017-12, 2018-02, a Part 2 season past
+its old last tier, the earlier 999-round tiers in the client, the 2017-02 100-coin tiers.

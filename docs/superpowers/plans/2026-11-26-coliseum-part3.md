@@ -44,7 +44,8 @@ Part 2 plan and summary: `docs/superpowers/plans/2026-11-26-coliseum-part2.md`, 
   110, 116; month copy for 099, 126, 153, 154 (corrupt raw rows) and 137 (2019 shape). 21557 (2018-01, 2018-04 sets): rule
   from base 1557 «The Good Boy» (raw ReLux base row), name declared as inferred. 120097 Ringmaster (2018-02): month copy of
   the rule row 20097 (base 97 old shape), not the 2019 row. Generated maps: Ringmaster 2017-06 R10 = 20097, Enraged Elk
-  2017-09 R10 = 20184, both rule rows from bases 97 / 184 (raw ReLux old shape), declared in the notice.
+  2017-09 R10 = 20184; Ringmaster is a rule row from base 97 (raw ReLux old shape), Enraged Elk keeps its 1.1.3 row 20184
+  (source order: 1.1.3 first; Task 3 ruling; display name fixed in enemy-name-fix.js), both declared in the notice.
 - Boards: the 44 ReLux boards 2210067 .. 2210106 (4 per month, 3 from 2017-12: both-gender 3500-coin board + Tier 10 / 11
   Bonus); Spirit-part cells (type 33) served as Spirit parts; Puppy Medium / Puppy Bob are JP-only (PUPPY_BOARDS.md: not
   served, a notice line). Card pictures as in Part 2 (JP card only when it fits the WW screenshot and contains the preview;

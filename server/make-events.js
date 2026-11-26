@@ -1146,17 +1146,22 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     const evIds = opts.eventEnemyIds ? new Set(opts.eventEnemyIds) : require('./make-event-enemies').eventIds();
     const byName = new Map();
     const evByName = new Map(); // the event rows of a name: only to report them (genMapOf eventOnly), never an answer
+    // Coliseum rows (variant ids 20000-29999 and their month ids, make-colosseum.js) answer a name only when it has no other row: the
+    // Part 3 rule row 21534 «Barrier Master» made EV-0682 / EV-0744 ambiguous against the story row 11534 (Coliseum Part 3 Task 6)
+    const coliByName = new Map();
+    const { monthBase } = require('./make-colosseum');
+    const coliId = (id) => (id >= 20000 && id <= 29999) || monthBase(id) !== null;
     for (const e of master.enemy || []) {
       if (!e.name) continue;
-      const to = evIds.has(e.enemyId) ? evByName : byName;
+      const to = evIds.has(e.enemyId) ? evByName : coliId(e.enemyId) ? coliByName : byName;
       const k = String(e.name).trim().toLowerCase();
       if (!to.has(k)) to.set(k, []);
       to.get(k).push(e.enemyId);
     }
-    for (const v of [...byName.values(), ...evByName.values()]) v.sort((a, b) => a - b);
+    for (const v of [...byName.values(), ...evByName.values(), ...coliByName.values()]) v.sort((a, b) => a - b);
     const rowOf = new Map((master.enemy || []).map((e) => [e.enemyId, e]));
     const statsOf = (id) => { const e = rowOf.get(id) || {}; return JSON.stringify([e.hp, e.attack, e.defense, e.baseLv, e.validGrowth]); };
-    genLook = { byName: (n) => byName.get(String(n).trim().toLowerCase()) || [], eventByName: (n) => evByName.get(String(n).trim().toLowerCase()) || [], nameOf: (id) => names.get(id) || null, statsOf };
+    genLook = { byName: (n) => byName.get(String(n).trim().toLowerCase()) || coliByName.get(String(n).trim().toLowerCase()) || [], eventByName: (n) => evByName.get(String(n).trim().toLowerCase()) || [], nameOf: (id) => names.get(id) || null, statsOf };
     return genLook;
   };
   const aliases = config.rewardTypeAliases || null;

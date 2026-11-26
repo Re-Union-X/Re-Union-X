@@ -302,11 +302,16 @@ if (fs.existsSync(path.join(MASTER, 'enemy.json')) && fs.existsSync(MISSING)) {
   console.log(`fonti: ${JSON.stringify(kinds)}; cloni con HP diversi fra base a 5 e a 4 cifre: ${five.length}`);
   // I-204: nessun clone di famiglia con la descrizione di un nemico di un altro nome (Q670 Chill Ripper = rosa);
   // la descrizione vuota (" ") e' quella originale di Darkling e dei Master (stesso nome della base): esclusa
+  // a description shared by several names fits each of them (not order-dependent), and the khuxwiki text of the clone's own name is
+  // right by definition (Green Requiem and Emerald Sonata share one text on the wiki; the Coliseum row 21503 brought it into
+  // the master, Coliseum Part 3)
   const descOf = new Map();
-  for (const r of before) if (!descOf.has(r.flavor)) descOf.set(r.flavor, r.name);
+  for (const r of before) { if (!descOf.has(r.flavor)) descOf.set(r.flavor, new Set()); descOf.get(r.flavor).add(r.name); }
+  const wikiFl = wikiFlavors();
+  for (const [n, t] of Object.entries(wikiFl)) if (descOf.has(t)) descOf.get(t).add(n);
   const wrong = after.filter((r) => saved.sources[r.enemyId] && saved.sources[r.enemyId].kind === 'family-clone'
-    && String(r.flavor).trim() && descOf.has(r.flavor) && descOf.get(r.flavor) !== r.name && r.flavor !== GENERIC_FLAVOR);
-  check(wrong.length === 0, `descrizioni di un altro nemico: ${wrong.slice(0, 5).map((r) => `${r.enemyId} ${r.name} = ${descOf.get(r.flavor)}`)}`);
+    && String(r.flavor).trim() && descOf.has(r.flavor) && !descOf.get(r.flavor).has(r.name) && !descOf.get(r.flavor).has(String(r.name).toLowerCase()) && r.flavor !== GENERIC_FLAVOR);
+  check(wrong.length === 0, `descrizioni di un altro nemico: ${wrong.slice(0, 5).map((r) => `${r.enemyId} ${r.name} = ${[...descOf.get(r.flavor)].join(' / ')}`)}`);
   const chill = after.filter((r) => r.name === 'Chill Ripper');
   check(chill.length > 0 && chill.every((r) => !/rose/i.test(r.flavor)), `Chill Ripper: ${chill.map((r) => r.flavor)}`);
   if (Object.keys(wikiFlavors()).length) {

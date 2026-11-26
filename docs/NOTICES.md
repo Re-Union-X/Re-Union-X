@@ -224,15 +224,15 @@ Slot 3 keeps its original rule: 5 draws from 10-Medal Deals paid with Jewels (no
 
 **IMPORTANT** · 11/26
 
-The monthly **Coliseum** seasons are back from Story Quest 130: April 2016 to April 2017 for now.
+The monthly **Coliseum** seasons are back from Story Quest 130: April 2016 to March 2018 for now.
 
 The season follows your **Story week**; each season keeps its own progress and coins (not original).
 
 Ranking brackets became **score thresholds**; keep one past season from the **Coliseum Catalog**.
 
-### Overview — 13 seasons, from Story Quest 130
+### Overview — 24 seasons, from Story Quest 130
 
-The **Coliseum** is back in **Quests** from **Story Quest 130**: the monthly seasons of the Olympus arena with their Tiers and Rounds, the original enemies, the one-turn shortcut, Coliseum Coins, Tier Rewards, the Coliseum Boards and the ranking rewards. Thirteen seasons are here: **April 2016 to April 2017**.
+The **Coliseum** is back in **Quests** from **Story Quest 130**: the monthly seasons of the Olympus arena with their Tiers and Rounds, the original enemies, the one-turn shortcut, Coliseum Coins, Tier Rewards, the Coliseum Boards and the ranking rewards. Twenty-four seasons are here: **April 2016 to March 2018**.
 
 ### Seasons — follow your Story week, progress kept
 
@@ -242,11 +242,17 @@ Each season keeps **its own progress, Coliseum Coins and Coliseum Boards** in yo
 
 From **November 2016** a season has **eleven Tiers**, one more than before, as in the original: Tier 10 has 10 rounds and Tier 11 is the endless one.
 
+Every season has **all the Tiers of the original data**: from **January 2017** some Tiers have **999 rounds** before the endless last one (Tiers 11-14 from January to March 2017, 11-20 in April 2017). A save in the old last Tier keeps its Tier and Round.
+
+From **May 2017** a season has **22 Tiers**, as in the original: Tiers 11, 12 and 13 have 50, 100 and 300 rounds, then nine Tiers of 999 rounds, the last one endless.
+
 ### Rounds and AP — retry freely, original AP campaigns
 
 As in the original game, a lost or abandoned round can be tried again as often as you like, and the AP paid to start it is not given back. Clearing every wave in one turn unlocks the next rounds at once, also across tiers; when you clear a later round, the rounds and tiers you skipped pay their coins and Tier Rewards.
 
 Rounds cost their original **3 to 5 AP**. The Coliseum AP campaigns of 2016 are back on their original days of your Story week: **1 AP** from May 19 to 31 and from June 16 to 22, 2016, and **0 AP!** on November 1-3, 2016, for the Coliseum season being played: the November 2016 season, unless you keep another one.
+
+From **May 2017** every round costs **0 AP**, as in the original data.
 
 The «1 AP» rate is (rebuilt): this version of the game rounds the original rate up to 2 AP on a round, so the rate is adjusted to keep 1 AP.
 
@@ -256,13 +262,17 @@ There is only one player on this server, so the monthly ranking cannot be a real
 
 The thresholds are (rebuilt): the only worldwide cutoffs on record are those of **August 2016** (recordings of its ranking). August to October 2016 use values read from them; the other seasons are interpolated from them and adjusted to their number of rounds (from November 2016, ten more rounds: every threshold is 10 rounds higher).
 
-The rewards of each bracket are the original ones: from the game data and the notices of their season up to November 2016, from the community wiki from December 2016. The December 2016 **Pegasus Knight Helm** goes to the top 10,000, as its notice says.
+From **May 2017** each month uses the border ranks posted by players at its end (r/KingdomHearts, 2017): its thresholds follow those values. August 2017 and January to March 2018 have none and use the curve of the whole 2017 era.
+
+About 100,000 players a month were ranked in 2017, so almost everyone was in the top 100,000: from May 2017 the **50,001st-100,000th** bracket and the lower ones need only **1 round**.
+
+The rewards of each bracket are the original ones: from the game data and the notices of their season up to November 2016, from the community wiki from December 2016. The December 2016 **Pegasus Knight Helm** goes to the top 10,000, as its notice says. The **December 2017** Santa Hat, Beard and Brows are **Spirit parts**, as its notice says.
 
 In May 2016 every ranked player got the same reward, as in the original: one cleared round is enough. Before your first round of May 2016 the goal reads **10000000th**: that was the original lowest bracket of that season (5,000,001st to 10,000,000th).
 
 ### Coliseum Catalog — keep one past season, filters
 
-The **Coliseum Catalog** is (not original): it is an addition of this server, like the Event and Raid Catalogs. Its banner is the **first of the Events tab** and appears from Story Quest 130, when the Coliseum opens; tap it to open the Training Grounds, and its **Details** button lists every season here with its tiers, AP, Coliseum Boards and your progress.
+The **Coliseum Catalog** is (not original): it is an addition of this server, like the Event and Raid Catalogs. Its banner is the **first of the Events tab** and appears from Story Quest 130, when the Coliseum opens; tap it to open the Training Grounds, and its **Details** button lists every season here with its tiers, AP, Coliseum Boards (with their cards) and your progress. Tap a season for its page: its Coliseum Boards with the nodes unlocked and the coins still needed, its Tiers and Tier Rewards, the score thresholds and where its maps come from.
 
 One **past season** at a time can be **kept**: the Coliseum then plays the kept season until you **remove** it, whatever your Story week, also when your Story week goes back to an earlier month. Only past seasons can be kept: not the season of your Story week, nor a month your Story week has only just reached. Keeping or removing a season loses nothing, since each season keeps its progress and coins. A kept season shows **«Ends in»** the end of the current week (not original): it never ends on its own, but the screen needs a date.
 
@@ -272,27 +282,39 @@ The Coliseum Catalog banner and the season cards are our own design (not origina
 
 ### Maps — original, Japanese and generated maps
 
-The maps of **April to July 2016** are the original ones, from the 2016 worldwide game files. **December 2016 to April 2017** use the original maps of the Japanese version, which the worldwide game most likely reused (its round lists match them).
+The maps of **April to July 2016** are the original ones, from the 2016 worldwide game files. **December 2016 to April 2017**, **May 2017** and **January to March 2018** use the original maps of the Japanese version, which the worldwide game most likely reused (its round lists match them).
 
-No map of **August to November 2016** survives: their rounds are played on **generated maps** (not original), built from the round lists of the community wiki (khuxwiki) with the original enemies of those seasons, in the original arena.
+No map of **August to November 2016** and **June to December 2017** survives: their rounds are played on **generated maps** (not original), built from the round lists of the community wiki (khuxwiki) with the original enemies of those seasons, in the original arena.
 
-The wiki lists enemy buffs (higher Strength or Defense) on some waves of the maps 1, 2, 3, 5, 6 and 10 of **August 2016** and 1 and 7 of **September 2016**.
+The wiki lists enemy buffs (higher Strength or Defense) on some waves of the maps 1, 2, 3, 5, 6 and 10 of **August 2016**, 1 and 7 of **September 2016**, and on most maps of **June to December 2017**.
 
 The ten maps of a season repeat in every tier: rounds 1, 11, 21 … of a tier play map 1, rounds 2, 12, 22 … map 2, and so on.
 
-A map cannot carry those buffs, so these enemies fight **without them** (not original).
+A map cannot carry those buffs, so these enemies fight **without them** (not original); the counter of the June 2017 Ringmaster is dropped too.
 
-On the eighth map of **November 2016**, three Shadows of the third wave stand on places added by the generator (not original): no original layout holds seven enemies in one wave.
+The wiki gives only the name of the boss of map 10 of **June 2017** and **September 2017**: they are the Coliseum **Ringmaster** and **Enraged Elk** of the game data.
+
+On the eighth map of **November 2016**, three Shadows of the third wave stand on places added by the generator (not original): no original layout holds seven enemies in one wave. Eight maps of 2017 have one or two such places.
+
+### Enemies — original rows, a few by the rule
+
+The Coliseum enemies of 2017 and 2018 have their **original stats**: from the original Coliseum enemy table (ReLux Team donation), or a copy of the original row when a season reuses an enemy under the id of its month.
+
+Where no original row survives (the June 2017 **Ringmaster** among them), the enemy is (rebuilt) by the variant rule from its original base enemy, as for earlier seasons. No value is estimated.
 
 ### Graphics — board cards, one button icon stands in
 
 The card pictures of the Coliseum Boards are original art: from the 2016 worldwide files or the Japanese files where they match the board, else the board previews of the community wiki at their original size.
 
+The cards of the **Mango Sweetie** (July 2017) and **Illusionist** (September 2017) boards are (rebuilt) from the small picture of the community wiki, the only one that survives.
+
+The **Puppy Medium** and **Puppy Bob** boards were in the Japanese version only: they are not here.
+
 The icon of the **Coliseum Boards** button is not in any surviving game file: the **Multi Board** icon stands in for it (not original).
 
 ### Not here yet — later seasons and PvP
 
-The seasons from May 2017 to June 2021 will come in later updates. The **PvP Coliseum** is not available yet.
+The seasons from April 2018 to June 2021 will come in later updates. The **PvP Coliseum** is not available yet.
 
 ## Event Quests: how they work
 

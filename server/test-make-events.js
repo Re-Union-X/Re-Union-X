@@ -1804,6 +1804,16 @@ const tests = {
     const vr = me.buildEvents([record('E-M', [genQuest(702200, { jpTable: { target: 'Foe A variant' } })])], CONFIG, master(), undefined, {}, null, null, { eventEnemyIds: [] });
     assert.deepStrictEqual([entry(vr, 'E-M').quests[0].reason, vr.genMaps.length], ['enemyMissing', 0]);
     assert.match(entry(vr, 'E-M').quests[0].why, /Foe A variant/);
+    // a Coliseum row (20000-29999 or a month id) answers a name only when the name has no other row (Coliseum Part 3: the rule row
+    // 21534 Barrier Master held EV-0682 / EV-0744 as ambiguous against 11534)
+    const mC = master();
+    mC.enemy = [{ enemyId: 501, name: 'Foe A', hp: [1] }, { enemyId: 502, name: 'Foe B', hp: [1] }, { enemyId: 20502, name: 'Foe B', hp: [9] }, { enemyId: 161020502, name: 'Foe B', hp: [8] }];
+    const co = me.buildEvents([record('E-M', [genQuest(702200)])], CONFIG, mC, undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.ok(entry(co, 'E-M').quests[0].served, JSON.stringify(entry(co, 'E-M').quests[0]));
+    assert.ok(co.genMaps[0].enemies.flat().some((x) => x.enemyId === 502) && !co.genMaps[0].enemies.flat().some((x) => x.enemyId > 20000), 'the non-Coliseum row');
+    mC.enemy = [{ enemyId: 501, name: 'Foe A', hp: [1] }, { enemyId: 20502, name: 'Foe B', hp: [9] }];
+    const co2 = me.buildEvents([record('E-M', [genQuest(702200)])], CONFIG, mC, undefined, {}, null, null, { eventEnemyIds: [] });
+    assert.ok(co2.genMaps[0].enemies.flat().some((x) => x.enemyId === 20502), 'only Coliseum rows: still an answer');
   },
   // fix round 1 (Task 3 review): never a silent pick among same-name rows. Rows with different stats -> enemyAmbiguous (held, the
   // candidates in why, no gen entry); rows with the same stats -> the id; an explicit record id (wikiEnemyIds, targets[0].id) wins
