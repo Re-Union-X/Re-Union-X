@@ -81,6 +81,22 @@ run('wallet_chip_coin_icon', () => {
   assert.strictEqual(walletChip({ img: null, label: 'Raid Coins', value: 5 }), '<span class="wal"><small>Raid Coins</small><b>5</b></span>', 'no substitute icon');
   assert.ok(walletChip({ ic: 'raid', label: 'R', value: 1 }).includes('/web/special/icon/raid.png'), 'an icon key still works');
 });
+// «Kept now» (user 26-11): one compact line per kept item with its card, name, catalogue, detail link and the catalogue's own Remove
+run('hub_kept_section', () => {
+  const kept = [{ kind: 'raid', catalog: 'Raid Catalog', name: 'Darkside · Tier 3', img: '/web/raid/img/v1/8100.png', href: '/web/raid/raid/8100?from=catalog',
+    remove: '/web/raid/unkeep', where: 'Events' }, { kind: 'shop', catalog: 'Banner Catalog', name: 'Deal <1>', img: '/web/gacha/img/7.png',
+    href: '/web/gacha/detail/7?from=catalog', remove: '/web/gacha/unpin', where: 'the Shop' }];
+  const html = pages.hubPage(CARDS, kept);
+  assert.ok(html.indexOf('id="sec-kept"') > 0 && html.indexOf('id="sec-kept"') < html.indexOf('<div id="rows">'), 'the section above the catalogues');
+  assert.ok(html.includes('<h2>Kept now</h2><span class="kcount">2</span>'), 'its title and count');
+  assert.ok(html.includes('<div class="kr" id="k-raid"><a class="ki" href="/web/raid/raid/8100?from=catalog"><img src="/web/raid/img/v1/8100.png" alt=""></a>'
+    + '<div class="kt"><a class="kn" href="/web/raid/raid/8100?from=catalog">Darkside · Tier 3</a><span class="kc">Raid Catalog</span></div>'
+    + '<a href="#" class="pk" data-on="0" data-pin="/web/raid/unkeep" data-where="Events" onclick="return kxRm(this)">Remove from Events</a></div>'), 'a raid row');
+  assert.ok(html.includes('>Deal &lt;1&gt;</a><span class="kc">Banner Catalog</span>') && html.includes('data-pin="/web/gacha/unpin"') && html.includes('Remove from the Shop'), 'the Shop row, escaped');
+  assert.ok(html.includes('function kxRm(el)') && html.includes('location.reload()') && html.includes('<div id="pinmsg" class="pinmsg"></div>'), 'Remove posts, says so, reloads the hub');
+  const empty = pages.hubPage(CARDS, []);
+  assert.ok(empty.includes(`<p class="mu">${pages.KEPT_NONE}</p>`) && pages.KEPT_NONE === 'Nothing kept: pick a past item in a catalog to keep it' && !empty.includes('class="kcount"'), 'empty state');
+});
 run('hub_page_phone', () => {
   const html = require('./phone-css').withPhone(pages.hubPage(CARDS));
   assert.ok(html.includes('<style data-phone>') && html.includes('#rows>.row'), 'the phone card grid applies');
@@ -205,6 +221,43 @@ function wiring() {
     const icon = web(t.respondCoinIcon, '/web/coin/v7/raid.png');
     assert.deepStrictEqual([icon.code, icon.type, icon.body.toString()], [200, 'image/png', 'png raid']);
     for (const u of ['/web/coin/v7/avatar.png', '/web/coin/v7/icons.png', '/web/coin/v7/..%2Fraid.png', '/web/coin/raid.png']) assert.strictEqual(web(t.respondCoinIcon, u).code, 404, u);
+  });
+  // «Kept now» on the real catalogues: keep one item in each (the first past one each catalogue accepts), every row with its card,
+  // detail page and Remove request; a Remove through that request empties its row
+  run('wiring_kept_section', () => {
+    const post = (fn, url) => { const o = { code: 0 }; quiet(() => fn({ writeHead(c) { o.code = c; }, end() {} }, url)); return o.code; };
+    const keepFirst = (fn, urlOf, ids) => ids.find((id) => post(fn, urlOf(id)) === 200);
+    const hub = () => web(t.respondGameCatalogWeb, '/web/catalog').body.toString('utf8');
+    // nothing kept: the muted line
+    p.colosseum = { ...(p.colosseum || {}), kept: null };
+    for (const [fn, u] of [[t.respondRaidPost, '/web/raid/unkeep'], [t.respondEventPost, '/web/event/unkeep'], [t.respondAvatarPost, '/web/avatar/unkeep'],
+      [t.respondSpecialPost, '/web/special/unpin'], [t.respondGachaPost, '/web/gacha/unpin']]) post(fn, u);
+    assert.ok(hub().includes(`<p class="mu">${pages.KEPT_NONE}</p>`), 'empty state');
+    p.colosseum.kept = 800;
+    // a Story far enough (quest 900, 2020) that past events and Special quests can be kept
+    const q900 = t.masterRows('stage').find((r) => r.stageKind === 1 && r.id === 900);
+    p.stageScores[q900.stageId] = 1;
+    const raidId = keepFirst(t.respondRaidPost, (id) => `/web/raid/keep/${id}`, [...new Set((t.raidIndex().entries || []).map((e) => e.evStageId))].slice(0, 300));
+    const evId = keepFirst(t.respondEventPost, (id) => `/web/event/keep/${id}`, [...new Set((t.eventIndex().entries || []).map((e) => e.evStageId))].slice(0, 600));
+    const spId = keepFirst(t.respondSpecialPost, (id) => `/web/special/pin/${id}`, t.specialIndex().entries.map((e) => e.evStageId).slice(0, 300));
+    const shopId = keepFirst(t.respondGachaPost, (id) => `/web/gacha/pin/${id}`, t.gachaCatalog().banners.map((b) => b.drawMedalTypeId).slice(0, 300));
+    const html = hub();
+    const row = (kind) => (new RegExp(`<div class="kr" id="k-${kind}">[^]*?</div></div>`).exec(html) || [''])[0];
+    assert.ok(row('colosseum').includes('href="/web/colosseum/season/800?from=catalog"') && row('colosseum').includes('Coliseum · April 2016')
+      && row('colosseum').includes('data-pin="/web/colosseum/unkeep"') && row('colosseum').includes('Remove from the Coliseum'), `Coliseum row ${row('colosseum')}`);
+    if (raidId) assert.ok(row('raid').includes(`href="/web/raid/raid/${raidId}?from=catalog"`) && row('raid').includes(`/web/raid/img/v`) && row('raid').includes('data-pin="/web/raid/unkeep"'), 'raid row');
+    if (evId) assert.ok(row('event').includes(`href="/web/event/event/${evId}?from=catalog"`) && row('event').includes('data-pin="/web/event/unkeep"'), 'event row');
+    if (spId) assert.ok(row('special').includes(`href="/web/special/quest/${spId}?from=catalog"`) && row('special').includes('data-pin="/web/special/unpin"'), 'special row');
+    if (shopId) assert.ok(row('shop').includes(`href="/web/gacha/detail/${shopId}?from=catalog"`) && row('shop').includes('data-pin="/web/gacha/unpin"') && row('shop').includes('Banner Catalog'), 'shop row');
+    assert.ok(raidId && evId && spId && shopId, `something kept in each: raid ${raidId} event ${evId} special ${spId} shop ${shopId}`);
+    const n = [...html.matchAll(/<div class="kr" id="k-/g)].length;
+    assert.ok(html.includes(`<h2>Kept now</h2><span class="kcount">${n}</span>`) && n >= 5, `count ${n}`);
+    // Remove: the catalogue's own request, then the hub no longer lists it
+    assert.strictEqual(post(t.respondColosseumPost, '/web/colosseum/unkeep'), 200);
+    assert.strictEqual(post(t.respondRaidPost, '/web/raid/unkeep'), 200);
+    const after = hub();
+    assert.ok(!after.includes('id="k-colosseum"') && !after.includes('id="k-raid"') && after.includes('id="k-event"'), 'removed rows gone, the others stay');
+    for (const [fn, u] of [[t.respondEventPost, '/web/event/unkeep'], [t.respondSpecialPost, '/web/special/unpin'], [t.respondGachaPost, '/web/gacha/unpin']]) post(fn, u);
   });
   run('wiring_banner_image', () => {
     assert.strictEqual(web(t.respondGameCatalogWeb, '/web/catalog/img/v1/5000.png').code, 404, 'no picture yet: 404');

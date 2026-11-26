@@ -538,7 +538,7 @@ function catalogFacts(index, ctx = {}) {
     }
     quests += weeks.size;
   }
-  return { quests, campaigns, kept: data.pinned ? data.pinned.name : null };
+  return { quests, campaigns, kept: data.pinned ? data.pinned.name : null, keptId: data.pinned ? data.pinned.evStageId : null };
 }
 
 function catalogPage(index, ctx = {}) {

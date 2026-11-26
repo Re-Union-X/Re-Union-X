@@ -12,6 +12,7 @@
 const special = require('./special-pages');
 const parts = require('./catalog-pages');
 const { PHONE_MQ } = require('./phone-css');
+const detailCards = require('./detail-cards'); // the section card of the «Kept now» list
 
 const { CSS: SPECIAL_CSS, esc, icon } = special;
 const HUB_URL = '/web/catalog';
@@ -28,7 +29,16 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   + '.row .wal{margin:4px 0 0;align-self:flex-start;font-size:13px}.row .cw{margin-top:auto}'
   + '.row{cursor:pointer}'
   // phone card grid (phone-css.js): the short catalogue names on one line, the counts as small as the other lines
-  + `@media ${PHONE_MQ}{#rows>.row.row .nm{height:auto}#rows>.row .ct{font-size:12px}}`;
+  + `@media ${PHONE_MQ}{#rows>.row.row .nm{height:auto}#rows>.row .ct{font-size:12px}}`
+  // «Kept now» (user 26-11): a section card of the detail pages, one compact line per kept item (its card, name, catalogue, Remove)
+  + detailCards.CARD_CSS
+  + '#sec-kept .csb{padding:4px 10px 6px}.kcount{background:#0d5f86;border:1px solid #39a7cf;border-radius:10px;padding:0 8px;font-size:13px;color:#fff;line-height:1.6}.kr{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid #1d5878}.kr:first-child{border-top:0}'
+  + '.kr .ki{flex:0 0 160px;line-height:0}.kr .ki img{width:160px;height:35px;border-radius:4px;object-fit:cover}'
+  + '.kr .kt{flex:1 1 auto;min-width:0;line-height:1.3}.kr .kn{display:block;color:#fff;font-weight:bold;text-decoration:none;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+  + '.kr .kc{color:#00d4ed;font-size:13px}.kr .pk{flex:0 0 auto;margin:0;padding:2px 12px;font-size:13px;width:auto;min-height:0;display:inline-block}'
+  + '#sec-kept .mu{margin:4px 2px;font-size:14px}'
+  + `@media ${PHONE_MQ}{.kr{gap:8px;padding:3px 0}.kr .ki{flex-basis:110px}.kr .ki img{width:110px;height:24px}.kr .kn{font-size:13px}.kr .kc{font-size:11px}`
+  + '.kr .pk{font-size:12px!important;padding:2px 10px!important;min-height:26px;width:auto!important;display:inline-flex!important;align-items:center}}';
 
 // a card's row: the banner on the left (as the catalogue rows), the name, the description, the facts, the coins; the whole row opens
 // the catalogue (ROW_JS), the name and the picture are links
@@ -43,18 +53,37 @@ function cardRow(c) {
     + `<a class="go" href="${href}" aria-label="Open">›</a></div>\n`;
 }
 
+// the «Kept now» list: kept = [{kind, catalog (its catalogue's name), name, img, href (its detail page), remove (the catalogue's own
+// Remove endpoint), where (the screen it is kept in, the catalogue's «Remove from …» label)}]; nothing kept: one muted line
+const KEPT_NONE = 'Nothing kept: pick a past item in a catalog to keep it';
+function keptSection(kept = []) {
+  const rows = kept.map((k) => `<div class="kr" id="k-${esc(k.kind)}"><a class="ki" href="${esc(k.href)}"><img src="${esc(k.img)}" alt=""></a>`
+    + `<div class="kt"><a class="kn" href="${esc(k.href)}">${esc(k.name)}</a><span class="kc">${esc(k.catalog)}</span></div>`
+    + `<a href="#" class="pk" data-on="0" data-pin="${esc(k.remove)}" data-where="${esc(k.where)}" onclick="return kxRm(this)">Remove from ${esc(k.where)}</a></div>`).join('');
+  return detailCards.section('kept', 'pin', 'Kept now', rows || `<p class="mu">${KEPT_NONE}</p>`, kept.length ? `<span class="kcount">${kept.length}</span>` : '');
+}
+// Remove: the catalogue's own request (POST to its unkeep / unpin URL, the same message box as the catalogue's button), then the hub
+// is loaded again so the list and the cards show the change
+const KEPT_JS = 'function kxSay(box,cls,head,sub){box.className=cls;box.innerHTML="";var b=document.createElement("div"),s=document.createElement("small");'
+  + 'b.textContent=head;s.textContent=sub;box.appendChild(b);box.appendChild(s);box.style.display="block";}'
+  + 'function kxRm(el){var box=document.getElementById("pinmsg"),w=el.getAttribute("data-where"),x=new XMLHttpRequest();x.open("POST",el.getAttribute("data-pin"));'
+  + 'x.onload=function(){if(x.status===200){kxSay(box,"pinmsg off","Removed.","Leave and re-enter "+w+".");setTimeout(function(){location.reload();},700);}'
+  + 'else kxSay(box,"pinmsg err","Could not change "+w,"Try again from its catalog.");};'
+  + 'x.onerror=function(){kxSay(box,"pinmsg err","Could not reach the server","Try again.");};x.send("");return false;}';
+
 const ROW_JS = "document.getElementById('rows').addEventListener('click',function(e){if(e.target.closest('a'))return;"
   + "var r=e.target.closest('.row');if(r&&r.getAttribute('data-href'))location.href=r.getAttribute('data-href');});";
 
-function hubPage(cards = []) {
+function hubPage(cards = [], kept = []) {
   const list = KEYS.map((k) => cards.find((c) => c.key === k)).filter(Boolean);
   return parts.PAGE_HEAD('Game Catalog', HUB_CSS) + '<body>'
     + '<div class="hdr"><h1>Game Catalog</h1></div>'
     + '<p class="n">Every catalogue of this server in one place: pick one to see everything of the original game it holds. '
     + 'From each catalogue you can keep one past item, and it then appears in its own tab every week. The Banner Catalog is in the Shop. '
     + 'The Game Catalog is an addition of this server.</p>'
+    + keptSection(kept)
     + `<div id="rows">${list.map(cardRow).join('') || '<p class="n">No catalogue is served yet.</p>'}</div>`
-    + `<script>${ROW_JS}</script></body></html>`;
+    + `<div id="pinmsg" class="pinmsg"></div><script>${ROW_JS}${KEPT_JS}</script></body></html>`;
 }
 
 // the BACK bar to the hub on a catalogue page (its own BACK bar, e.g. the Avatar Board Catalog opened from another catalogue,
@@ -69,4 +98,4 @@ function withHubBack(html) {
   return out.replace(/<body(\s+class="([^"]*)")?>/, (m, a, cls) => `<body class="${cls ? `${cls} ` : ''}hb">`);
 }
 
-module.exports = { HUB_URL, KEYS, BAR_CSS, hubPage, withHubBack, cardRow };
+module.exports = { HUB_URL, KEYS, BAR_CSS, KEPT_NONE, keptSection, hubPage, withHubBack, cardRow };

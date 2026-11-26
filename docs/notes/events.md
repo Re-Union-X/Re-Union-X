@@ -1904,3 +1904,12 @@ Event Boards screen), 16 Raid Coin, 17 Coliseum Coin. `python -I recon/tools/mak
 `server/game_data/coin_icons/<key>.png` + `icons.json {version, keys}` (git-ignored; build-resources.ps1 runs it with --strict).
 server.js `coinWallet` serves them at `/web/coin/v<version>/<key>.png` (keys avatar / event / raid / coliseum only); a coin without
 its file shows no icon. Test: recon/tools/test_make_coin_icons.py, server/test-game-catalog.js `wiring_coin_icons`.
+
+### «Kept now» on the hub (26 November 2026)
+
+Above the catalogue cards the hub lists everything kept now (server.js `gameCatalogKept`, game-catalog-pages.js `keptSection`, a
+section card of detail-cards.js): the kept Coliseum season, raid, event, avatar board entry, Special quest and the Shop's kept banner
+(Banner Catalog, for a quick Remove; the kept Spirit Blind Box deal is not listed). One compact line each: its card, name, catalogue,
+a link to its detail page and the catalogue's own Remove request (`/web/colosseum/unkeep`, `/web/raid/unkeep`, `/web/event/unkeep`,
+`/web/avatar/unkeep`, `/web/special/unpin`, `/web/gacha/unpin`; no confirmation, as the catalogue buttons), then the hub reloads.
+Nothing kept: «Nothing kept: pick a past item in a catalog to keep it».

@@ -5334,26 +5334,49 @@ const withHubBack = (html) => (gameCatalogOn() ? gameCatalogPages.withHubBack(ht
 const countOf = (n, w, ws = `${w}s`) => `${Number(n).toLocaleString('en-US')} ${n === 1 ? w : ws}`;
 // the cards of the hub page (game-catalog-pages.js): one per catalogue, its banner, description, counts, kept item and coins; a
 // catalogue whose data fails is left out (logged), never the whole page
+// the «Kept now» list of the hub (user 26-11): every item kept now, from the facts of the cards (keptId) plus the Shop's kept banner
+// (Banner Catalog: a quick Remove too), each with its card, detail page and its catalogue's own Remove request
+function gameCatalogKept(cards) {
+  const by = Object.fromEntries(cards.map((c) => [c.key, c])), out = [];
+  const add = (kind, fn) => { try { const k = fn(); if (k) out.push({ kind, ...k }); } catch (e) { console.log(`[catalog] kept ${kind}: ${e.message}`); } };
+  const ev = (key) => (by[key] && by[key].keptId ? by[key] : null);
+  add('colosseum', () => { const c = ev('colosseum'); return c && { catalog: 'Coliseum Catalog', name: c.kept, where: 'the Coliseum', remove: '/web/colosseum/unkeep',
+    img: `/web/colosseum/img/v${routesColosseum.COLOSSEUM_IMG_VERSION}/${c.keptId}.png`, href: `/web/colosseum/season/${c.keptId}?from=catalog` }; });
+  add('raid', () => { const c = ev('raid'); return c && { catalog: 'Raid Catalog', name: c.kept, where: 'Events', remove: '/web/raid/unkeep',
+    img: `/web/raid/img/v${routesRaid.RAID_IMG_VERSION}/${c.keptId}.png`, href: `/web/raid/raid/${c.keptId}?from=catalog` }; });
+  add('event', () => { const c = ev('event'); return c && { catalog: 'Event Catalog', name: c.kept, where: 'Events', remove: '/web/event/unkeep',
+    img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${c.keptId}.png`, href: `/web/event/event/${c.keptId}?from=catalog` }; });
+  add('avatar', () => { const c = ev('avatar'); return c && { catalog: 'Avatar Board Catalog', name: c.kept, where: 'Avatar Boards', remove: '/web/avatar/unkeep',
+    img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${c.keptId}.png`, href: `/web/avatar/board/${c.keptId}?from=catalog` }; });
+  add('special', () => { const c = ev('special'); return c && { catalog: 'Special Catalog', name: c.kept, where: 'Special', remove: '/web/special/unpin',
+    img: special.imgPath(c.keptId), href: `/web/special/quest/${c.keptId}?from=catalog` }; });
+  add('shop', () => {
+    const id = (player.gacha || {}).pinned, b = id && gachaCatalog().banners.find((x) => x.rowId === id);
+    return b && { catalog: 'Banner Catalog', name: b.name, where: 'the Shop', remove: '/web/gacha/unpin',
+      img: `/web/gacha/img/${b.drawMedalTypeId}.png`, href: `/web/gacha/detail/${b.drawMedalTypeId}?from=catalog` };
+  });
+  return out;
+}
 function gameCatalogCards() {
   const cards = [], add = (key, fn) => { try { const c = fn(); if (c) cards.push({ key, ...c }); } catch (e) { console.log(`[catalog] ${key} card: ${e.message}`); } };
   add('colosseum', () => {
     const f = colosseumPages.catalogFacts(colosseum().catalogRows());
     return { title: 'Coliseum Catalog', href: '/web/colosseum/catalog', img: `/web/colosseum/img/v${routesColosseum.COLOSSEUM_IMG_VERSION}/${makeColosseum.CATALOG_EV}.png`,
       line: 'Every Coliseum season, one a month: keep a past one and the Coliseum plays it again.', count: countOf(f.seasons, 'season'),
-      kept: f.kept, keptNone: 'No season kept: the Coliseum plays the season of your Story', wallet: colosseumWallet(),
+      kept: f.kept, keptId: f.keptId, keptNone: 'No season kept: the Coliseum plays the season of your Story', wallet: colosseumWallet(),
       note: colosseum().catalogCtx().unlocked ? null : 'The Coliseum opens at Story Quest 130' };
   });
   add('raid', () => {
     const index = raidIndex(), f = raidPages.catalogFacts(index, raid().catalogCtx());
     return { title: 'Raid Catalog', href: '/web/raid/catalog', img: `/web/raid/img/v${routesRaid.RAID_IMG_VERSION}/${(index.catalog || {}).evStageId || 8000}.png`,
       line: 'Every raid week of the game, with its bosses, tiers and Raid Boards.', count: `${countOf(f.raids, 'raid')}${f.jp ? ` · ${countOf(f.jp, 'Japan-only raid')}` : ''}`,
-      kept: f.kept, keptNone: 'No raid kept', wallet: raidWallet() };
+      kept: f.kept, keptId: f.keptId, keptNone: 'No raid kept', wallet: raidWallet() };
   });
   add('event', () => {
     eventRoutes().pruneKept();
     const index = eventIndex(), f = eventPages.catalogFacts(index, eventRoutes().catalogCtx());
     return { title: 'Event Catalog', href: '/web/event/catalog', img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${(index.catalog || {}).evStageId || 20000}.png`,
-      line: 'Every event of the game, with its quests, Event Boards and rewards.', count: countOf(f.entries, 'event'), kept: f.kept, keptNone: 'No event kept',
+      line: 'Every event of the game, with its quests, Event Boards and rewards.', count: countOf(f.entries, 'event'), kept: f.kept, keptId: f.keptId, keptNone: 'No event kept',
       wallet: eventWallet() };
   });
   add('avatar', () => {
@@ -5363,7 +5386,7 @@ function gameCatalogCards() {
     const f = eventPages.catalogFacts(index, eventRoutes().boardCatalogCtx(), true);
     return { title: 'Avatar Board Catalog', href: '/web/avatar/catalog', img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${index.avatarCatalog.evStageId}.png`,
       line: 'Every past limited Avatar Board, with its dates, price and card.', count: `${countOf(f.entries, 'entry', 'entries')} · ${countOf(f.boards, 'board')}`,
-      kept: f.kept, keptNone: 'No board kept', wallet: avatarWallet() };
+      kept: f.kept, keptId: f.keptId, keptNone: 'No board kept', wallet: avatarWallet() };
   });
   add('special', () => {
     const index = specialIndex();
@@ -5371,7 +5394,7 @@ function gameCatalogCards() {
     const f = specialPages.catalogFacts(index, specialCtx());
     return { title: 'Special Catalog', href: '/web/special/catalog', img: special.imgPath(index.catalog.evStageId),
       line: 'Every Special quest and VIP campaign, with its days, objectives and drops.', count: `${countOf(f.quests, 'quest')} · ${countOf(f.campaigns, 'campaign')}`,
-      kept: f.kept, keptNone: 'No quest kept', wallet: null };
+      kept: f.kept, keptId: f.keptId, keptNone: 'No quest kept', wallet: null };
   });
   return cards;
 }
@@ -5381,7 +5404,8 @@ function respondGameCatalogWeb(res, url) {
   const p = url.split('?')[0];
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (/^\/web\/catalog\/?$/i.test(p)) {
-    const b = Buffer.from(withPhone(gameCatalogPages.hubPage(gameCatalogCards())), 'utf8');
+    const cards = gameCatalogCards();
+    const b = Buffer.from(withPhone(gameCatalogPages.hubPage(cards, gameCatalogKept(cards))), 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length });
     return res.end(b);
   }

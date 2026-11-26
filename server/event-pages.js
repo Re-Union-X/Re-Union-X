@@ -476,7 +476,7 @@ function catalogOf(index, ctx, m) {
 // their boards) and the kept one's name
 function catalogFacts(index, ctx = {}, board = false) {
   const entries = board ? boardEntriesOf(index) : eventEntriesOf(index), kept = keptOf(entries, ctx);
-  return { entries: entries.length, boards: board ? entries.reduce((n, e) => n + boardsOf(e).length, 0) : 0, kept: kept ? catName(kept) : null };
+  return { entries: entries.length, boards: board ? entries.reduce((n, e) => n + boardsOf(e).length, 0) : 0, kept: kept ? catName(kept) : null, keptId: kept ? kept.evStageId : null };
 }
 // GET /web/event/catalog: the Event Catalog (events only)
 const catalogPage = (index, ctx = {}) => catalogOf(index, ctx, MODES.event);

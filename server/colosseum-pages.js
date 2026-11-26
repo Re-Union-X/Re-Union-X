@@ -152,7 +152,7 @@ const baseOf = (row) => row.base || (row.state === 'kept' ? 'can' : row.state);
 const pillInner = (html) => html.slice(html.indexOf('>') + 1, html.lastIndexOf('</span>'));
 
 // Game Catalog hub (game-catalog-pages.js, user 26-11): the served seasons and the kept one's name
-const catalogFacts = (rows) => { const k = rows.find((r) => r.state === 'kept'); return { seasons: rows.length, kept: k ? titleOf(k) : null }; };
+const catalogFacts = (rows) => { const k = rows.find((r) => r.state === 'kept'); return { seasons: rows.length, kept: k ? titleOf(k) : null, keptId: k ? k.colosseumStageId : null }; };
 function catalogPage(rows, ctx = {}) {
   const keptRow = rows.find((r) => r.state === 'kept');
   const html = rows.map((row) => {

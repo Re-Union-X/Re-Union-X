@@ -217,7 +217,7 @@ const replacesLine = (st, kept) => parts.replacesLine(st, kept ? titleOf(kept) :
 // Game Catalog hub (game-catalog-pages.js, user 26-11): the raids of each section and the kept raid's name
 function catalogFacts(index, ctx = {}) {
   const rows = calendar.catalogRows(index), kept = keptRow(rows, ctx);
-  return { raids: rows.filter((r) => !r.jp).length, jp: rows.filter((r) => r.jp).length, kept: kept ? titleOf(kept) : null };
+  return { raids: rows.filter((r) => !r.jp).length, jp: rows.filter((r) => r.jp).length, kept: kept ? titleOf(kept) : null, keptId: kept ? kept.evStageId : null };
 }
 function catalogPage(index, ctx = {}) {
   const periods = ctx.periods, rows = calendar.catalogRows(index), kept = keptRow(rows, ctx);
