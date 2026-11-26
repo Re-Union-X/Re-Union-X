@@ -640,6 +640,14 @@ const STATE_WHY = {
 // settimana mostrata, poi la risposta per questo banner in evidenza (HTML, testi gia' sicuri)
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const niceDay = (iso) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}, ${iso.slice(0, 4)}`;
+// «Mar 9 – 15, 2017», «Mar 9 – Apr 5, 2017», «Dec 29, 2016 – Jan 4, 2017»
+function spanDays(from, to) {
+  if (from === to) return niceDay(from);
+  if (from.slice(0, 4) !== to.slice(0, 4)) return `${niceDay(from)} – ${niceDay(to)}`;
+  const [m1, d1] = [MONTHS[Number(from.slice(5, 7)) - 1], Number(from.slice(8, 10))], [m2, d2] = [MONTHS[Number(to.slice(5, 7)) - 1], Number(to.slice(8, 10))];
+  return m1 === m2 ? `${m1} ${d1} – ${d2}, ${to.slice(0, 4)}` : `${m1} ${d1} – ${m2} ${d2}, ${to.slice(0, 4)}`;
+}
+const ordinalWeek = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th')}`;
 function laterWhy(banner, w, ctx) {
   const sea = seasonOf(banner);
   if (sea) return `<p class="v">Seasonal banner: it returns to the top of the Shop every year, <b>${windowText(sea)}</b> (UTC, real calendar), when it is the most recent unlocked edition of its season.</p>`;
@@ -658,11 +666,15 @@ function laterWhy(banner, w, ctx) {
     }
     verdict ||= 'It is in your period, but the Shop is full in its weeks.';
   }
-  const quests = w.qFrom ? ` (Story Quests ${w.qFrom}-${w.qTo})` : '';
-  return '<b>How the Shop works</b><ol>'
-    + `<li>Your progress in the Story${quests} matches this period of the original calendar: <b>${niceDay(w.day)} - ${niceDay(w.periodEnd)}</b>.</li>`
-    + `<li>The Shop shows one week of it at a time. This week: <b>${niceDay(w.from)} - ${niceDay(w.to)}</b>.</li>`
-    + `<li>Every Monday it moves to the next week${w.n > 1 ? `; after the last one it starts again (${w.n} weeks in this period)` : ' (this period is a single week)'}.</li></ol>`
+  // the box in short sentences, as the «Your Story is your calendar» part of the notices (routes-info-album.js RULES_NOTICE, user
+  // 26-11: the period's weeks start on its first day, the switch is every real Monday)
+  const story = w.qFrom ? `Your Story is at Quests ${w.qFrom}-${w.qTo}` : 'Your Story is in this period';
+  const weeks = `${w.n} week${w.n === 1 ? '' : 's'}`;
+  return '<b>How the Shop works</b>'
+    + `<p>${story}: the Shop shows the banners of <b>${spanDays(w.day, w.periodEnd)}</b> (<b>${weeks}</b> of the original calendar).</p>`
+    + (w.n > 1 ? `<p>It shows one of those weeks at a time: now <b>${spanDays(w.from, w.to)}</b>.</p>`
+      + `<p>Every Monday (08:00 UTC) it moves on to the next one; after the ${ordinalWeek(w.n)} it starts again from the first.</p>`
+      : '<p>The Shop shows that week until your Story reaches the next period.</p>')
     + `<p class="v">${verdict}</p>`;
 }
 // Codice condiviso (ES5, XMLHttpRequest: WebView di Android 9) dei pulsanti «Keep in the Shop» / «Remove from the Shop»
@@ -961,7 +973,7 @@ function catalogPage(banners, ctx) {
     + `<script>${PIN_JS}</script><script>${js}</script><script>[].forEach.call(document.querySelectorAll('.cat .b'),function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el){if(t.tagName==='A'||t.tagName==='BUTTON'||t.tagName==='INPUT')return;t=t.parentNode;}var h=el.getAttribute('data-href');if(h)location.href=h;};});</script><style>.cat .b{cursor:pointer}</style>`, '', '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>');
 }
 
-module.exports = {
+module.exports = { spanDays,
   KIND_OPTS, niceRange, PAY_ICON, MEDAL_GALLERY_HREF,
   KEPT_STYLE, CATALOG_PLATE_STYLE, CATALOG_PAY_TYPE, PAY_ICON_KEYS, page, PIN_JS, esc,
   TUTORIAL_BANNER, tutorialOpen, tutorialRow, SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketCurrency, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, listedCurrency, catalogRow, catalogPlate,

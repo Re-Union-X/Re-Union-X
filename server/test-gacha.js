@@ -618,6 +618,15 @@ check(dk.includes('<a class="pk pkd" id="pinbtn"') && dk.includes('.pk{display:i
   check(dk2.length > 0 && g.detailPage(okb, undefined, medalNames, dctx2).includes('will not come back to the Shop, unless you keep it in the Shop with the button below.'), 'dettagli: passato fissabile dal Catalog');
   check(g.detailPage(okb, undefined, medalNames, { ...dctx2, fromCatalog: false }).includes('unless you keep it in the Shop from the Banner Catalog.'), 'dettagli: passato fissabile fuori dal Catalog');
   check(g.detailPage(bad['prices [0]'], undefined, medalNames, dctx2).includes('will not come back to the Shop. You can still') && !g.detailPage(bad['prices [0]'], undefined, medalNames, dctx2).includes('unless you keep'), 'dettagli: non fissabile senza clausola');
+  // «How the Shop works» in short sentences (user 26-11, as the «Your Story is your calendar» notice): the period and its weeks, the
+  // week shown now, the Monday switch; a period of one week says so
+  const wk4 = { day: '2017-03-09', periodEnd: '2017-04-05', from: '2017-03-09', to: '2017-03-15', k: 0, n: 4, qFrom: 556, qTo: 570 };
+  const box = g.detailPage(okb, undefined, medalNames, { ...dctx, shopWeek: wk4 });
+  check(box.includes('<b>How the Shop works</b><p>Your Story is at Quests 556-570: the Shop shows the banners of <b>Mar 9 – Apr 5, 2017</b> (<b>4 weeks</b> of the original calendar).</p>')
+    && box.includes('<p>It shows one of those weeks at a time: now <b>Mar 9 – 15, 2017</b>.</p><p>Every Monday (08:00 UTC) it moves on to the next one; after the 4th it starts again from the first.</p>')
+    && !box.includes('matches this period'), 'dettagli: How the Shop works in frasi brevi');
+  check(g.detailPage(okb, undefined, medalNames, dctx2).includes('(<b>1 week</b> of the original calendar).</p><p>The Shop shows that week until your Story reaches the next period.</p>'), 'dettagli: periodo di una settimana');
+  check(g.spanDays('2016-12-29', '2017-01-04') === 'Dec 29, 2016 – Jan 4, 2017' && g.spanDays('2017-03-09', '2017-03-09') === 'Mar 9, 2017', 'spanDays');
 } catch (err) { errors.push(`fissato: eccezione ${err.stack}`); }
 
 // ricerca per medaglia (sp3 7.1, I-150): nomi per banner -> ids dei banner
