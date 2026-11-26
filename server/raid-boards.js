@@ -32,20 +32,29 @@ const norm = (s) => String(s || '').normalize('NFKC').toLowerCase().replace(/[:,
 const slug = (s) => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const num = (s) => parseInt(String(s ?? '').replace(/,/g, ''), 10) || 0;
 
-// The path: rows left to right, then right to left (a snake), START in the top-left corner. Cells along it alternate between
-// node (even) and piece (odd), so the n-th node is at index 2n.
+// The path: START in the bottom-left corner as on every original board (1214 of 1214 in the master), then a snake upwards:
+// bottom row left to right, next row right to left, ... The board screen draws the board's picture over the top-left corner
+// (rows 0-1, columns 0-1: never used by an original board), so the two top rows start at column 2 (user 26-11, tester report
+// I-323: START and the first nodes were hidden under the picture). Cells along it alternate between node (even) and piece
+// (odd), so the n-th node is at index 2n; 41 cells = START + 20 nodes.
+const IMAGE_CORNER = (r, c) => r <= 1 && c <= 1;
 function snake() {
   const cells = [];
-  for (let r = 0; r < 5; r++) for (let k = 0; k < 9; k++) cells.push([r, r % 2 ? 8 - k : k]);
+  for (let k = 0; k < 5; k++) {
+    const r = 4 - k, cols = [];
+    for (let c = 0; c < 9; c++) if (!IMAGE_CORNER(r, c)) cols.push(c);
+    for (const c of k % 2 ? cols.reverse() : cols) cells.push([r, c]);
+  }
   return cells;
 }
 const SNAKE = snake();
+const PATH_NODES = (SNAKE.length - 1) / 2; // 20
 const side = ([r, c], [r2, c2]) => (r2 < r ? 'U' : r2 > r ? 'D' : c2 < c ? 'L' : 'R');
 const pieceOf = (a, b) => { const s = new Set([a, b]); return ['UD', 'LR', 'UL', 'UR', 'DL', 'DR'].find((p) => s.has(p[0]) && s.has(p[1])); };
 
 // sphereArray row of a board with n nodes: node k (1-based) = masu index k - 1.
 function gridRow(arryId, n) {
-  if (n < 1 || n > NODES) throw new Error(`raid boards: a board of ${n} cells does not fit the grid (1-${NODES})`);
+  if (n < 1 || n > PATH_NODES) throw new Error(`raid boards: a board of ${n} cells does not fit the grid (1-${PATH_NODES})`);
   const grid = Array.from({ length: 5 }, () => Array(9).fill(0));
   for (let i = 0; i <= 2 * n; i++) {
     const [r, c] = SNAKE[i];
@@ -344,4 +353,4 @@ function artLines(art) {
   return [...head, ...art.map(line)].join('\n') + '\n';
 }
 
-module.exports = { SEL, PARTS_SEL, TICKETS, MASU_KEYS, MASU, START, END, num, norm, artLines, usDate, buildBoards, cellsOf, gridRow, matchReward, itemIndex, parseBoardCorrections, allocateBoardIds, BOARD_BASE, BOARD_MAX, TYPE, NODES, COMPLETION, PIECE, STARTCELL };
+module.exports = { SEL, PARTS_SEL, TICKETS, MASU_KEYS, MASU, START, END, num, norm, artLines, usDate, buildBoards, cellsOf, gridRow, matchReward, itemIndex, parseBoardCorrections, allocateBoardIds, BOARD_BASE, BOARD_MAX, TYPE, NODES, PATH_NODES, COMPLETION, PIECE, STARTCELL };

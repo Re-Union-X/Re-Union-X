@@ -172,7 +172,7 @@ aid_boards_arterify.png`); 4 have none
     board screen shows its own `SpherePointIcon_Raid` widget (JP `Sphere_Info_ver310`). Both from the JP files
     (`originals.tsv`, section «Avatar Board coin icons»), widgets 37x38 at scale 0.9 as in JP (`make_layouts.py`); the
     Avatar Coins icon `_normal` is the same coin as the IncentiveIcon_14 used before.
-  - Still ours: the cell positions (the screenshots show the original layouts, e.g. START bottom left; not restored yet).
+  - Still ours: the cell positions (the original layouts were not collected). **26-11 (I-323):** the path now starts bottom left like every original board (1214 of 1214 in the master) and snakes upwards, skipping the top-left 2 x 2 corner where the board screen draws the board picture (never used by an original board); before, START and the first nodes sat under the picture. Capacity START + 20 nodes (largest raid board: 19). Master revision 396.
 
 <a id="prove"></a>
 ## Tests on the save

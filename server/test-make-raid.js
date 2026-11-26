@@ -1637,8 +1637,12 @@ const tests = {
     assert.deepStrictEqual([masu.rewardSelect[22], masu.rewardId[22], masu.spherePoint[22]], [3, 300948, 0], 'completion at index 22');
     for (const k of ['spCol0', 'spCol1', 'spCol2', 'spCol3', 'spCol4']) assert.strictEqual(arr[k].length, 9);
     // every size the grid holds keeps the order
-    for (let n = 1; n <= rb.NODES; n++) assert.deepStrictEqual(walkOrder(rb.gridRow(1, n)), Array.from({ length: n }, (_, i) => i + 1), `${n} cells`);
-    assert.throws(() => rb.gridRow(1, 23), /23 cells/);
+    for (let n = 1; n <= rb.PATH_NODES; n++) assert.deepStrictEqual(walkOrder(rb.gridRow(1, n)), Array.from({ length: n }, (_, i) => i + 1), `${n} cells`);
+    assert.throws(() => rb.gridRow(1, rb.PATH_NODES + 1), /21 cells/);
+    // as on every original board: START bottom left, nothing under the board picture (rows 0-1, columns 0-1; tester report I-323)
+    const full = rb.gridRow(1, rb.PATH_NODES), rowsOf = (x) => [x.spCol0, x.spCol1, x.spCol2, x.spCol3, x.spCol4];
+    assert.strictEqual(rowsOf(full)[4][0], rb.STARTCELL, 'START bottom left');
+    for (const [r, c] of [[0, 0], [0, 1], [1, 0], [1, 1]]) assert.strictEqual(rowsOf(full)[r][c], 0, `cell ${r},${c} under the board picture`);
     // radiant: jewels, both genders of an avatar part, a Spirit part by its master spelling, a draw ticket, a title at completion
     const all = build((f) => { withBoards(f); f.boards.weeks[3].census_id = W1; });
     const rad = all.masuRows.find((r) => all.sphereRows.find((s) => s.sphereBoardId === r.masuId).boardName.startsWith('Radiant Rewards Board '));
