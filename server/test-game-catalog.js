@@ -94,7 +94,7 @@ run('hub_kept_section', () => {
   assert.ok(html.includes('<h2>Kept now</h2><span class="kcount">2</span>'), 'its title and count');
   assert.ok(html.includes('<div class="kr" id="k-raid"><a class="ki" href="/web/raid/raid/8100?from=catalog"><img src="/web/raid/img/v1/8100.png" alt=""></a>'
     + '<div class="kt"><a class="kn" href="/web/raid/raid/8100?from=catalog">Darkside · Tier 3</a><span class="kc">Raid Catalog</span></div>'
-    + '<a href="#" class="pk" data-on="0" data-pin="/web/raid/unkeep" data-where="Events" onclick="return kxRm(this)">Remove from Events</a></div>'), 'a raid row');
+    + '<a href="#" class="pk" data-on="0" data-pin="/web/raid/unkeep" data-where="Events" onclick="return kxRm(this)"><img class="ic" src="/web/special/icon/pin') && html.includes('.png" alt="">Remove from Events</a></div>'), 'a raid row');
   assert.ok(html.includes('>Quest &lt;1&gt;</a><span class="kc">Special Catalog</span>') && html.includes('data-pin="/web/special/unpin"') && html.includes('Remove from Special'), 'a Special row, escaped');
   assert.ok(html.includes('function kxRm(el)') && html.includes('location.reload()') && html.includes('<div id="pinmsg" class="pinmsg"></div>'), 'Remove posts, says so, reloads the hub');
   const empty = pages.hubPage(CARDS, []);
@@ -111,12 +111,12 @@ run('catalog_head_helper', () => {
   assert.ok(/\.chd h1\{/.test(dc.HEAD_CSS) && /\.intro\{/.test(dc.HEAD_CSS) && dc.HEAD_CSS.includes('(max-height:480px) and (max-width:900px)'), 'its CSS, compact on phones');
   assert.ok(require('./catalog-pages').PAGE_HEAD('T', '').includes(dc.HEAD_CSS), 'loaded by the catalogue pages');
 });
-// large screens (user 26-11: no scrolling at 1280x720): the five catalogues as a grid of cards, the kept items in two columns
+// large screens (user 26-11: no scrolling at 1280x720): the five catalogues as a grid of cards, the kept items one per line (Remove on the right)
 run('hub_large_grid', () => {
   const html = pages.hubPage(CARDS, [{ kind: 'raid', catalog: 'Raid Catalog', name: 'R', img: '/i.png', href: '/h', remove: '/web/raid/unkeep', where: 'Events' }]);
   assert.ok(html.includes('@media not all and (max-height:480px) and (max-width:900px){#rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))'), 'card grid off the phone');
   assert.ok(html.includes('#rows>.row{display:flex;flex-direction:column') && html.includes('#rows>.row .go{display:none}'), 'cards, not rows');
-  assert.ok(html.includes('<div class="kl"><div class="kr" id="k-raid">') && html.includes('.kl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'), 'kept items in two columns');
+  assert.ok(html.includes('<div class="kl"><div class="kr" id="k-raid">') && html.includes('.kl{display:grid;grid-template-columns:1fr}') && html.includes('.kr .pk{flex:0 0 auto;margin:0 0 0 auto;'), 'kept items one per line, Remove on the right');
 });
 run('hub_page_phone', () => {
   const html = require('./phone-css').withPhone(pages.hubPage(CARDS));

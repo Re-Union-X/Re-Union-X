@@ -35,12 +35,12 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   + '#sec-kept .csb{padding:4px 10px 6px}.kcount{background:#0d5f86;border:1px solid #39a7cf;border-radius:10px;padding:0 8px;font-size:13px;color:#fff;line-height:1.6}.kr{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid #1d5878}.kr:first-child{border-top:0}'
   + '.kr .ki{flex:0 0 160px;line-height:0}.kr .ki img{width:160px;height:35px;border-radius:4px;object-fit:cover}'
   + '.kr .kt{flex:1 1 auto;min-width:0;line-height:1.3}.kr .kn{display:block;color:#fff;font-weight:bold;text-decoration:none;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
-  + '.kr .kc{color:#00d4ed;font-size:13px}.kr .pk{flex:0 0 auto;margin:0;padding:2px 12px;font-size:13px;width:auto;min-height:0;display:inline-block}'
+  + '.kr .kc{color:#00d4ed;font-size:13px}.kr .pk{flex:0 0 auto;margin:0 0 0 auto;display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:2px 14px;font-size:13px;line-height:1.2;width:auto;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.5)}.kr .pk .ic{width:1.2em;height:1.2em;margin:0;vertical-align:0}'
   + '#sec-kept .mu{margin:4px 2px;font-size:14px}'
   + `@media ${PHONE_MQ}{.kr{gap:8px;padding:3px 0}.kr .ki{flex-basis:110px}.kr .ki img{width:110px;height:24px}.kr .kn{font-size:13px}.kr .kc{font-size:11px}`
-  + '.kr .pk{font-size:12px!important;padding:2px 10px!important;min-height:26px;width:auto!important;display:inline-flex!important;align-items:center}}'
-  // the kept items in two columns (large screens and phones: the phone page is 70 % zoomed, about 900 CSS px wide)
-  + '.kl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}.kl>.kr:nth-child(2){border-top:0}'
+  + '.kr .pk{font-size:12px;padding:2px 10px;min-height:26px}}'
+  // one kept item per line, its Remove button on the right edge (user 26-11, phones and large screens)
+  + '.kl{display:grid;grid-template-columns:1fr}'
   // large screens (user 26-11: «the hub must not need scrolling» on the 1280x720 WebView): the five catalogues side by side as cards,
   // like the phone grid, and the kept items in two columns; the phone layout keeps its own grid (phone-css.js, 3 columns)
   + `@media not all and ${PHONE_MQ}{`
@@ -52,8 +52,6 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   + '.kr{padding:4px 0}.kr .ki{flex-basis:128px}.kr .ki img{width:128px;height:28px}.kr .kn{font-size:14px}.kr .kc{font-size:12px}'
   // user 26-11: one kept item per line, its Remove button on the right edge (no empty half), a clean pill; the card texts lined up:
   // every description takes three lines, so the counts, the kept lines and the coin chips start at the same height
-  + '.kl{grid-template-columns:1fr}.kl>.kr:nth-child(2){border-top:1px solid #1d5878}'
-  + '.kr .pk{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:3px 16px;font-size:13px;line-height:1;border-width:1px;border-radius:14px;box-sizing:border-box}'
   + '#rows>.row .d{min-height:calc(3 * 1.35em)}'
   // the coin chip inside the card (user 26-11: «Coliseum Coins · Dec 2017» ran out of the 5-column card): a slightly smaller label
   + '#rows>.row .wal{max-width:100%}#rows>.row .wal small{font-size:11px;padding:2px 6px 2px 4px;gap:3px;letter-spacing:0}#rows>.row .wal b{padding:1px 8px}'
@@ -78,7 +76,7 @@ const KEPT_NONE = 'Nothing kept: pick a past item in a catalog to keep it';
 function keptSection(kept = []) {
   const rows = kept.map((k) => `<div class="kr" id="k-${esc(k.kind)}"><a class="ki" href="${esc(k.href)}"><img src="${esc(k.img)}" alt=""></a>`
     + `<div class="kt"><a class="kn" href="${esc(k.href)}">${esc(k.name)}</a><span class="kc">${esc(k.catalog)}</span></div>`
-    + `<a href="#" class="pk" data-on="0" data-pin="${esc(k.remove)}" data-where="${esc(k.where)}" onclick="return kxRm(this)">Remove from ${esc(k.where)}</a></div>`).join('');
+    + `<a href="#" class="pk" data-on="0" data-pin="${esc(k.remove)}" data-where="${esc(k.where)}" onclick="return kxRm(this)">${icon('pin')}Remove from ${esc(k.where)}</a></div>`).join('');
   return detailCards.section('kept', 'pin', 'Kept now', rows ? `<div class="kl">${rows}</div>` : `<p class="mu">${KEPT_NONE}</p>`, kept.length ? `<span class="kcount">${kept.length}</span>` : '');
 }
 // Remove: the catalogue's own request (POST to its unkeep / unpin URL, the same message box as the catalogue's button), then the hub
