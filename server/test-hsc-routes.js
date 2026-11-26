@@ -82,7 +82,7 @@ const tests = {
     const w = world();
     assert.deepStrictEqual(w.h.onClear(SH, 5500), [9000100, 9000101]);
     const ms = w.presents.filter((p) => /points/.test(p.comment));
-    assert.deepStrictEqual(ms.map((p) => [p.type, p.num, p.comment]), [[2, 5, 'High Score Challenge: Spring Cup - 1,000 points'], [4, 1000, 'High Score Challenge: Spring Cup - 5,000 points']]);
+    assert.deepStrictEqual(ms.map((p) => [p.type, p.num, p.comment]), [[2, 5, 'High Score Challenge: Spring Cup: 1,000 points'], [4, 1000, 'High Score Challenge: Spring Cup: 5,000 points']]);
     assert.deepStrictEqual(w.player.hsc['H-1'].milestones, [1000, 5000]);
     assert.deepStrictEqual(w.h.onClear(SH, 5800), [], 'already paid');
     assert.deepStrictEqual(w.h.onClear(SH, 1200), [], 'a lower run');
@@ -94,12 +94,12 @@ const tests = {
     const w = world();
     w.h.onClear(SH, 2500);
     const br = () => w.presents.filter((p) => !/points/.test(p.comment));
-    assert.deepStrictEqual(br(), [{ type: 2, id: 0, num: 5, comment: 'High Score Challenge: Spring Cup - 51st - 100th' }]);
+    assert.deepStrictEqual(br(), [{ type: 2, id: 0, num: 5, comment: 'High Score Challenge: Spring Cup: 51st - 100th' }]);
     w.h.onClear(SH, 2600);
     assert.strictEqual(br().length, 1, 'same bracket: nothing more');
     w.h.onClear(SH, 9500);
-    assert.deepStrictEqual(br().slice(1), [{ type: 2, id: 0, num: 45, comment: 'High Score Challenge: Spring Cup - 1st - 10th' },
-      { type: 3, id: 90011, num: 1, comment: 'High Score Challenge: Spring Cup - 1st - 10th', skillId: 7, skillLv: 2 }]);
+    assert.deepStrictEqual(br().slice(1), [{ type: 2, id: 0, num: 45, comment: 'High Score Challenge: Spring Cup: 1st - 10th' },
+      { type: 3, id: 90011, num: 1, comment: 'High Score Challenge: Spring Cup: 1st - 10th', skillId: 7, skillLv: 2 }]);
     assert.deepStrictEqual([w.player.hsc['H-1'].best, w.player.hsc['H-1'].paidIndex], [9500, 2]);
     // the Present Box draws the comment with the game font, which has no em / en dash (as the Coliseum, bench 25-11)
     assert.ok(w.presents.some((p) => /points/.test(p.comment)), 'milestone texts checked too');
@@ -265,7 +265,7 @@ function wiring() {
     assert.strictEqual(call(t.respondMyPage).rankingRewards.rankingHighScore, 0);
     const own = call((res) => t.hsc().respondRanking(res, '/ranking/highscore/own')).highscoreRankingOwn.rankingDatas[0];
     assert.deepStrictEqual([own.rank, own.lux, typeof own.userData.user, Array.isArray(own.userMedals), 'emblemIds' in own], [51, 2500, 'object', true, true]);
-    assert.ok((p.presents || []).some((x) => x.comment === 'High Score Challenge: Spring Cup - 51st - 100th' && x.number === 5));
+    assert.ok((p.presents || []).some((x) => x.comment === 'High Score Challenge: Spring Cup: 51st - 100th' && x.number === 5));
     console.log('ok wiring_hsc');
   } finally {
     fs.readFileSync = readFile;

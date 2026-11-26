@@ -7,7 +7,7 @@
 // thresholds); the kept (Event Catalog) play counts for its own event id (HSC quests are never shared, make-events.js).
 // Delivery (user gate 16-11):
 //   - a run that reaches a new bracket pays the difference vs the bracket already paid (rewardsDue) into the Presents, text
-//     «High Score Challenge: <event> - <bracket>», and arms the original «Score Ranking Results» popup: /ranking/reward/check sends
+//     «High Score Challenge: <event>: <bracket>», and arms the original «Score Ranking Results» popup: /ranking/reward/check sends
 //     it once ({lastRankingResults [{lastRankingId, lastRank, lastUnionRank 0, pvpClass 0}], rankingRewardIds, openRankingIds}),
 //     the next time the player opens Rankings, then never again;
 //   - each newly reached point milestone (evScoreReward) is paid into the Presents once per event id and returned in /stage/clear
@@ -67,7 +67,7 @@ function routesHsc({ player, savePlayer, entryOfStage, listed, addPresent, maste
     const st = (player.hsc ||= {})[cid] = { ...(cur || {}), best: r.best, paidIndex: r.paidIndex, milestones: [...((cur && cur.milestones) || [])] };
     const before = cur ? cur.paidIndex : -1;
     if (r.paidIndex > before) { // a new bracket: its popup even when it adds no new items (review round 1, Minor 1)
-      const text = `High Score Challenge: ${nameOf(e)} - ${bracketText(h.brackets[r.paidIndex])}`;
+      const text = `High Score Challenge: ${nameOf(e)}: ${bracketText(h.brackets[r.paidIndex])}`;
       for (const x of r.due) pay(x, text);
       st.result = { rankingId: h.rankingId, rank: ranked.shownRank(h.thresholds, r.best), rankingRewardId: rankingRewardIdOf(e, r.paidIndex) };
       log(`[hsc] ${cid}: score ${n}, best ${r.best}: bracket ${bracketText(h.brackets[r.paidIndex])} paid (${r.due.map((x) => `type ${x.type} id ${x.id || 0} x${x.num}`).join(', ')})`);
@@ -75,7 +75,7 @@ function routesHsc({ player, savePlayer, entryOfStage, listed, addPresent, maste
     const ids = [];
     for (const m of [...(h.milestones || [])].sort((a, b) => a.score - b.score)) {
       if (r.best < m.score || st.milestones.includes(m.score)) continue;
-      for (const x of m.rewards || []) pay(x, `High Score Challenge: ${nameOf(e)} - ${m.score.toLocaleString('en-US')} points`);
+      for (const x of m.rewards || []) pay(x, `High Score Challenge: ${nameOf(e)}: ${m.score.toLocaleString('en-US')} points`);
       st.milestones.push(m.score);
       if (m.scoreRewardId) ids.push(m.scoreRewardId);
       log(`[hsc] ${cid}: milestone ${m.score} points paid`);
