@@ -13,7 +13,7 @@
 const special = require('./special-pages');
 const parts = require('./catalog-pages');
 
-const { CSS: SPECIAL_CSS, esc, monthYear, icon, MATCH_JS, entryYears, GAME_YEARS, YEAR_SPAN } = special;
+const { CSS: SPECIAL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN } = special;
 const { PAGE_HEAD, pill, keepJs, FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet } = parts;
 const BASE = '/web/colosseum', WHERE = 'the Coliseum';
 const UNLOCK_QUEST = 130; // routes-colosseum.js UNLOCK_QUEST (not required here: the page module stays free of the routes)
@@ -102,10 +102,9 @@ const FJS = '(function(){var LAB=__LAB__,SETS=__SETS__,PN=__PN__;' + MATCH_JS
   + "$('sum').onclick=function(e){var t=e.target;while(t&&t!==this&&!at(t,'data-x'))t=t.parentNode;var x=at(t,'data-x');if(!x)return;e.preventDefault();"
   + "if(x==='show'||x==='all')cur.show='all';if(x==='bd'||x==='all')cur.bd='all';if(x==='tr'||x==='all')cur.tr='all';if(x==='q'||x==='all')cur.q='';render();};"
   + 'window.kxRender=render;window.kxFilter=function(s){cur=blank();for(var k in s)cur[k]=s[k];render();};render();})();';
-// the game years of a season (Year tabs, user 26-11): every game year its month touches (special-pages.js entryYears, the rule of
-// the Special Catalog for an entry across April 7): April 2017 = Launch year and Year 2
-const yearsOf = (row) => { const [y, m] = row.month.split('-').map(Number);
-  return entryYears({ campaign: { start: `${row.month}-01`, end: new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10) } }); };
+// the game year of a season (Year tabs, user 26-11: «as in the other catalogs»): the year of its start, the rule of the Raid / Event /
+// Special cards (gameYearOf(start)): April 2017 starts on April 1, so it is in the Launch year. A list, as data-p is matched by word
+const yearsOf = (row) => [gameYearOf(`${row.month}-01`)];
 // FIND names of a row: the month («May 2016») and its board names
 const searchOf = (row, boards) => [monthYear(`${row.month}-01`), ...boards].join(' | ');
 // the state a row returns to when it is not kept (routes-colosseum.js catalogCard base; a row without one: «can» when kept)

@@ -219,26 +219,31 @@ const tests = {
     assert.ok(html.includes('.fbtn{flex:0 0 auto!important'), 'the phone header keeps the Filters button on the title line');
   },
   // Year tabs (user 26-11, I-328): the game years of the other catalogs (gacha.js GAME_YEARS, April 7 to April 7), «All years» first,
-  // a tab only for a year with seasons; a season is under every game year its month touches (special-pages.js entryYears): April
-  // 2017 (1st-30th) is in the Launch year and in Year 2
+  // a tab only for a year with seasons; a season is in the game year of its start, as the Raid / Event / Special cards (April 2017
+  // starts on April 1: Launch year)
   year_tabs() {
+    const tabsOf = (html) => [...html.matchAll(/<button type="button" class="tab[^"]*" data-p="(\w+)"><b>([^<]+)<\/b><small>[^<]*<\/small><span class="c" id="tc\w+">(\d+)<\/span>/g)].map((m) => [m[1], m[2], Number(m[3])]);
     const html = pages.catalogPage(SEASONS13, CTX);
-    const tabs = [...html.matchAll(/<button type="button" class="tab[^"]*" data-p="(\w+)"><b>([^<]+)<\/b><small>[^<]*<\/small><span class="c" id="tc\w+">(\d+)<\/span>/g)].map((m) => [m[1], m[2], Number(m[3])]);
-    assert.deepStrictEqual(tabs, [['all', 'All years', 13], ['0', 'Launch year', 13], ['1', 'Year 2', 1]]);
+    assert.deepStrictEqual(tabsOf(html), [['all', 'All years', 13], ['0', 'Launch year', 13]], 'the 13 seasons: Launch year only');
     assert.ok(/<div class="tabs" id="tabs">[\s\S]*?<\/div><div class="tabline"><\/div>/.test(html), 'tabs + tab line as the other catalogs');
-    assert.ok(rowHtml(html, 2000).includes('data-p="0 1"') && rowHtml(html, 1500).includes('data-p="0"'));
-    const p = fakePage(html);
+    assert.ok(rowHtml(html, 2000).includes('data-p="0"') && rowHtml(html, 1500).includes('data-p="0"'), 'April 2017: the year of its start');
+    // a later season (2017-05, Year 2) gets its own tab; switching tabs hides the other year's rows
+    const more = [...SEASONS13, row(2100, '2017-05', 'later', { base: 'later', boards: 'todo' })];
+    const h2 = pages.catalogPage(more, CTX);
+    assert.deepStrictEqual(tabsOf(h2), [['all', 'All years', 14], ['0', 'Launch year', 13], ['1', 'Year 2', 1]]);
+    const p = fakePage(h2);
     const shown = () => p.rows.filter((r) => !/ hide/.test(r.className)).map((r) => Number(r.attrs['data-eid']));
-    assert.strictEqual(shown().length, 13, 'All years');
+    assert.strictEqual(shown().length, 14, 'All years');
     p.win.kxFilter({ p: '1' });
-    assert.deepStrictEqual(shown(), [2000], 'Year 2: April 2017 only');
+    assert.deepStrictEqual(shown(), [2100], 'Year 2');
     assert.ok(p.el('sum').innerHTML.includes('1 season') && p.el('sum').innerHTML.includes('in <b>Year 2</b>'), p.el('sum').innerHTML);
     p.win.kxFilter({ p: '0' });
-    assert.strictEqual(shown().length, 13, 'Launch year: every season (April 2017 too)');
+    assert.strictEqual(shown().length, 13, 'Launch year (April 2017 included, May 2017 not)');
+    assert.ok(!shown().includes(2100));
     // tabs and filters together: tab counts follow the filters, the tab stays
     p.win.kxFilter({ p: '1', show: 'later' });
-    assert.deepStrictEqual(shown(), [2000]);
-    assert.deepStrictEqual([p.el('tcall').textContent, p.el('tc0').textContent, p.el('tc1').textContent].map(String), ['4', '4', '1'], 'counts of the filtered seasons per tab');
+    assert.deepStrictEqual(shown(), [2100]);
+    assert.deepStrictEqual([p.el('tcall').textContent, p.el('tc0').textContent, p.el('tc1').textContent].map(String), ['5', '4', '1'], 'counts of the filtered seasons per tab');
     p.win.kxFilter({ p: '1', show: 'can' });
     assert.deepStrictEqual(shown(), []);
     assert.ok(p.el('none').textContent.includes('No seasons match'));
