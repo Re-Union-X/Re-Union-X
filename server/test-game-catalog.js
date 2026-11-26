@@ -87,7 +87,7 @@ run('wallet_chip_coin_icon', () => {
 // «Kept now» (user 26-11): one compact line per kept item with its card, name, catalogue, detail link and the catalogue's own Remove
 run('hub_kept_section', () => {
   const kept = [{ kind: 'raid', catalog: 'Raid Catalog', name: 'Darkside · Tier 3', img: '/web/raid/img/v1/8100.png', href: '/web/raid/raid/8100?from=catalog',
-    remove: '/web/raid/unkeep', where: 'Events' }, { kind: 'special', catalog: 'Special Catalog', name: 'Quest <1>', img: '/web/special/img/v9/7060.png',
+    remove: '/web/raid/unkeep', where: 'Events' }, { kind: 'special', catalog: 'Special Catalog', name: 'Quest <1>', img: '/web/special/img/v10/7060.png',
     href: '/web/special/quest/7060?from=catalog', remove: '/web/special/unpin', where: 'Special' }];
   const html = pages.hubPage(CARDS, kept);
   assert.ok(html.indexOf('id="sec-kept"') > 0 && html.indexOf('id="sec-kept"') < html.indexOf('<div id="rows">'), 'the section above the catalogues');

@@ -110,7 +110,7 @@ try:
     brown = lambda p: p[0] < 110 and p[1] < 80 and p[2] < 40 and p[0] > p[2]  # noqa: E731
     check(sum(brown(p) for p in pixels(title)) > 800, 'catalog title with a brown outline')
     yellow = lambda p: p[0] > 230 and p[1] > 215 and p[2] < 90  # noqa: E731
-    check(sum(yellow(p) for p in pixels(cat.crop((440, 0, 640, 140)))) > 300, 'TRAINING sticker (yellow burst) on the right')
+    check(m.special_option('B').info.get('sticker_box') is None, 'no TRAINING sticker on the Special Catalog banner (user 26-11)')
     bare = m.catalog_banner(os.path.join(tmp, 'nothing'), None).convert('RGB')
     check(mean(ImageChops.difference(cat, bare)) > 8, 'catalog background made of the original banners (differs without them)')
     if os.path.isdir(m.ENEMIES):
@@ -305,6 +305,13 @@ try:
     check(redp(k70.getpixel((4, 22))), 'build_raid: KEPT RAID tab in the Raid Catalog red %s' % (k70.getpixel((4, 22)),))
     empty = os.path.join(tmp, 'raid_none')
     check(m.build_raid({'entries': [{'evStageId': 8070}]}, empty, 'full') == {'catalog': 0, 'kept': 0, 'missing': 1}, 'no card, no index catalog')
+    # user 26-11: the five catalogue banners say what the catalogue holds, no «Training Grounds» line, no TRAINING sticker
+    check(m.CATALOG_SUB == 'Every Special quest and VIP campaign' and m.RAID_CATALOG_SUB == 'Every raid boss, tier and Raid Board'
+          and m.EVENT_CATALOG_SUB == 'Every event, its quests and Event Boards' and m.AVATAR_CATALOG_SUB == 'Every limited Avatar Board'
+          and m.COLOSSEUM_CATALOG_SUB == 'Every Coliseum season, one a month', 'catalogue subtitles describe the catalogue')
+    check(not any('Training' in s or 'Tap:' in s for s in (m.CATALOG_SUB, m.RAID_CATALOG_SUB, m.EVENT_CATALOG_SUB, m.AVATAR_CATALOG_SUB, m.COLOSSEUM_CATALOG_SUB)),
+          'no Training Grounds in the five subtitles')
+    check(m.GAME_CATALOG_SUB == 'Tap: Training Grounds · Details: all catalogs', 'Game Catalog subtitle kept')
     # Catalog options (user 06-11): every option 640x140, gold frame, gold title left of the TRAINING sticker, all different
     opts = {}
     for k in ('special', 'raid', 'event'):
@@ -315,9 +322,7 @@ try:
             tb = o.info.get('title_box')
             check(tb is not None and tb[2] <= m.TITLE_MAX_RIGHT and tb[0] >= 10, '%s %s title box %s left of the sticker' % (k, st, tb))
             sb, fi = o.info.get('sticker_box'), m.FRAME_INNER
-            check(sb is not None and fi[0] <= sb[0] and fi[1] <= sb[1] and sb[2] <= fi[2] and sb[3] <= fi[3],
-                  '%s %s TRAINING mark %s inside the frame %s' % (k, st, sb, fi))
-            check(sb is not None and tb is not None and tb[2] < sb[0], '%s %s title %s clear of the mark %s' % (k, st, tb, sb))
+            check(sb is None, '%s %s: no TRAINING sticker (user 26-11)' % (k, st))
             out_ = [b for b in o.info.get('pieces', []) if not (fi[0] <= b[0] and fi[1] <= b[1] and b[2] <= fi[2] and b[3] <= fi[3])]
             check(o.info.get('pieces') and not out_, '%s %s art pieces inside the frame (out: %s)' % (k, st, out_))
             check(o.convert('RGB').getpixel((1, 70)) == m.FAMILY_GOLD[:3] and o.convert('RGB').getpixel((320, 138)) == m.FAMILY_GOLD[:3],
@@ -345,8 +350,7 @@ try:
         tb = o.info.get('title_box')
         check(tb is not None and tb[2] <= m.TITLE_MAX_RIGHT, 'raid %s title clear of the sticker %s' % (v, tb))
         sb, fi = o.info.get('sticker_box'), m.FRAME_INNER
-        check(sb is not None and fi[0] <= sb[0] and fi[1] <= sb[1] and sb[2] <= fi[2] and sb[3] <= fi[3] and tb[2] < sb[0],
-              'raid %s TRAINING mark %s inside the frame, clear of the title' % (v, sb))
+        check(sb is None, 'raid %s: no TRAINING sticker' % v)
         pc = o.info.get('pieces') or []
         check(pc and all(fi[0] <= b[0] and fi[1] <= b[1] and b[2] <= fi[2] and b[3] <= fi[3] for b in pc), 'raid %s boss inside the frame %s' % (v, pc))
         if os.path.isdir(m.RAID_RIGS):

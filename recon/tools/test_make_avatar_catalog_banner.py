@@ -40,7 +40,8 @@ try:
     check(o.size == (640, 140), 'size %s' % (o.size,))
     tb, sb, fi = o.info.get('title_box'), o.info.get('sticker_box'), m.FRAME_INNER
     check(tb is not None and tb[0] >= 10 and tb[2] <= m.TITLE_MAX_RIGHT, 'title box %s left of the TRAINING sticker' % (tb,))
-    check(sb is not None and fi[0] <= sb[0] and fi[1] <= sb[1] and sb[2] <= fi[2] and sb[3] <= fi[3], 'TRAINING sticker inside the frame')
+    check(sb is None, 'no TRAINING sticker on the Avatar Board Catalog')
+    check(m.AVATAR_COIN[-1] == 'IncentiveIcon_14.png', 'Avatar Coin is type 14, not the VIP Coin')
     out_ = [b for b in o.info.get('pieces', []) if not (fi[0] <= b[0] and fi[1] <= b[1] and b[2] <= fi[2] and b[3] <= fi[3])]
     check(len(o.info.get('pieces', [])) >= len(m.AVATAR_CARDS) + 1 and not out_, 'board cards and coins inside the frame (out: %s)' % out_)
     check(rgb.getpixel((1, 70)) == m.FAMILY_GOLD[:3] and rgb.getpixel((320, 138)) == m.FAMILY_GOLD[:3], 'gold frame')

@@ -350,7 +350,7 @@ function artLines(boardIds) {
 // Details -> CATALOG_URL (colosseum-pages.js), a tap opens the Training Grounds quest CATALOG_STAGE of make-special (the stage of
 // the Raid and Event Catalog banners too); the card game_data/colosseum_img/6000.png (recon/tools/make_special_banners.py
 // --section colosseum). After a change of the cards bump COLOSSEUM_IMG_VERSION, then the master revision.
-const CATALOG_EV = 6000, CATALOG_STAGE = 970000, CATALOG_URL = '/web/colosseum/catalog', COLOSSEUM_IMG_VERSION = 2;
+const CATALOG_EV = 6000, CATALOG_STAGE = 970000, CATALOG_URL = '/web/colosseum/catalog', COLOSSEUM_IMG_VERSION = 3;
 const RANGES = {
   colosseumStage: ['colosseumStageId', 1, 9999], colosseum: ['colosseumId', 1, 99999],
   stage: ['id', 81001, 81999], // stageKind 3, stageId YYYYMMNN

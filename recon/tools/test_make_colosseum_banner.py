@@ -56,7 +56,7 @@ try:
     check(rgb.getpixel((1, 70)) == m.FAMILY_GOLD[:3] and rgb.getpixel((320, 138)) == m.FAMILY_GOLD[:3], 'gold frame of the catalogue family')
     tb, sb = cat.info.get('title_box'), cat.info.get('sticker_box')
     check(tb is not None and tb[0] >= 10 and tb[2] <= m.COLOSSEUM_TITLE_RIGHT, 'title %s left of the art (%d)' % (tb, m.COLOSSEUM_TITLE_RIGHT))
-    check(sb is not None and inside(sb) and tb[2] < sb[0], 'TRAINING sticker %s inside the frame, clear of the title' % (sb,))
+    check(sb is None, 'no TRAINING sticker on the Coliseum Catalog')
     pc = cat.info.get('pieces') or []
     check(len(pc) == 3 and all(inside(b) for b in pc), 'panel, coin and crown inside the frame %s' % (pc,))
     check(all(b[0] >= m.COLOSSEUM_TITLE_RIGHT for b in pc), 'the art keeps clear of the title %s' % (pc,))
@@ -79,7 +79,7 @@ try:
     sc = m.colosseum_season_card('2016-04', pieces)
     src = sc.convert('RGB')
     check(sc.size == (640, 140) and src.getpixel((1, 70)) == m.FAMILY_GOLD[:3], 'season card 640x140 with the gold frame')
-    check(mean(ImageChops.difference(src.crop(sb), rgb.crop(sb))) > 20, 'no TRAINING sticker on a season card')
+    check(sc.info.get('sticker_box') is None, 'no TRAINING sticker on a season card')
     check(mean(ImageChops.difference(src, m.colosseum_season_card('2016-05', pieces).convert('RGB'))) > 1, 'the month changes the card')
     check(all(inside(b) for b in sc.info.get('pieces') or [(0, 0, 999, 999)]), 'season card pieces inside the frame')
 

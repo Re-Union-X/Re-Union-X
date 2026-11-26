@@ -62,16 +62,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 ROOT = os.path.dirname(os.path.dirname(REPO))
 KEPT_TEXT = 'KEPT QUEST'
-CATALOG_TITLE, CATALOG_SUB = 'SPECIAL CATALOG', 'Tap: Training Grounds · Details: all quests'
+CATALOG_TITLE, CATALOG_SUB = 'SPECIAL CATALOG', 'Every Special quest and VIP campaign'
 # Raid Catalog (raids Part 2, Task 9): banner evStage 8000 in game_data/raid_img, kept raid cards <evStageId>-kept.png
-RAID_CATALOG_EV, RAID_CATALOG_TITLE, RAID_CATALOG_SUB = 8000, 'RAID CATALOG', 'Tap: Training Grounds · Details: all raids'
+RAID_CATALOG_EV, RAID_CATALOG_TITLE, RAID_CATALOG_SUB = 8000, 'RAID CATALOG', 'Every raid boss, tier and Raid Board'
 RAID_KEPT_TEXT, RAID_STRIPS = 'KEPT RAID', 5
 # Raid Catalog bosses (redesign 06-11): original raid boss rigs (lwf/character/raid/<model>/wait, LWF + textures of the game
 # data, local only, --raid-rigs) as (model, height, centre x, baseline y, dark shade 0-1); back row first
 RAID_RIGS = os.path.join(ROOT, 'tmp', 'raid_p2', 'files', 'lwf', 'character', 'raid')
 RAID_BOSSES = [('1009', 80, 596, 86, .3), ('1005', 114, 418, 124, .2), ('0004', 116, 500, 140, 0), ('0013', 104, 594, 142, 0)]
 # Event Catalog (Events Part 1, Task 6): banner evStage 20000 in game_data/event_img, kept event cards <evStageId>-kept.png
-EVENT_CATALOG_TITLE, EVENT_CATALOG_SUB = 'EVENT CATALOG', 'Tap: Training Grounds · Details: all events'
+EVENT_CATALOG_TITLE, EVENT_CATALOG_SUB = 'EVENT CATALOG', 'Every event, its quests and Event Boards'
 EVENT_KEPT_TEXT = 'KEPT EVENT'
 # originals cut into the oblique strips of the catalogue banner (reference\special_banners; missing ones are skipped)
 CATALOG_STRIPS = [
@@ -933,7 +933,7 @@ def left_shade(im, rgb, strength=150, width=380):
     return Image.alpha_composite(im, dark)
 
 
-def family_finish(im, title, sub, ink, max_right=None):
+def family_finish(im, title, sub, ink, max_right=None, training=False):
     """the common part of every catalogue card: gold title (the old Raid Catalog lettering) as large as fits left of the
     TRAINING sticker (or of max_right: a long title that must leave its art clear, Avatar Board Catalog), the white subtitle,
     the sticker in the top right corner and the square gold frame. im.info['title_box'] = the title's box (tests: never under
@@ -948,9 +948,12 @@ def family_finish(im, title, sub, ink, max_right=None):
     gold_text(im, (20, 52), title, f, outline=6)
     ImageDraw.Draw(im).text((22, 108), sub, font=make_shop_art.font(19), anchor='lm', fill=(255, 255, 255, 255),
                             stroke_width=3, stroke_fill=tuple(ink) + (255,))
-    st, xy, sbox = family_sticker()
-    im.alpha_composite(st, xy)
-    im.info['sticker_box'] = sbox
+    if training:   # only the Game Catalog banner (a tap opens the Training Grounds, user 26-11); the five catalogues carry none
+        st, xy, sbox = family_sticker()
+        im.alpha_composite(st, xy)
+        im.info['sticker_box'] = sbox
+    else:
+        im.info['sticker_box'] = None
     ImageDraw.Draw(im).rectangle((1, 1, 638, 138), outline=FAMILY_GOLD, width=3)
     im.info['title_box'] = m.getbbox()
     im.info['pieces'] = list(_ART_BOXES)
@@ -1113,20 +1116,17 @@ def event_option(style, coin=None):
 # composed of original pieces): the gold card of the Special tab (evStage = event_ids.json rows['@avatarBoardCatalog'], written by
 # make_avatar_catalog_banner.py to game_data/event_img). Pieces: original avatar board cards (the 306x306 sphere_incentive cards
 # served to the client, raid_loc/img/sphere_incentive_av/<donorId>.png, local only) and the Avatar Coin of the game UI (the gold
-# heart coin, img/incentive/IncentiveIcon_30.png of the local JP 4.3.1 data, the same coin as SpherePointIcon_VIP)
-AVATAR_CATALOG_TITLE, AVATAR_CATALOG_SUB = 'AVATAR BOARD CATALOG', 'Tap: Training Grounds · Details: all boards'
+# heart coin, img/incentive/IncentiveIcon_14.png: type 14; _30 is the VIP Coin)
+AVATAR_CATALOG_TITLE, AVATAR_CATALOG_SUB = 'AVATAR BOARD CATALOG', 'Every limited Avatar Board'
 AVATAR_CARDS_DIR = os.path.join(ROOT, 'raid_loc', 'img', 'sphere_incentive_av')
 AVATAR_CARDS = (2510033, 2510032, 2510037)     # Formal Minnie (back left), Formal Mickey (front), Ariel (back right)
-AVATAR_COIN = ('img', 'incentive', 'IncentiveIcon_30.png')
+AVATAR_COIN = ('img', 'incentive', 'IncentiveIcon_14.png')
 AVATAR_INK = (96, 52, 0)
 
 
 def avatar_coin_path():
-    try:
-        import private_tools
-        return private_tools.local_path('jp_data', *AVATAR_COIN)
-    except Exception:  # noqa: BLE001 - no local data: no coin
-        return None
+    """the Avatar Coin (type 14, not the VIP Coin _30): coin_icons copy, bundle 2016 or JP data; None when missing"""
+    return _game_avatar_coin()
 
 
 AVATAR_TITLE_RIGHT = 424   # the long title ends here: the coins and the avatars keep the right part of the card
@@ -1199,7 +1199,7 @@ def build_avatar(evstage, event_img, cards_dir=None, coin=None):
 # Events tab). Output: server/game_data/colosseum_img (git-ignored). After a change bump COLOSSEUM_IMG_VERSION (server/make-colosseum.js),
 # then the master revision.
 COLOSSEUM_CATALOG_EV = 6000
-COLOSSEUM_CATALOG_TITLE, COLOSSEUM_CATALOG_SUB = 'COLISEUM CATALOG', 'Tap: Training Grounds · Details: all seasons'
+COLOSSEUM_CATALOG_TITLE, COLOSSEUM_CATALOG_SUB = 'COLISEUM CATALOG', 'Every Coliseum season, one a month'
 COLOSSEUM_SEASON_SUB = 'Coliseum season'
 COLOSSEUM_TOP, COLOSSEUM_BOT = (70, 150, 226), (10, 36, 104)     # Olympus sky blue -> deep navy
 COLOSSEUM_INK = (10, 30, 80)
@@ -1436,7 +1436,7 @@ def game_option(style='A', pieces=None):
     if chi is not None:
         im = paste_shadowed(im, chi, (604 - chi.width / 2, 140 - 82 / 2 - 6 - chi.height / 2), **shadow)
     im = _game_sparkle(im, [(530, 76, 2.4), (486, 30, 1.4), (580, 128, 1.2)], (255, 250, 220))
-    return family_finish(left_shade(im, (14, 8, 50), 175, 420), GAME_CATALOG_TITLE, GAME_CATALOG_SUB, GAME_INK, GAME_TITLE_RIGHT)
+    return family_finish(left_shade(im, (14, 8, 50), 175, 420), GAME_CATALOG_TITLE, GAME_CATALOG_SUB, GAME_INK, GAME_TITLE_RIGHT, training=True)
 
 
 def build_game(out_dir, pieces=None):
