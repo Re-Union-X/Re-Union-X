@@ -71,7 +71,7 @@ const SUMMARY = {
   ],
   'Differences from the original game': [
     'Re-Union X works **completely offline**: no other players and nothing is sold.',
-    'Your **Story** is your calendar: Shop, Raids, Events and Special Quests show one week at a time.',
+    'Your **Story** is your calendar: each Story period lasts several weeks, and Shop, Raids, Events and Special Quests show one week of it at a time.',
   ],
   'Differences in detail': [
     'Every rule that differs from the original game, topic by topic.',
