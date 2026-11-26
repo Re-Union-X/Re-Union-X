@@ -265,7 +265,7 @@ function wiring() {
     const html = hub();
     const row = (kind) => (new RegExp(`<div class="kr" id="k-${kind}">[^]*?</div></div>`).exec(html) || [''])[0];
     assert.ok(row('colosseum').includes('href="/web/colosseum/season/800?from=catalog"') && row('colosseum').includes('Coliseum · April 2016')
-      && row('colosseum').includes('data-pin="/web/colosseum/unkeep"') && row('colosseum').includes(' from the Coliseum</span>'), `Coliseum row ${row('colosseum')}`);
+      && row('colosseum').includes('data-pin="/web/colosseum/unkeep"') && row('colosseum').includes('>Remove from the Coliseum</a>'), `Coliseum row ${row('colosseum')}`);
     if (raidId) assert.ok(row('raid').includes(`href="/web/raid/raid/${raidId}?from=catalog"`) && row('raid').includes(`/web/raid/img/v`) && row('raid').includes('data-pin="/web/raid/unkeep"'), 'raid row');
     if (evId) assert.ok(row('event').includes(`href="/web/event/event/${evId}?from=catalog"`) && row('event').includes('data-pin="/web/event/unkeep"'), 'event row');
     if (spId) assert.ok(row('special').includes(`href="/web/special/quest/${spId}?from=catalog"`) && row('special').includes('data-pin="/web/special/unpin"'), 'special row');
