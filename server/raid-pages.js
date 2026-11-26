@@ -106,7 +106,8 @@ function statusOf(row, ctx) {
   return { show: 'later', cls: 'off', pill: pill('off', 'later', text), button: null, why };
 }
 const keepButton = (id, on, extra = '', cls = '') => parts.keepButton('/web/raid', id, on, extra, cls);
-const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css');
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
 const KEEP_JS = keepJs('/web/raid', 'raid');
 
 // ES5, no external script. Rows read once at start; a period tab, a year chip and the Filters sheet only toggle a class.
@@ -473,7 +474,8 @@ function detailPage(index, evStageId, ctx = {}) {
   const st = statusOf(row, ctx), kept = keptRow(rows, ctx), title = titleOf(row), periods = ctx.periods;
   const button = st.button === null ? '' : `<div>${keepButton(row.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', DETAIL_KEEP)}</div>`;
   const pName = GAME_YEARS[gameYearOf(row.start)].name;
-  const kv = [['Dates', dateRange(row)], ['Type', FAMILY_LABEL[row.family] || row.family], ['Game year', pName]].map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
+  // colour roles (detail-cards.js): dates cyan; the tier table by column (detail-cards.js column roles: tier and boss bold, level cyan, HP gold, not built muted)
+  const kv = [['Dates', cards.cyan(esc(dateRange(row)))], ['Type', esc(FAMILY_LABEL[row.family] || row.family)], ['Game year', esc(pName)]].map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
   const tierRows = row.entries.map((e) => `<tr><td>${esc(tierLabel(e.tier))}</td><td>${esc(e.boss || '')}</td><td>${e.level ?? ''}</td>`
     + `<td${e.available ? '' : ' class="r"'}>${e.available ? Number(e.hp || 0).toLocaleString('en-US') : 'Not built yet'}</td></tr>`).join('');
   const ids = [...new Set(row.entries.flatMap((e) => e.sphereBoardIds || []))];
@@ -497,12 +499,13 @@ function detailPage(index, evStageId, ctx = {}) {
   const box = srvBox(row, st, { after: `<div id="pinmsg" class="pinmsg"></div>${replacesLine(st, kept)}${button}`,
     intro: `This server follows your Story, not the calendar: this week of the original game (${esc(dateRange(row))}) opens when your Story reaches it.`,
     rule: RULE_DETAIL, links: [...(notice ? [[`/web/raid/notice/${row.evStageId}?from=raid`, notice]] : []), ['/web/raid/catalog', 'Raid Catalog ›']] });
-  return PAGE_HEAD(title, CSS + DETAIL_CSS + RAID_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
+  return PAGE_HEAD(title, CSS + DETAIL_CSS + RAID_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS + cards.CARD_CSS) + `<body${back ? ' class="hb"' : ''}>`
     + `<h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, row.evStageId)}" alt="">${box}`
-    + `<h2>Week</h2><table class="kv">${kv}</table>`
-    + `<h2>Tiers</h2><table class="tt"><tr><th>Tier</th><th>Boss</th><th>Quest LV</th><th>Boss HP</th></tr>${tierRows}</table>`
+    // the sections as cards (detail-cards.js cardSections, user 26-11)
+    + cards.cardSections(`<h2>Week</h2><table class="kv">${kv}</table>`
+    + `<h2>Tiers</h2><table class="tt kn1 kn2 kc3 kg4"><tr><th>Tier</th><th>Boss</th><th>Quest LV</th><th>Boss HP</th></tr>${tierRows}</table>`
     + `<p class="n">The boss starts at LV 1 and gains ${stepOf(row) > 1 ? `${stepOf(row)} levels` : 'a level'} at every win${bonusStepText(row)}, up to LV 99; levels reset on the 1st of every month.</p>`
-    + `<h2>Raid Boards</h2>${boards}${other}`
+    + `<h2>Raid Boards</h2>${boards}${other}`)
     + `<p class="n">The Raid Catalog is an addition of this server: in the original game a raid was played only in its own week.</p>${back}<script>${KEEP_JS}</script></body></html>`;
 }
 

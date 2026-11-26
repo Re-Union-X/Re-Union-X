@@ -9,7 +9,8 @@ const special = require('./special');
 // next; Launch year .. Final months; user 06-11): same names, same boundaries, a tab only for a year with rows, no «Now» mark
 // (the Shop has none). Display grouping only: special.PERIODS (Launch .. Last) still drives the unlocks and the entries' periods.
 const { gameYearOf, GAME_YEARS } = require('./gacha');
-const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css');
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
 const YEAR_SPAN = '2016–2021';
 // game years a span of days touches (inclusive)
 const yearsBetween = (from, to) => { const out = []; for (let y = gameYearOf(from); y <= gameYearOf(to); y++) out.push(y); return out; };
@@ -703,7 +704,8 @@ function detailPage(index, evStageId, ctx = {}) {
     return stages.map((s, i) => {
       const info = names.stage(s.stageId), ap = (en.useAp || [])[i];
       const kv = [['AP', ap ?? ''], ['Level', s.wikiLv ?? ''], ['Target', s.target || ''], ['Where', [s.world, s.room].filter(Boolean).join(' · ')]]
-        .filter(([, v]) => v !== '').map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
+        // colour roles (detail-cards.js): AP gold, level cyan
+        .filter(([, v]) => v !== '').map(([k, v]) => `<tr><th>${k}</th><td>${k === 'AP' ? cards.val(esc(v)) : k === 'Level' ? cards.cyan(esc(v)) : esc(v)}</td></tr>`).join('');
       const obj = info && info.objectives.length ? `<h3>Objectives</h3><table class="ob"><tr><th>Objective</th><th>Reward</th></tr>${info.objectives
         .map((o) => `<tr><td>${esc(o.text)}</td><td class="r">${esc(o.reward || '—')}</td></tr>`).join('')}</table>` : '';
       const drops = [...new Set((s.dropRewardIds || []).flatMap((rid) => names.drop(rid)))];
@@ -731,16 +733,18 @@ function detailPage(index, evStageId, ctx = {}) {
       + `${vb.pill}<div class="why ${vb.cls}">${vb.why}</div>${days}${v.length === 1 ? button(v) : ''}</div>`;
   };
   const periodList = periods.filter((p) => f.list.some((en) => en.periods.includes(p.n)))
-    .map((p) => `<li><b>${esc(p.name)}</b> <span class="n">${niceDay(p.from)} – ${niceDay(p.to)}</span></li>`).join('');
-  const details = versions.map((v, vi) => `<details class="vq"${vi === 0 ? ' open' : ''}><summary>Quests · ${esc(verLabel(v))}</summary>`
-    + v.map((en) => `${v.length > 1 ? `<h3>${esc(en.name)}</h3>` : ''}${quests(en)}`).join('') + '</details>').join('');
+    .map((p) => `<li><b>${esc(p.name)}</b> <span class="rd">${niceDay(p.from)} – ${niceDay(p.to)}</span></li>`).join('');
+  // the quest lists stay tap-to-open, as cards (detail-cards.js CARD_CSS details.vq.cs)
+  const details = versions.map((v, vi) => `<details class="vq cs"${vi === 0 ? ' open' : ''}><summary>Quests · ${esc(verLabel(v))}</summary><div class="csb">`
+    + v.map((en) => `${v.length > 1 ? `<h3>${esc(en.name)}</h3>` : ''}${quests(en)}`).join('') + '</div></details>').join('');
   const back = ctx.fromCatalog ? `<div class="bar"><a class="back" href="/web/special/catalog#q${Number(evStageId)}">BACK<span></span></a></div>` : '';
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + `<title>${esc(f.title)}</title><style>${CSS}${DETAIL_CSS}${NARROW_CSS}</style></head><body${back ? ' class="hb"' : ''}>`
+    + `<title>${esc(f.title)}</title><style>${CSS}${DETAIL_CSS}${cards.CARD_CSS}${NARROW_CSS}</style></head><body${back ? ' class="hb"' : ''}>`
     + `<h1>${esc(f.title)}</h1><img class="banner" width="640" height="140" src="${special.imgPath(head.evStageId)}" alt="">`
     + `${best.pill}<div id="pinmsg" class="pinmsg"></div>`
-    + `<h2>Version${versions.length > 1 ? 's' : ''}</h2>${versions.map(block).join('')}`
-    + `<h2>Period${periodList.split('<li>').length > 2 ? 's' : ''}</h2><ul class="pl">${periodList}</ul>`
+    // the sections as cards (detail-cards.js cardSections, user 26-11)
+    + cards.cardSections(`<h2>Version${versions.length > 1 ? 's' : ''}</h2>${versions.map(block).join('')}`
+    + `<h2>Period${periodList.split('<li>').length > 2 ? 's' : ''}</h2><ul class="pl">${periodList}</ul>`)
     + `${details}${back}<script>${PIN_JS}</script></body></html>`;
 }
 

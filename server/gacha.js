@@ -13,7 +13,8 @@
 // player.drawTickets, mai due valute insieme nella lista (9.7).
 'use strict';
 const clock = require('./clock');
-const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css');
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
 const gd = require('./gacha-data');
 const { seasonOf, windowText } = require('./gacha-seasons');
 const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;
@@ -720,8 +721,10 @@ function detailPage(banner, ex, medalNames, ctx) {
   const vip = (banner.vipDraw ? `<p class="k">★ ${esc(VIP_DRAW_TEXT)}</p>` : '') + (isFreeDaily(banner) ? `<p class="k">★ ${esc(FREE_DAILY_TEXT)}</p>` : '');
   const back = ctx?.fromCatalog ? `<div class="bar"><a class="back" href="/web/gacha/catalog#c${banner.drawMedalTypeId}">BACK<span></span></a></div>` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}${vip}`
-    + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek, ctx)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}${pinButton(banner, ctx)}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
-    + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${ctx?.noticeSection || ''}${rates}${back}`, back ? 'hb' : '');
+    + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek, ctx)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}${pinButton(banner, ctx)}`
+    // the sections as cards (detail-cards.js, user 26-11; a heading inside the notice box stays where it is)
+    + cards.cardSections(`<h2>Campaign Period</h2><p>Original banner: ${cards.cyan(dates(banner))}.</p>${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}`)
+    + `${cards.cardSections(`${ctx?.noticeSection || ''}${rates}`)}${back}<style>${cards.CARD_CSS}</style>`, back ? 'hb' : '');
 }
 
 function oddsPage(entries) {

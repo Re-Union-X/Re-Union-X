@@ -14,7 +14,8 @@
 'use strict';
 const special = require('./special-pages');
 const parts = require('./catalog-pages');
-const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css');
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
 
 const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN, CROWN } = special;
 const { PAGE_HEAD, pill, keepJs, FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet, backBar, srvFrame, RULE_CSS, SRV_CSS, FOLD_CSS } = parts;
@@ -226,19 +227,14 @@ function itemText(x, ctx) {
 }
 const rounds = (n) => `<span class="rd">${num(n)} round${n === 1 ? '' : 's'}</span>`;
 const OK = (t) => `<span class="yes">${t}${CROWN}</span>`, MU = (t) => `<span class="mu">${t}</span>`;
-// a section of the page: a card with its header band (the «Original notice» card of the raid notices, catalog-pages.js ONC_CSS)
-const section = (key, ic, title, body, badge = '') => `<div class="cs" id="sec-${key}"><h2 class="csh">${icon(ic)}${esc(title)}${badge}</h2><div class="csb">${body}</div></div>`;
-// the NOT ORIGINAL tag of a section that is an addition of this server: in its header band, as the «On this server» box (srvFrame)
-const NG = '<span class="ng">NOT ORIGINAL</span>';
-const COLI_DETAIL_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06283e;margin:16px 0 12px;overflow:hidden}'
-  + '.cs>h2.csh{margin:0;padding:8px 14px 7px;color:#ffcd4a;font-size:18px;letter-spacing:.03em;background:#0a4466;background:linear-gradient(#0f5a85,#0a4466);border-bottom:2px solid #39a7cf}'
-  + '.cs>h2.csh:before{content:""}.csh .ng{margin-left:10px;vertical-align:3px}.mp>.ng:first-child{margin:0 6px 0 0}.csh .ic{width:1.35em;height:1.35em;margin-right:8px}.csb{padding:6px 10px 8px}.csb>table{margin:4px 0 6px}.csb>p.n{margin:6px 2px 2px}'
-  + '.tt{table-layout:auto}.tt small{display:block;color:#b9cfdc;font-size:13px}.tt td.nw{white-space:nowrap}.tt tr.got td{background:#0d4a3a}'
+// the section cards and colour roles: detail-cards.js (shared with the other catalog detail pages)
+const section = (key, ic, title, body, badge = '') => cards.section(key, ic, esc(title), body, badge);
+const { NG } = cards;
+const COLI_DETAIL_CSS = cards.CARD_CSS + '.mp>.ng:first-child{margin:0 6px 0 0}'
+  + '.tt{table-layout:auto}.tt small{display:block;color:#b9cfdc;font-size:13px}.tt td.nw{white-space:nowrap}'
   + 'td.bc{width:64px;padding-right:0}td.bc img,td.bc .nb{display:block;width:64px;height:64px;border-radius:6px}'
-  + '.v,.cc{color:#ffcd4a;font-weight:bold}.rd{color:#00d4ed;font-weight:bold}.yes{color:#6fd47f;font-weight:bold}.yes .ic{margin-left:4px}.mu{color:#8fa9ba}'
-  + '.tn{color:#fff;font-weight:bold}.it{color:#fff}.sk{color:#b9cfdc;font-size:13px}.bns{color:#ffcd4a;font-size:13px}'
+  + '.cc{color:#ffcd4a;font-weight:bold}.it{color:#fff}.sk{color:#b9cfdc;font-size:13px}.bns{color:#ffcd4a;font-size:13px}'
   + '.kv td b{color:#ffcd4a}.mp{line-height:1.5;margin:2px}.mp b{color:#ffcd4a}.mp a{color:#9fd4ff}'
-  + '.ng{display:inline-block;background:#e0521a;border:1px solid #ffc27a;color:#fff;border-radius:10px;padding:0 8px;font-size:11px;font-weight:bold;letter-spacing:.6px;line-height:1.7;vertical-align:1px}'
   // the Keep / Remove button of the box: compact, as in the other detail pages (phone-css.js sizes .pkd on phones)
   + '.sb .pk.pkd{margin:6px 0 2px}';
 

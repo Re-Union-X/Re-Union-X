@@ -296,6 +296,9 @@ const tests = {
   },
   detail_page() {
     const d = pages.detailPage(index(), 8100, ctx());
+    // section cards (detail-cards.js, user 26-11: the Coliseum season page style) and the colour roles
+    for (const k of ['week', 'tiers', 'raid-boards']) assert(d.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
+    assert(d.includes('<h2>Tiers</h2>') && d.includes('<table class="tt kn1 kn2 kc3 kg4">') && /<td><span class="rd">[^<]+<\/span><\/td>/.test(d), 'colour roles: tier columns, dates cyan');
     assert(/<h1>Trickmaster · Blue Trident Tail<\/h1>/.test(d));
     assert(/src="\/web\/raid\/img\/v3\/8100\.png"/.test(d), 'banner');
     assert(/Oct 7, 2019/.test(d) && /Oct 13, 2019/.test(d), 'dates');

@@ -32,7 +32,8 @@ const BOARD_BASE = '/web/avatar'; // the Avatar Board Catalog (Task 5b)
 const BOARD_WHERE = 'Avatar Boards'; // the screen its kept boards are listed in (keep button and messages)
 const keepButton = (id, on, extra = '', cls = '') => parts.keepButton(BASE, id, on, extra, cls);
 const boardKeepButton = (id, on, extra = '', cls = '') => parts.keepButton(BOARD_BASE, id, on, extra, cls, BOARD_WHERE);
-const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css');
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
 const KEEP_JS = parts.keepJs(BASE, 'event');
 const BOARD_KEEP_JS = parts.keepJs(BOARD_BASE, 'entry', BOARD_WHERE);
 // the pills the page script writes after a keep / remove: [row class, html]; the Avatar Board Catalog has its own
@@ -594,7 +595,7 @@ function hscSection(e, ctx) {
   const medalName = (m) => m.name || (ctx.itemName && ctx.itemName({ type: 3, id: m.medalId, num: 1 })) || `Medal ${m.medalId}`;
   const bonus = medals.length
     ? '<h3>Score bonus medals</h3><p class="n">A medal of this list in your deck raises the score of every run by its bonus (the original list of the event).</p>'
-      + `<table class="tt hs"><tr class="hh"><th>Medal</th><th>Bonus</th><th>Shown in</th></tr>${medals.map((m) => `<tr class="bm"><td>${esc(medalName(m))}</td><td data-l="Bonus">+${m.rate / 100}%</td>`
+      + `<table class="tt hs kn1 kg2"><tr class="hh"><th>Medal</th><th>Bonus</th><th>Shown in</th></tr>${medals.map((m) => `<tr class="bm"><td>${esc(medalName(m))}</td><td data-l="Bonus">+${m.rate / 100}%</td>`
       + `<td data-l="Shown in">${m.display ? `Deck slot ${m.display}` : 'Medals list'}</td></tr>`).join('')}</table>`
     : pct.length ? `<p class="n">Score-bonus medals of the original event (${pct.map((x) => `+${x}%`).join(', ')}): not built yet.</p>` : '';
   return `<h2>High Score</h2>${mine}<h3>Score thresholds</h3>`
@@ -602,8 +603,8 @@ function hscSection(e, ctx) {
     + "when your best run reaches it you receive that bracket's original rewards, once (only the highest bracket reached; a better run later pays the difference). "
     + `The rank shown is the best rank of the bracket you reached. Below ${num(thr[0].score)} points your rank shows as ${ordinal(shownRank(thr, -Infinity))}; `
     + `1st from ${num(top.score)} points.</p>`
-    + `<table class="tt hs"><tr class="hh"><th>Original ranks</th><th>Score</th><th>Rank shown</th><th>Source</th><th>Rewards</th></tr>${thRows}</table>`
-    + (msRows ? `<h3>Point milestones</h3><p class="n">The original milestones: each pays once when your score reaches it.</p><table class="tt hs"><tr class="hh"><th>Score</th><th>Rewards</th>${hasBest ? '<th>Status</th>' : ''}</tr>${msRows}</table>` : '')
+    + `<table class="tt hs kn1 kg2 kc3"><tr class="hh"><th>Original ranks</th><th>Score</th><th>Rank shown</th><th>Source</th><th>Rewards</th></tr>${thRows}</table>`
+    + (msRows ? `<h3>Point milestones</h3><p class="n">The original milestones: each pays once when your score reaches it.</p><table class="tt hs kg1"><tr class="hh"><th>Score</th><th>Rewards</th>${hasBest ? '<th>Status</th>' : ''}</tr>${msRows}</table>` : '')
     + bonus;
 }
 
@@ -654,7 +655,7 @@ function avatarBoardsSection(e, ctx, onEventPage = false) {
   const rows = boards.map((b) => `<tr>${card(b)}<td>${esc(b.name)}</td><td>${b.window ? esc(`${niceDay(b.window[0])} – ${niceDay(b.window[1])}`) : '—'}</td><td>${esc(boardPrice(b))}</td>${status(b)}</tr>`).join('');
   const codes = [...new Set((e.avatarBoards || []).flatMap((w) => w.labels || []))];
   const notes = codes.length ? `<ul class="pl">${codes.map((c) => `<li>${esc(BOARD_LABEL_TEXT[c] || c)}</li>`).join('')}</ul>` : '';
-  return `<script>${BOARD_NC_JS}</script><h2>Avatar Boards</h2><table class="tt bt ab"><tr><th></th><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
+  return `<script>${BOARD_NC_JS}</script><h2>Avatar Boards</h2><table class="tt bt ab kn2 kc3 kg4"><tr><th></th><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
     + '<p class="n">A board on sale is bought once with Jewels and stays yours; its nodes are opened with Avatar Coins. In the original game these boards were sold '
     + `only in their dates: on this server a past entry can be kept in the ${onEventPage ? `<a href="${esc(boardLink)}">Avatar Board Catalog ›</a>` : 'Avatar Board Catalog'}, `
     + 'and its boards are listed in Avatar Boards again at their original price (an addition of this server, not original). Keeping it never changes your kept event.</p>';
@@ -688,7 +689,9 @@ function detailPage(index, evStageId, ctx = {}) {
   const kv = [['Dates', dateRange(e)], ['Game year', GAME_YEARS[gameYearOf(e.start)].name],
     ...(boardOnly(e) ? [] : [['Quests', quests.length === servedOf(e).length ? String(quests.length) : `${servedOf(e).length} of ${quests.length} served`]]),
     ...(nb ? [['Avatar boards', nbs === nb ? String(nb) : `${nbs} of ${nb} served`]] : []),
-    ...(Array.isArray(e.days) && e.days.length ? [['Open', `Only on ${daysText(e.days)} (its whole day)`]] : [])].map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
+    ...(Array.isArray(e.days) && e.days.length ? [['Open', `Only on ${daysText(e.days)} (its whole day)`]] : [])]
+    // colour roles (detail-cards.js): the dates cyan
+    .map(([k, v]) => `<tr><th>${k}</th><td>${k === 'Dates' ? cards.cyan(esc(v)) : esc(v)}</td></tr>`).join('');
   const qRows = quests.map((q) => {
     const done = q.served && ctx.stageDone && ctx.stageDone(q.stageId);
     const day = Array.isArray(q.days) && q.days.length ? `<small>Open on ${esc(daysText(q.days))}</small>` : '';
@@ -697,7 +700,7 @@ function detailPage(index, evStageId, ctx = {}) {
   }).join('');
   // the original evStage rows of the event (Part 2 Task 5): one card each in the Events tab, with its own dates and quests
   const rows = Array.isArray(e.rows) && e.rows.length > 1 ? e.rows : [];
-  const cards = rows.length ? `<h2>Cards</h2><p class="n">In the original game this event showed ${rows.length} cards in the Events tab, each with its own dates and quests.</p>`
+  const cardsHtml = rows.length ? `<h2>Cards</h2><p class="n">In the original game this event showed ${rows.length} cards in the Events tab, each with its own dates and quests.</p>`
     + `<table class="tt"><tr><th>Card</th><th>Dates</th><th>Quests</th></tr>${rows.map((r) => `<tr><td>${r.available && r.evStageId ? `<img width="160" height="35" src="${imgOf(ctx, r.evStageId)}" alt=""${NO_CARD(160, 35)}>` : ''}</td>`
       + `<td>${esc(`${niceDay(r.start)}${r.end && r.end !== r.start ? ` – ${niceDay(r.end)}` : ''}`)}${Array.isArray(r.days) && r.days.length ? '<small>its whole day</small>' : ''}</td>`
       + (r.available ? `<td>${esc(plural((r.stageIds || []).length, 'quest'))}</td>` : `<td class="r">Not served yet<small>${esc(plural(r.quests || 0, 'quest'))}</small></td>`) + '</tr>').join('')}</table>` : '';
@@ -706,11 +709,12 @@ function detailPage(index, evStageId, ctx = {}) {
   const box = srvBox(e, st, index, { after: `<div id="pinmsg" class="pinmsg"></div>${replacesLine(st, kept)}${button}`,
     intro: `This server follows your Story, not the calendar: this event of the original game (${esc(dateRange(e))}) opens when your Story reaches it.`,
     links: [...(notice ? [[`${BASE}/notice/${e.evStageId}?from=event`, notice]] : []), [`${BASE}/catalog`, 'Event Catalog ›']] });
-  return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
+  return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS + cards.CARD_CSS) + `<body${back ? ' class="hb"' : ''}>`
     + `<h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140)}>${box}`
-    + `<h2>Event</h2><table class="kv">${kv}</table>`
-    + cards + hscSection(e, ctx) + boardsSection(index, e, ctx) + avatarBoardsSection(e, ctx, true)
-    + (boardOnly(e) ? '' : `<h2>Quests</h2><table class="tt"><tr><th>Quest</th><th>LV</th><th>AP</th><th>Status</th></tr>${qRows}</table>`)
+    // the sections as cards (detail-cards.js cardSections, user 26-11); quest columns: name bold, LV cyan, AP gold
+    + cards.cardSections(`<h2>Event</h2><table class="kv">${kv}</table>`
+    + cardsHtml + hscSection(e, ctx) + boardsSection(index, e, ctx) + avatarBoardsSection(e, ctx, true)
+    + (boardOnly(e) ? '' : `<h2>Quests</h2><table class="tt kn1 kc2 kg3"><tr><th>Quest</th><th>LV</th><th>AP</th><th>Status</th></tr>${qRows}</table>`))
     + `<p class="n">The Event Catalog is an addition of this server: in the original game an event was played only in its own dates.</p>${back}<script>${KEEP_JS}</script></body></html>`;
 }
 
@@ -771,10 +775,10 @@ function boardDetailPage(index, evStageId, ctx = {}) {
   const box = srvFrame(st, { after: `<div id="pinmsg" class="pinmsg"></div>${replacesLine(st, kept)}${button}`,
     intro: `This server follows your Story, not the calendar: these boards of the original game (${esc(dateRange(e))}) are listed in Avatar Boards when your Story reaches their dates.`,
     links }, 'avatar');
-  return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS) + `<body${back ? ' class="hb"' : ''}>`
+  return PAGE_HEAD(title, CSS + DETAIL_CSS + EVENT_DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS + cards.CARD_CSS) + `<body${back ? ' class="hb"' : ''}>`
     // an event that also sold boards keeps its event card; a BOARD entry has none (its boards' cards are in the table, Task 5c)
     + `<h1>${esc(title)}</h1>${boardOnly(e) ? '' : `<img class="banner" width="640" height="140" src="${imgOf(ctx, e.evStageId)}" alt=""${NO_CARD(640, 140, 'No card')}>`}${box}`
-    + `<h2>Entry</h2><table class="kv">${kv}</table>${avatarBoardsSection(e, ctx)}`
+    + cards.cardSections(`<h2>Entry</h2><table class="kv">${kv}</table>${avatarBoardsSection(e, ctx)}`)
     + `<p class="n">The Avatar Board Catalog is an addition of this server: in the original game a board was sold only in its own dates.</p>${back}<script>${BOARD_KEEP_JS}</script></body></html>`;
 }
 

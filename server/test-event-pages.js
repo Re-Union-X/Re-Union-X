@@ -199,6 +199,9 @@ const tests = {
     assert.ok(box.includes('On this server') && box.includes('NOT ORIGINAL'));
     // the Keep / Remove button of a detail page: the shared compact phone class (phone-css.js DETAIL_KEEP)
     assert.ok(box.includes('class="pk pkd" data-id="29900"'), 'Event detail: the shared compact keep button');
+    // section cards and colour roles (detail-cards.js, user 26-11)
+    for (const k of ['event', 'quests']) assert.ok(html.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
+    assert.ok(html.includes('<table class="tt kn1 kc2 kg3">') && /<td><span class="rd">[^<]+<\/span><\/td>/.test(html), 'colour roles: quest columns, dates cyan');
     assert.ok(/<details class="rb">/.test(box) && !/<details class="rb" open/.test(box), 'Rebuilt values closed');
     for (const l of ['dramaOff', 'eventCoins', 'donorKept']) assert.ok(box.includes(REASONS[l].replace(/'/g, '&#39;')) || box.includes(REASONS[l]), `reason of ${l}`);
     assert.ok(box.includes('Past event'), 'status');
@@ -568,6 +571,8 @@ const tests = {
     const d = pages.boardDetailPage(ix, 29920, ctx());
     assert.ok(d.includes('<h2>Avatar Boards</h2>') && d.includes('Red Coat') && d.includes('3,000 Jewels'));
     assert.ok(d.includes('class="pk pkd" data-id="29920"'), 'Avatar Board detail: the shared compact keep button (phone-css.js DETAIL_KEEP)');
+    for (const k of ['entry', 'avatar-boards']) assert.ok(d.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
+    assert.ok(d.includes('<table class="tt bt ab kn2 kc3 kg4">'), 'board names bold, dates cyan, prices gold');
     assert.ok(/Blue Coat.{0,200}price/i.test(d), 'priceUnknown: never sold at a guessed price');
     assert.ok(/Lost Coat.{0,300}reward/i.test(d) && !d.includes('cell 2: medal'), 'a held board: its reason in plain words, not the builder note');
     assert.ok(!d.includes('<h2>Quests</h2>'), 'no quest table for a board-only entry');
@@ -895,7 +900,7 @@ const tests = {
     const ix = BOARD_INDEX();
     ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
     for (const page of [pages.boardDetailPage(ix, 29920, ctx()), pages.detailPage(ix, 29900, ctx())]) {
-      const head = /<table class="tt bt ab"><tr>((?:<th>[^<]*<\/th>)+)<\/tr>/.exec(page);
+      const head = /<table class="tt bt ab(?: kn2 kc3 kg4)?"><tr>((?:<th>[^<]*<\/th>)+)<\/tr>/.exec(page);
       assert.ok(head, 'the Avatar Boards table has its own class');
       const cols = [...head[1].matchAll(/<th>([^<]*)<\/th>/g)].map((m) => m[1]);
       const n = (name) => cols.indexOf(name) + 1;

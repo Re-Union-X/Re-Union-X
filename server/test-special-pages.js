@@ -126,6 +126,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(d.includes('Every day') && d.includes('Period 1') && d.includes('Period 2') && d.includes('Jan 1, 2016'), 'details: days and periods with dates');
   check(d.includes('class="s s-can"') && d.includes('data-pin="/web/special/pin/7102"') && d.includes('khuxPin') && d.includes('Replaces: N-kb'), 'details: pill and pin button');
   check(d.includes('class="pk pkd" data-id="7102"'), 'details: the shared compact keep button (phone-css.js DETAIL_KEEP)');
+  check(/<div class="cs" id="sec-versions?"><div class="csh"><img class="ic"/.test(d) && /<div class="cs" id="sec-periods?">/.test(d) && d.includes('<details class="vq cs"'), 'details: section cards (detail-cards.js)');
   check(d.includes('Quest Two') && /AP[\s\S]{0,80}12/.test(d) && d.includes('80') && d.includes('King Pretender') && d.includes('Agrabah'), 'details: quest name, AP, level, target, world');
   check(d.includes('Defeat Shadow x 3') && d.includes('Cid Ver. B x1') && d.includes('Munny x100'), 'details: objectives with rewards');
   check(d.includes('Huey Ver. A') && d.includes('Mythril Shard') && /reconstructed/.test(d), 'details: drops, reconstructed note');
@@ -220,7 +221,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(/id="m7322"><b>Tue<\/b><span class="s s-now">/.test(q) && /id="m7321"><b>Mon<\/b><span class="s s-other">/.test(q), 'each day with its own status');
   const qp = pages.detailPage(ix, 7302, { ...c4, fromCatalog: true });
   check(qp.indexOf('2016–2017 · VIP') > qp.indexOf('2018–2020 · Free') && /id="v1"[\s\S]*data-pin="\/web\/special\/pin\/7301"/.test(qp), 'Power: the VIP version (older, second) with its own Keep');
-  check(/<details class="vq" open><summary>Quests · 2018–2020 · Free<\/summary>/.test(qp) && /<details class="vq"><summary>Quests · 2016–2017 · VIP<\/summary>/.test(qp), 'quests per version, newest open');
+  check(/<details class="vq cs" open><summary>Quests · 2018–2020 · Free<\/summary>/.test(qp) && /<details class="vq cs"><summary>Quests · 2016–2017 · VIP<\/summary>/.test(qp), 'quests per version, newest open');
   check(qp.includes('class="back" href="/web/special/catalog#q7302"'), 'BACK to the row');
   check(pages.detailPage(ix, 7351, c4).includes('Week of Jun 12, 2017'), 'campaign details: its week');
   // REWARDS on rows

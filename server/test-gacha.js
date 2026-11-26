@@ -266,6 +266,7 @@ const bA = sb({ rarityMix: [[5, 1], [4, 2]], lotCount: 3, guarantee: { list: ['A
 const dp = g.detailPage(bA, exA, medalNames, sctx);
 check(/rainbow ring/.test(dp) && /starburst[^<]*reconstructed/.test(dp), 'draw page declares the result effects (rainbow original, starburst reconstructed)');
 check(dp.includes('Draw rates') && /reconstructed/.test(dp), 'dettagli: Draw rates e reconstructed');
+check(dp.includes('<div class="cs" id="sec-draw-rates"><div class="csh"><img class="ic"') && dp.includes('<h2>Draw rates</h2>'), 'details: section cards (detail-cards.js)');
 check(dp.includes('Medal rarities of each draw: original'), 'dettagli: composizione original');
 check(dp.includes('Featured Medal guaranteed within 7 draws (original)'), 'dettagli: pity');
 check(dp.includes('every 3rd draw') && dp.includes('one of the listed Medals (featured Medals twice as likely)'), 'dettagli: slot a lista con every');
