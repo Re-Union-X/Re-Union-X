@@ -92,5 +92,69 @@ try:
 finally:
     shutil.rmtree(t)
 
+# ---- Part 3b: 2018-07 revision pin, rebuilt STG headers (header absent in the JP folder) ----
+import struct  # noqa: E402
+import mapfile  # noqa: E402
+
+JPF = ics.iter_cl_files(JP, plain=ics.PLAIN_REVISION_STAGES)
+JPH = ics.iter_cl_files(JP)
+M07 = [20180700 + k for k in range(1, 11)]
+t = tempfile.mkdtemp()
+try:
+    class AllIds(object):
+        def __contains__(self, i):
+            return True
+    rep = ics.run([(3500, s) for s in M07], [('jp431', JPF)], {'OC_0001_00_00'}, AllIds(), os.path.join(t, 'o07'))
+    ids07 = {e for st in rep['stages'] for e in st.get('enemies', [])}
+    check(all(st['status'] == 'imported' for st in rep['stages']) and ids07, 'revision pin 2018-07: imported')
+    check(not [i for i in ids07 if i >= 60000], 'revision pin 2018-07: no enemy id >= 60000: %s' % sorted(i for i in ids07 if i >= 60000))
+    # the highest revision of the same stages DOES carry such ids (so the pin is what removes them)
+    rep_hi = ics.run([(3500, s) for s in M07], [('jp431', JPH)], {'OC_0001_00_00'}, AllIds(), os.path.join(t, 'o07hi'))
+    check([e for st in rep_hi['stages'] for e in st.get('enemies', []) if e >= 60000], 'revision pin 2018-07: pin is needed')
+    # every other stage still takes its highest revision (20190506 has revisions .00000060 / .00000037)
+    check(JPF[(20190506, None)].endswith('cl_stg20190506.00000060.bin') and JPF[(20190506, 0)].endswith('_00.00000037.bin'),
+          'other stages take the highest revision')
+    check(JPF[(20180701, None)].endswith('cl_stg20180701.bin') and JPF[(20180701, 0)].endswith('cl_stg20180701_00.bin'),
+          'pinned stages take the plain files')
+
+    # header rebuilt
+    SIB = {20181001: 20181002, 20181005: 20181002, 20181102: 20181101, 20190203: 20190201, 20190205: 20190201}
+    o = os.path.join(t, 'ohdr')
+    stages = [(4000, s) for s in SIB] + [(4000, 20181002)]
+    rep = ics.run(stages, [('jp431', JPF)], {'OC_0001_00_00'}, AllIds(), o)
+    st = {s['stageId']: s for s in rep['stages']}
+    for sid, sib in SIB.items():
+        check(st[sid]['status'] == 'imported' and st[sid].get('headerRebuilt') is True, 'header rebuilt flag %s' % sid)
+        stg_b = open(os.path.join(o, 'cl_stg%08d.bin' % sid), 'rb').read()
+        stg, parts = mapfile.load_stage({(sid, None): stg_b, (sid, 0): os.path.join(o, 'cl_stg%08d_00.bin' % sid)}, sid)
+        bad, _ = mapfile.check_stage(stg, parts)
+        check(not bad, 'header rebuilt %s passes check_stage: %s' % (sid, bad))
+        sg = mapfile.parse_stg(open(JPH[(sib, None)], 'rb').read())
+        check(len(stg_b) == 64 and stg['parts'] == 1 and stg['teams_total'] == len(parts[0]['teams']) and
+              stg['enemies_total'] == len(parts[0]['enemies']), 'header rebuilt %s counts equal the part' % sid)
+        check((stg['start'], stg['start_facing'], stg['version'], stg['start_part']) ==
+              (sg['start'], sg['start_facing'], sg['version'], sg['start_part']), 'header rebuilt %s start from %s' % (sid, sib))
+        check(st[sid].get('headerSibling') == sib, 'header sibling %s' % sid)
+    # a stage that HAS its header is copied byte for byte and not flagged
+    check(not st[20181002].get('headerRebuilt') and open(os.path.join(o, 'cl_stg20181002.bin'), 'rb').read() ==
+          open(JPH[(20181002, None)], 'rb').read(), 'header present: byte copy, no flag')
+    # a stage with no part file stays rejected (also through main -> exit 1)
+    only = os.path.join(t, 'only')
+    os.makedirs(only)
+    shutil.copyfile(JPH[(20181002, None)], os.path.join(only, 'cl_stg20181002.bin'))   # STG, no part
+    rep = ics.run([(4000, 20181002), (4000, 20181001)], [('jp431', ics.iter_cl_files(only))], {'OC_0001_00_00'}, AllIds(),
+                  os.path.join(t, 'o_nopart'))
+    check([s['status'] for s in rep['stages']] == ['skipped', 'skipped'], 'no part file: rejected')
+    master = os.path.join(t, 'm')
+    os.makedirs(master)
+    json.dump([{'colosseumStageId': 4000, 'validStage': 1, 'stageId': [20181002]}], open(os.path.join(master, 'colosseumStage.json'), 'w'))
+    json.dump([{'enemyId': 1}], open(os.path.join(master, 'enemy.json'), 'w'))
+    with contextlib.redirect_stdout(io.StringIO()):
+        rc = ics.main(['--master', master, '--b2016', only, '--jp', only, '--gen', only, '--out', os.path.join(t, 'o_rc'),
+                       '--report', os.path.join(t, 'rc.json')])
+    check(rc == 1, 'no part file: exit 1')
+finally:
+    shutil.rmtree(t)
+
 print('FAIL: ' + '; '.join(fails) if fails else 'OK: import_colosseum_stages')
 sys.exit(1 if fails else 0)
