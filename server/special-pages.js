@@ -752,7 +752,8 @@ function detailPage(index, evStageId, ctx = {}) {
     const vb = statusFor(bestOf(v)), en0 = v[0];
     const pers = periods.filter((p) => en0.periods.includes(p.n)).map((p) => esc(p.name)).join(', ');
     const limits = [en0.from ? `from ${niceDay(en0.from)}` : '', en0.to ? `until ${niceDay(en0.to)}` : ''].filter(Boolean).join(', ');
-    const days = v.length === 1 ? `<p>${esc(daysText(en0))}</p>`
+    // the weekdays the quest opens (user 26-11: a bare «Every day» said nothing): «Open every day of the week» / «Open on Monday»
+    const days = v.length === 1 ? `<p>Open ${en0.days === 'all' ? cards.cyan('every day') + ' of the week' : `on ${cards.cyan(esc(Array.isArray(en0.days) && en0.days.length === 1 ? dayWords(en0.days) : daysText(en0)))}`}.</p>`
       : `<p>${v.every((en) => Array.isArray(en.days) && en.days.length === 1) ? `One quest per day: ${esc(v.map((en) => en.days[0]).join(', '))}.` : `${v.length} quests.`}</p>`
         // one line per day / variant only when they differ (a status of their own, or a Keep button)
         + (new Set(v.map((en) => `${statusFor(en).show}|${statusFor(en).cls}`)).size > 1 || v.some((en) => statusFor(en).button !== null)

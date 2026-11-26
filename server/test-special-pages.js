@@ -123,7 +123,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
     e('kb2', 7102, { periods: [1, 2], family: 'SQ13', useAp: [12], stages: [{ stageId: 71020, quest: 'Quest Two', target: 'King Pretender', wikiLv: 80, world: 'Agrabah', room: 'Bazaar', dropRewardIds: [1] }] })] };
   const d = pages.detailPage(ix2, 7102, ctxD);
   check(typeof d === 'string' && d.includes('<title>N-kb2</title>') && d.includes('/web/special/img/v' + require('./special').SPECIAL_IMG_VERSION + '/7102.png'), 'details: title and banner');
-  check(d.includes('Every day') && d.includes('Period 1') && d.includes('Period 2') && d.includes('Jan 1, 2016'), 'details: days and periods with dates');
+  check(d.includes('every day</span> of the week') && d.includes('Period 1') && d.includes('Period 2') && d.includes('Jan 1, 2016'), 'details: days and periods with dates');
   check(d.includes('class="s s-can"') && d.includes('data-pin="/web/special/pin/7102"') && d.includes('khuxPin') && d.includes('Replaces: N-kb'), 'details: pill and pin button');
   check(d.includes('class="pk pkd" data-id="7102"'), 'details: the shared compact keep button (phone-css.js DETAIL_KEEP)');
   // quest blocks (detail-cards.js questBlock, user 26-11): stat chips, Objectives and Drops tables with lined-up first columns; Drops
