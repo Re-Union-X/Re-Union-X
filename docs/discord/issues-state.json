@@ -812,6 +812,13 @@
    "group": "OPEN",
    "hash": "0ed71fa5be81719c",
    "name": "I-326 · Special Attack gauge kept after dying / quitting a quest"
+  },
+  "I-327": {
+   "thread": "1575424304676348026",
+   "msg": "1575424304676348026",
+   "group": "OPEN",
+   "hash": "91f4a92b348aae18",
+   "name": "I-327 · KHDR START (Dark Road) on the title screen: «Unable to locate necessary files. Files will…"
   }
  }
 }
