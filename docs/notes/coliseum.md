@@ -529,3 +529,11 @@ sphereMasu +40 each. Nothing else changed (events identical).
 
 Bench walk (controller, pending): LV > 999 probe first, then 2017-05, 2017-06, 2017-09, 2017-12, 2018-02, a Part 2 season past
 its old last tier, the earlier 999-round tiers in the client, the 2017-02 100-coin tiers.
+
+### Follow-ups for the next part (final review, 26-11)
+
+- Enemy rule rows now stop the build when the base exists only as a row of our master (`MASTER_BASE_APPROVED`, empty): find an original base or ask the user.
+- Enemy 20114 (raw ReLux row) uses the 2017 month curve and equals 20112 at LV 1 / 100 / 300: checked, the same pattern as every month row, not a clone. Nothing to change.
+- The private ReLux path default in `make-colosseum.js` names a donor folder: resolve it through the private path helper / environment in the planned legal sweep.
+- `reluxShape` checks knots and the ATK cap only: add an HP-scale check (HP at LV 300 / LV 100 in the old-curve band) to it and to the «no 2019 row» assertion before more raw rows are consumed.
+- 21557 (JP 20180106 / 20180406 sets) is not served yet: an open named case of the 2018-04 part.

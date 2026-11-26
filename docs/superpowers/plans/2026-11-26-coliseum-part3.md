@@ -41,7 +41,8 @@ Part 2 plan and summary: `docs/superpowers/plans/2026-11-26-coliseum-part2.md`, 
   stops (no estimates without the user). ReLux rows with 2019-revamp values are never used for these seasons. Labels per
   row: `colosseumEnemyRelux`, `colosseumEnemyMonthCopy`, `colosseumEnemyRule`.
 - Named cases (audits): the 16 ids `161020xxx` of 2017-05: raw ReLux rows for 007, 011, 015, 022, 033, 036, 059, 092, 093,
-  110, 116; month copy for 099, 126, 153, 154 (corrupt raw rows) and 137 (2019 shape). 21557 (2018-01, 2018-04 sets): rule
+  110, 116; month copy for 099, 126, 153, 154 (corrupt raw rows) and 137 (2019 shape). 21557 (JP 20180106 and 20180406 sets; NOT used by any
+  stage served in Part 3, whose 2018-01 set is JP 20170601..10; an open named case for the 2018-04 part): rule
   from base 1557 «The Good Boy» (raw ReLux base row), name declared as inferred. 120097 Ringmaster (2018-02): month copy of
   the rule row 20097 (base 97 old shape), not the 2019 row. Generated maps: Ringmaster 2017-06 R10 = 20097, Enraged Elk
   2017-09 R10 = 20184; Ringmaster is a rule row from base 97 (raw ReLux old shape), Enraged Elk keeps its 1.1.3 row 20184
