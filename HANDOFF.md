@@ -55,6 +55,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   requests, logcat and screenshots. Taps only while the game is alive (`bench_lib` refuses taps with the game closed).
 
 ## State and next step
+- **26-11 night, Coliseum Part 3 (2017-05 .. 2018-03) code DONE, bench walk PARTLY DONE, Game Catalog added (START HERE).** Resources **189** installed, master revision **399** (Part 3 rows + Game Catalog evStage 5000). Ledger `.superpowers/sdd/2026-11-26-coliseum-part3/progress.md` (rulings, bench results, the full «STATE before compact» line with what is left: Cerberus 20114 check, a Spirit-part Present, a board purchase, then the final whole-branch review, then the plan of the 2018-04 .. 2019-04 part). Bench saves colip3may/jun/jun9/sep/sep9/dec/jan, colip3lv991/lv1151. Catalog work this session (user requests): detail pages for every catalog with section cards, collapsible sections, shared boards table, coin chips on the list headers, whole-row taps, Game Catalog hub as the only catalog banner (first in Events). Note: the bench scripts stop every node process, so agents' test runs die (rerun them alone).
 
 (Older state blocks, 17-22 October: [docs/journal/2026-10-22.md](docs/journal/2026-10-22.md).)
 
