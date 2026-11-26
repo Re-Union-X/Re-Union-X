@@ -1515,6 +1515,14 @@ test('real_part3b (2018-04 .. 2019-04 from the ReLux extract: tiers, lump sums, 
   // the cell medals are checked like the tier medals: a mapped one our medal master lacks stops the build
   const only4000 = mc.SEASONS.filter((s) => s.colosseumStageId === 4000);
   assert.throws(() => withRanking([4000], () => mc.seasonRows({ ...src, masterMedalIds: new Set([...ids].filter((m) => m !== 300948)) }, only4000)), /300948/);
+  // an unmapped cell medal our master lacks stops the build too; with the medals in the master every cell medal of the 44 boards is ours
+  const bogusCell = { ...relux, sphereMasu: relux.sphereMasu.map((r) => (r.sphereBoardId === 2210131 ? { ...r, rewardId: r.rewardId.map((v, i) => (i === 1 ? 99999998 : v)) } : r)) };
+  assert.throws(() => withRanking([4000], () => mc.seasonRows({ ...src, relux: bogusCell, masterMedalIds: ids }, only4000)), /board 2210131 cell 1 pays medal 99999998/);
+  if (have) {
+    for (const r of out.sphereMasu.filter((x) => x.masuId >= 2210107 && x.masuId <= 2210150)) {
+      r.rewardSelect.forEach((t, i) => { if (t === 3) assert.ok(medals.has(r.rewardId[i]), `board ${r.masuId} cell ${i} medal ${r.rewardId[i]} in our medal master`); });
+    }
+  } else results.push('skip real_part3b cell medal master check: 300948 / 300913 only exist in a master built with KHUX_MEDALS_ALL=1');
   // the Part 1-3 seasons: the same rows with or without the new seasons, and the same as the served master
   for (const t of ['colosseumStage', 'colosseum']) {
     assert.strictEqual(JSON.stringify(out[t].filter((r) => r.colosseumStageId <= 3100)), JSON.stringify(outOld[t]), `${t}: Part 1-3 rows unchanged`);

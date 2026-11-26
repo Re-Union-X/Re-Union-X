@@ -502,7 +502,11 @@ const byKey = (key) => (a, b) => a[key] - b[key];
 function reluxCellMedals(m, masterMedalIds, boardId) {
   const r = { ...m, rewardId: [...m.rewardId] };
   m.rewardSelect.forEach((sel, i) => {
-    if (sel !== 3 || !RELUX_MEDAL[m.rewardId[i]]) return;
+    if (sel !== 3) return;
+    if (!RELUX_MEDAL[m.rewardId[i]]) {
+      if (masterMedalIds && !masterMedalIds.has(m.rewardId[i])) throw new Error(`colosseum: board ${boardId} cell ${i} pays medal ${m.rewardId[i]}, not in our medal master and not mapped (RELUX_MEDAL)`);
+      return;
+    }
     r.rewardId[i] = RELUX_MEDAL[m.rewardId[i]];
     if (masterMedalIds && !masterMedalIds.has(r.rewardId[i])) throw new Error(`colosseum: board ${boardId} cell ${i} pays medal ${r.rewardId[i]} (mapped), not in our medal master (build it with KHUX_MEDALS_ALL=1)`);
   });
