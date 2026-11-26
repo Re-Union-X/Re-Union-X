@@ -765,7 +765,7 @@ test('real_part2 (the nine seasons from the 1.1.3 master and the ReLux extract)'
 });
 
 // ---- Coliseum Part 2 Task 3: an enemy row for every id the served stages use ----
-const SOURCES = ['113', 'rule', 'relux', 'estimate'];
+const SOURCES = ['113', 'rule', 'relux', 'monthCopy', 'estimate'];
 const knotRow = (id, name, knots, hp, atk, extra = {}) => ({ enemyId: id, name, validGrowth: knots.length, baseLv: knots, hp, attack: atk, defense: knots.map(() => 900),
   exp: knots.map(() => 1), money: knots.map(() => 13), raidPoint: knots.map(() => 108), lux: knots.map(() => 1), score: knots.map(() => 500), validSkill: 1, skillId: [100], ...extra });
 // the variant rule (docs/notes/coliseum.md): same level knots up to LV 999, same ATK and DEF, same HP below LV 300, HP x3 at LV 300,
@@ -782,7 +782,7 @@ function assertRule(row, base) {
   assert.ok(row.money.every((v) => v === 0) && row.raidPoint.every((v) => v === 0), `${row.enemyId} no munny / raid points`);
 }
 
-test('stage enemies: 1.1.3 row, then the variant rule, then the ReLux row; a missing source stops', () => {
+test('stage enemies: 1.1.3 row, then the ReLux row (old shape), then the variant rule; a missing source stops', () => {
   const base50 = knotRow(50, 'Base Foe', [1, 35, 100, 300, 999, 1150], [100, 200, 300, 1000, 5000, 6000], [10, 20, 30, 40, 50, 60]);
   const masterEnemies = [{ enemyId: 20001 }, { enemyId: 20031 }, base50];
   const relux60 = { ...knotRow(20060, 'ReLux Foe', [1, 35, 100, 300, 999], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]), _meta: { era: 'x' } };
@@ -834,9 +834,11 @@ test('ruleRow: null without the LV 300 / LV 999 knots or with a knot between the
   assert.strictEqual(mc.ruleRow(20050, b([1, 35, 100, 300])), null, 'no LV 999');
   assert.strictEqual(mc.ruleRow(20050, b([1, 35, 100, 999])), null, 'no LV 300');
   assert.strictEqual(mc.ruleRow(20050, b([1, 35, 100, 300, 500, 999])), null, 'a knot between LV 300 and LV 999');
-  // no rule row: the id falls through to the ReLux row
+  // no rule row and a ReLux row of no known shape: the run stops (Part 3: a ReLux row serves only with the old shape)
   const src = { ...fixture(), masterEnemies: [{ enemyId: 20001 }, b([1, 35, 100, 300])], reluxEnemies: [knotRow(20050, 'ReLux Foe', [1, 999], [1, 2], [1, 2])],
     stageEnemies: Object.fromEntries(Array.from({ length: 10 }, (_, i) => [20150701 + i, [20001, 20050]])) };
+  assert.throws(() => mc.seasonRows(src, S800), /20050.*no source/);
+  src.reluxEnemies = [knotRow(20050, 'ReLux Foe', [1, 35, 100, 300, 999], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5])];
   assert.strictEqual(mc.seasonRows(src, S800).colosseumEnemies.find((e) => e.enemyId === 20050).source, 'relux');
 });
 
@@ -878,7 +880,7 @@ test('real_part2_enemies (every enemy id of the served stages)', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
   try {
     fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
-    const out = mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMIES || mc.DEFAULT_RELUX_ENEMIES) });
+    const out = mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY) || [] });
     assert.strictEqual(out.colosseumStage.length, 13);
     assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] }, 'every served stage checked');
     const after = new Map(JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => [r.enemyId, r]));
@@ -1092,6 +1094,181 @@ test('real_part3 (2017-05 .. 2018-03 from the ReLux extract, every head..term ti
       assert.strictEqual(JSON.stringify(cs(id)), JSON.stringify(master.colosseumStage.find((r) => r.colosseumStageId === id)), `${id} season row byte-identical`);
     }
   } else results.push('skip real_part3 byte check: no served master with 800 .. 1600');
+});
+
+// ---- Coliseum Part 3 Task 3: month ids, the raw ReLux enemy table, month copies ----
+const SOURCES3 = ['113', 'relux', 'monthCopy', 'rule'];
+const OLD6 = [1, 35, 100, 300, 999, 9999], OLD17 = [1, 100, 300, 600, 9999, 99999], NEW19 = [1, 1400, 2600, 3100, 3200, 9999];
+const PAD = [1768055072, 1769236844, 1948283749];
+// a raw ReLux row: full-length arrays, binary padding past validGrowth as in the donor table
+const rawRow = (id, name, knots, hp, atk, extra = {}) => {
+  const pad = (a) => [...a, ...PAD, ...PAD].slice(0, 6);
+  return { enemyId: id, name, displayId: id % 100000 % 20000 || id, validGrowth: knots.length, baseLv: pad(knots), hp: pad(hp), attack: pad(atk),
+    defense: pad(knots.map(() => 900)), exp: pad(knots.map(() => 1)), money: pad(knots.map(() => 13)), raidPoint: pad(knots.map(() => 0)), lux: pad(knots.map(() => 1)),
+    score: pad(knots.map(() => 500)), validSkill: 1, skillId: [100, ...PAD], ...extra };
+};
+test('reluxShape: old curves, the 2019 revamp, corrupt rows', () => {
+  assert.strictEqual(mc.reluxShape(rawRow(97, 'Ringmaster', OLD6, [20000, 51000, 70000, 176000, 766260, 114656559], [1, 2, 3, 4, 5, 6])), 'old');
+  assert.strictEqual(mc.reluxShape(rawRow(161020007, 'Large Body', OLD17, [4500, 20766, 157839, 223970, 20662560, 206625600], [1, 2, 3, 4, 5, 6])), 'old');
+  assert.strictEqual(mc.reluxShape(rawRow(184, 'Enraged Elk', OLD6.slice(0, 5), [1, 2, 3, 4, 5], [1, 2, 3, 4, 5])), 'old');
+  assert.strictEqual(mc.reluxShape(rawRow(20097, 'Ringmaster', NEW19, [12750, 2942545725, 11250909078, 13414547850, 14280000000, 427082287500], [1, 2, 3, 4, 5, 2100000000])), '2019');
+  // the old knots with the revamp's ATK cap are not an old row either
+  assert.strictEqual(mc.reluxShape(rawRow(20098, 'X', OLD6, [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 2100000000])), '2019');
+  // 161020099 Morning Star: three knots, placeholder values, the rest padding
+  assert.strictEqual(mc.reluxShape(rawRow(161020099, 'Morning Star', [1, 1400, 9999], [3571429, 5000000000, 35710714286], [1, 2, 3])), 'corrupt');
+  assert.strictEqual(mc.reluxShape(rawRow(161020153, 'Ice Plant', [1, 200, 9999], [16000, 10000000, 9999999999], [1, 2, 3])), 'corrupt');
+  assert.strictEqual(mc.reluxShape({ ...rawRow(1, 'X', OLD6, [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6]), hp: [1, 2, 8317989504018571000, 4, 5, 6] }), 'corrupt');
+  assert.strictEqual(mc.reluxShape(null), 'corrupt');
+});
+
+// a fixture of the named cases (PART3_AUDIT.md §4, MISSING17_ENEMIES.md), on the S800 stage ids
+function p3EnemyFixture() {
+  const m = (id, name, displayId, knots = OLD6.slice(0, 5), hp = [100, 200, 300, 1000, 5000]) => ({ ...knotRow(id, name, knots, hp, knots.map((l) => l)), displayId });
+  const masterEnemies = [{ enemyId: 20001 }, { enemyId: 20031 }, m(20007, 'Large Body', 7), m(20099, 'Morning Star', 90), m(20137, 'Wyvern', 137),
+    m(20153, 'Ice Plant', 39), m(1500, 'Bunch O\' Balloons', 1500, OLD6.slice(0, 5), [4400, 11500, 17486, 45573, 273438])];
+  const raw = [
+    rawRow(161020007, 'Large Body', OLD17, [4500, 20766, 157839, 223970, 20662560, 206625600], [950, 2287, 5443, 51289, 2198291, 21982910], { displayId: 7 }),
+    rawRow(161020099, 'Morning Star', [1, 1400, 9999], [3571429, 5000000000, 35710714286], [40286, 1128000, 8056338], { displayId: 90 }),
+    rawRow(161020137, 'Wyvern', NEW19, [12688, 2928121482, 11195757563, 13348790263, 14210000000, 424988746875], [2973, 1, 2, 3, 4, 2100000000], { displayId: 137 }),
+    rawRow(161020153, 'Ice Plant', [1, 200, 9999], [16000, 10000000, 9999999999], [1500, 15000, 99999999], { displayId: 153 }),
+    rawRow(97, 'Ringmaster', OLD6, [20000, 51000, 70000, 176000, 766260, 114656559], [1650, 2160, 3120, 6300, 18434, 8531902], { displayId: 97 }),
+    rawRow(20097, 'Ringmaster', NEW19, [12750, 2942545725, 11250909078, 13414547850, 14280000000, 427082287500], [2922, 1, 2, 3, 4, 2100000000], { displayId: 97 }),
+    rawRow(120097, 'Ringmaster', NEW19, [12750, 2942545725, 11250909078, 13414547850, 14280000000, 427082287500], [2922, 1, 2, 3, 4, 2100000000], { displayId: 97 }),
+    rawRow(1557, 'The Good Boy', OLD6, [32049, 101209, 512071, 1126557, 3321215, 378377554], [1784, 2673, 4132, 10563, 23632, 17213742], { displayId: 1557 }),
+    rawRow(1500, 'Bunch O\' Balloons', OLD6, [9000, 18000, 30000, 97870, 607220, 9999999], [10, 20, 30, 40, 50, 60], { displayId: 1500 }),
+    rawRow(21500, 'Bunch O\' Balloons', NEW19, [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 2100000000], { displayId: 1500 }),
+  ];
+  const stageEnemies = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [20150701 + i, [20001]]));
+  stageEnemies[20150701] = [20001, 161020007, 161020099, 161020137, 161020153];
+  stageEnemies[20150702] = [20097, 120097];
+  stageEnemies[20150703] = [21557, 21500];
+  return { ...fixture(), masterEnemyIds: undefined, masterEnemies, reluxEnemies: raw, stageEnemies };
+}
+
+test('Part 3 enemies: 1.1.3, raw ReLux old shape, month copy, rule from an original base; never a 2019 row', () => {
+  const src = p3EnemyFixture();
+  const out = mc.seasonRows(src, S800);
+  const rep = new Map(out.colosseumEnemies.map((e) => [e.enemyId, e]));
+  const row = (id) => out.enemy.find((r) => r.enemyId === id);
+  assert.deepStrictEqual(out.colosseumEnemies.map((e) => [e.enemyId, e.source]),
+    [[20097, 'rule'], [21500, 'rule'], [21557, 'rule'], [29999, '113'], [120097, 'monthCopy'], [161020007, 'relux'], [161020099, 'monthCopy'], [161020137, 'monthCopy'], [161020153, 'monthCopy']]);
+  for (const e of out.colosseumEnemies) assert.ok(SOURCES3.includes(e.source), `${e.enemyId} source`);
+  assert.strictEqual(rep.get(161020007).label, 'colosseumEnemyRelux');
+  assert.strictEqual(rep.get(161020099).label, 'colosseumEnemyMonthCopy');
+  assert.strictEqual(rep.get(20097).label, 'colosseumEnemyRule');
+  // the raw row, arrays cut at validGrowth (no padding served)
+  assert.deepStrictEqual(row(161020007).hp, [4500, 20766, 157839, 223970, 20662560, 206625600]);
+  assert.deepStrictEqual(row(161020007).skillId, [100, 0, 0, 0]);
+  // month copies: the base row with the new id and the base's displayId; why the raw row was refused is reported
+  const base99 = src.masterEnemies.find((r) => r.enemyId === 20099);
+  assert.deepStrictEqual({ ...row(161020099), enemyId: 20099 }, mc.schemaRowOf('enemy', base99));
+  assert.strictEqual(row(161020099).displayId, 90);
+  assert.strictEqual(row(161020153).displayId, 39, 'Ice Plant: the base displayId, not the raw 153');
+  assert.deepStrictEqual([rep.get(161020099).base, rep.get(161020099).reluxShape], [20099, 'corrupt']);
+  assert.deepStrictEqual([rep.get(161020137).base, rep.get(161020137).reluxShape], [20137, '2019']);
+  // Ringmaster: 20097 = rule from the raw ReLux base 97 (old shape), not its 2019 row; 120097 = month copy of that rule row
+  assert.deepStrictEqual([rep.get(20097).base, rep.get(20097).baseSource, rep.get(20097).reluxShape], [97, 'relux', '2019']);
+  assertRule(row(20097), mc.schemaRowOf('enemy', src.reluxEnemies.find((r) => r.enemyId === 97), true));
+  assert.deepStrictEqual({ ...row(120097), enemyId: 20097 }, row(20097));
+  assert.deepStrictEqual([rep.get(120097).base, rep.get(120097).reluxShape], [20097, '2019']);
+  // 21557: no row of the id anywhere, rule from the raw base 1557 «The Good Boy», the name declared as inferred
+  assert.strictEqual(row(21557).name, 'The Good Boy');
+  assert.deepStrictEqual([rep.get(21557).base, rep.get(21557).baseSource, rep.get(21557).nameInferred], [1557, 'relux', true]);
+  assert.ok(!rep.get(20097).nameInferred, 'a refused raw row of the id still confirms the name');
+  // the raw ReLux base (original) wins over our master's clone base
+  assert.deepStrictEqual([rep.get(21500).baseSource, row(21500).hp[3]], ['relux', 3 * 97870]);
+  // no 2019-revamp values in any row
+  for (const r of out.enemy) {
+    const lv = r.baseLv.slice(0, r.validGrowth);
+    assert.ok(!lv.some((l) => [1400, 2600, 3100, 3200].includes(l)) && Math.max(...r.attack) < 2100000000, `${r.enemyId}: no 2019 row`);
+  }
+  // the master rows are never written again
+  assert.ok(!out.enemy.some((r) => src.masterEnemies.some((m) => m.enemyId === r.enemyId)));
+});
+
+test('month ids: accepted only with a YYMM / 1 prefix on a Coliseum base; no source still stops', () => {
+  const src = p3EnemyFixture();
+  // a month id whose base has no row anywhere: the documented stop
+  assert.throws(() => mc.seasonRows({ ...src, stageEnemies: { ...src.stageEnemies, 20150704: [161020017] } }, S800),
+    /161020017.*20150704.*decided per enemy as for the raids.*docs\/notes\/coliseum\.md/);
+  // not a month id (bad month, not a Coliseum base): refused as before
+  for (const id of [161320007, 1510228138, 161000007]) {
+    assert.throws(() => mc.seasonRows({ ...src, stageEnemies: { ...src.stageEnemies, 20150704: [id] } }, S800), new RegExp(`${id}.*not a Coliseum variant id`));
+  }
+  // a 2019-shape raw row with no base: stops (never served)
+  assert.throws(() => mc.seasonRows({ ...src, reluxEnemies: [...src.reluxEnemies, rawRow(20444, 'X', NEW19, [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6])],
+    stageEnemies: { ...src.stageEnemies, 20150704: [20444] } }, S800), /20444.*no source/);
+  assert.deepStrictEqual(mc.monthBase(161020007), 20007);
+  assert.deepStrictEqual(mc.monthBase(120097), 20097);
+  assert.deepStrictEqual(mc.monthBase(171020091), 20091);
+  assert.deepStrictEqual([mc.monthBase(20097), mc.monthBase(161320007), mc.monthBase(1510228138)], [null, null, null]);
+});
+
+test('readReluxEnemies: the raw table (array or {enemy: []}) or the {rows} extract, null when not readable', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
+  try {
+    const f = (n, j) => { const p = path.join(dir, n); fs.writeFileSync(p, JSON.stringify(j)); return p; };
+    assert.deepStrictEqual(mc.readReluxEnemies(f('a.json', [{ enemyId: 1 }])), [{ enemyId: 1 }]);
+    assert.deepStrictEqual(mc.readReluxEnemies(f('b.json', { enemy: [{ enemyId: 2 }] })), [{ enemyId: 2 }]);
+    assert.deepStrictEqual(mc.readReluxEnemies(f('c.json', { rows: [{ enemyId: 3 }] })), [{ enemyId: 3 }]);
+    assert.strictEqual(mc.readReluxEnemies(path.join(dir, 'none.json')), null);
+    assert.ok(/server_master[\\/]enemy\.json$/.test(mc.DEFAULT_RELUX_ENEMY), mc.DEFAULT_RELUX_ENEMY);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// the real sources: every enemy id of every served stage of the 24 seasons in the master after patch(); the named cases
+test('real_part3_enemies (every enemy id of the 24 seasons, the named cases)', () => {
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
+  const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
+  const stageEnemies = mc.readStageEnemies(mc.stageEnemyFiles());
+  const raw = mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY);
+  if (!src || !relux || !stageEnemies || !raw) { results.push('skip real_part3_enemies: 1.1.3 master, ReLux extracts or stage enemy lists not on disk'); return; }
+  const masterRows = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
+  const P3 = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100).map((s) => s.colosseumStageId);
+  try {
+    fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
+    const out = withRanking(P3, () => mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: raw }));
+    assert.strictEqual(out.colosseumStage.length, 24);
+    assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] }, 'every served stage checked');
+    const after = new Map(JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => [r.enemyId, r]));
+    const before = new Map(masterRows.map((r) => [r.enemyId, r]));
+    const served = out.colosseumStage.flatMap((r) => r.stageId.slice(0, r.validStage));
+    assert.strictEqual(served.length, 240);
+    let missing = 0;
+    for (const sid of served) {
+      assert.ok(stageEnemies[sid] && stageEnemies[sid].length, `stage ${sid}: enemy list`);
+      for (const id of stageEnemies[sid]) if (!after.has(id)) missing++;
+    }
+    assert.strictEqual(missing, 0, 'every enemy of every served stage in the master');
+    for (const r of masterRows) assert.deepStrictEqual(after.get(r.enemyId), r, `master row ${r.enemyId} kept as it was`);
+    assert.strictEqual(after.size, before.size + out.enemy.length, 'new rows only for missing ids');
+    const rep = new Map(out.colosseumEnemies.map((e) => [e.enemyId, e]));
+    const rawById = new Map(raw.map((r) => [r.enemyId, r]));
+    for (const e of out.colosseumEnemies) {
+      assert.ok(SOURCES3.includes(e.source), `${e.enemyId} ${e.source}`);
+      const r = after.get(e.enemyId), lv = r.baseLv.slice(0, r.validGrowth);
+      assert.ok(!lv.some((l) => [1400, 2600, 3100, 3200].includes(l)) && Math.max(...r.attack) < 2100000000, `${e.enemyId}: no 2019-revamp row`);
+      if (e.source === 'relux') assert.strictEqual(mc.reluxShape(rawById.get(e.enemyId)), 'old', `${e.enemyId}: old-shape raw row`);
+      if (e.source === 'rule') assertRule(r, e.baseSource === 'master' ? before.get(e.base) : mc.schemaRowOf('enemy', e.baseSource === '113' ? src.enemy.find((x) => x.enemyId === e.base) : rawById.get(e.base), true));
+      if (e.source === 'monthCopy') assert.deepStrictEqual({ ...r, enemyId: e.base }, mc.schemaRowOf('enemy', after.get(e.base)), `${e.enemyId}: copy of ${e.base}`);
+    }
+    // the named cases (plan Global Constraints)
+    const src2017 = (id) => (rep.get(id) || {}).source;
+    for (const t of ['007', '011', '015', '022', '033', '036', '059', '092', '093', '110', '116']) assert.strictEqual(src2017(+`161020${t}`), 'relux', `161020${t}`);
+    for (const t of ['099', '126', '153', '154', '137']) assert.strictEqual(src2017(+`161020${t}`), 'monthCopy', `161020${t}`);
+    assert.strictEqual(after.get(161020007).displayId, after.get(20007).displayId, '161020007: the base displayId');
+    assert.strictEqual(after.get(161020153).displayId, after.get(20153).displayId, '161020153: the base displayId');
+    assert.deepStrictEqual([src2017(120097), rep.get(120097).base], ['monthCopy', 20097]);
+    assert.deepStrictEqual([src2017(20097), rep.get(20097).base, rep.get(20097).baseSource], ['rule', 97, 'relux']);
+    // Enraged Elk 20184: an existing master row (kept); added here only when missing, then by the rule from base 184
+    if (rep.has(20184)) assert.deepStrictEqual([src2017(20184), rep.get(20184).base], ['rule', 184]);
+    else assert.ok(before.has(20184), '20184 in the master');
+    const clone = out.colosseumEnemies.filter((e) => e.baseSource === 'master').map((e) => e.enemyId);
+    const by = (k) => out.colosseumEnemies.filter((e) => e.source === k).map((e) => e.enemyId);
+    results.push(`info real_part3_enemies: ${new Set(served.flatMap((s) => stageEnemies[s])).size} ids over ${served.length} stages; new rows ${out.enemy.length}: `
+      + `${SOURCES3.map((k) => `${k} ${JSON.stringify(by(k))}`).join('; ')}; rule rows on a master (clone) base: ${JSON.stringify(clone)}`);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 console.log(results.join('\n'));

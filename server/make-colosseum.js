@@ -8,7 +8,8 @@
 // - stage: the season's 10 round stages, stageKind 3, world 5, map "Coliseum", stageId YYYYMMNN (cl_stg<stageId>.bin),
 //   id 81001+ as in 1.1.3;
 // - enemy: 1.1.3 Coliseum variants (ids 20000-29999) missing from our master only (today none: the 111 rows are there), and
-//   (Part 2 Task 3, enemyRows) every id the served stages use missing from our master (today none: 93 ids over 130 stages);
+//   (Part 2 Task 3, enemyRows) every id the served stages use missing from our master (Part 3 Task 3: also the month ids
+//   161020xxx / 120097, from the raw ReLux table, month copies and the variant rule; see enemyRows);
 // - ranking (category 4, ids 4009-4012) + rankingReward (its brackets, ids = the ranking's startRank..endRank): the client's
 //   «Rewards» button crashes for a season whose rankingId has no rankingReward rows;
 // - sphere / sphereArray / sphereMasu: the Coliseum boards (type 3) of the season (SEASON_BOARDS; 1.1.3 rows, from 2016-11 the
@@ -85,8 +86,9 @@ const path = require('path');
 const DEFAULT_2016 = 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data';
 // the cleaned ReLux season extract (private, outside the repo) when KHUX_COLOSSEUM_RELUX names none
 const DEFAULT_RELUX = 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\coliseum_seasons.json';
-// the cleaned ReLux Coliseum enemy rows (next to the season extract) when KHUX_COLOSSEUM_RELUX_ENEMIES names none
-const DEFAULT_RELUX_ENEMIES = path.join(path.dirname(DEFAULT_RELUX), 'coliseum_enemies.json');
+// the raw ReLux enemy table (the donor's server_master, private, outside the repo; Coliseum Part 3) when KHUX_COLOSSEUM_RELUX_ENEMY
+// names none. The cleaned extract coliseum_enemies.json is not used any more: its 20xxx rows are the 2019 revamp (VERIFY.md §1)
+const DEFAULT_RELUX_ENEMY = 'D:\\Progetto_Restauro_KH_UX\\Reddit Donators\\ReLux Team\\KHUX_pacchetto_18_11_2026\\pkg\\server_master\\enemy.json';
 const START = '2015-01-01 00:00:00', END = '2030-12-31 23:59:59';
 // source: '113' = the 1.1.3 master rows, 'relux' = the cleaned ReLux extract; genStages: the stage set is GEN_STAGE_IDS(month)
 const SEASONS = [
@@ -464,34 +466,77 @@ function ruleRow(id, base) {
   return schemaRow('enemy', r, validMap(r, ENEMY_VALID));
 }
 
-// Enemy rows (Coliseum Part 2 Task 3). Every Coliseum variant of the 1.1.3 master missing from ours (as in Part 1), then every id
-// the served stages use (src.stageEnemies {stageId: [enemyId]}, readStageEnemies) missing from our master, from the first source
-// that has it: the 1.1.3 row ('113'), else the variant rule against its base row id - 20000 of our master ('rule', docs/notes/
-// coliseum.md «Enemy variant rule»: same level knots up to LV 999, same ATK / DEF / EXP / lux / score, same HP below LV 300, HP x3
-// at LV 300, 40/11 x that at LV 999, no munny or raid points; the rest of the row as the base, though the originals also differ in
-// score / CP / skills, which no rule gives), else the ReLux row (src.reluxEnemies, 'relux'). Original Coliseum variant ids
-// (ENEMY_RANGE) only. No source at all stops the build (the rule, docs/notes/coliseum.md «Enemy rows of the served stages»): the
-// stats of such an enemy are decided per enemy as for the raids and added as a source here; 'estimate' is a reserved label for
-// those rows, never a silent path. Rows of our master are never written again. out.colosseumEnemies = [{enemyId, source, label,
-// stages}], label colosseumEnemy<source> (the notice labels colosseumEnemyRule / colosseumEnemyEstimate for the non-original
-// values). out.enemyCheck = {checked, reason, unchecked: [stageId]}: checked false when the stage enemy lists are missing or do not
-// cover every served stage (a clean machine before its first resource build: make-game-tables runs before gen_colosseum_stages /
-// import_colosseum_stages, so a hard stop there would break the build; the stage import still refuses a missing enemy).
-const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', estimate: 'colosseumEnemyEstimate' };
+// Enemy rows (Coliseum Part 2 Task 3, Part 3 Task 3). Every Coliseum variant of the 1.1.3 master missing from ours (as in Part 1),
+// then every id the served stages use (src.stageEnemies {stageId: [enemyId]}, readStageEnemies) missing from our master, from the
+// first source that has it (plan 2026-11-26-coliseum-part3.md, Global Constraints):
+// 1. the 1.1.3 row of the id ('113');
+// 2. the raw ReLux row of the id (src.reluxEnemies, the donor's whole enemy table, 'relux') when reluxShape calls it 'old' (the
+//    1.1.3 knots 1/35/100/300/999(/9999) or the 2017 month curve 1/100/300/600/9999/99999); a 2019-revamp row (knots
+//    1/1400/2600/3100/3200/9999, VERIFY.md §1: the live master overwrote the 20xxx ids with the 2019 values) or a corrupt one
+//    (placeholder knots, the rest binary padding: 161020099 / 126 / 153 / 154) is never used;
+// 3. a month id (monthBase: YYMM + a Coliseum id, 161020007 = 2016-10 copy of 20007, or 1 + a Coliseum id, 120097) takes the row
+//    of its base Coliseum id (our master's row, else the one this run derives for it) with the new id, the base's displayId kept
+//    ('monthCopy');
+// 4. the variant rule ('rule', docs/notes/coliseum.md «Enemy variant rule»: same level knots up to LV 999, same ATK / DEF / EXP /
+//    lux / score, same HP below LV 300, HP x3 at LV 300, 40/11 x that at LV 999, no munny or raid points; the rest of the row as
+//    the base, though the originals also differ in score / CP / skills, which no rule gives) against the base id - 20000: the
+//    1.1.3 row of the base, else its raw ReLux row of the old shape (originals), else our master's row (baseSource 'master':
+//    for the gap ids our master's row may be our own clone, reported, never silent).
+// Original Coliseum ids only: 20000-29999 (ENEMY_RANGE) and the month ids of the served stage lists. No source at all stops the
+// build (docs/notes/coliseum.md «Enemy rows of the served stages»): the stats of such an enemy are decided per enemy as for the
+// raids and added as a source here; 'estimate' is a reserved label for those rows, never a silent path. Rows of our master are
+// never written again. out.colosseumEnemies = [{enemyId, source, label, stages, base?, baseSource?, reluxShape?, nameInferred?}]:
+// base = the row a monthCopy / rule row comes from, baseSource its source ('113' / 'relux' / 'master', rule rows), reluxShape why
+// the id's own raw ReLux row was refused, nameInferred when no source holds a row of the id at all (21557: the name is the base
+// model's, «The Good Boy»). Labels colosseumEnemy<source> (the notice labels colosseumEnemyRelux / MonthCopy / Rule / Estimate for
+// the non-1.1.3 values). out.enemyCheck = {checked, reason, unchecked: [stageId]}: checked false when the stage enemy lists are
+// missing or do not cover every served stage (a clean machine before its first resource build: make-game-tables runs before
+// gen_colosseum_stages / import_colosseum_stages, so a hard stop there would break the build; the stage import still refuses a
+// missing enemy).
+const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', monthCopy: 'colosseumEnemyMonthCopy',
+  estimate: 'colosseumEnemyEstimate' };
+const variantId = (id) => id >= ENEMY_RANGE[0] && id <= ENEMY_RANGE[1];
+// the base Coliseum id of a month id (YYMM + 20xxx, 1 + 20xxx), null for any other id
+function monthBase(id) {
+  if (!Number.isSafeInteger(id) || id < 100000) return null;
+  const base = id % 100000, prefix = Math.floor(id / 100000);
+  if (!variantId(base)) return null;
+  if (prefix === 1) return base;
+  const mm = prefix % 100;
+  return prefix >= 1000 && prefix <= 9999 && mm >= 1 && mm <= 12 ? base : null;
+}
+// the shape of a raw ReLux enemy row: 'old' (the 1.1.3 knots or the 2017 month curve), '2019' (the 2019 Coliseum revamp: its
+// knots, or the revamp's ATK cap 2,100,000,000), 'corrupt' (anything else: placeholder knots, values past the safe integers,
+// a missing row). Only the first validGrowth values count (the rest is binary padding in every donor row).
+const OLD_KNOTS = [[1, 35, 100, 300, 999, 9999], [1, 35, 100, 300, 999], [1, 100, 300, 600, 9999, 99999]].map(String);
+const KNOTS_2019 = String([1, 1400, 2600, 3100, 3200, 9999]);
+const ATK_CAP_2019 = 2100000000;
+function reluxShape(r) {
+  const n = r && r.validGrowth;
+  if (!n || n > 6) return 'corrupt';
+  const cut = (f) => (Array.isArray(r[f]) ? r[f].slice(0, n) : []);
+  const lv = cut('baseLv');
+  if (['baseLv', 'hp', 'attack', 'defense'].some((f) => cut(f).length !== n || cut(f).some((v) => !Number.isSafeInteger(v) || v < 0))) return 'corrupt';
+  if (lv[0] !== 1 || lv.some((l, i) => i && l <= lv[i - 1])) return 'corrupt';
+  if (String(lv) === KNOTS_2019 || cut('attack').some((v) => v >= ATK_CAP_2019)) return '2019';
+  return OLD_KNOTS.includes(String(lv)) ? 'old' : 'corrupt';
+}
+// a row of the 4.3.1 enemy schema, arrays cut at their valid counts
+const enemySchemaRow = (r) => schemaRow('enemy', r, validMap(r, ENEMY_VALID));
+const schemaRowOf = (table, r) => (table === 'enemy' ? enemySchemaRow(r) : schemaRow(table, r));
 function enemyRows(src, out) {
   const masterRows = src.masterEnemies || [];
   const have = new Set([...(src.masterEnemyIds || []), ...masterRows.map((r) => r.enemyId)]);
   const added = new Map(); // enemyId -> report entry
-  const add = (id, row, source, stages) => {
+  const add = (id, row, source, stages, extra = {}) => {
     have.add(id);
     out.enemy.push(row);
-    added.set(id, { enemyId: id, source, label: ENEMY_LABEL[source], stages });
+    added.set(id, { enemyId: id, source, label: ENEMY_LABEL[source], stages, ...extra });
   };
-  const variant = (id) => id >= ENEMY_RANGE[0] && id <= ENEMY_RANGE[1];
   const row113 = new Map((src.enemy || []).map((e) => [e.enemyId, e]));
   for (const e of [...(src.enemy || [])].sort(byKey('enemyId'))) {
-    if (!variant(e.enemyId) || have.has(e.enemyId)) continue;
-    add(e.enemyId, schemaRow('enemy', e, validMap(e, ENEMY_VALID)), '113', []);
+    if (!variantId(e.enemyId) || have.has(e.enemyId)) continue;
+    add(e.enemyId, enemySchemaRow(e), '113', []);
   }
   const served = out.colosseumStage.flatMap((cs) => cs.stageId.slice(0, cs.validStage));
   out.enemyCheck = { checked: false, reason: 'no stage enemy lists', unchecked: served };
@@ -505,19 +550,46 @@ function enemyRows(src, out) {
         for (const id of ids) { if (!need.has(id)) need.set(id, []); if (!need.get(id).includes(sid)) need.get(id).push(sid); }
       }
     }
-    const base = new Map(masterRows.map((r) => [r.enemyId, r]));
+    const master = new Map(masterRows.map((r) => [r.enemyId, r]));
     const relux = new Map((src.reluxEnemies || []).map((r) => [r.enemyId, r]));
+    const rows = new Map(out.enemy.map((r) => [r.enemyId, r])); // the rows of this run, by id
+    // the row of a base: our master's, else one this run derived (resolved on demand, also when no stage needs the base itself)
+    const derived = new Map(); // id -> {row, source, extra} or null
+    const resolve = (id) => {
+      if (derived.has(id)) return derived.get(id);
+      derived.set(id, null); // a loop has no source
+      const e113 = row113.get(id), rx = relux.get(id), shape = rx ? reluxShape(rx) : undefined, mb = monthBase(id);
+      const refused = rx && shape !== 'old' ? { reluxShape: shape } : {};
+      const named = rx || e113 ? {} : { nameInferred: true };
+      let res = null;
+      if (e113) res = { row: enemySchemaRow(e113), source: '113', extra: {} };
+      else if (rx && shape === 'old') res = { row: enemySchemaRow(rx), source: 'relux', extra: {} };
+      else if (mb !== null) {
+        const b = baseRow(mb);
+        if (b) res = { row: { ...enemySchemaRow(b), enemyId: id }, source: 'monthCopy', extra: { base: mb, ...refused, ...named } };
+      } else if (variantId(id)) {
+        const bid = id - 20000, b113 = row113.get(bid), brx = relux.get(bid), bm = master.get(bid);
+        const [b, baseSource] = b113 ? [b113, '113'] : brx && reluxShape(brx) === 'old' ? [enemySchemaRow(brx), 'relux'] : bm ? [bm, 'master'] : [null, null];
+        const rule = b && ruleRow(id, b);
+        if (rule) res = { row: rule, source: 'rule', extra: { base: bid, baseSource, ...refused, ...named } };
+      }
+      derived.set(id, res);
+      return res;
+    };
+    const baseRow = (id) => master.get(id) || rows.get(id) || (resolve(id) || {}).row || null;
     for (const [id, stages] of [...need].sort((a, b) => a[0] - b[0])) {
       if (added.has(id)) { added.get(id).stages = stages; continue; }
       if (have.has(id)) continue;
       const where = `enemy ${id} of stage ${stages.join(', ')}`;
-      if (!variant(id)) throw new Error(`colosseum: ${where} is missing from the master and is not a Coliseum variant id`);
-      const e113 = row113.get(id), b = base.get(id - 20000), rule = b && ruleRow(id, b), rx = relux.get(id);
-      if (e113) add(id, schemaRow('enemy', e113, validMap(e113, ENEMY_VALID)), '113', stages);
-      else if (rule) add(id, rule, 'rule', stages);
-      else if (rx) add(id, schemaRow('enemy', rx, validMap(rx, ENEMY_VALID)), 'relux', stages);
-      else throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no base ${id - 20000} for the variant rule, no ReLux row): `
-        + 'its stats are decided per enemy as for the raids (label colosseumEnemyEstimate), see docs/notes/coliseum.md «Enemy rows of the served stages»');
+      if (!variantId(id) && monthBase(id) === null) throw new Error(`colosseum: ${where} is missing from the master and is not a Coliseum variant id (20000-29999) nor a month id (YYMM / 1 + one)`);
+      const res = resolve(id);
+      if (!res) {
+        const base = monthBase(id) !== null ? `no row for its base ${monthBase(id)}` : `no base ${id - 20000} for the variant rule`;
+        throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no ReLux row of the old shape, ${base}): `
+          + 'its stats are decided per enemy as for the raids (label colosseumEnemyEstimate), see docs/notes/coliseum.md «Enemy rows of the served stages»');
+      }
+      add(id, res.row, res.source, stages, res.extra);
+      rows.set(id, res.row);
     }
     out.enemyCheck = unchecked.length ? { checked: false, reason: `${unchecked.length} served stages without an enemy list`, unchecked } : { checked: true, reason: '', unchecked: [] };
   }
@@ -541,9 +613,14 @@ function readRelux(file, boardsFile = path.join(path.dirname(file), 'coliseum_bo
   return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum || []),
     sphere: boards.map((x) => x.sphere), sphereArray: boards.map((x) => x.sphereArray), sphereMasu: boards.map((x) => x.sphereMasu) };
 }
-// the cleaned ReLux Coliseum enemy rows ({rows: [...]}, arrays already cut), null when not readable
+// the ReLux enemy rows: the raw donor table (an array or {enemy: [...]}, full-length arrays with binary padding past the valid
+// counts, cut by enemyRows) or a {rows: [...]} extract; null when not readable
 function readReluxEnemies(file) {
-  try { const j = JSON.parse(fs.readFileSync(file, 'utf8')); return Array.isArray(j && j.rows) ? j.rows : null; } catch { return null; }
+  let j;
+  try { j = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+  if (Array.isArray(j)) return j;
+  const rows = j && (Array.isArray(j.rows) ? j.rows : Array.isArray(j.enemy) ? j.enemy : null);
+  return rows || null;
 }
 // The enemy lists of the stages, local files outside the repo (env names them, else the local defaults), the first one holding a
 // stage wins: the stage import report (import_colosseum_stages.py: the files actually served, status «imported»), the generated
@@ -627,11 +704,14 @@ function patch(masterDir, opts = {}) {
     console.warn(`colosseum: WARNING ${notBuilt.map((s) => s.month).join(', ')} not built yet (no ranking prizes in RELUX_RANKING): left out`);
     seasons = seasons.filter((s) => !notBuilt.includes(s));
   }
-  // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the ReLux enemy rows (opts.reluxEnemies, else
-  // KHUX_COLOSSEUM_RELUX_ENEMIES / DEFAULT_RELUX_ENEMIES); without the lists only the 1.1.3 variants are checked (the stage import
-  // still refuses a stage with an enemy missing from the master). With opts.src (tests) the local files are never read.
+  // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the raw ReLux enemy table (opts.reluxEnemies,
+  // else KHUX_COLOSSEUM_RELUX_ENEMY / DEFAULT_RELUX_ENEMY); without the lists only the 1.1.3 variants are checked (the stage import
+  // still refuses a stage with an enemy missing from the master); without the table an id that needs it stops the run (enemyRows).
+  // With opts.src (tests) the local files are never read.
   const stageEnemies = opts.stageEnemies || (opts.src ? null : readStageEnemies(stageEnemyFiles()));
-  const reluxEnemies = opts.reluxEnemies || (opts.src ? [] : readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMIES || DEFAULT_RELUX_ENEMIES) || []);
+  const reluxEnemyFile = process.env.KHUX_COLOSSEUM_RELUX_ENEMY || DEFAULT_RELUX_ENEMY;
+  const reluxEnemies = opts.reluxEnemies || (opts.src ? [] : readReluxEnemies(reluxEnemyFile));
+  if (!reluxEnemies) console.warn(`colosseum: the raw ReLux enemy table ${reluxEnemyFile} is not readable: the ids that need it stop the run`);
   const out = seasonRows({ ...src, relux, masterEnemyIds: master.enemy.map((r) => r.enemyId), masterEnemies: master.enemy, stageEnemies, reluxEnemies }, seasons);
   // the flag of an unchecked run (out.enemyCheck); make-game-tables prints it as a banner. Not a stop: on a clean machine the
   // stage files come after this run (build-resources.ps1), the stage import then refuses a missing enemy
@@ -649,12 +729,12 @@ function patch(masterDir, opts = {}) {
   if (opts.artFile) fs.writeFileSync(opts.artFile, artLines(out.sphere.map((r) => r.sphereBoardId)));
   if (!banner) console.warn(`colosseum: no Coliseum Catalog banner: the Training Grounds stage ${CATALOG_STAGE} is not in the master (make-special first)`);
   console.log(`colosseum: ${out.colosseumStage.length} seasons (${seasons.map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
-    + `+${out.enemy.length} enemies (${['113', 'rule', 'relux'].map((k) => `${k} ${out.colosseumEnemies.filter((e) => e.source === k).length}`).join(', ')}), +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
+    + `+${out.enemy.length} enemies (${['113', 'relux', 'monthCopy', 'rule'].map((k) => `${k} ${out.colosseumEnemies.filter((e) => e.source === k).length}`).join(', ')}), +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
   return out;
 }
 
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMIES, readReluxEnemies, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
+module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
   STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS };
