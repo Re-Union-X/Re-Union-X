@@ -763,6 +763,20 @@
    "group": "CLOSED",
    "hash": "af22cc43cc71c1e7",
    "name": "I-319 · «Approx. 0.00 KB» on the Download prompt after switching to a save with an older master"
+  },
+  "I-320": {
+   "thread": "1575393754012196885",
+   "msg": "1575393754012196885",
+   "group": "OPEN",
+   "hash": "8b25e01fb70309d9",
+   "name": "I-320 · «Your Story is your calendar»: the week/period rule is not clear"
+  },
+  "I-321": {
+   "thread": "1575393757371826221",
+   "msg": "1575393757371826221",
+   "group": "OPEN",
+   "hash": "a67f04551733a8c0",
+   "name": "I-321 · Credits: Drybomber's real contribution"
   }
  }
 }
