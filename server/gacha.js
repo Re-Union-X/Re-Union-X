@@ -929,7 +929,7 @@ function catalogPage(banners, ctx) {
     const st = stateOf(b, ctx), y = gameYearOf(b.start), pay = payGroupOf(b), href = `/web/gacha/detail/${b.drawMedalTypeId}?from=catalog`;
     perYear[y]++;
     const pk = pinnable(b, ctx) ? (() => { const on = st.key !== 'pinned'; return `<div class="pkw"><button type="button" class="pk" data-id="${b.drawMedalTypeId}" data-pin="${on ? `/web/gacha/pin/${b.drawMedalTypeId}` : '/web/gacha/unpin'}" data-on="${on ? 1 : 0}">${on ? `${cards.KEEP_LABEL_ICON}Keep in the Shop` : 'Remove from the Shop'}</button><div class="pinmsg"></div></div>`; })() : '';
-    return `<div class="b ${st.key}" id="c${b.drawMedalTypeId}" data-year="${y}" data-pay="${pay}" data-vip="${isVip(b) ? 1 : 0}" data-free="${isFreeDaily(b) ? 1 : 0}" data-state="${st.key}" data-kind="medal">`
+    return `<div class="b ${st.key}" id="c${b.drawMedalTypeId}" data-year="${y}" data-pay="${pay}" data-vip="${isVip(b) ? 1 : 0}" data-free="${isFreeDaily(b) ? 1 : 0}" data-state="${st.key}" data-kind="medal" data-href="${href}">`
       + `<a class="im" href="${href}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt=""></a>`
       + `<div class="info"><a class="nm" href="${href}">${esc(b.name)}</a><div class="n">${esc(niceRange(b))}</div>`
       + `${priceLine(b) ? `<div class="pay">${PAY_ICON[pay]}${priceLine(b)}</div>` : ''}<span class="s s-${st.key}">${esc(st.text)}</span>${pk}</div></div>`;
@@ -957,7 +957,8 @@ function catalogPage(banners, ctx) {
     + `<h4>SHOW</h4><div class="opts" data-g="show">${opts(SHOW_OPTS, (v) => (v === 'all' ? '' : ` st-${v}`))}</div>` // SHOW before PAID WITH (user 13-11)
     + `<h4>PAID WITH</h4><div class="opts" data-g="pay">${opts(PAY_OPTS)}</div>`
     + `<div class="foot"><a href="#" class="reset" id="freset">Reset filters</a><button type="button" class="ok" id="fok">Show ${nb}</button></div></div>`
-    + `<script>${PIN_JS}</script><script>${js}</script>`, '', '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>');
+    // the whole row opens the banner page (user 26-11, as the Raid / Event Catalog rows): a tap anywhere but on a link or button
+    + `<script>${PIN_JS}</script><script>${js}</script><script>[].forEach.call(document.querySelectorAll('.cat .b'),function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el){if(t.tagName==='A'||t.tagName==='BUTTON'||t.tagName==='INPUT')return;t=t.parentNode;}var h=el.getAttribute('data-href');if(h)location.href=h;};});</script><style>.cat .b{cursor:pointer}</style>`, '', '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>');
 }
 
 module.exports = {

@@ -83,6 +83,8 @@ function progressOf(row) {
 // ES5: after a keep / remove the kept row gold, the previous one back to its own state (data-base, data-bcls, data-bpill: a kept
 // season can sit on the story month or later, ruling 10), the «Replaces» lines (catalog-pages.js kxRows of keepJs, shared with the
 // Raid and Event Catalogs), then the line of the season of the Story (whether another season is kept)
+// the whole row opens the season page (user 26-11, as the Raid / Event Catalog rows): a tap anywhere but on a link or button
+const ROW_JS = "[].forEach.call(document.querySelectorAll('#rows .row'),function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el){if(t.tagName==='A'||t.tagName==='BUTTON'||t.tagName==='INPUT')return;t=t.parentNode;}var h=el.getAttribute('data-href');if(h)location.href=h;};});";
 const JS = "var PILL=__PILL__,R=[].slice.call(document.querySelectorAll('#rows .row'));"
   + "kxRows(R,PILL,{after:function(){var k=false,i,s;for(i=0;i<R.length;i++)if(R[i].getAttribute('data-show')==='kept')k=true;"
   + "for(i=0;i<R.length;i++)if(R[i].getAttribute('data-show')==='now'){s=R[i].querySelector('.s');if(s)s.innerHTML=PILL[k?'nowKept':'now'][1];}"
@@ -159,7 +161,7 @@ function catalogPage(rows, ctx = {}) {
     const button = st.button === null ? ''
       : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(on){kxRow(b.getAttribute(\'data-id\'),on);})"', '', WHERE)}</div>`;
     const base = baseOf(row), bst = base === row.state ? st : statusOf({ ...row, state: base }, ctx, keptRow);
-    return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-show="${row.state}" data-name="${name}"`
+    return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-href="${href}" data-show="${row.state}" data-name="${name}"`
       + ` data-base="${esc(base)}" data-bcls="${esc(bst.cls)}" data-bpill="${esc(pillInner(bst.pill))}"`
       + ` data-p="${yearsOf(row).join(' ')}" data-boards="${esc(row.boards || 'none')}" data-tiers="${row.tiersDone ? 'done' : 'todo'}" data-search="${esc(searchOf(row, boards))}">`
       // the left column (user 26-11): the season card with its board cards under it, so a row is no taller than its text
@@ -191,7 +193,7 @@ function catalogPage(rows, ctx = {}) {
     + (rows.length ? `<div class="sum" id="sum"><span class="n1">${plural(rows.length, 'season')}</span> · no filters</div><div id="none" class="none" style="display:none"></div>` : '')
     + `<script>${BOARD_NC_JS}</script><div id="rows">${html || '<p class="n">No Coliseum season is served yet.</p>'}</div>`
     + sheet
-    + `<div id="pinmsg" class="pinmsg"></div><script>${keepJs(BASE, 'season', WHERE)}</script><script>${js}</script>${rows.length ? `<script>${fjs}</script>` : ''}</body></html>`;
+    + `<div id="pinmsg" class="pinmsg"></div><script>${keepJs(BASE, 'season', WHERE)}</script><script>${js}${ROW_JS}</script>${rows.length ? `<script>${fjs}</script>` : ''}</body></html>`;
 }
 
 // ---- Season detail page (26-11, as the Raid Catalog detail page raid-pages.js detailPage): GET /web/colosseum/season/<id> ----

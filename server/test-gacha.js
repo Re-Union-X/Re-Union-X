@@ -661,9 +661,10 @@ try {
   check(yp.includes("kind:attr(el,'data-kind')||'medal'") && yp.includes("if(s.kind!=='all'&&r.kind!==s.kind)return false;"), 'catalogo: filtro kind nel JS');
   check(yp.includes('"/web/gacha/unpin"+p'), 'catalogo: khuxSet con le rotte pet per data-k="pet"');
   check(yp.includes('/web/gacha/search?q=') && yp.includes('encodeURIComponent(') && yp.includes('Searching…'), 'catalogo: ricerca con encodeURIComponent e «Searching…»');
-  const rows = [...yp.matchAll(/<div class="b [^"]*" id="c(\d+)" data-year="(\d)" data-pay="(\w+)" data-vip="([01])" data-free="[01]" data-state="(\w+)" data-kind="medal">/g)];
+  const rows = [...yp.matchAll(/<div class="b [^"]*" id="c(\d+)" data-year="(\d)" data-pay="(\w+)" data-vip="([01])" data-free="[01]" data-state="(\w+)" data-kind="medal" data-href="\/web\/gacha\/detail\/\d+\?from=catalog">/g)];
   check(rows.length === yb.length, `catalogo: data-* su ogni banner (${rows.length})`);
   const row = (b) => rows.find((r) => Number(r[1]) === b.drawMedalTypeId) || [];
+  check(yp.includes("querySelectorAll('.cat .b'),function(el){el.onclick=") && yp.includes("if(t.tagName==='A'||t.tagName==='BUTTON'"), 'catalogo: tutta la riga apre i dettagli (come Raid / Event Catalog)');
   check(row(yb[0])[2] === '0' && row(yb[1])[2] === '1' && row(yb[5])[2] === '5', 'catalogo: data-year');
   check(row(yb[2])[3] === 'seasonal' && row(yb[4])[3] === 'platinum' && row(yb[6])[3] === 'other' && row(yb[3])[4] === '1' && row(yb[0])[4] === '0', 'catalogo: data-pay e data-vip');
   check(row(yb[1])[5] === 'locked' && row(yb[5])[5] === 'catalog' && row(yb[0])[5] === 'later', 'catalogo: data-state');

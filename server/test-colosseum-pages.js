@@ -357,6 +357,28 @@ const tests = {
     assert.ok(ph.includes('<style data-phone>') && ph.includes('html{zoom:.7}') && ph.includes('table{table-layout:auto!important}'));
     assert.ok(/[;}']\.pkd\{[^}]*width:auto!important[^}]*min-height:26px[^}]*font-size:13px!important/.test(ph), 'compact Keep / Remove on phones');
   },
+  // the whole row opens the season page (user 26-11, as the Raid / Event Catalog rows): a tap on the row, its card strip or the
+  // empty space navigates; a tap on a link (name, card, Keep / Remove) or a button keeps its own action
+  row_link() {
+    const html = pages.catalogPage(ROWS, CTX);
+    assert.ok(rowHtml(html, 900).includes('data-href="/web/colosseum/season/900?from=catalog"'));
+    const rows = [...html.matchAll(/<div class="row [^"]*"[^>]*>/g)].map((m) => { const a = Object.fromEntries([...m[0].matchAll(/([\w-]+)="([^"]*)"/g)].map((x) => [x[1], x[2]]));
+      return { attrs: a, className: a.class, getAttribute: (k) => (k in a ? a[k] : null), setAttribute() {}, q: {}, querySelector() { return null; }, tagName: 'DIV' }; });
+    const ids = {}, el = (id) => (ids[id] ||= { id, innerHTML: '', textContent: '', style: {}, value: '', getAttribute: () => null });
+    const loc = { hash: '', href: '' };
+    const sel = (q) => (q === '#rows .row' ? rows : []);
+    require('vm').runInNewContext([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join(String.fromCharCode(10)),
+      { window: {}, location: loc, history: {}, document: { body: { className: '' }, getElementById: el, querySelectorAll: sel, createElement: () => ({}) } });
+    const may = rows.find((r) => r.attrs['data-eid'] === '900');
+    const strip = { tagName: 'SPAN', parentNode: { tagName: 'DIV', parentNode: may } };
+    may.onclick({ target: strip });
+    assert.strictEqual(loc.href, '/web/colosseum/season/900?from=catalog', 'a tap on the board strip opens the season');
+    loc.href = '';
+    may.onclick({ target: { tagName: 'A', parentNode: { tagName: 'DIV', parentNode: may } } });
+    assert.strictEqual(loc.href, '', 'the Keep / Remove link keeps its own action');
+    may.onclick({ target: may });
+    assert.strictEqual(loc.href, '/web/colosseum/season/900?from=catalog', 'the empty space of the row');
+  },
   empty() {
     const html = pages.catalogPage([], CTX);
     assert.ok(html.includes('No Coliseum season is served yet.'));
