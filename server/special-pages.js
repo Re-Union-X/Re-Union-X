@@ -9,6 +9,7 @@ const special = require('./special');
 // next; Launch year .. Final months; user 06-11): same names, same boundaries, a tab only for a year with rows, no «Now» mark
 // (the Shop has none). Display grouping only: special.PERIODS (Launch .. Last) still drives the unlocks and the entries' periods.
 const { gameYearOf, GAME_YEARS } = require('./gacha');
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const YEAR_SPAN = '2016–2021';
 // game years a span of days touches (inclusive)
 const yearsBetween = (from, to) => { const out = []; for (let y = gameYearOf(from); y <= gameYearOf(to); y++) out.push(y); return out; };
@@ -318,7 +319,7 @@ function pageData(index, ctx) {
   const current = new Set(ctx.period === undefined ? [] : special.currentEntries({ entries }, ctx));
   return { entries, byKey, pinned, current };
 }
-const keepButton = (id, on, extra = '') => `<a href="#" class="pk" data-id="${id}" data-on="${on}" data-pin="${on === 1 ? `/web/special/pin/${id}` : '/web/special/unpin'}"${extra}>${on === 1 ? KEEP_LABEL : REMOVE_LABEL}</a>`;
+const keepButton = (id, on, extra = '', cls = '') => `<a href="#" class="pk${cls}" data-id="${id}" data-on="${on}" data-pin="${on === 1 ? `/web/special/pin/${id}` : '/web/special/unpin'}"${extra}>${on === 1 ? KEEP_LABEL : REMOVE_LABEL}</a>`;
 // «Monday» for one day, «Mon, Wed» for several (status lines)
 const dayWords = (days) => (Array.isArray(days) && days.length === 1 ? ({ Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' })[days[0]] || days[0] : (days || []).join(', '));
 const daysText = (en) => (en.days === 'all' ? 'Every day' : (en.days || []).join(', '));
@@ -507,11 +508,11 @@ function statusTools(ctx, data) {
   const statusFor = (en) => { if (!memo.has(en)) memo.set(en, statusOf(en, ctx, data)); return memo.get(en); };
   const bestOf = (list) => list.reduce((a, b) => (khuxRank(statusFor(b).show, statusFor(b).cls) < khuxRank(statusFor(a).show, statusFor(a).cls) ? b : a));
   // the Keep / Remove button of a group of entries, only when exactly one of them can be kept (with «Replaces»)
-  const keepFor = (list, extra) => {
+  const keepFor = (list, extra, cls = '') => {
     const keepable = list.filter((en) => statusFor(en).button !== null);
     if (keepable.length !== 1) return '';
     const st = statusFor(keepable[0]);
-    return `${st.rp || ''}<div>${keepButton(keepable[0].evStageId, st.button, extra)}</div>`;
+    return `${st.rp || ''}<div>${keepButton(keepable[0].evStageId, st.button, extra, cls)}</div>`;
   };
   return { statusFor, bestOf, keepFor };
 }
@@ -695,7 +696,7 @@ function detailPage(index, evStageId, ctx = {}) {
   const periods = ctx.periods || special.PERIODS;
   const names = { drop: () => [], stage: () => null, ...(ctx.names || {}) };
   const { statusFor, bestOf, keepFor } = statusTools(ctx, data);
-  const button = (list) => keepFor(list, ' onclick="var b=this;return khuxPin(b,document.getElementById(\'pinmsg\'),function(){b.style.display=\'none\';})"');
+  const button = (list) => keepFor(list, ' onclick="var b=this;return khuxPin(b,document.getElementById(\'pinmsg\'),function(){b.style.display=\'none\';})"', DETAIL_KEEP);
   const versions = [...f.versions].reverse(), head = versions[0][0], best = statusFor(bestOf(f.list));
   const quests = (en) => {
     const stages = en.stages && en.stages.length ? en.stages : (en.stageIds || []).map((stageId) => ({ stageId, dropRewardIds: en.dropRewardIds }));

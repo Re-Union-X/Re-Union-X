@@ -14,6 +14,7 @@
 'use strict';
 const special = require('./special-pages');
 const parts = require('./catalog-pages');
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 
 const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN, CROWN } = special;
 const { PAGE_HEAD, pill, keepJs, FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet, backBar, srvFrame, RULE_CSS, SRV_CSS, FOLD_CSS } = parts;
@@ -250,7 +251,7 @@ function detailPage(rows, id, det, ctx = {}) {
   const q = row.state === 'later' && ctx.unlockQuestOf ? ctx.unlockQuestOf(row) : null;
   const st = { ...st0, why: q ? `Your Story has not reached this month yet: it unlocks at Story Quest ${q}.` : WHY[whyKey] || '' };
   const button = st.button === null ? ''
-    : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', ' pkd', WHERE)}</div>`;
+    : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', DETAIL_KEEP, WHERE)}</div>`;
   const box = srvFrame(st, { after: `<div id="pinmsg" class="pinmsg"></div>${parts.replacesLine(st, keptRow && keptRow !== row ? titleOf(keptRow) : null)}${button}`,
     intro: `This server follows your Story, not the calendar: this season of the original game (${esc(monthYear(`${row.month}-01`))}) plays when your Story week reaches its month, or when you keep it here.`,
     links: [[NOTICE_LINK, '«Coliseum» notice ›'], [`${BASE}/catalog`, 'Coliseum Catalog ›']] }, 'pin');

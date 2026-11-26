@@ -197,6 +197,8 @@ const tests = {
     const html = pages.detailPage(INDEX(), 29900, { ...ctx(), fromCatalog: true, hasNotice: (id) => id === 'E-0' });
     const box = html.slice(html.indexOf('<div class="sb">'), html.indexOf('<h2>'));
     assert.ok(box.includes('On this server') && box.includes('NOT ORIGINAL'));
+    // the Keep / Remove button of a detail page: the shared compact phone class (phone-css.js DETAIL_KEEP)
+    assert.ok(box.includes('class="pk pkd" data-id="29900"'), 'Event detail: the shared compact keep button');
     assert.ok(/<details class="rb">/.test(box) && !/<details class="rb" open/.test(box), 'Rebuilt values closed');
     for (const l of ['dramaOff', 'eventCoins', 'donorKept']) assert.ok(box.includes(REASONS[l].replace(/'/g, '&#39;')) || box.includes(REASONS[l]), `reason of ${l}`);
     assert.ok(box.includes('Past event'), 'status');
@@ -565,6 +567,7 @@ const tests = {
     assert.ok(html.includes('Draw Ticket Board 1') && html.includes(pages.boardWhyPlain('windowUnknown: no dated notice')));
     const d = pages.boardDetailPage(ix, 29920, ctx());
     assert.ok(d.includes('<h2>Avatar Boards</h2>') && d.includes('Red Coat') && d.includes('3,000 Jewels'));
+    assert.ok(d.includes('class="pk pkd" data-id="29920"'), 'Avatar Board detail: the shared compact keep button (phone-css.js DETAIL_KEEP)');
     assert.ok(/Blue Coat.{0,200}price/i.test(d), 'priceUnknown: never sold at a guessed price');
     assert.ok(/Lost Coat.{0,300}reward/i.test(d) && !d.includes('cell 2: medal'), 'a held board: its reason in plain words, not the builder note');
     assert.ok(!d.includes('<h2>Quests</h2>'), 'no quest table for a board-only entry');

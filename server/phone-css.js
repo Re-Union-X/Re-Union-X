@@ -56,9 +56,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   // dates: exactly two lines (clamped): with the phone's 110 % system font a two-line date was taller than a min-height
   // Coliseum Catalog: the progress line (.pg) as the dates (user 26-11: a two-line progress line pushed its state pill below the
   // neighbours'), and its board card strip at a fixed height (colosseum-pages.js BOARD_CSS)
-  // Coliseum season page (user 26-11: the Keep / Remove button was far too big on the phone): a compact button as the other
-  // detail pages', never the full-width button of the narrow portrait layout
-  + '.sb .pk.pkd{display:inline-flex!important;align-items:center;gap:6px;width:auto!important;min-height:26px;padding:2px 12px!important;font-size:13px!important;line-height:1.4!important;margin:6px 0 2px!important}'
+  // the Keep / Remove button of every catalog detail page (DETAIL_KEEP: Raid, Event, Avatar Board, Special, Banner and Coliseum
+  // details; user 26-11: «far too big» on the phone): one compact button, never the full-width button of the narrow portrait layout
+  + '.pkd{display:inline-flex!important;align-items:center;gap:6px;width:auto!important;min-height:26px;padding:2px 12px!important;font-size:13px!important;line-height:1.4!important;margin:6px 0 2px!important}'
   + `${inCards('.lc')}{display:flex;flex-direction:column;gap:4px;width:100%;flex:0 0 auto;max-width:none}`
   + `${inCards('.bcs')}{flex:0 0 auto;height:44px!important}${inCards('.bt')}{font-size:11px}`
   + `${inCards('.d')},${inCards('.pg')},${inCards('.n')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35;height:2.8em;flex:0 0 auto}`
@@ -107,6 +107,9 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + '#rows>.row:has(>.mi) .cps{margin-top:4px}'
   + '}';
 
+// the class every catalog detail page gives its Keep / Remove button (the compact phone rule above)
+const DETAIL_KEEP = ' pkd';
+
 const MARK = '<style data-phone>';
 
 // The phone CSS as the last <style> of the head, so it wins over the page's own rules; pages without a head
@@ -118,4 +121,4 @@ function withPhone(html) {
   return html.slice(0, i) + MARK + PHONE_CSS + '</style>' + html.slice(i);
 }
 
-module.exports = { PHONE_MQ, PHONE_CSS, withPhone };
+module.exports = { PHONE_MQ, PHONE_CSS, withPhone, DETAIL_KEEP };

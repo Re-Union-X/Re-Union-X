@@ -607,6 +607,7 @@ try {
   const dr = g.detailPage(okb, undefined, medalNames, { ...dctx, pinnedRowId: okb.rowId });
   check(dr.includes('Remove from the Shop') && dr.includes('/web/gacha/unpin') && dr.includes('Removed.') && dr.includes('Leave and re-enter the Shop.') && dr.includes('pinmsg off') && !dr.includes('>📌 Keep in the Shop</a>'), 'dettagli: Remove');
   check(!g.detailPage(okb, undefined, medalNames, { ...dctx, fromCatalog: false }).includes('Keep in the Shop'), 'dettagli: niente pulsante fuori dal Catalog');
+check(dk.includes('<a class="btn pkd" id="pinbtn"'), 'details: the shared compact keep button on phones (phone-css.js DETAIL_KEEP)');
   check(!g.detailPage(bad['prices [0]'], undefined, medalNames, dctx).includes('Keep in the Shop'), 'dettagli: niente pulsante se non fissabile');
   // verdetti dei Details (finale): stagionale fuori finestra, fissabile passato
   const wk = { day: '2016-06-01', periodEnd: '2016-06-30', from: '2016-06-06', to: '2016-06-12', k: 0, n: 1 };

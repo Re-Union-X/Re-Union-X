@@ -279,11 +279,11 @@ const tests = {
     assert(!/class="pk"/.test(r), 'no Keep button');
     assert(/class="row [^"]*\boff\b/.test(r));
     const d = pages.detailPage(index(), 8150, ctx());
-    assert(/Not built yet/.test(d) && !/class="pk"/.test(d));
+    assert(/Not built yet/.test(d) && !/class="pk[ "]/.test(d));
     // a partial week: the missing tier says so on the details page, the row stays keepable
     const p = pages.detailPage(index(), 8100, ctx());
     assert(/Epic[\s\S]*Not built yet/.test(p), 'the missing tier');
-    assert(/class="pk"/.test(p));
+    assert(/class="pk pkd"/.test(p), 'the shared compact detail button (phone-css.js DETAIL_KEEP)');
   },
   later_locked() {
     const html = catalog(index(), ctx());
@@ -292,7 +292,7 @@ const tests = {
     assert(/Not reached in this version of the Story/.test(r), 'no Story quest reaches it');
     assert(!/class="pk"/.test(r), 'cannot be kept');
     const d = pages.detailPage(index(), 8180, ctx({ unlockQuestOf: () => 612 }));
-    assert(/Unlocks at Story Quest 612/.test(d) && !/class="pk"/.test(d));
+    assert(/Unlocks at Story Quest 612/.test(d) && !/class="pk[ "]/.test(d));
   },
   detail_page() {
     const d = pages.detailPage(index(), 8100, ctx());

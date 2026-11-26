@@ -106,6 +106,7 @@ function statusOf(row, ctx) {
   return { show: 'later', cls: 'off', pill: pill('off', 'later', text), button: null, why };
 }
 const keepButton = (id, on, extra = '', cls = '') => parts.keepButton('/web/raid', id, on, extra, cls);
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const KEEP_JS = keepJs('/web/raid', 'raid');
 
 // ES5, no external script. Rows read once at start; a period tab, a year chip and the Filters sheet only toggle a class.
@@ -470,7 +471,7 @@ function detailPage(index, evStageId, ctx = {}) {
   const rows = calendar.catalogRows(index), row = rows.find((r) => r.evStageId === Number(evStageId));
   if (!row) return null;
   const st = statusOf(row, ctx), kept = keptRow(rows, ctx), title = titleOf(row), periods = ctx.periods;
-  const button = st.button === null ? '' : `<div>${keepButton(row.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"')}</div>`;
+  const button = st.button === null ? '' : `<div>${keepButton(row.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', DETAIL_KEEP)}</div>`;
   const pName = GAME_YEARS[gameYearOf(row.start)].name;
   const kv = [['Dates', dateRange(row)], ['Type', FAMILY_LABEL[row.family] || row.family], ['Game year', pName]].map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
   const tierRows = row.entries.map((e) => `<tr><td>${esc(tierLabel(e.tier))}</td><td>${esc(e.boss || '')}</td><td>${e.level ?? ''}</td>`

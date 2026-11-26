@@ -13,6 +13,7 @@
 // player.drawTickets, mai due valute insieme nella lista (9.7).
 'use strict';
 const clock = require('./clock');
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const gd = require('./gacha-data');
 const { seasonOf, windowText } = require('./gacha-seasons');
 const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;
@@ -678,7 +679,7 @@ function pinButton(banner, ctx) {
   const pinned = ctx.pinnedRowId === banner.rowId;
   const url = pinned ? '/web/gacha/unpin' : `/web/gacha/pin/${banner.drawMedalTypeId}`;
   const repl = !pinned && ctx.pinnedRowId && ctx.pinnedName ? `<div class="n">Replaces: ${esc(ctx.pinnedName)}</div>` : '';
-  return `<div class="pin">${repl}<a class="btn" id="pinbtn" href="#" data-pin="${url}" data-on="${pinned ? 0 : 1}" `
+  return `<div class="pin">${repl}<a class="btn${DETAIL_KEEP}" id="pinbtn" href="#" data-pin="${url}" data-on="${pinned ? 0 : 1}" `
     + `onclick="return khuxPin(this,document.getElementById('pinmsg'),function(){document.getElementById('pinbtn').style.display='none';})">${pinned ? 'Remove from the Shop' : '📌 Keep in the Shop'}</a><div id="pinmsg" class="pinmsg"></div></div>`
     + `<script>${PIN_JS}</script>`;
 }

@@ -355,7 +355,7 @@ const tests = {
     // phone: the 70 % layout of the other detail pages
     const ph = withPhone(html);
     assert.ok(ph.includes('<style data-phone>') && ph.includes('html{zoom:.7}') && ph.includes('table{table-layout:auto!important}'));
-    assert.ok(/\.sb \.pk\.pkd\{[^}]*width:auto!important[^}]*min-height:26px[^}]*font-size:13px!important/.test(ph), 'compact Keep / Remove on phones');
+    assert.ok(/[;}']\.pkd\{[^}]*width:auto!important[^}]*min-height:26px[^}]*font-size:13px!important/.test(ph), 'compact Keep / Remove on phones');
   },
   empty() {
     const html = pages.catalogPage([], CTX);

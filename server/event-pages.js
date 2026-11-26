@@ -30,8 +30,9 @@ const { PAGE_HEAD, pill, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues,
 const BASE = '/web/event';
 const BOARD_BASE = '/web/avatar'; // the Avatar Board Catalog (Task 5b)
 const BOARD_WHERE = 'Avatar Boards'; // the screen its kept boards are listed in (keep button and messages)
-const keepButton = (id, on, extra = '') => parts.keepButton(BASE, id, on, extra);
-const boardKeepButton = (id, on, extra = '') => parts.keepButton(BOARD_BASE, id, on, extra, '', BOARD_WHERE);
+const keepButton = (id, on, extra = '', cls = '') => parts.keepButton(BASE, id, on, extra, cls);
+const boardKeepButton = (id, on, extra = '', cls = '') => parts.keepButton(BOARD_BASE, id, on, extra, cls, BOARD_WHERE);
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const KEEP_JS = parts.keepJs(BASE, 'event');
 const BOARD_KEEP_JS = parts.keepJs(BOARD_BASE, 'entry', BOARD_WHERE);
 // the pills the page script writes after a keep / remove: [row class, html]; the Avatar Board Catalog has its own
@@ -681,7 +682,7 @@ function detailPage(index, evStageId, ctx = {}) {
   const entries = eventEntriesOf(index), e = entryOfId(entries, Number(evStageId));
   if (!e) return null;
   const st = statusOf(e, ctx), kept = keptOf(entries, ctx), title = catName(e);
-  const button = st.button === null ? '' : `<div>${keepButton(e.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"')}</div>`;
+  const button = st.button === null ? '' : `<div>${keepButton(e.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', DETAIL_KEEP)}</div>`;
   const quests = e.quests || [];
   const nb = boardsOf(e).length, nbs = boardsOf(e).filter((b) => b.served).length;
   const kv = [['Dates', dateRange(e)], ['Game year', GAME_YEARS[gameYearOf(e.start)].name],
@@ -760,7 +761,7 @@ function boardDetailPage(index, evStageId, ctx = {}) {
   const entries = boardEntriesOf(index), e = entryOfId(entries, Number(evStageId));
   if (!e) return null;
   const st = boardStatusOf(e, ctx), kept = keptOf(entries, ctx), title = catName(e);
-  const button = st.button === null ? '' : `<div>${boardKeepButton(e.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"')}</div>`;
+  const button = st.button === null ? '' : `<div>${boardKeepButton(e.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', DETAIL_KEEP)}</div>`;
   const kv = [['Dates', dateRange(e)], ['Game year', GAME_YEARS[gameYearOf(e.start)].name], ['Avatar boards', boardCount(e)]]
     .map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
   const cat = origin(ctx.cat);
