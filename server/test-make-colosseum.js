@@ -1701,5 +1701,153 @@ test('real_part3_enemies (every enemy id of the 24 seasons, the named cases)', (
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+// ---- Coliseum Part 3b Task 3: the enemy rows of 2018-04 .. 2019-04 ----
+test('reluxShape HP scale: HP at LV 300 / LV 100 inside the old Coliseum curve band; revamp-scale HP is 2019', () => {
+  const row = (hp100, hp300, atk = [1, 2, 3, 4, 5, 6]) => rawRow(1, 'X', OLD6, [10, 20, hp100, hp300, 5, 6], atk);
+  // inside: the 1.1.3 variants 0.80 .. 11.83, the served Part 3 rows 2.06 .. 10.12, the 1710xxxxx rows up to 10.7
+  for (const ratio of [0.8, 1, 2.06, 3, 10.12, 11.83]) assert.strictEqual(mc.reluxShape(row(100000, Math.round(100000 * ratio))), 'old', `ratio ${ratio}`);
+  // outside: placeholder rows of the raw table (20x, 25x, 180x) and a collapsed LV 300
+  for (const ratio of [0.1, 12.5, 20, 25, 180]) assert.strictEqual(mc.reluxShape(row(100000, Math.round(100000 * ratio))), 'corrupt', `ratio ${ratio}`);
+  // revamp scale: the 2019 curve at the old knots (HP at LV 300 over the 2.1e9 cap, ratio 1.19 inside the band)
+  assert.strictEqual(mc.reluxShape(row(5515151509, 6575758750)), '2019');
+  assert.strictEqual(mc.reluxShape(row(12000000000, 14300000000)), '2019');
+  assert.strictEqual(mc.reluxShape(rawRow(2, 'Y', OLD6.slice(0, 5), [1, 2, 3, 4, 5], [1, 2, 3, 4, 5])), 'old', 'LV 100 / LV 300 = 3 / 4 (1.33)');
+  assert.strictEqual(mc.reluxShape(rawRow(3, 'Z', OLD17, [100, 200, 300, 900, 8000, 9000], [1, 2, 3, 4, 5, 6])), 'old', 'the 2017 month curve has LV 100 / 300 too');
+});
+
+// a fixture of the 2018 cases: Jewel Sorceress 21546 (only a 2019-shape row of its own; its month copy comes from the JP Coliseum row)
+function p3bFixture() {
+  const f = p3EnemyFixture();
+  const raw = [
+    rawRow(180911546, 'Jewel Sorceress', OLD6, [62214, 196466, 994022, 2186848, 6447065, 1216674453], [1100, 2300, 4100, 9700, 29000, 31000000], { displayId: 1546 }),
+    rawRow(21546, 'Jewel Sorceress', NEW19, [15313, 3533939719, 13512121197, 16110608938, 17150000000, 512917453125], [3000, 1, 2, 3, 4, 2100000000], { displayId: 1546 }),
+    rawRow(171020007, 'Large Body', OLD6, [4500, 20766, 157839, 223970, 20662560, 206625600], [950, 2287, 5443, 51289, 2198291, 21982910], { displayId: 7 })];
+  const stageEnemies = { ...f.stageEnemies, 20150704: [21546], 20150705: [171020007] };
+  return { ...f, reluxEnemies: [...f.reluxEnemies, ...raw], stageEnemies };
+}
+test('MONTH_COPY_OF: 21546 = the JP Coliseum row 180911546 under id 21546 (monthCopy label); a 2019-shape row is never used', () => {
+  assert.deepStrictEqual(mc.MONTH_COPY_OF, { 21546: 180911546 });
+  assert.strictEqual(mc.monthBase(21546), null, 'not a monthBase case: hence the explicit map');
+  const src = p3bFixture();
+  const out = mc.seasonRows(src, S800);
+  const row = (id) => out.enemy.find((r) => r.enemyId === id);
+  const rep = out.colosseumEnemies.find((e) => e.enemyId === 21546);
+  assert.deepStrictEqual([rep.source, rep.label, rep.base, rep.reluxShape], ['monthCopy', 'colosseumEnemyMonthCopy', 180911546, '2019']);
+  assert.deepStrictEqual({ ...row(21546), enemyId: 180911546 }, mc.schemaRowOf('enemy', src.reluxEnemies.find((r) => r.enemyId === 180911546)));
+  assert.strictEqual(row(21546).displayId, 1546);
+  assert.deepStrictEqual(row(21546).baseLv, [1, 35, 100, 300, 999, 9999], 'old knots, none of the 2019 revamp');
+  assert.ok(Math.max(...row(21546).attack) < 2100000000 && row(21546).hp[5] === 1216674453);
+  // 1710xxxxx: the raw old-shape row served as it is, label Relux, the base's displayId
+  assert.deepStrictEqual([out.colosseumEnemies.find((e) => e.enemyId === 171020007).source, row(171020007).displayId], ['relux', 7]);
+  // the month copy source must be an old-shape row: a 2019-shape 180911546 (or none) stops the build, never a 2019 row
+  const stop = /21546.*20150704.*no source.*180911546/s;
+  assert.throws(() => mc.seasonRows({ ...src, reluxEnemies: src.reluxEnemies.filter((r) => r.enemyId !== 180911546) }, S800), stop);
+  assert.throws(() => mc.seasonRows({ ...src, reluxEnemies: src.reluxEnemies.map((r) => (r.enemyId === 180911546 ? { ...r, baseLv: NEW19, attack: [1, 2, 3, 4, 5, 2100000000] } : r)) }, S800), stop);
+  assert.throws(() => mc.seasonRows({ ...src, reluxEnemies: src.reluxEnemies.map((r) => (r.enemyId === 180911546 ? { ...r, hp: [62214, 196466, 5515151509, 6575758750, 6447065, 1216674453] } : r)) }, S800), stop);
+  // a master that has 21546 keeps its row: nothing of the master is written again
+  const own = { ...knotRow(21546, 'Jewel Sorceress', OLD6.slice(0, 5), [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]), displayId: 1546 };
+  const out2 = mc.seasonRows({ ...src, masterEnemies: [...src.masterEnemies, own] }, S800);
+  assert.ok(!out2.enemy.some((r) => r.enemyId === 21546));
+});
+
+// the ids of the 2018-04 .. 2019-04 sets missing from the master (census: 31 raw ReLux old shape, 29 variant rule, 21546)
+const P3B_RELUX = [170920091, 171020007, 171020011, 171020017, 171020019, 171020021, 171020022, 171020023, 171020026, 171020033, 171020042, 171020043, 171020059,
+  171020067, 171020075, 171020097, 171020116, 171020172, 171020176, 171021506, 171021521, 171021534, 171021548, 171022503, 171022506, 171022508, 171022510,
+  171028043, 171028172, 171029043, 171029172];
+const P3B_RULE = [20020, 20095, 20096, 20129, 20199, 20227, 20249, 20271, 21026, 21031, 21520, 21522, 21523, 21524, 21529, 21531, 21535, 21536, 21537, 21539,
+  21540, 21542, 21545, 21549, 21552, 21563, 21581, 22504, 22505];
+test('PART3B_ENEMY_IDS = the 61 ids of the census, next to PART3_ENEMY_IDS and disjoint from it', () => {
+  assert.deepStrictEqual([...mc.PART3B_ENEMY_IDS].sort((a, b) => a - b), [...P3B_RELUX, ...P3B_RULE, 21546].sort((a, b) => a - b));
+  assert.strictEqual(mc.PART3B_ENEMY_IDS.size, 61);
+  assert.ok([...mc.PART3B_ENEMY_IDS].every((id) => !mc.PART3_ENEMY_IDS.has(id)));
+});
+
+// the plain-revision pin of the 2018-07 stage files: the Python import and the enemy lists read the same revision
+test('2018-07 stage enemy lists: the pinned earlier revision (no 6xxxx id), the same set as the import pin', () => {
+  const stageEnemies = mc.readStageEnemies(mc.stageEnemyFiles());
+  const py = path.join(__dirname, '..', 'recon', 'tools', 'import_colosseum_stages.py');
+  if (!stageEnemies || !fs.existsSync(py) || !(20180701 in stageEnemies)) { results.push('skip 2018-07 pin: stage enemy lists or import tool not on disk'); return; }
+  const m = /PLAIN_REVISION_STAGES\s*=\s*frozenset\(range\((\d+),\s*(\d+)\)\)/.exec(fs.readFileSync(py, 'utf8'));
+  assert.ok(m, 'PLAIN_REVISION_STAGES in the import tool');
+  const pinned = Array.from({ length: +m[2] - +m[1] }, (_, i) => +m[1] + i);
+  assert.deepStrictEqual(pinned, Array.from({ length: 10 }, (_, i) => 20180701 + i));
+  for (const sid of pinned) {
+    assert.ok(stageEnemies[sid] && stageEnemies[sid].length, `${sid}: enemy list`);
+    assert.ok(stageEnemies[sid].every((id) => id < 60000), `${sid}: no 6xxxx (2019 revamp) id`);
+  }
+});
+
+// the real sources: every enemy id of the 13 new sets in the master after patch(); each id from exactly the census source
+test('real_part3b_enemies (every enemy id of 2018-04 .. 2019-04, the census sources, 21546, the HP scale)', () => {
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
+  const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
+  const stageEnemies = mc.readStageEnemies(mc.stageEnemyFiles());
+  const raw = mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY);
+  const censusFile = path.join(process.env.KHUX_COLOSSEUM_CENSUS_DIR || 'D:\\Progetto_Restauro_KH_UX\\private\\events\\sources\\coliseum', 'ENEMIES_2018.md');
+  if (!src || !relux || !stageEnemies || !raw || !fs.existsSync(censusFile)) { results.push('skip real_part3b_enemies: 1.1.3 master, ReLux extracts, stage enemy lists or the census not on disk'); return; }
+  const P3B = [3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400];
+  // the census: per month "id source" lists
+  const census = new Map();
+  for (const line of fs.readFileSync(censusFile, 'utf8').split('\n')) {
+    if (!/^\*\*20\d\d-\d\d\*\* \(\d+\):/.test(line)) continue;
+    for (const m of line.slice(line.indexOf('):') + 2).matchAll(/(\d+) (master|relux|rule|only2019|monthCopy|113)/g)) census.set(+m[1], m[2]);
+  }
+  assert.strictEqual(census.size, 138, 'the census lists 138 ids');
+  // the master without the rows this part adds (the test reads the same before and after a master regen)
+  const drop = new Set([...mc.PART3B_ENEMY_IDS]);
+  const masterRows = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).filter((r) => !drop.has(r.enemyId));
+  const heavy = 'D:\\Progetto_Restauro_KH_UX\\tmp';
+  const dir = fs.mkdtempSync(path.join(fs.existsSync(heavy) ? heavy : os.tmpdir(), 'khux-p3b-enemy-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
+    const out = withRanking(P3B, () => mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: raw, seasons: mc.SEASONS }));
+    assert.strictEqual(out.colosseumStage.length, 37);
+    const after = new Map(JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => [r.enemyId, r]));
+    const before = new Map(masterRows.map((r) => [r.enemyId, r]));
+    const sets = out.colosseumStage.filter((r) => P3B.includes(r.colosseumStageId)).flatMap((r) => r.stageId.slice(0, r.validStage));
+    assert.strictEqual(sets.length, 130);
+    const need = new Set(sets.flatMap((sid) => stageEnemies[sid] || []));
+    for (const sid of sets) assert.ok(stageEnemies[sid] && stageEnemies[sid].length, `stage ${sid}: enemy list`);
+    assert.deepStrictEqual([...need].sort((a, b) => a - b), [...census.keys()].sort((a, b) => a - b), 'the stage lists = the census ids');
+    assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] });
+    for (const id of need) assert.ok(after.has(id), `enemy ${id} in the master`);
+    for (const r of masterRows) assert.deepStrictEqual(after.get(r.enemyId), r, `master row ${r.enemyId} kept as it was`);
+    assert.strictEqual(after.size, before.size + out.enemy.length, 'new rows only for missing ids');
+    // exactly the Part 3b rows (the Part 3 rows are in the master already)
+    assert.deepStrictEqual(out.enemy.map((r) => r.enemyId), [...mc.PART3B_ENEMY_IDS].sort((a, b) => a - b), 'exactly the Part 3b rows added');
+    const rep = new Map(out.colosseumEnemies.map((e) => [e.enemyId, e]));
+    const rawById = new Map(raw.map((r) => [r.enemyId, r]));
+    // each id from exactly the census source (only2019 = 21546, served as the month copy of the JP row)
+    const want = { relux: 'relux', rule: 'rule', only2019: 'monthCopy' };
+    for (const [id, c] of census) {
+      if (c === 'master') { assert.ok(before.has(id) && !rep.has(id), `${id}: already in the master`); continue; }
+      assert.strictEqual((rep.get(id) || {}).source, want[c], `${id}: census ${c}`);
+    }
+    for (const e of out.colosseumEnemies) {
+      const r = after.get(e.enemyId), lv = r.baseLv.slice(0, r.validGrowth);
+      assert.ok(!lv.some((l) => [1400, 2600, 3100, 3200].includes(l)) && Math.max(...r.attack) < 2100000000, `${e.enemyId}: no 2019-revamp row`);
+      assert.strictEqual(e.label, { relux: 'colosseumEnemyRelux', rule: 'colosseumEnemyRule', monthCopy: 'colosseumEnemyMonthCopy' }[e.source]);
+      if (e.source === 'relux') {
+        assert.strictEqual(mc.reluxShape(rawById.get(e.enemyId)), 'old', `${e.enemyId}: old-shape raw row (knots and HP scale)`);
+        const base = before.get(e.enemyId % 100000);
+        if (base) assert.strictEqual(r.displayId, base.displayId, `${e.enemyId}: the base displayId`);
+      }
+      if (e.source === 'rule') assert.notStrictEqual(e.baseSource, 'master', `${e.enemyId}: original base`);
+    }
+    assert.deepStrictEqual(P3B_RELUX.filter((id) => rep.get(id).source !== 'relux'), []);
+    assert.deepStrictEqual(P3B_RULE.filter((id) => rep.get(id).source !== 'rule'), []);
+    // 21546: the row of 180911546 (September 2018, old shape) under the id 21546
+    assert.deepStrictEqual([rep.get(21546).source, rep.get(21546).label, rep.get(21546).base, rep.get(21546).reluxShape], ['monthCopy', 'colosseumEnemyMonthCopy', 180911546, '2019']);
+    assert.strictEqual(mc.reluxShape(rawById.get(180911546)), 'old');
+    assert.deepStrictEqual({ ...after.get(21546), enemyId: 180911546 }, mc.schemaRowOf('enemy', rawById.get(180911546)));
+    assert.strictEqual(after.get(21546).name, 'Jewel Sorceress');
+    assert.deepStrictEqual(mc.MASTER_BASE_APPROVED, [], 'no approved master base');
+    // the Part 3 follow-up: the raw ReLux rows served in Part 3 still pass the HP scale
+    const p3rows = [...mc.PART3_ENEMY_IDS].map((id) => rawById.get(id)).filter((r) => r && mc.reluxShape(r) === 'old');
+    assert.strictEqual(p3rows.length, 12, 'the 12 Part 3 raw rows still old');
+    results.push(`info real_part3b_enemies: ${need.size} ids over ${sets.length} stages; new rows ${out.enemy.length}: relux ${P3B_RELUX.length}, rule ${P3B_RULE.length}, monthCopy [21546]`);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 console.log(results.join('\n'));
 if (process.exitCode) console.log('test-make-colosseum: FAIL'); else console.log('test-make-colosseum: OK');

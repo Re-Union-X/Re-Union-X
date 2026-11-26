@@ -39,7 +39,7 @@ check(u(1501) === '[1,2,5,0,1501001]', `Gold Tricholoma originale toccato ${u(15
 const evIds = require('./make-event-enemies').eventIds();
 // the Part 3 Coliseum rows (make-colosseum.js PART3_ENEMY_IDS) keep the counters of their original row: not ours either; every
 // other Coliseum row is checked as before
-const P3 = require('./make-colosseum').PART3_ENEMY_IDS;
+const P3 = new Set([...require('./make-colosseum').PART3_ENEMY_IDS, ...require('./make-colosseum').PART3B_ENEMY_IDS]); // Part 3 and 3b
 const coli = (id) => P3.has(id);
 const counted = master.filter((e) => e.validUrgency > 0 && e.enemyId !== 1501 && !(e.enemyId >= 160911501 && e.enemyId <= 160951501)
   && !evIds.has(e.enemyId) && !coli(e.enemyId));

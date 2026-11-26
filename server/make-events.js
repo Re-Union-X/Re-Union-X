@@ -1149,7 +1149,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     // the Part 3 Coliseum rows (make-colosseum.js PART3_ENEMY_IDS; opts.part3EnemyIds in the tests) answer a name only when it has no
     // other row: the rule row 21534 «Barrier Master» made EV-0682 / EV-0744 ambiguous against the story row 11534 (Coliseum Part 3)
     const coliByName = new Map();
-    const p3 = opts.part3EnemyIds ? new Set(opts.part3EnemyIds) : require('./make-colosseum').PART3_ENEMY_IDS;
+    const p3 = opts.part3EnemyIds ? new Set(opts.part3EnemyIds) : new Set([...require('./make-colosseum').PART3_ENEMY_IDS, ...require('./make-colosseum').PART3B_ENEMY_IDS]);
     const coliId = (id) => p3.has(id);
     for (const e of master.enemy || []) {
       if (!e.name) continue;

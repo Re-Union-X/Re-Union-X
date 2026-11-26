@@ -663,6 +663,7 @@ function ruleRow(id, base) {
 //    1.1.3 knots 1/35/100/300/999(/9999) or the 2017 month curve 1/100/300/600/9999/99999); a 2019-revamp row (knots
 //    1/1400/2600/3100/3200/9999, VERIFY.md §1: the live master overwrote the 20xxx ids with the 2019 values) or a corrupt one
 //    (placeholder knots, the rest binary padding: 161020099 / 126 / 153 / 154) is never used;
+// 2b. MONTH_COPY_OF: an explicit month copy of a raw old-shape row of another id (21546 = 180911546), 'monthCopy', else a stop;
 // 3. a month id (monthBase: YYMM + a Coliseum id, 161020007 = 2016-10 copy of 20007, or 1 + a Coliseum id, 120097) takes the row
 //    of its base Coliseum id (our master's row, else the one this run derives for it) with the new id, the base's displayId kept
 //    ('monthCopy');
@@ -689,6 +690,16 @@ function ruleRow(id, base) {
 const PART3_ENEMY_IDS = new Set([20057, 20097, 20114, 20161, 20240, 20251, 20255, 21500, 21502, 21503, 21504, 21505, 21506, 21508, 21509, 21510, 21515, 21517,
   21521, 21525, 21527, 21530, 21534, 22500, 22501, 22502, 22503, 22506, 22507, 22508, 22510, 120097, 161020007, 161020011, 161020015,
   161020022, 161020033, 161020036, 161020059, 161020092, 161020093, 161020099, 161020110, 161020116, 161020126, 161020137, 161020153, 161020154]);
+// the enemy rows the Part 3b seasons add (2018-04 .. 2019-04: raw ReLux old shape 31 = 170920091 + the 30 1710xxxxx of 2018-05, variant
+// rule 29, month copy 1 = 21546); the same reason for the explicit list as PART3_ENEMY_IDS
+const PART3B_ENEMY_IDS = new Set([20020, 20095, 20096, 20129, 20199, 20227, 20249, 20271, 21026, 21031, 21520, 21522, 21523, 21524, 21529, 21531, 21535,
+  21536, 21537, 21539, 21540, 21542, 21545, 21546, 21549, 21552, 21563, 21581, 22504, 22505, 170920091, 171020007, 171020011, 171020017, 171020019,
+  171020021, 171020022, 171020023, 171020026, 171020033, 171020042, 171020043, 171020059, 171020067, 171020075, 171020097, 171020116, 171020172,
+  171020176, 171021506, 171021521, 171021534, 171021548, 171022503, 171022506, 171022508, 171022510, 171028043, 171028172, 171029043, 171029172]);
+// an explicit month copy whose source id is not the monthBase of the target (user decision 26-11): 21546 Jewel Sorceress (WW 2018-06 and
+// 2019-04; its base 1546 exists nowhere and its own raw ReLux row is 2019 shape) = the JP Coliseum row 180911546 (September 2018, old
+// shape) under the id 21546, label colosseumEnemyMonthCopy; the source row must be of the old shape, else the build stops
+const MONTH_COPY_OF = { 21546: 180911546 };
 const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', monthCopy: 'colosseumEnemyMonthCopy',
   estimate: 'colosseumEnemyEstimate' };
 const variantId = (id) => id >= ENEMY_RANGE[0] && id <= ENEMY_RANGE[1];
@@ -707,6 +718,12 @@ function monthBase(id) {
 const OLD_KNOTS = [[1, 35, 100, 300, 999, 9999], [1, 35, 100, 300, 999], [1, 100, 300, 600, 9999, 99999]].map(String);
 const KNOTS_2019 = String([1, 1400, 2600, 3100, 3200, 9999]);
 const ATK_CAP_2019 = 2100000000;
+// the HP scale of the old Coliseum curve (Part 3b Task 3, the Part 3 follow-up): HP at LV 300 / HP at LV 100 of the genuine old rows
+// = 0.80 .. 11.83 (the 125 Coliseum variants of the 1.1.3 master), 2.06 .. 10.12 (the 12 Part 3 raw rows), at most 10.71 (the Coliseum
+// rows 1710xxxxx); the raw table's placeholder rows with the old knots sit at 20x, 25x, 180x. A band of 0.5 .. 12 keeps every genuine
+// row and refuses those. The 2019 curve is 1.19 at its two middle knots (constant over the 473 rows), so the ratio cannot tell it
+// apart: its HP at LV 300 (6.6e9 and up) is over the revamp's 2.1e9 cap, the same cap as the ATK check, and calls the row '2019'.
+const HP_RATIO_BAND = [0.5, 12];
 function reluxShape(r) {
   const n = r && r.validGrowth;
   if (!n || n > 6) return 'corrupt';
@@ -715,7 +732,10 @@ function reluxShape(r) {
   if (['baseLv', 'hp', 'attack', 'defense'].some((f) => cut(f).length !== n || cut(f).some((v) => !Number.isSafeInteger(v) || v < 0))) return 'corrupt';
   if (lv[0] !== 1 || lv.some((l, i) => i && l <= lv[i - 1])) return 'corrupt';
   if (String(lv) === KNOTS_2019 || cut('attack').some((v) => v >= ATK_CAP_2019)) return '2019';
-  return OLD_KNOTS.includes(String(lv)) ? 'old' : 'corrupt';
+  if (!OLD_KNOTS.includes(String(lv))) return 'corrupt';
+  const hp = cut('hp'), hp100 = hp[lv.indexOf(100)], hp300 = hp[lv.indexOf(300)];
+  if (hp300 >= ATK_CAP_2019) return '2019';
+  return hp100 > 0 && hp300 / hp100 >= HP_RATIO_BAND[0] && hp300 / hp100 <= HP_RATIO_BAND[1] ? 'old' : 'corrupt';
 }
 // a row of the 4.3.1 enemy schema, arrays cut at their valid counts
 const enemySchemaRow = (r) => schemaRow('enemy', r, validMap(r, ENEMY_VALID));
@@ -761,7 +781,10 @@ function enemyRows(src, out) {
       let res = null;
       if (e113) res = { row: enemySchemaRow(e113), source: '113', extra: {} };
       else if (rx && shape === 'old') res = { row: enemySchemaRow(rx), source: 'relux', extra: {} };
-      else if (mb !== null) {
+      else if (MONTH_COPY_OF[id] !== undefined) {
+        const sid = MONTH_COPY_OF[id], srx = relux.get(sid);
+        if (srx && reluxShape(srx) === 'old') res = { row: { ...enemySchemaRow(srx), enemyId: id }, source: 'monthCopy', extra: { base: sid, baseSource: 'relux', ...refused, ...named } };
+      } else if (mb !== null) {
         const b = baseRow(mb);
         if (b) res = { row: { ...enemySchemaRow(b), enemyId: id }, source: 'monthCopy', extra: { base: mb, ...refused, ...named } };
       } else if (variantId(id)) {
@@ -783,7 +806,7 @@ function enemyRows(src, out) {
       if (!variantId(id) && monthBase(id) === null) throw new Error(`colosseum: ${where} is missing from the master and is not a Coliseum variant id (20000-29999) nor a month id (YYMM / 1 + one)`);
       const res = resolve(id);
       if (!res) {
-        const base = monthBase(id) !== null ? `no row for its base ${monthBase(id)}` : `no base ${id - 20000} for the variant rule`;
+        const base = MONTH_COPY_OF[id] !== undefined ? `no old-shape row ${MONTH_COPY_OF[id]} to copy` : monthBase(id) !== null ? `no row for its base ${monthBase(id)}` : `no base ${id - 20000} for the variant rule`;
         throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no ReLux row of the old shape, ${base}): `
           + 'its stats are decided per enemy as for the raids (label colosseumEnemyEstimate), see docs/notes/coliseum.md «Enemy rows of the served stages»');
       }
@@ -938,4 +961,4 @@ function patch(masterDir, opts = {}) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
 module.exports = { MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
-  PART3_ENEMY_IDS, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS, ERA17 };
+  PART3_ENEMY_IDS, PART3B_ENEMY_IDS, MONTH_COPY_OF, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS, ERA17 };
