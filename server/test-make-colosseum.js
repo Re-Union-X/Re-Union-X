@@ -1205,13 +1205,29 @@ test('spirit parts paid (a 2017-12 threshold Present with a Spirit part)', () =>
   assert.ok(res.due.every((x) => x.type !== 33 || (x.skillId === 0 && x.skillType === 1)), 'a plain item Present');
 });
 
-test('era17 thresholds: one fitted curve for 2017-05 .. 2018-03, <= served rounds, never down; the earlier seasons unchanged', () => {
+// per-month calibration (lowest bracket first; f = fitted, i = interpolated): months with season-end points their own curve,
+// the others the era curve
+const I = 'interpolated', F = 'fitted';
+const ERA_T = [[1, 1, 1, 245, 811, 999, 1147, 1624], [I, I, I, I, F, F, F, F]];
+const MONTH_T = {
+  '2017-05': [[1, 1, 1, 95, 314, 417, 504, 810], [I, I, I, I, F, F, F, F]],
+  '2017-06': [[1, 1, 1, 135, 446, 550, 631, 893], [I, I, I, I, I, I, F, I]],
+  '2017-07': [[1, 1, 1, 126, 417, 617, 798, 1527], [I, I, I, I, F, F, F, I]],
+  '2017-08': ERA_T,
+  '2017-09': [[1, 1, 1, 238, 788, 971, 1115, 1578], [I, I, I, I, I, I, I, F]],
+  '2017-10': [[1, 1, 1, 232, 770, 1014, 1216, 1921], [I, I, I, I, F, F, F, F]],
+  '2017-11': [[1, 1, 1, 661, 2192, 2696, 3092, 4363], [I, I, I, I, F, F, F, F]],
+  '2017-12': [[1, 1, 1, 456, 1511, 1831, 2079, 2863], [I, I, I, I, F, F, F, F]],
+  '2018-01': ERA_T, '2018-02': ERA_T, '2018-03': ERA_T,
+};
+test('era17 thresholds: a month curve where the month has season-end points, else the era curve; <= served rounds, never down', () => {
   const out = mc.seasonRows(p3all(), [S800[0], S1500, ...P3_SEASONS]);
   for (const s of P3_SEASONS) {
     const t = out.ranked[s.colosseumStageId].thresholds, served = out.colosseum.filter((x) => x.colosseumStageId === s.colosseumStageId).reduce((n, x) => n + x.arrivalStageCount, 0);
     assert.strictEqual(served, 570 + 9 * 999, `${s.month} served rounds`);
-    assert.deepStrictEqual(t.map((x) => x.score), [1, 1, 1, 245, 811, 999, 1147, 1624], `${s.month} thresholds (lowest bracket first)`);
-    assert.deepStrictEqual(t.map((x) => x.label), ['interpolated', 'interpolated', 'interpolated', 'interpolated', 'fitted', 'fitted', 'fitted', 'fitted'], `${s.month} labels`);
+    assert.deepStrictEqual(t.map((x) => x.score), MONTH_T[s.month][0], `${s.month} thresholds (lowest bracket first)`);
+    assert.deepStrictEqual(t.map((x) => x.label), MONTH_T[s.month][1], `${s.month} labels`);
+    assert.strictEqual(!!mc.ERA17.months[s.month], MONTH_T[s.month] !== ERA_T, `${s.month}: own curve only with its own points`);
     t.forEach((x, i) => { assert.ok(Number.isInteger(x.score) && x.score >= 1 && x.score <= served, `${s.month} ${x.score} in 1..${served}`); if (i) assert.ok(x.score >= t[i - 1].score, `${s.month} never down`); });
   }
   assert.deepStrictEqual(out.ranked[800].thresholds.map((x) => x.score), [33, 65, 94, 135], '2016-04 unchanged');
@@ -1219,7 +1235,24 @@ test('era17 thresholds: one fitted curve for 2017-05 .. 2018-03, <= served round
   // rankedOf picks the era from the tier rows themselves (the routes pass the served master rows)
   const rows2100 = out.colosseum.filter((x) => x.colosseumStageId === 2100);
   const rew2100 = out.rankingReward.filter((x) => x.rankingRewardId >= 35300 && x.rankingRewardId < 35308);
-  assert.deepStrictEqual(mc.rankedOf(rows2100, rew2100).thresholds.map((x) => x.score), [1, 1, 1, 245, 811, 999, 1147, 1624]);
+  assert.deepStrictEqual(mc.rankedOf(rows2100, rew2100).thresholds.map((x) => x.score), MONTH_T['2017-05'][0]);
+});
+
+test('era17 per-month fit: each data month reproduces its own points within x / ÷ 1.15; method by the points\' rank span', () => {
+  const E = mc.ERA17;
+  assert.ok(E.monthTolerance > 1 && E.monthTolerance < E.tolerance && E.monthTolerance <= 1.15, `month tolerance ${E.monthTolerance}`);
+  assert.deepStrictEqual(Object.keys(E.months), ['2017-05', '2017-06', '2017-07', '2017-09', '2017-10', '2017-11', '2017-12'], 'the months with season-end points');
+  for (const [m, c] of Object.entries(E.months)) {
+    assert.deepStrictEqual(c.points, E.points.filter((p) => p[0] === m), `${m}: its own points only`);
+    const ranks = c.points.map((p) => p[1]), span = Math.log10(Math.max(...ranks) / Math.min(...ranks));
+    assert.strictEqual(c.method, span >= 1 ? 'own fit' : 'era slope, own intercept', `${m} method`);
+    if (span < 1) assert.strictEqual(c.b, E.b, `${m}: the era slope`);
+    assert.ok(c.b < 0, `${m}: rounds go down with the rank`);
+    for (const [, rank, round, src] of c.points) {
+      const f = c.curve(rank), k = Math.max(round / f, f / round);
+      assert.ok(k <= E.monthTolerance, `${m} rank ${rank}: recorded ${round}, month curve ${f.toFixed(0)} (x ${k.toFixed(2)}) ${src}`);
+    }
+  }
 });
 
 test('era17 fit: every recorded season-end point within the stated tolerance; the points = CUTOFFS_2017.md (when on disk)', () => {

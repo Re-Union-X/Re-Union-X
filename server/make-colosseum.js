@@ -80,7 +80,7 @@
 // BY NAME in our skill.json (the ReLux skill ids are another numbering), the month's avatar parts to rank 100,000 (2017-05 / 06 /
 // 07 / 09 / 11), 2017-09 also Defense Boost I Max on 5★ Scrooge to rank 100,000, 2017-12 the Santa Spirit parts (type 33, petParts:
 // Hat 402007 to rank 2,500, Beard 411002 to 50,000, Brows 401004 to 100,000; notice 34668 calls them Spirit parts, the wiki
-// «avatar»). Thresholds: one era curve ERA17 for the eleven seasons (all with the same tiers: 570 rounds, then nine 999-round tiers,
+// «avatar»). Thresholds: one era curve ERA17 for the eleven seasons, replaced by a month curve where the month has data (below) (all with the same tiers: 570 rounds, then nine 999-round tiers,
 // 9,561 rounds served), fitted on the recorded border ranks of the era (private CUTOFFS_2017.md: 23 season-end points, reddit
 // r/KingdomHearts 6e01rg, 6f291y, 6o1ra2, 6o76ek, 6qhit7, 73i23q and u/xamaxin's border-rank posts 7aafnf / 7gtzkx / 7p6gif for
 // 2017-10 / 11 / 12; global round = rounds before the tier + round): least squares
@@ -92,6 +92,20 @@
 //   100,000 / 250,000 / 500,000 -> 1 round   (label «interpolated»: ~100,000 players a month (92,115 / 103,017 / 100,723 at the
 //   ends of 2017-10 / 11 / 12), so every ranked player was inside rank ~100,000)
 // No value of 2018-01 .. 03 is on record beyond loose statements (CUTOFFS_2017.md context rows, all inside the tolerance).
+// Per-month calibration (controller ruling 26-11, ERA17.months): a month with its own season-end points gets its own curve of the
+// same form, fitted on its points only: both a and b when they span at least one decade of rank, else the era slope b with its own
+// intercept (the mean of its points); the same tail (10,000 -> 1 round at 100,000). Every month point within x / ÷ 1.15 of its
+// month curve (ERA17.monthTolerance; worst a 2017-10 point, x 1.11). «fitted» = an edge
+// inside the ranks of the month's points, else «interpolated». Thresholds 100 / 1,000 / 2,500 / 10,000 / 50,000 (then 1, 1, 1):
+//   2017-05 own fit (ranks 99 .. 10,200; 6e01rg, 6f291y; a 3.3200 b -0.2059): 810 / 504 / 417 / 314 / 95
+//   2017-06 era slope, own intercept (ranks 459, 1,000; 6o1ra2):                893 / 631 / 550 / 446 / 135
+//   2017-07 own fit (ranks 991 .. 10,000; 6qhit7; a 3.7471 b -0.2817):         1,527 / 798 / 617 / 417 / 126
+//   2017-09 era slope, own intercept (rank 100; 73i23q):                         1,578 / 1,115 / 971 / 788 / 238
+//   2017-10 own fit (ranks 100 .. 10,000; 7aafnf; a 3.6808 b -0.1986):         1,921 / 1,216 / 1,014 / 770 / 232
+//   2017-11 own fit (ranks 100 .. 10,000; 7gtzkx; a 3.9387 b -0.1495):         4,363 / 3,092 / 2,696 / 2,192 / 661
+//   2017-12 own fit (ranks 100 .. 10,000; 7p6gif; a 3.7343 b -0.1388):         2,863 / 2,079 / 1,831 / 1,511 / 456
+//   2017-08, 2018-01, 2018-02, 2018-03: no season-end point, the era curve above (1,624 / 1,147 / 999 / 811 / 245).
+// Note 2017-05: its 10,000 point (313) was taken two days before the end, a lower bound.
 //
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
@@ -358,17 +372,39 @@ const ERA17_POINTS = [
   ['2017-11', 100, 4283, '7gtzkx'], ['2017-11', 1000, 3222, '7gtzkx'], ['2017-11', 2500, 2677, '7gtzkx'], ['2017-11', 10000, 2158, '7gtzkx'],
   ['2017-12', 100, 2716, '7p6gif'], ['2017-12', 1000, 2222, '7p6gif'], ['2017-12', 2500, 1953, '7p6gif'], ['2017-12', 10000, 1397, '7p6gif'],
 ];
-const ERA17 = (() => {
-  const xs = ERA17_POINTS.map((p) => Math.log10(p[1])), ys = ERA17_POINTS.map((p) => Math.log10(p[2])), n = xs.length;
+// least squares of log10(round) on log10(rank) over points; slope b fixed when given (then only the intercept: the mean)
+function logFit(points, fixedB) {
+  const xs = points.map((p) => Math.log10(p[1])), ys = points.map((p) => Math.log10(p[2])), n = xs.length;
   const mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
-  const b = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / xs.reduce((s, x) => s + (x - mx) ** 2, 0), a = my - b * mx;
-  const curve = (rank) => 10 ** (a + b * Math.log10(rank));
-  // FIT_RANK = the last rank of the fitted range (the points reach 10,200); PLAYERS = ranked players a month (every ranked player inside)
-  const FIT_RANK = 10000, PLAYERS = 100000, top = Math.round(curve(FIT_RANK));
-  const round = (rank) => (rank >= PLAYERS ? 1 : rank <= FIT_RANK ? Math.round(curve(rank))
-    : Math.max(1, Math.round(top - (top - 1) * Math.log10(rank / FIT_RANK) / Math.log10(PLAYERS / FIT_RANK))));
-  return { seasons: new Set([2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100]), points: ERA17_POINTS, a, b, curve, round,
-    label: (rank) => (rank <= FIT_RANK ? 'fitted' : 'interpolated'), tolerance: 2.85 };
+  const b = fixedB !== undefined ? fixedB : xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+  return { a: my - b * mx, b };
+}
+// a threshold curve: round(rank) on the fit to FIT_RANK, log-linear from there to 1 round at PLAYERS (every ranked player inside);
+// label «fitted» for a rank inside [lo, hi] (the ranks of the points behind it), else «interpolated»
+// FIT_RANK = the last bracket edge of the fitted range (the era points reach 10,200); PLAYERS = ranked players a month
+const ERA17_FIT_RANK = 10000, ERA17_PLAYERS = 100000;
+function eraCurve(a, b, lo, hi) {
+  const curve = (rank) => 10 ** (a + b * Math.log10(rank)), top = Math.round(curve(ERA17_FIT_RANK));
+  const round = (rank) => (rank >= ERA17_PLAYERS ? 1 : rank <= ERA17_FIT_RANK ? Math.round(curve(rank))
+    : Math.max(1, Math.round(top - (top - 1) * Math.log10(rank / ERA17_FIT_RANK) / Math.log10(ERA17_PLAYERS / ERA17_FIT_RANK))));
+  return { a, b, curve, round, label: (rank) => (rank >= lo && rank <= hi ? 'fitted' : 'interpolated') };
+}
+// per-month calibration (controller ruling 26-11): a month with its own season-end points gets its own curve; both parameters when
+// its points span at least one decade of rank (MONTH_SPAN), else the era slope and its own intercept; the other months the era curve
+const ERA17_MONTH_SPAN = 1;
+const ERA17 = (() => {
+  const { a, b } = logFit(ERA17_POINTS);
+  const era = eraCurve(a, b, Math.min(...ERA17_POINTS.map((p) => p[1])), ERA17_FIT_RANK);
+  const months = {};
+  for (const m of [...new Set(ERA17_POINTS.map((p) => p[0]))]) {
+    const pts = ERA17_POINTS.filter((p) => p[0] === m), ranks = pts.map((p) => p[1]);
+    const both = Math.log10(Math.max(...ranks) / Math.min(...ranks)) >= ERA17_MONTH_SPAN;
+    const f = logFit(pts, both ? undefined : b);
+    months[m] = { ...eraCurve(f.a, f.b, Math.min(...ranks), Math.max(...ranks)), method: both ? 'own fit' : 'era slope, own intercept', points: pts };
+  }
+  const seasons = new Map(SEASONS.filter((s) => s.colosseumStageId >= 2100 && s.colosseumStageId <= 3100).map((s) => [s.colosseumStageId, s.month]));
+  return { seasons, points: ERA17_POINTS, a, b, curve: era.curve, round: era.round, label: era.label, tolerance: 2.85, months, monthTolerance: 1.15,
+    of: (colosseumStageId) => (seasons.has(colosseumStageId) ? months[seasons.get(colosseumStageId)] || era : null) };
 })();
 
 let schemaCache = null;
@@ -426,8 +462,8 @@ function bracketsOf(rewardRows) {
 // a bracket reaching EVERYONE (2016-05: ranks to 5,000,000 and 10,000,000) was open to every ranked player: one round
 const EVERYONE = 1000000;
 // colosseumStageId of an ERA17 season: its own curve (Part 3 Task 5), the finite-round shift does not apply
-const thresholdsOf = (brackets, finiteRounds, colosseumStageId) => brackets.map((b) => (ERA17.seasons.has(colosseumStageId)
-  ? { startRank: b.startRank, endRank: b.endRank, score: ERA17.round(b.endRank), label: ERA17.label(b.endRank) }
+const thresholdsOf = (brackets, finiteRounds, colosseumStageId, c = ERA17.of(colosseumStageId)) => brackets.map((b) => (c
+  ? { startRank: b.startRank, endRank: b.endRank, score: c.round(b.endRank), label: c.label(b.endRank) }
   : { startRank: b.startRank, endRank: b.endRank, score: b.endRank >= EVERYONE ? 1 : cutoffRound(b.endRank, finiteRounds), label: 'interpolated' }));
 // {brackets, thresholds} of a season from its tier rows and the rankingReward rows of its ranking (master or 1.1.3); the era from
 // the tier rows' colosseumStageId
