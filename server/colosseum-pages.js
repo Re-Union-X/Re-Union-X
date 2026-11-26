@@ -63,6 +63,8 @@ const SHOW_OPTS = [['all', 'All seasons'], ['now', 'Season of your Story', 'now'
 const SHOW_SETS = { later: ['later', 'other'] }; // «its month starts this week» is not reached as a season yet
 const BOARD_OPTS = [['all', 'All'], ['done', 'Completed', 'bdone'], ['todo', 'Not completed', 'btodo']];
 const TIER_OPTS = [['all', 'All'], ['done', 'All taken', 'done'], ['todo', 'Not all taken', 'todo']];
+// chip colours: st-* (SHOW) and pr-* (TIER REWARDS, the PROGRESS chips of the Raid / Event Catalogs) come with special-pages.js CSS;
+// bd-* (COLISEUM BOARDS) as the Raid / Event Board chips (raid-pages.js, event-pages.js). phone-css.js changes only their size
 const FILTER_CSS = '.o.bd-done.on{background:#2e9e3e;border-color:#6fd47f}.o.bd-todo.on{background:#5a6470;border-color:#9aa4ae}';
 const FJS = '(function(){var LAB=__LAB__,SETS=__SETS__;' + MATCH_JS
   + 'function $(i){return document.getElementById(i);}function at(e,a){return e&&e.getAttribute?e.getAttribute(a):null;}'

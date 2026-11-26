@@ -606,6 +606,11 @@ test('RELUX_RANKING: every medal, skill level and avatar part exists in our mast
       assert.strictEqual(avatar.filter((p) => p.gender === 1).length, avatar.filter((p) => p.gender === 2).length, `${sid} ♂ / ♀`);
     }
   }
+  // 2016-12: Pegasus Knight: Helm to rank 10,000 only (notice 23117 «top 10,000» wins over the wiki's 250,000), Tail to 2,500
+  const helm = mc.RELUX_RANKING[1600].brackets.map((b) => b.filter((x) => /^p19:10129[12]$/.test(x)).length);
+  const tail = mc.RELUX_RANKING[1600].brackets.map((b) => b.filter((x) => /^p20:10729[12]$/.test(x)).length);
+  assert.deepStrictEqual(helm, [2, 2, 2, 2, 0, 0, 0, 0], 'Helm: top 10,000 (notice 23117)');
+  assert.deepStrictEqual(tail, [2, 2, 2, 0, 0, 0, 0, 0], 'Tail: top 2,500 (notice 23117)');
   assert.throws(() => mc.rankItem('moogle6'), /unknown/);
   assert.deepStrictEqual(mc.rankItem('cidx5'), { type: 3, id: 90076, skillType: 1, skillId: 0, skillLv: 1, num: 5 });
 });

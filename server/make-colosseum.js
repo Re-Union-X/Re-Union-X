@@ -54,8 +54,9 @@
 //   bracket equal to the monthly notices 19886, 20641, 21481: test-make-colosseum.js real_part2). ReLux holds no rankingReward rows
 //   for 2016-12 .. 2018-03 (its 4019 rows are the donor's invention) and the 1.1.3 row 4016 points to the 4015 rows, so every relux
 //   season gets its own ranking row (RANKING_ROW: the constant fields of the 1.1.3 rows 4009-4016, rankingId of its colosseumStage
-//   row) and the reward rows of RELUX_RANKING: 2016-11 = notice 22105 (the full table), 2016-12 .. 2017-04 = khuxwiki (the monthly
-//   notices give only the featured prizes and the top 2,500 / 10,000 / 100,000 edges, all equal to the wiki brackets). Ids
+//   row) and the reward rows of RELUX_RANKING: 2016-11 = notice 22105 (the full table), 2016-12 .. 2017-04 = khuxwiki, except the 2016-12 Helm
+//   (notice 23117: top 10,000, the notice wins); the monthly notices give only the featured prizes and the top 2,500 / 10,000 /
+//   100,000 edges, all equal to the wiki brackets. Ids
 //   REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK so they stay in 30000-39999 (the original 4021 range 40000-40007 does not).
 //   Thresholds: 2016-08 = the August 2016 cutoffs themselves (the curve anchors are that month's ranking, 110 finite rounds:
 //   64 / 76 / 93 / 105 / 134 / 159 / 175 / 216); 2016-09 / 10 the same structure (110 rounds), so the same values; 2016-11 ..
@@ -140,15 +141,16 @@ const RELUX_RANKING = {
     ['p19:101215', 'p19:101216', 'chip5x2', 'dale5x2'],
     ['chip5', 'dale5']] },
   // 2016-12, khuxwiki: ATK Boost II & Lux Plus (1114) on 6★ Scrooge; Pegasus Knight: Tail ♂ / ♀ (107291 / 107292) to rank 2,500 (notice
-  // 23117: top 2,500), Pegasus Knight: Helm ♂ / ♀ (101291 / 101292) to 250,000 (notice 23117 says «top 10,000»: see the Task 5 report)
+  // 23117: top 2,500); Pegasus Knight: Helm ♂ / ♀ (101291 / 101292) to rank 10,000 as notice 23117 says («Rank in the top 10,000 and
+  // get the Pegasus Knight: Helm»): the worldwide notice wins over the wiki, which lists the Helm down to rank 250,000
   1600: { source: 'khuxwiki', brackets: [
     ['scrooge6:1114x3', 'p20:107291', 'p19:101291', 'p20:107292', 'p19:101292', 'chip6x5', 'dale6x5', 'cidx5', 'mirrorx5'],
     ['scrooge6:1114x2', 'p20:107291', 'p19:101291', 'p20:107292', 'p19:101292', 'chip6x3', 'dale6x3', 'cidx3', 'mirrorx4'],
     ['scrooge6:1114', 'p20:107291', 'p19:101291', 'p20:107292', 'p19:101292', 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
     ['scrooge6:1114', 'p19:101291', 'p19:101292', 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
-    ['p19:101291', 'p19:101292', 'chip6', 'dale6', 'cid', 'mirror'],
-    ['p19:101291', 'p19:101292', 'chip5x3', 'dale5x3'],
-    ['p19:101291', 'p19:101292', 'chip5x2', 'dale5x2'],
+    ['chip6', 'dale6', 'cid', 'mirror'],
+    ['chip5x3', 'dale5x3'],
+    ['chip5x2', 'dale5x2'],
     ['chip5', 'dale5']] },
   // 2017-01 SP Attack Gauge I (1124), Armored Terra: Mask / Armored Aqua: Mask (notice 23796: top 100,000)
   1700: { source: 'khuxwiki', brackets: wiki2017(1124, 'p19:101297', 'p19:101298') },

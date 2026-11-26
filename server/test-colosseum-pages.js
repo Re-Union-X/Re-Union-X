@@ -204,6 +204,12 @@ const tests = {
   },
   filters_phone_layout() {
     const html = withPhone(pages.catalogPage(FILTER_ROWS, CTX));
+    // every chip class of the sheet has its «on» colour (special-pages.js CSS, the same chips as the Raid / Event Catalogs), on desktop
+    // and in the phone page (phone-css.js keeps the colours, only sizes change)
+    const chips = [...new Set([...html.matchAll(/class="o ((?:st|bd|pr)-\w+)/g)].map((m) => m[1]))].sort();
+    assert.deepStrictEqual(chips, ['bd-done', 'bd-todo', 'pr-done', 'pr-todo', 'st-can', 'st-kept', 'st-later', 'st-now']);
+    for (const c of chips) assert.ok(html.includes(`.o.${c}.on{background:`), `chip ${c} styled`);
+    assert.ok(html.includes('.o.pr-done.on{background:#b8860b') && html.includes('.o.pr-todo.on{background:#5a6470'), 'tier chips as the PROGRESS chips of the catalogs');
     assert.ok(/<div id="rows">\s*<div class="row /.test(html), 'rows stay direct children of #rows (phone cards #rows>.row)');
     assert.ok(html.includes('#rows>.row.hide') || html.includes('#rows>.row.hide,'), 'phone CSS hides filtered cards');
     assert.ok(html.includes('.fbtn{flex:0 0 auto!important'), 'the phone header keeps the Filters button on the title line');
