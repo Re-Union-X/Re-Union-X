@@ -374,3 +374,41 @@ only), imported by `build-resources.ps1` like the raid / event board cards.
 - High Score Challenge Present titles «<event>: <bracket>» with ASCII dashes.
 - Enemy levels re-checked on the bench (May 2016): Tier 1 Round 19 = LV 19, Tier 3 Round 1 = LV 36, Round 2 = LV 37: no reset
   between tiers.
+
+## Part 2 summary (26 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-26-coliseum-part2.md`. Served: master revision **397** (regenerated 26-11 with the env of the
+10-11 block of HANDOFF.md + `KHUX_WORLDTOUR=0` + `KHUX_AVATAR_BOARDS`); resource build, install and bench walk pending.
+
+- **Seasons** 2016-08 (1200), 2016-09 (1300), 2016-10 (1400) from the 1.1.3 master rows; 2016-11 (1500) .. 2017-04 (2000) from
+  the ReLux season extract (private, read at build time, `KHUX_COLOSSEUM_RELUX`). Tiers stop at the first endless tier
+  (999 rounds, as Part 1): ten tiers up to 2016-10, **eleven from 2016-11** (Tier 10 = 10 rounds, 900 coins; Tier 11 endless).
+  The hidden 999-round tiers of the extract (12-14 in 2017-01..03, 12-21 in 2017-04) are not served. A tier coin reward above
+  10,000 stops the build (x100 artefact guard).
+- **Stage files.** 2016-08 .. 2016-11: no original set survives; `recon/tools/gen_colosseum_stages.py` writes 40 maps
+  (stage ids `2116MMNN`, import label `colosseumGen`) from the khuxwiki round rows, with original Coliseum variant ids
+  (59 distinct, all in the 1.1.3 master) on the best-fitting JP 4.3.1 arena layout; enemy level = round. 18 wiki enemy buffs
+  cannot be carried (the stage enemy record has no buff field): list per stage in the local
+  `stage_gen/colosseum_gen/report.json` (rounds 1, 2, 3, 5, 6, 10 of 2016-08; 1, 7 of 2016-09). Stage 21161108 (2016-11
+  round 8, waves 5/1/7/1) has 3 positions placed by the generator. 2016-12 .. 2017-04 = the JP 4.3.1 sets 2016-05 .. 2016-09
+  (the stage ids of the ReLux rows). Stage rows for 1500-2000: copies of the 1400 rows (ids 81071-81130, `strDummy`).
+- **Enemies.** Every enemy id of the 130 served stages is in the master: no row added, no estimate (`enemyRows`, see «Gap
+  research»; an unknown id stops the build).
+- **Ranking.** Brackets 1-100 .. 250,001-500,000. Thresholds: 2016-08..10 = 64 / 76 / 93 / 105 / 134 / 159 / 175 / 216 (the
+  curve through the recorded August 2016 cutoffs), 2016-11 .. 2017-04 = 74 / 86 / 103 / 115 / 144 / 169 / 185 / 226 (ten more
+  rounds). Prizes: 1.1.3 rows checked against the notices (2016-08..10), notice 22105 (2016-11), khuxwiki (2016-12 .. 2017-04);
+  the 2016-12 Pegasus Knight Helm goes to the top 10,000 (notice 23117 over the wiki). Reward ids 35000 + (rankingId - 4016) x 50.
+- **Boards.** 30 boards (2210037-2210066); cards by `recon/tools/coliseum_board_cards.py` (see «Board card pictures»): 4 JP
+  4.3.1 twins, 26 khuxwiki previews at native size.
+- **Coliseum Catalog** 13 rows; Filters (I-328): FIND, state, Coliseum Boards completed / not, Tier Rewards all taken / not.
+- **AP campaigns**: the «0 AP!» days of 2016-11-01..03 now reach the November 2016 season.
+- **Notice** «Coliseum» (11/26): thirteen seasons, eleven tiers, thresholds and prizes, new section «Maps» (generated maps,
+  dropped buffs, generator positions), board card sources, filters.
+
+Master regen diff (26-11, against a backup of `server/master_data`): only additions, in colosseum (+96 tiers), colosseumStage (+9),
+stage (+90), ranking (+9), rankingReward (+72), sphere / sphereArray / sphereMasu (+30 each); enemy unchanged; no stage-enemy
+check banner (the stage lists were on disk).
+
+Bench walk (controller, pending): story clock in each era (2016-08 generated set, 2016-11 extra tier, 2017-03 JP set), round
+list and levels, a generated stage plays, one-turn window across a tier, a board purchase with its card, Catalog keep of a
+Part 2 season, the Catalog filters and phone layout, a threshold Present.

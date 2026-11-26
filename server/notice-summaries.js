@@ -18,7 +18,7 @@ const SUMMARY = {
     'Keep one past raid from the **Raid Catalog**; missing graphics and values are {rebuilt}.',
   ],
   'Coliseum': [
-    'The monthly **Coliseum** seasons are back from Story Quest 130: April to July 2016 for now.',
+    'The monthly **Coliseum** seasons are back from Story Quest 130: April 2016 to April 2017 for now.',
     'The season follows your **Story week**; each season keeps its own progress and coins {not original}.',
     'Ranking brackets became **score thresholds**; keep one past season from the **Coliseum Catalog**.',
   ],
@@ -102,12 +102,13 @@ const ONELINER = {
     'Raids not here yet': 'worldwide raids only for now',
   },
   'Coliseum': {
-    'Overview': 'four 2016 seasons, from Story Quest 130',
+    'Overview': '13 seasons, from Story Quest 130',
     'Seasons': 'follow your Story week, progress kept',
     'Rounds and AP': 'retry freely, original AP campaigns',
     'Ranking': 'brackets became score thresholds',
-    'Coliseum Catalog': 'list every season, keep one past season',
-    'Graphics': 'one button icon stands in',
+    'Coliseum Catalog': 'keep one past season, filters',
+    'Maps': 'original, Japanese and generated maps',
+    'Graphics': 'board cards, one button icon stands in',
     'Not here yet': 'later seasons and PvP',
   },
   'Event Quests: how they work': {
