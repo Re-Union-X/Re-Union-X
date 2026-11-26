@@ -92,7 +92,7 @@ const CARD_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06
   + '.qs{display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px 2px}.qs .st{display:inline-flex;align-items:stretch;border:1px solid #2f6f93;border-radius:12px;overflow:hidden;font-size:14px}'
   + '.qs .st small{background:#0a4466;color:#9fb7c6;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;display:flex;align-items:center}'
   + '.qs .st b{background:#06283e;padding:1px 10px;display:flex;align-items:center}.ql{padding:4px 10px 0}.ql div{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:14px;color:#fff}'
-  + '.ql small{color:#9fb7c6;font-size:11px;letter-spacing:.08em;text-transform:uppercase;min-width:4.5em}.ql .ic{width:1.2em;height:1.2em;margin:0;flex:none;vertical-align:middle}'
+  + '.ql small{color:#9fb7c6;font-size:11px;letter-spacing:.08em;text-transform:uppercase;width:5.6em;flex:none}.ql .ic{width:1.2em;height:1.2em;margin:0;flex:none;vertical-align:middle}'
   + '.qb>.qt{padding:4px 10px 8px}.qb h4{margin:8px 0 4px;color:#ffcd4a;font-size:15px;display:flex;align-items:center;gap:6px}.qb h4 .ic{width:1.2em;height:1.2em}'
   + '.qb table.qtt{table-layout:fixed;width:100%;margin:2px 0 6px}.qb table.qtt td:first-child,.qb table.qtt th:first-child{width:62%}.qb table.qtt.dt td:nth-child(2),.qb table.qtt.dt th:nth-child(2){width:14%}'
   + '.qb td .ic{width:1.3em;height:1.3em;margin:0 6px 0 0;vertical-align:-4px}.qb p.n{margin:2px 0 6px}';
