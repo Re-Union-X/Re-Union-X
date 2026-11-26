@@ -635,15 +635,17 @@ test('relux ranking: own rows of RELUX_RANKING, keyed off the season itself (no 
   assert.deepStrictEqual(b[5].rewards.map(tokenOf), ['101297', '101298', '90055x3', '90065x3']);
   assert.deepStrictEqual(b[6].rewards.map(tokenOf), ['90055x2', '90065x2'], 'no mask past rank 100,000 (notice 23796)');
   // a season with no RELUX_RANKING entry stops (never a copy of another season)
-  const f = p2(); f.relux.colosseumStage[0] = { ...f.relux.colosseumStage[0], colosseumStageId: 2100 };
-  f.relux.colosseum.forEach((t) => { if (t.colosseumStageId === 1500) t.colosseumStageId = 2100; });
+  const f = p2(); f.relux.colosseumStage[0] = { ...f.relux.colosseumStage[0], colosseumStageId: 3200 };
+  f.relux.colosseum.forEach((t) => { if (t.colosseumStageId === 1500) t.colosseumStageId = 3200; });
   f.relux.colosseumStage[0].headColosseumId = 1501;
-  assert.throws(() => mc.seasonRows(f, [{ month: '2017-05', colosseumStageId: 2100, source: 'relux' }]), /2017-05|2100/);
+  assert.ok(!mc.RELUX_RANKING[3200], '3200 (2018-04, next part) has no prizes yet');
+  assert.throws(() => mc.seasonRows(f, [{ month: '2018-04', colosseumStageId: 3200, source: 'relux' }]), /2018-04|3200/);
 });
 
 test('RELUX_RANKING: every medal, skill level and avatar part exists in our master', () => {
   const M = (t) => JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', `${t}.json`), 'utf8'));
   const medals = new Set(M('medal').map((r) => r.medalId)), skills = new Map(M('skill').map((r) => [r.skillId, r])), parts = new Map(M('avatarParts').map((r) => [r.avatarPartsId, r]));
+  const pets = new Set(M('petParts').map((r) => r.petPartsId));
   for (const [k, id] of Object.entries(mc.MEDAL)) assert.ok(medals.has(id), `${k} ${id}`);
   for (const [id, lv] of Object.entries(mc.SKILL_LV)) assert.strictEqual(skills.get(Number(id)).maxLv, lv, `skill ${id} maxLv`);
   for (const [sid, spec] of Object.entries(mc.RELUX_RANKING)) {
@@ -651,11 +653,12 @@ test('RELUX_RANKING: every medal, skill level and avatar part exists in our mast
     for (const items of spec.brackets) {
       for (const it of items.map(mc.rankItem)) {
         if (it.type === 3) assert.ok(medals.has(it.id), `${sid} medal ${it.id}`);
+        else if (it.type === 33) assert.ok(pets.has(it.id), `${sid} Spirit part ${it.id}`);
         else assert.ok(parts.has(it.id), `${sid} avatar part ${it.id}`);
         if (it.skillId) assert.strictEqual(it.id === 90126 || it.id === 90125 || it.id === 90123, true, `${sid} skill ${it.skillId} rides on a Scrooge medal`);
       }
       // ♂ and ♀ of the same part together
-      const avatar = items.map(mc.rankItem).filter((x) => x.type !== 3).map((x) => parts.get(x.id));
+      const avatar = items.map(mc.rankItem).filter((x) => x.type === 19 || x.type === 20).map((x) => parts.get(x.id));
       assert.strictEqual(avatar.filter((p) => p.gender === 1).length, avatar.filter((p) => p.gender === 2).length, `${sid} ♂ / ♀`);
     }
   }
@@ -909,8 +912,8 @@ test('real_part2_enemies (every enemy id of the served stages)', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
   try {
     fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
-    const out = mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY) || [] });
-    assert.strictEqual(out.colosseumStage.length, 13);
+    const out = mc.patch(dir, { src: { ...src, relux }, stageEnemies, seasons: P2_SEASONS, reluxEnemies: mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY) || [] });
+    assert.strictEqual(out.colosseumStage.length, 13, 'the Part 2 seasons (Part 3: real_part3_enemies)');
     assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] }, 'every served stage checked');
     const after = new Map(JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => [r.enemyId, r]));
     const before = new Set(masterRows.map((r) => r.enemyId));
@@ -1054,19 +1057,191 @@ test('part2 tiers extended keep progress', () => {
   assert.ok(res.ok); assert.deepStrictEqual(res.tierRewards, []); assert.strictEqual(res.coins, 10);
 });
 
-test('patch: a season not built yet (no ranking prizes) is left out with a warning, never half served', () => {
+test('patch: the Part 3 seasons enter the master with their prizes; a relux season without prizes stops the run (never left out)', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
   const warn = console.warn, said = [];
   console.warn = (m) => said.push(String(m));
   try {
     const src = p3(); delete src.masterEnemyIds;
     const out = mc.patch(dir, { src, seasons: [S800[0], S1500, S2100] });
-    assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId), [800, 1500]);
-    assert.ok(said.some((m) => /2017-05/.test(m) && /not built yet/.test(m)), `warning: ${said.join(' | ')}`);
-    assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'colosseumStage.json'), 'utf8')).map((r) => r.colosseumStageId), [800, 1500]);
-    // seasonRows itself still stops on it (never a copy of another season's prizes)
-    assert.throws(() => mc.seasonRows(p3(), [S2100]), /2100/);
+    assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId), [800, 1500, 2100]);
+    assert.ok(!said.some((m) => /not built yet/.test(m)), `no «not built yet» warning: ${said.join(' | ')}`);
+    assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'colosseumStage.json'), 'utf8')).map((r) => r.colosseumStageId), [800, 1500, 2100]);
+    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'rankingReward.json'), 'utf8')).filter((r) => r.rankingRewardId >= 35300 && r.rankingRewardId < 35350).length, 8,
+      '2017-05 (ranking 4022): its eight reward rows');
+    // a relux season whose prizes are missing stops (seasonRows and patch), never a copy of another season's prizes
+    const keep = mc.RELUX_RANKING[2100];
+    delete mc.RELUX_RANKING[2100];
+    try {
+      assert.throws(() => mc.seasonRows(p3(), [S2100]), /2100/);
+      assert.throws(() => mc.patch(dir, { src: p3(), seasons: [S800[0], S2100] }), /2100/);
+    } finally { mc.RELUX_RANKING[2100] = keep; }
   } finally { console.warn = warn; fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- Coliseum Part 3 Task 5: ranking prizes and the 2017 era thresholds ----
+// The audit table (private PART3_AUDIT.md §6, khuxwiki monthly pages): the featured skill BY NAME (ids from skill.json, never ReLux
+// ids) on 6★ Scrooge x3 / x2 / x1 / x1 to rank 10,000; the month's avatar parts to rank 100,000; 2017-09 + Defense Boost I Max on
+// 5★ Scrooge x3 / x2 / x1 / x1 / x1 / x1 to rank 100,000; 2017-12 the Santa Spirit parts by bracket (Hat to 2,500, Beard to 50,000,
+// Brows to 100,000); Chip / Dale / Cid / Magic Mirror as every month since 2017-01.
+const P3_PRIZES = {
+  2100: { skill: 'Second Chance II', parts: [['KH Dale: Glasses', 1], ['KH Dale: Glasses', 2]] },
+  2200: { skill: 'Attack Boost IV Max', parts: [['Hydrangea Prep: Hat', 1], ['Hydrangea Formal: Crown', 2]] },
+  2300: { skill: 'ATK B IV Max & GA 2', parts: [['Mango Prep: Hat', 1], ['Mango Sweetie: Headband', 2]] },
+  2400: { skill: 'ATK Boost IV & Lux+' },
+  2500: { skill: 'Defense Boost II Max', parts: [['Illusionist: Mask', 1], ['Illusionist: Mask', 2]], five: 'Defense Boost I Max' },
+  2600: { skill: 'Attack Boost V' },
+  2700: { skill: 'Second Chance III', parts: [['Natural', 1], ['Long Side Tails', 2]] },
+  2800: { skill: 'ATK B V & Lux+', spirit: [['Santa Hat', 3], ['Santa Beard', 5], ['Santa Brows', 6]] }, // [name, brackets from the top]
+  2900: { skill: 'Defense Boost III Max' },
+  3000: { skill: 'ATK B V Max & Lux+' },
+  3100: { skill: 'Second Chance IV' },
+};
+const MD = (t) => JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', `${t}.json`), 'utf8'));
+// the expected tokens of each bracket (top first), built from names
+function p3Expected(sid) {
+  const p = P3_PRIZES[sid], one = (rows, what) => { assert.strictEqual(rows.length, 1, what); return rows[0]; };
+  const skill = (n) => one(MD('skill').filter((r) => r.name === n), `skill «${n}»`).skillId;
+  const part = ([n, g]) => one(MD('avatarParts').filter((r) => r.name === n && r.gender === g), `avatar part «${n}» ${g}`).avatarPartsId;
+  const pet = (n) => one(MD('petParts').filter((r) => r.name === n), `Spirit part «${n}»`).petPartsId;
+  const x = (id, n) => (n > 1 ? `${id}x${n}` : String(id));
+  const s6 = [3, 2, 1, 1, 0, 0, 0, 0], s5 = [3, 2, 1, 1, 1, 1, 0, 0], c6 = [5, 3, 2, 2, 1, 0, 0, 0], cid = [5, 3, 3, 2, 1, 0, 0, 0];
+  const mir = [5, 4, 4, 3, 1, 0, 0, 0], c5 = [0, 0, 0, 0, 0, 3, 2, 1];
+  return EDGES.map((_, i) => [
+    ...(s6[i] ? [x(`90126:${skill(p.skill)}`, s6[i])] : []), ...(p.five && s5[i] ? [x(`90125:${skill(p.five)}`, s5[i])] : []),
+    ...(p.parts && i < 6 ? p.parts.map((q) => String(part(q))) : []), ...(p.spirit || []).filter(([, n]) => i < n).map(([n]) => String(pet(n))),
+    ...[90056, 90066].flatMap((id) => (c6[i] ? [x(id, c6[i])] : [])), ...(cid[i] ? [x(90076, cid[i])] : []), ...(mir[i] ? [x(90156, mir[i])] : []),
+    ...[90055, 90065].flatMap((id) => (c5[i] ? [x(id, c5[i])] : [])),
+  ].sort());
+}
+// p3() + the other eight months (tiers of 2100), boards of their own ids
+const p3all = () => {
+  const f = p3();
+  for (const sid of [2300, 2400, 2500, 2600, 2800, 2900, 3000, 3100]) {
+    const s = p3Season(sid, 40000001 + sid * 100, SK2100); // own made-up set ids (never served twice)
+    f.relux.colosseumStage.push(s.colosseumStage); f.relux.colosseum.push(...s.colosseum);
+    for (const [k, id] of mc.SEASON_BOARDS[sid].entries()) {
+      const n = mc.SEASON_BOARDS[sid].length, bonus = k >= n - 2;
+      const b = reluxBoard(id, bonus ? `Tier ${10 + k - (n - 2)} Bonus` : 'Avatar', bonus || n === 3 ? 0 : k + 1, bonus ? [3090, 3390][k - (n - 2)] : n === 3 ? 3500 : 1100);
+      f.relux.sphere.push(b.sphere); f.relux.sphereArray.push(b.sphereArray); f.relux.sphereMasu.push(b.sphereMasu);
+    }
+  }
+  return f;
+};
+const P3_SEASONS = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100);
+
+test('Part 3 ranking prizes: the audit table, featured skill by name, 2017-09 5★ skill, 2017-12 Spirit parts by bracket', () => {
+  assert.deepStrictEqual(P3_SEASONS.map((s) => s.colosseumStageId), Object.keys(P3_PRIZES).map(Number));
+  const out = mc.seasonRows(p3all(), P3_SEASONS);
+  for (const s of P3_SEASONS) {
+    const id = s.colosseumStageId, rk = out.ranking.find((r) => r.rankingId === 4022 + (id - 2100) / 100);
+    assert.ok(rk, `${s.month}: ranking ${4022 + (id - 2100) / 100}`);
+    assert.deepStrictEqual([rk.startRank, rk.endRank], [35000 + (rk.rankingId - 4016) * 50, 35000 + (rk.rankingId - 4016) * 50 + 7], `${s.month} reward block`);
+    const top = [...out.ranked[id].brackets].reverse();
+    assert.deepStrictEqual(top.map((b) => [b.startRank, b.endRank]), EDGES, `${s.month} brackets`);
+    const want = p3Expected(id);
+    top.forEach((b, i) => assert.deepStrictEqual(b.rewards.map(tokenOf).sort(), want[i], `${s.month} bracket ${EDGES[i].join('-')}`));
+  }
+  // skills at their maxLv on Scrooge (skillType 3): Defense Boost I Max 15, the others 20
+  const rows = out.rankingReward.filter((r) => r.rankingRewardId >= 35500 && r.rankingRewardId < 35508); // 2017-09 (4026)
+  assert.deepStrictEqual([rows[0].id.slice(0, 2), rows[0].skillType.slice(0, 2), rows[0].skillId.slice(0, 2), rows[0].skillLv.slice(0, 2)],
+    [[90126, 90125], [3, 3], [1152, 1151], [20, 15]]);
+  // 2017-12 (4029): the Spirit parts are type 33 (petParts), not avatar parts
+  const dec = out.rankingReward.filter((r) => r.rankingRewardId >= 35650 && r.rankingRewardId < 35658);
+  assert.deepStrictEqual(dec.map((r) => r.id.filter((v, k) => r.type[k] === 33)), [[402007, 411002, 401004], [402007, 411002, 401004], [402007, 411002, 401004],
+    [411002, 401004], [411002, 401004], [401004], [], []]);
+  assert.deepStrictEqual(mc.rankItem('p33:402007'), { type: 33, id: 402007, skillType: 1, skillId: 0, skillLv: 1, num: 1 });
+});
+
+// the private khuxwiki table (khuxwiki_ww_2016-2018.md, «Ranking:» lines) read independently: every bracket of 2017-05 .. 2018-03
+test('real_part3_prizes (RELUX_RANKING = the khuxwiki monthly tables, names -> our ids)', () => {
+  const file = 'D:\\Progetto_Restauro_KH_UX\\private\\events\\sources\\coliseum\\khuxwiki_ww_2016-2018.md';
+  if (!fs.existsSync(file)) { results.push('skip real_part3_prizes: private khuxwiki_ww_2016-2018.md not on disk'); return; }
+  const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/), M = { scrooge6: 90126, scrooge5: 90125, chip6: 90056, dale6: 90066, cid: 90076, mirror: 90156, chip5: 90055, dale5: 90065 };
+  const skills = MD('skill'), parts = MD('avatarParts'), pets = MD('petParts');
+  const partName = (w) => w.replace(/^H-/, '').replace(/-P$/, '').replace(/^A-/, '').replace(/-A-/, ': ');
+  const out = mc.seasonRows(p3all(), P3_SEASONS);
+  for (const s of P3_SEASONS) {
+    const at = lines.findIndex((l) => l.startsWith(`## ${s.month} `)), rk = lines.slice(at).find((l) => l.startsWith('Ranking: '));
+    assert.ok(at >= 0 && rk, `${s.month} in the wiki table`);
+    const wiki = rk.slice(9).split(' || ').map((b) => {
+      const m = /^\[(\d+) - (\d+)\] (.*)$/.exec(b), kv = m[3].split(', ').map((x) => /^(\S+) (.*)$/.exec(x).slice(1));
+      const val = (k) => (kv.find(([key]) => key === k) || [])[1];
+      const toks = [];
+      for (const [k, v] of kv) {
+        const x = (id, n) => (Number(n) > 1 ? `${id}x${n}` : String(id));
+        if (/^scrooge[56]$/.test(k)) {
+          const sk = skills.filter((r) => r.name === val(`skill${k.slice(-1)}`));
+          assert.strictEqual(sk.length, 1, `${s.month} skill «${val(`skill${k.slice(-1)}`)}»`);
+          toks.push(x(`${M[k]}:${sk[0].skillId}`, v));
+        } else if (M[k]) toks.push(x(M[k], v));
+        else if (/^avatar[mf]\d?$/.test(k)) {
+          const r = parts.filter((p) => p.name === partName(v) && p.gender === (k[6] === 'm' ? 1 : 2));
+          assert.strictEqual(r.length, 1, `${s.month} avatar part «${v}»`); toks.push(String(r[0].avatarPartsId));
+        } else if (/^avatar\d$/.test(k)) { // 2017-12: the Santa parts are Spirit parts (notice 34668)
+          const r = pets.filter((p) => p.name === partName(v));
+          assert.strictEqual(r.length, 1, `${s.month} Spirit part «${v}»`); toks.push(String(r[0].petPartsId));
+        } else assert.ok(/^skill[56]$/.test(k), `${s.month} wiki item ${k}`);
+      }
+      return { edges: [Number(m[1]), Number(m[2])], toks: toks.sort() };
+    });
+    const top = [...out.ranked[s.colosseumStageId].brackets].reverse();
+    assert.deepStrictEqual(top.map((b) => [b.startRank, b.endRank]), wiki.map((w) => w.edges), `${s.month} edges = wiki`);
+    top.forEach((b, i) => assert.deepStrictEqual(b.rewards.map(tokenOf).sort(), wiki[i].toks, `${s.month} bracket ${wiki[i].edges.join('-')} = wiki`));
+  }
+});
+
+test('spirit parts paid (a 2017-12 threshold Present with a Spirit part)', () => {
+  const ranked = require('./ranked-rewards');
+  const out = mc.seasonRows(p3all(), P3_SEASONS.filter((s) => s.colosseumStageId === 2800));
+  const r = out.ranked[2800], box = {};
+  const thr = (end) => r.thresholds.find((t) => t.endRank === end).score;
+  let res = ranked.record(box, 2800, thr(100000), r); // 50,001-100,000: the Brows
+  assert.deepStrictEqual(res.due.filter((x) => x.type === 33).map((x) => [x.id, x.num]), [[401004, 1]]);
+  res = ranked.record(box, 2800, thr(10000), r); // 2,501-10,000: + the Beard, the Brows not again
+  assert.deepStrictEqual(res.due.filter((x) => x.type === 33).map((x) => [x.id, x.num]), [[411002, 1]]);
+  res = ranked.record(box, 2800, thr(2500), r); // 1,001-2,500: + the Hat
+  assert.deepStrictEqual(res.due.filter((x) => x.type === 33).map((x) => [x.id, x.num]), [[402007, 1]]);
+  assert.ok(res.due.every((x) => x.type !== 33 || (x.skillId === 0 && x.skillType === 1)), 'a plain item Present');
+});
+
+test('era17 thresholds: one fitted curve for 2017-05 .. 2018-03, <= served rounds, never down; the earlier seasons unchanged', () => {
+  const out = mc.seasonRows(p3all(), [S800[0], S1500, ...P3_SEASONS]);
+  for (const s of P3_SEASONS) {
+    const t = out.ranked[s.colosseumStageId].thresholds, served = out.colosseum.filter((x) => x.colosseumStageId === s.colosseumStageId).reduce((n, x) => n + x.arrivalStageCount, 0);
+    assert.strictEqual(served, 570 + 9 * 999, `${s.month} served rounds`);
+    assert.deepStrictEqual(t.map((x) => x.score), [1, 1, 1, 245, 811, 999, 1147, 1624], `${s.month} thresholds (lowest bracket first)`);
+    assert.deepStrictEqual(t.map((x) => x.label), ['interpolated', 'interpolated', 'interpolated', 'interpolated', 'fitted', 'fitted', 'fitted', 'fitted'], `${s.month} labels`);
+    t.forEach((x, i) => { assert.ok(Number.isInteger(x.score) && x.score >= 1 && x.score <= served, `${s.month} ${x.score} in 1..${served}`); if (i) assert.ok(x.score >= t[i - 1].score, `${s.month} never down`); });
+  }
+  assert.deepStrictEqual(out.ranked[800].thresholds.map((x) => x.score), [33, 65, 94, 135], '2016-04 unchanged');
+  assert.deepStrictEqual(out.ranked[1500].thresholds.map((x) => x.score), [74, 86, 103, 115, 144, 169, 185, 226], '2016-11 unchanged');
+  // rankedOf picks the era from the tier rows themselves (the routes pass the served master rows)
+  const rows2100 = out.colosseum.filter((x) => x.colosseumStageId === 2100);
+  const rew2100 = out.rankingReward.filter((x) => x.rankingRewardId >= 35300 && x.rankingRewardId < 35308);
+  assert.deepStrictEqual(mc.rankedOf(rows2100, rew2100).thresholds.map((x) => x.score), [1, 1, 1, 245, 811, 999, 1147, 1624]);
+});
+
+test('era17 fit: every recorded season-end point within the stated tolerance; the points = CUTOFFS_2017.md (when on disk)', () => {
+  const E = mc.ERA17;
+  assert.ok(E.points.length >= 20, `${E.points.length} fit points`);
+  assert.ok(E.tolerance > 1 && E.tolerance <= 3, `tolerance x/÷ ${E.tolerance}`);
+  for (const [month, rank, round, src] of E.points) {
+    const f = E.curve(rank), k = Math.max(round / f, f / round);
+    assert.ok(k <= E.tolerance, `${month} rank ${rank}: recorded ${round}, curve ${f.toFixed(0)} (x ${k.toFixed(2)} > ${E.tolerance}) ${src}`);
+    assert.ok(month >= '2017-05' && month <= '2018-03', `${month} inside the era`);
+  }
+  // the fit itself: least squares of log10(round) on log10(rank) over the points
+  const xs = E.points.map((p) => Math.log10(p[1])), ys = E.points.map((p) => Math.log10(p[2])), n = xs.length;
+  const mx = xs.reduce((a, b) => a + b) / n, my = ys.reduce((a, b) => a + b) / n;
+  const b = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+  assert.ok(Math.abs(E.b - b) < 1e-9 && Math.abs(E.a - (my - b * mx)) < 1e-9, 'a / b = the least-squares fit');
+  assert.deepStrictEqual([E.a.toFixed(4), E.b.toFixed(4)], ['3.5122', '-0.1509'], 'the values stated in the module comment');
+  const file = 'D:\\Progetto_Restauro_KH_UX\\private\\events\\sources\\coliseum\\CUTOFFS_2017.md';
+  if (!fs.existsSync(file)) { results.push('skip era17 CUTOFFS_2017.md: private file not on disk'); return; }
+  const fit = fs.readFileSync(file, 'utf8').split(/\r?\n/).map((l) => l.split('|').map((c) => c.trim())).filter((c) => c[7] === 'fit')
+    .map((c) => [c[2], Number(c[3].replace(/[~,]/g, '')), Number(c[5].replace(/,/g, ''))]);
+  assert.deepStrictEqual(fit, E.points.map((p) => p.slice(0, 3)), 'the module points = the fit rows of CUTOFFS_2017.md');
 });
 
 // the real sources: the ReLux extract (private) and our medal master; 800 .. 1600 compared with the served master when it is on disk
