@@ -413,7 +413,8 @@ Plan `docs/superpowers/plans/2026-11-26-coliseum-part2.md`. Served: master revis
 - **Coliseum Catalog** 13 rows; Filters (I-328): FIND, state, Coliseum Boards completed / not, Tier Rewards all taken / not;
   game year tabs (962a2b17, 8c728856: a season sits in the game year of its start, as the Raid / Event / Special cards).
 - **Catalog season cards** (`server/game_data/colosseum_img/<colosseumStageId>.png`, git-ignored): written by
-  `python -I recon/tools/make_special_banners.py --section colosseum` from SEASONS of make-colosseum.js. **After a change of
+  `python -I recon/tools/make_special_banners.py --section colosseum` from SEASONS of make-colosseum.js (since 26-11 the 6000 card
+  is the Coliseum card of the Game Catalog hub, no longer a banner of the Events tab: events.md «Game Catalog»). **After a change of
   SEASONS** run it (build-resources.ps1 runs it next to gen_colosseum_stages.py since 26-11); make-game-tables prints a banner
   when a served season has no card. Without it the Catalog row shows an empty frame (the server answers 404).
 - **AP campaigns**: the «0 AP!» days of 2016-11-01..03 now reach the November 2016 season.

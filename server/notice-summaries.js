@@ -47,7 +47,7 @@ const SUMMARY = {
   ],
   'Avatar boards': [
     'Limited **Avatar Boards** are back, following your Story week; a board you buy is yours for good.',
-    'The **Avatar Board Catalog** in Special lets you keep one past board {not original}.',
+    'The **Avatar Board Catalog** (in the **Game Catalog** of Events) lets you keep one past board {not original}.',
   ],
   'SP Chip & Dale': [
     'The **SP Chip & Dale** 6★ Medal, an event reward, is back with a community render {rebuilt}.',

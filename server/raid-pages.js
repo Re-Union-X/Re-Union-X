@@ -214,6 +214,11 @@ const keptRow = (rows, ctx) => rows.find((r) => calendar.rowState(r, ctx) === 'k
 const replacesLine = (st, kept) => parts.replacesLine(st, kept ? titleOf(kept) : null);
 
 
+// Game Catalog hub (game-catalog-pages.js, user 26-11): the raids of each section and the kept raid's name
+function catalogFacts(index, ctx = {}) {
+  const rows = calendar.catalogRows(index), kept = keptRow(rows, ctx);
+  return { raids: rows.filter((r) => !r.jp).length, jp: rows.filter((r) => r.jp).length, kept: kept ? titleOf(kept) : null };
+}
 function catalogPage(index, ctx = {}) {
   const periods = ctx.periods, rows = calendar.catalogRows(index), kept = keptRow(rows, ctx);
   let lastM = '';
@@ -642,4 +647,4 @@ function jpNoticePage(row, doc, ctx, { st, back }) {
     + `${back}</body></html>`;
 }
 
-module.exports = { expandCatalog, catalogPage, detailPage, noticePage, parseNotice, statusOf, khuxMatch, noticeBlocks, NOTICE_CSS }; // noticeBlocks, NOTICE_CSS: also the Shop notices (shop-notice-pages.js)
+module.exports = { expandCatalog, catalogPage, catalogFacts, detailPage, noticePage, parseNotice, statusOf, khuxMatch, noticeBlocks, NOTICE_CSS }; // noticeBlocks, NOTICE_CSS: also the Shop notices (shop-notice-pages.js)

@@ -1849,3 +1849,48 @@ declared in the Notices, «Events of 2016-2018»). The khuxwiki series «Defeat 
   (private script `tmp\eventboards\missing_art\scripts\magicgem_card.py`; the bottom band of the gem, hidden by «x15» on that card,
   from the khuxwiki card of this board aligned on the medals), `boardArt` 2310052 (loc), label boardArt; resources 177.
   The full board needs all 48 objectives (480 coins), as in the original.
+
+## Game Catalog (26 November 2026)
+
+User request 26-11: the catalogues were split between the Special tab (Special Catalog, Avatar Board Catalog) and the Events tab
+(Coliseum Catalog, Raid Catalog, Event Catalog). They now have one hub; the **Banner Catalog** stays in the Shop.
+
+- **Banner.** `server/make-game-catalog.js` writes evStage **5000** (`GAME_CATALOG_EV`; free id below the Coliseum Catalog 6000):
+  eventType 0, eventCategory 2, the Training Grounds stage 970000 of make-special.js (a tap opens it, as the catalogue banners did),
+  `detailUrl` `/web/catalog`, `bannerUrl` `/web/catalog/img/v1/5000.png` (`GAME_CATALOG_IMG_VERSION`). Run by make-game-tables.js
+  after make-colosseum (`KHUX_GAME_CATALOG=0`: off); re-runnable (its own row replaced, nothing else touched). Without the stage 970000
+  in the master no row (warning).
+- **Listing** (server.js `gameCatalogEvents`, `eventsTabNow`; events-tab-order.js 5th argument): when the served master has the row,
+  the Events tab lists the Game Catalog banner **first and alone** among the catalogue banners (no 6000 / 8000 / 20000 cards), then
+  the kept raid, the kept event, the week's raids and events; the Special tab no longer lists the Special Catalog banner (7000) nor the
+  Avatar Board Catalog banner (`specialEventsNow`). The older banner rows stay in the master, unlisted; a master without row 5000
+  lists the older banners as before (no crash window between server and master). Home banners and the tabs' Progress use the same
+  list (the Training Grounds now count in the Events Progress only).
+- **Hub page** `GET /web/catalog` (server/game-catalog-pages.js `hubPage`, cards built by server.js `gameCatalogCards`): one card per
+  catalogue in the order Coliseum, Raid, Event, Avatar Board, Special, as `#rows>.row` (the phone 3-column card grid of phone-css.js
+  applies): its banner picture (6000 / 8000 / 20000 / the Avatar Board Catalog row / 7000), a one-line description, the count of the
+  catalogue's own summary (seasons; raids + Japan-only raids; events; entries + boards; quests + campaigns, the Special count computed
+  like its card list, special-pages.js `catalogFacts`), the kept item (or «No … kept»), the coin chip of its header (Coliseum Coins of
+  the live season, Raid / Event / Avatar Coins; none for Special) and, before Story Quest 130, «The Coliseum opens at Story Quest 130».
+  A catalogue whose data fails is left out of the page (logged). The hub has no BACK bar of its own (the game's BACK closes it).
+- **BACK.** The five catalogue list pages show a BACK bar to `/web/catalog` while the banner is served (game-catalog-pages.js
+  `withHubBack`, with the bar CSS of the detail pages); the Avatar Board Catalog opened with `?from=special|event` keeps its own BACK.
+  Detail pages are unchanged (their BACK returns to their catalogue, whose BACK returns to the hub).
+- **Picture** `server/game_data/catalog_img/5000.png` (git-ignored), `python -I recon/tools/make_special_banners.py --section game`
+  (also run by build-resources.ps1; test `recon/tools/test_make_game_catalog_banner.py`): the catalogue family (gold title «GAME
+  CATALOG», subtitle, TRAINING sticker, gold frame) on royal blue -> violet with gold rays, and the five catalogue emblems (Coliseum
+  Coin, Raid Coin, Moogle medal, Event Coin, Avatar Coin, original UI pieces of the local JP data). After a change bump
+  `GAME_CATALOG_IMG_VERSION`, then the master revision. Route `/web/catalog/img/v<N>/<id>.png` (numeric ids only, else 404).
+- **Notices:** new «Game Catalog» (11/26, INFORMATION, not original); the rules card «Catalogs: keep one of each» and the sections
+  Event / Raid / Coliseum / Avatar Board / Special Catalog say they open from the Game Catalog banner of the Events tab.
+- **Tests:** server/test-game-catalog.js (generator, tab order, hub page, BACK bars; the server wiring on a scratch copy of
+  master_data made of hard links with row 5000 added), test-notices.js.
+
+### Raid and Event Board web cards in the resources build
+
+The boards tables of the Raid / Event Catalog detail pages show the board cards from `server/game_data/raid_board_img` and
+`event_board_img` (+ cards.json). Since 26-11 build-resources.ps1 writes them, next to the Coliseum web cards:
+`python -I recon/tools/make_avatar_card_web.py --tsv server/game_data/<raid|event>_board_art.tsv --jp <jp_data> --b16
+<ref_work>/bundle2016/files --loc D:\Progetto_Restauro_KH_UX\raid_loc --out server/game_data/<raid|event>_board_img --all --strict`.
+A card with no source stops the build (`--strict`), and so does a missing list (regenerate the master first). Before, they were
+made by hand (26-11: 501 raid and 115 event cards).

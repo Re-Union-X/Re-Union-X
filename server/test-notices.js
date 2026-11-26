@@ -465,7 +465,7 @@ for (const web of [false, true]) {
     const l = n.avatarBoardLines(f).join(' ');
     check(l.startsWith('## Avatar boards') && l.includes('**3 boards on sale for Jewels**') && l.includes('**2 free boards**') && /Start-Up Boost Board/.test(l) && /100 Jewels/.test(l)
       && /Medal Fusion Set 1/.test(l) && /2 skills/.test(l) && /description is empty/.test(l) && !/plain card/.test(l)
-      && /## Avatar Board Catalog/.test(l) && /Special/.test(l) && /KEPT BOARD/.test(l) && /Unlocked an Avatar Board!/.test(l) && /next login/.test(l)
+      && /## Avatar Board Catalog/.test(l) && /Game Catalog\*\* banner, the first of the \*\*Events\*\* tab/.test(l) && /KEPT BOARD/.test(l) && /Unlocked an Avatar Board!/.test(l) && /next login/.test(l)
       && /never charged twice|nothing is paid or earned twice/.test(l) && /Bought/.test(l) && (l.match(/\{not original\}/g) || []).length >= 3
       && !/restored/i.test(l), `Avatar boards: righe ${l.slice(0, 900)}`);
     check(n.avatarNoticeFacts(path.join(dir, 'nope.json'), cf) === null && n.avatarBoardLines(null).length === 0, 'Avatar boards: senza avatar_boards.json nessuna sezione');
@@ -705,6 +705,18 @@ for (const web of [false, true]) {
   const ex = sec.filter((l) => /451|Oct(ober)? 13/.test(l));
   check(ex.length === 1 && ex[0].length <= 260, `calendar example in one item: ${ex.length}`);
   check(ex[0] && /451-475/.test(ex[0]) && /Oct 13 - Nov 9, 2016/.test(ex[0]) && /4 weeks/.test(ex[0]) && /each Monday/.test(ex[0]) && /Oct 13-19 again/.test(ex[0]), 'calendar example: facts');
+}
+// Game Catalog (user 26-11): its notice, and every catalogue section says it opens from the Game Catalog banner of the Events tab
+{
+  const g = n.NOTICES.find((x) => x.title === 'Game Catalog'), t = g ? g.body.join(' ') : '';
+  check(g && g.date === '11/26' && /first banner of the \*\*Events\*\* tab/.test(t) && /\{not original\}/.test(t) && /BACK/.test(t) && /Banner Catalog/.test(t) && /Training Grounds/.test(t), 'Game Catalog notice');
+  const all = n.NOTICES.map((x) => x.body.join('\n')).join('\n');
+  for (const c of ['Avatar Board Catalog', 'Event Catalog', 'Raid Catalog', 'Coliseum Catalog', 'Special Catalog']) {
+    check(new RegExp(`Game Catalog\\*\\* banner, the first of the (\\*\\*)?Events(\\*\\*)? tab \\(its \\*\\*Details\\*\\*, then \\*\\*${c}\\*\\*\\)`).test(all), `${c}: reached from the Game Catalog`);
+  }
+  check(!/Its banner in the Events tab opens|its gold banner in the \*\*Special\*\* tab|The first banner is the \*\*Special Catalog\*\*|Tapping the Special Catalog banner/.test(all), 'no catalogue banner of its own left');
+  const rules = n.NOTICES.find((x) => x.pinned === 1).body.join(' ');
+  check(/Game Catalog\*\*, the first banner of \*\*Events\*\*/.test(rules) && !/each have a \*\*Catalog\*\* as their first banner/.test(rules), 'rules: the Game Catalog');
 }
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');

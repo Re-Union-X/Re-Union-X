@@ -46,6 +46,8 @@ const raidPages = require('./raid-pages'); // Raid Catalog web pages (Task 9)
 const colosseumPages = require('./colosseum-pages'); // Coliseum Catalog web page (Coliseum Part 1 Task 6)
 const makeColosseum = require('./make-colosseum'); // BONUS_TIER of the Coliseum Catalog board cards
 const eventPages = require('./event-pages'); // Event Catalog web pages (Events Part 1, Task 5)
+const gameCatalogPages = require('./game-catalog-pages'); // Game Catalog hub page (user 26-11)
+const makeGameCatalog = require('./make-game-catalog'); // Game Catalog banner (evStage 5000)
 const legalPages = require('./legal-pages');
 const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranking');
 const chatRoutes = require('./routes-chat'); // chat del party (I-210)
@@ -222,6 +224,7 @@ function route(url) {
   if (p.startsWith('/web/colosseum/')) return 'colosseumweb'; // Coliseum Catalog page, cards, Keep / Remove (Coliseum Part 1 Task 6)
   if (p.startsWith('/web/event/')) return 'eventweb'; // Event Catalog, event details and notices, event cards
   if (p.startsWith('/web/avatar/')) return 'avatarweb'; // Avatar Board Catalog (Events Part 7 Task 5b)
+  if (p === '/web/catalog' || p.startsWith('/web/catalog/')) return 'catalogweb'; // Game Catalog hub and its banner (user 26-11)
   if (p.startsWith('/web/medals/')) return 'medalweb'; // Medal Gallery and its pictures (I-242)
   if (p.includes('system/status')) return 'status';
   if (p.includes('system/login')) return 'login';
@@ -1867,6 +1870,8 @@ const RAID_MODELS = process.env.KHUX_RAID_MODELS || path.join(__dirname, 'game_d
 const RAID_IMG = process.env.KHUX_RAID_IMG || path.join(__dirname, 'game_data', 'raid_img');
 // Coliseum Catalog cards (make_special_banners.py --section colosseum): 6000.png (the banner) and <colosseumStageId>.png (git-ignored)
 const COLOSSEUM_IMG = process.env.KHUX_COLOSSEUM_IMG || path.join(__dirname, 'game_data', 'colosseum_img');
+// Game Catalog banner (make_special_banners.py --section game): <GAME_CATALOG_EV>.png (git-ignored)
+const CATALOG_IMG = process.env.KHUX_CATALOG_IMG || path.join(__dirname, 'game_data', 'catalog_img');
 // original notices of the raids (make-raid-notices.js, git-ignored SQUARE ENIX text), read at request time (a new file is seen
 // without a restart); absent or broken: null, the notice pages say «not available»
 const RAID_NOTICES = process.env.KHUX_RAID_NOTICES || path.join(__dirname, 'game_data', 'raid_notices.json');
@@ -2582,7 +2587,7 @@ function homeBannersNow(realMs = realNow()) {
     const shopIds = [...(gacha.tutorialOpen(player, ctx.storyQuest) ? [gacha.TUTORIAL_BANNER] : []), ...gachaShopList(ctx)].map((b) => b.drawMedalTypeId);
     const list = homeBanners.homeBanners({
       shop: shopIds.map((id) => ({ drawMedalTypeId: id, limitDate: end.get(id) || weekEnd })),
-      events: eventsTabOrder(raid().events(realMs), eventRoutes().catalogEvents(), eventRoutes().events(realMs), colosseumCatalogEvents(realMs)),
+      events: eventsTabNow(realMs),
       // the Avatar Board Catalog banner is not a home plate (as the Special Catalog banner)
       special: specialEventsNow(realMs).filter((e) => e.eventStageId !== avatarCatalogBannerId()), specialCatalogId: specialIndex().catalog?.evStageId,
       evStageRows, drawMedalTypeRows: drawRows, fallbackDate: weekEnd,
@@ -4974,10 +4979,10 @@ function respondStageEvent(res, body) {
   if (fs.existsSync(evPath)) {
     try { events = JSON.parse(fs.readFileSync(evPath, 'utf8')); } catch (e) { console.log('[event] event.json non valido:', e.message); }
   }
-  // Events tab (events-tab-order.js, user 10-11 and 25-11): Coliseum Catalog, Raid Catalog, Event Catalog, kept raid, kept event,
-  // then the week's raids and event quests (routes-events.js). The Raid Catalog banner is the only raid card of eventType 0.
+  // Events tab (events-tab-order.js, user 10-11, 25-11 and 26-11): the Game Catalog banner (else, with an older master, the Coliseum,
+  // Raid and Event Catalog banners), kept raid, kept event, then the week's raids and event quests (routes-events.js).
   if (Number(body?.eventCategory) === 2) {
-    events = [...eventsTabOrder(raid().events(), eventRoutes().catalogEvents(), eventRoutes().events(), colosseumCatalogEvents()), ...events];
+    events = [...eventsTabNow(), ...events];
   }
   // «Current: Nth» of the High Score quest view: the shown rank of the HSC listed (routes-hsc.js), 0 without one
   let highScoreRank = 0;
@@ -5050,6 +5055,9 @@ function specialEventsNow(realMs = realNow()) {
   const index = specialIndex();
   if (!index.catalog || !specialUnlocked()) return [];
   const list = special.specialEvents(index, specialCtx(realMs));
+  // with the Game Catalog banner in the Events tab (user 26-11) the Special and Avatar Board Catalog banners are not listed: their
+  // catalogues are reached from its hub page
+  if (gameCatalogOn()) return list.filter((e) => e.eventStageId !== index.catalog.evStageId);
   // the Avatar Board Catalog banner (Events Part 7 Task 5b) right after the Special Catalog banner; a failure never breaks the tab
   try { return eventRoutes().withAvatarCatalog(list); } catch (e) { console.log(`[event] avatar catalog banner: ${e.message}`); return list; }
 }
@@ -5073,8 +5081,7 @@ function tabAchievement(list) {
 }
 const specialAchievement = (realMs = realNow()) => tabAchievement(specialEventsNow(realMs));
 // Events: the catalog banners, the raids and the event cards (kept one included), as the Events tab lists them
-const eventAchievement = (realMs = realNow()) => tabAchievement(eventsTabOrder(raid().events(realMs), eventRoutes().catalogEvents(), eventRoutes().events(realMs),
-  colosseumCatalogEvents(realMs)));
+const eventAchievement = (realMs = realNow()) => tabAchievement(eventsTabNow(realMs));
 // GET /web/special/img/<eventStageId>.png e <id>-kept.png (banner della quest fissata): immagini 640x140 di
 // game_data/special_img, 404 se mancano. /web/special/quest/<id> (e il vecchio /detail/<id>): pagina della quest (dal catalogo con
 // ?from=catalog: barra BACK); /web/special/icon/<chiave>.png: icone di chip e pill (SPECIAL_ICON_KEYS)
@@ -5090,7 +5097,7 @@ function respondSpecialWeb(res, url) {
   const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (p === '/web/special/catalog') {
     // no Avatar Board Catalog block at the top (user 23-11: it is reached from its own banner in the Special tab)
-    return page(specialPages.catalogPage(specialIndex(), { ...specialCtx(), names: specialPages.buildNames(masterRows), unlockQuestOf: specialUnlockQuest, stageDone: catalogStageDone })); // names: search box (drop and objective rewards)
+    return page(withHubBack(specialPages.catalogPage(specialIndex(), { ...specialCtx(), names: specialPages.buildNames(masterRows), unlockQuestOf: specialUnlockQuest, stageDone: catalogStageDone }))); // names: search box (drop and objective rewards)
   }
   const det = /^\/web\/special\/(?:quest|detail)\/(\d+)$/i.exec(p); // round 13: /quest/<id>; /detail/<id> (vecchi link) e' la stessa pagina
   if (det) {
@@ -5297,6 +5304,92 @@ function colosseum() {
 function colosseumCatalogEvents(realMs = realNow()) {
   try { return colosseum().catalogEvents(realMs); } catch (e) { console.log(`[colosseum] catalog banner: ${e.message}`); return []; }
 }
+// Game Catalog (user 26-11, make-game-catalog.js / game-catalog-pages.js): ONE catalogue banner, first in the Events tab, in place of
+// the Coliseum / Raid / Event Catalog banners (Events) and the Special / Avatar Board Catalog banners (Special). Listed when the served
+// master has its evStage row (an older master: the older banners as before); a tap opens the Training Grounds, Details the hub page.
+const gameCatalogRow = () => masterRows('evStage').find((r) => r.eventStageId === makeGameCatalog.GAME_CATALOG_EV) || null;
+const gameCatalogOn = () => { try { return !!gameCatalogRow(); } catch { return false; } };
+function gameCatalogEvents(realMs = realNow()) {
+  try {
+    const ev = gameCatalogRow();
+    if (!ev) return [];
+    const ids = (ev.stageId || []).slice(0, ev.validStageId || 0).filter(Boolean);
+    if (!ids.length) return [];
+    const scores = player.stageScores || {};
+    const stages = ids.map((stageId) => ({ stageId, useAp: Number(stageRowOf(stageId)?.useAp) || 0, score: scores[stageId] || 0,
+      playStatus: stageId in scores ? STAGE_CLEARED : 0, clearMissionIds: stageClearMissions(stageId) || [] }));
+    return [{ stages, eventStageId: ev.eventStageId, showIcon: 1, bannerUrl: `${WEB_BASE}${makeGameCatalog.bannerPath()}`, eventType: 0, status: 1,
+      endTime: serverTimeAt(clock.weekEnd(realMs)), newStageId: 0, isLock: 0,
+      // the crown right of the banner, as the other catalogue banners: every objective of the Training Grounds done
+      complete: stages.every((x) => [1, 2, 3].every((m) => x.clearMissionIds.includes(m))) ? 1 : 0 }];
+  } catch (e) { console.log(`[catalog] Game Catalog banner: ${e.message}`); return []; }
+}
+// the Events tab as /stage/event category 2 lists it (also the home banners and the tab's Progress)
+const eventsTabNow = (realMs = realNow()) => eventsTabOrder(raid().events(realMs), eventRoutes().catalogEvents(), eventRoutes().events(realMs), colosseumCatalogEvents(realMs),
+  gameCatalogEvents(realMs));
+// a catalogue list page reached from the hub: its BACK bar to /web/catalog (only while the Game Catalog banner is served)
+const withHubBack = (html) => (gameCatalogOn() ? gameCatalogPages.withHubBack(html) : html);
+const countOf = (n, w, ws = `${w}s`) => `${Number(n).toLocaleString('en-US')} ${n === 1 ? w : ws}`;
+// the cards of the hub page (game-catalog-pages.js): one per catalogue, its banner, description, counts, kept item and coins; a
+// catalogue whose data fails is left out (logged), never the whole page
+function gameCatalogCards() {
+  const cards = [], add = (key, fn) => { try { const c = fn(); if (c) cards.push({ key, ...c }); } catch (e) { console.log(`[catalog] ${key} card: ${e.message}`); } };
+  add('colosseum', () => {
+    const f = colosseumPages.catalogFacts(colosseum().catalogRows());
+    return { title: 'Coliseum Catalog', href: '/web/colosseum/catalog', img: `/web/colosseum/img/v${routesColosseum.COLOSSEUM_IMG_VERSION}/${makeColosseum.CATALOG_EV}.png`,
+      line: 'Every Coliseum season, one a month: keep a past one and the Coliseum plays it again.', count: countOf(f.seasons, 'season'),
+      kept: f.kept, keptNone: 'No season kept: the Coliseum plays the season of your Story', wallet: colosseumWallet(),
+      note: colosseum().catalogCtx().unlocked ? null : 'The Coliseum opens at Story Quest 130' };
+  });
+  add('raid', () => {
+    const index = raidIndex(), f = raidPages.catalogFacts(index, raid().catalogCtx());
+    return { title: 'Raid Catalog', href: '/web/raid/catalog', img: `/web/raid/img/v${routesRaid.RAID_IMG_VERSION}/${(index.catalog || {}).evStageId || 8000}.png`,
+      line: 'Every raid week of the game, with its bosses, tiers and Raid Boards.', count: `${countOf(f.raids, 'raid')}${f.jp ? ` · ${countOf(f.jp, 'Japan-only raid')}` : ''}`,
+      kept: f.kept, keptNone: 'No raid kept', wallet: { ic: 'raid', label: 'Raid Coins', value: Number(player.raidSpherePoint) || 0 } };
+  });
+  add('event', () => {
+    eventRoutes().pruneKept();
+    const index = eventIndex(), f = eventPages.catalogFacts(index, eventRoutes().catalogCtx());
+    return { title: 'Event Catalog', href: '/web/event/catalog', img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${(index.catalog || {}).evStageId || 20000}.png`,
+      line: 'Every event of the game, with its quests, Event Boards and rewards.', count: countOf(f.entries, 'event'), kept: f.kept, keptNone: 'No event kept',
+      wallet: { ic: 'camp', label: 'Event Coins', value: eventCoinPoint(), title: 'The Event Coins of the board set the Events tab plays now (one balance per set)' } };
+  });
+  add('avatar', () => {
+    const index = eventIndex();
+    if (!index.avatarCatalog) return null;
+    eventRoutes().pruneBoardKept();
+    const f = eventPages.catalogFacts(index, eventRoutes().boardCatalogCtx(), true);
+    return { title: 'Avatar Board Catalog', href: '/web/avatar/catalog', img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${index.avatarCatalog.evStageId}.png`,
+      line: 'Every past limited Avatar Board, with its dates, price and card.', count: `${countOf(f.entries, 'entry', 'entries')} · ${countOf(f.boards, 'board')}`,
+      kept: f.kept, keptNone: 'No board kept', wallet: { ic: 'avatar', label: 'Avatar Coins', value: Number(player.spherePoint) || 0 } };
+  });
+  add('special', () => {
+    const index = specialIndex();
+    if (!index.catalog) return null;
+    const f = specialPages.catalogFacts(index, specialCtx());
+    return { title: 'Special Catalog', href: '/web/special/catalog', img: special.imgPath(index.catalog.evStageId),
+      line: 'Every Special quest and VIP campaign, with its days, objectives and drops.', count: `${countOf(f.quests, 'quest')} · ${countOf(f.campaigns, 'campaign')}`,
+      kept: f.kept, keptNone: 'No quest kept', wallet: null };
+  });
+  return cards;
+}
+// GET /web/catalog (Details of the Game Catalog banner: the hub page) and /web/catalog/img/v<N>/<id>.png (its banner, from
+// game_data/catalog_img; numeric ids only, none: 404)
+function respondGameCatalogWeb(res, url) {
+  const p = url.split('?')[0];
+  const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  if (/^\/web\/catalog\/?$/i.test(p)) {
+    const b = Buffer.from(withPhone(gameCatalogPages.hubPage(gameCatalogCards())), 'utf8');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length });
+    return res.end(b);
+  }
+  const m = /^\/web\/catalog\/img\/(?:v\d+\/)?(\d{1,9})\.png$/i.exec(p);
+  const file = m && path.join(CATALOG_IMG, `${Number(m[1])}.png`);
+  if (!file || !fs.existsSync(file)) return notFound();
+  const b = fs.readFileSync(file);
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
+  return res.end(b);
+}
 // Coliseum Catalog page (colosseum-pages.js, Coliseum Part 1 Task 6): the rows of routes-colosseum.js and the lookups of the page
 // (board names from the master; unlockQuestOf as the Raid Catalog, from the first day of the season's month)
 // Coliseum Board web cards (26-11): game_data/colosseum_board_img written by recon/tools/make_avatar_card_web.py --tsv
@@ -5317,7 +5410,7 @@ function colosseumBoardCards() {
 }
 // Raid and Event Board web cards (user 26-11: the boards tables of the detail pages show the board cards, as the Coliseum one):
 // game_data/raid_board_img and event_board_img, written by recon/tools/make_avatar_card_web.py --tsv game_data/<kind>_board_art.tsv
-// --all --strict (git-ignored; run by hand on 26-11, a build-resources.ps1 step to add), read at request time like the Coliseum ones; served at
+// --all --strict (git-ignored; a build-resources.ps1 step since 26-11), read at request time like the Coliseum ones; served at
 // /web/<kind>/board-img/v<version>/<sphereBoardId>.png (numeric ids only, else 404)
 const BOARD_CARD_DIRS = { raid: process.env.KHUX_RAID_BOARD_IMG || path.join(__dirname, 'game_data', 'raid_board_img'),
   event: process.env.KHUX_EVENT_BOARD_IMG || path.join(__dirname, 'game_data', 'event_board_img') };
@@ -5385,7 +5478,7 @@ function respondColosseumWeb(res, url) {
   const p = url.split('?')[0];
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
-  if (/^\/web\/colosseum\/catalog$/i.test(p)) return page(colosseumPages.catalogPage(colosseum().catalogRows(), colosseumPageCtx()));
+  if (/^\/web\/colosseum\/catalog$/i.test(p)) return page(withHubBack(colosseumPages.catalogPage(colosseum().catalogRows(), colosseumPageCtx())));
   const det = /^\/web\/colosseum\/season\/(\d{1,9})$/i.exec(p);
   if (det) {
     const id = Number(det[1]), from = new URLSearchParams(url.split('?')[1] || '').get('from');
@@ -5559,7 +5652,7 @@ function respondRaidWeb(res, url) {
   const p = url.split('?')[0];
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
-  if (/^\/web\/raid\/catalog$/i.test(p)) return page(raidPages.catalogPage(raidIndex(), raidPageCtx()));
+  if (/^\/web\/raid\/catalog$/i.test(p)) return page(withHubBack(raidPages.catalogPage(raidIndex(), raidPageCtx())));
   const nt = /^\/web\/raid\/notice\/([^/]*)$/i.exec(p);
   if (nt) {
     const from = new URLSearchParams(url.split('?')[1] || '').get('from');
@@ -5601,7 +5694,7 @@ function respondEventWeb(res, url) {
   const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
   if (/^\/web\/event\/catalog$/i.test(p)) {
     eventRoutes().pruneKept();
-    return page(eventPages.catalogPage(eventIndex(), eventPageCtx()));
+    return page(withHubBack(eventPages.catalogPage(eventIndex(), eventPageCtx())));
   }
   const nt = /^\/web\/event\/notice\/([^/]*)$/i.exec(p);
   if (nt) {
@@ -5674,7 +5767,8 @@ function respondAvatarWeb(res, url) {
   if (/^\/web\/avatar\/img\//i.test(p)) return respondAvatarCard(res, p);
   if (/^\/web\/avatar\/catalog$/i.test(p)) {
     eventRoutes().pruneBoardKept();
-    return page(eventPages.boardCatalogPage(eventIndex(), avatarPageCtx({ from })));
+    // opened from the Special / Event Catalog (?from=): its own BACK bar to that catalogue; else the hub's (withHubBack keeps an own bar)
+    return page(withHubBack(eventPages.boardCatalogPage(eventIndex(), avatarPageCtx({ from }))));
   }
   const det = /^\/web\/avatar\/board\/(\d+)$/i.exec(p);
   const html = det && eventPages.boardDetailPage(eventIndex(), Number(det[1]), avatarPageCtx({ fromCatalog: from === 'catalog', from, cat: new URLSearchParams(url.split('?')[1] || '').get('cat') }));
@@ -6084,6 +6178,7 @@ function handler(scheme) {
       if (kind === 'colosseumweb') return req.method === 'POST' ? respondColosseumPost(res, req.url) : respondColosseumWeb(res, req.url);
       if (kind === 'eventweb') return req.method === 'POST' ? respondEventPost(res, req.url) : respondEventWeb(res, req.url);
       if (kind === 'avatarweb') return req.method === 'POST' ? respondAvatarPost(res, req.url) : respondAvatarWeb(res, req.url);
+      if (kind === 'catalogweb') return respondGameCatalogWeb(res, req.url);
       if (kind === 'medalweb') return respondMedalWeb(res, req.url, req);
       // tempi del popup Notices (segnalazione dell'utente 19-10: a volte resta vuoto a lungo al primo avvio): la
       // pagina chiama /web/notices/shown appena disegnata; il log dice quanto e' passato dalla richiesta
@@ -6499,6 +6594,7 @@ module.exports._test = {
   eventBoards, // server/test-event-board-routes.js
   avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
   respondEventWeb, respondEventPost, respondAvatarWeb, respondAvatarPost, migrateAvatarKeep, // server/test-event-pages.js
+  respondGameCatalogWeb, gameCatalogEvents, gameCatalogCards, gameCatalogOn, eventsTabNow, // server/test-game-catalog.js
   raidIndex, respondSphereCheck, respondSphereUpdate, userSphereAll, raidPageCtx, // server/test-raid-boards.js
   storyCtx, // server/test-raid-routes.js, server/test-raid-boards.js (the Shop week the raids follow)
   respondShopCampaign, // server/test-shop-campaign.js (Task 15)

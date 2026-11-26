@@ -1159,6 +1159,10 @@ require('./make-campaigns').patch(OUT);
     }
   }
 }
+// Game Catalog banner (user 26-11, make-game-catalog.js): evStage 5000, the one catalogue banner of the Events tab (Training Grounds
+// of make-special, Details -> /web/catalog, the hub of the Coliseum / Raid / Event / Avatar Board / Special Catalogs); its picture
+// game_data/catalog_img/5000.png is written by make_special_banners.py --section game (build-resources.ps1). KHUX_GAME_CATALOG=0: off
+require('./make-game-catalog').patch(OUT);
 // Limited, returning and level avatar boards (Events Part 7, avatar-boards.js): the 6 skills of the donated master (KHUX_DONOR_MASTER,
 // label skillFromDonor) into skill.json, then the rows of the private board records (KHUX_AVATAR_BOARDS; without it no board)
 // after the Raid and Event Boards: sphere 5000000+ (event_ids.json avatarBoards) and the level boards 2100119-2100126;

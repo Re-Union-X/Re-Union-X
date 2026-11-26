@@ -525,6 +525,22 @@ function statusTools(ctx, data) {
   return { statusFor, bestOf, keepFor };
 }
 
+// Game Catalog hub (game-catalog-pages.js, user 26-11): the counts of the catalogue's summary line (the cards catalogPage builds:
+// one per version of a quest, one per game year of a recurring VIP set's weeks, one per campaign) and the kept quest's name
+function catalogFacts(index, ctx = {}) {
+  const periods = ctx.periods || special.PERIODS, data = pageData(index, ctx);
+  let quests = 0, campaigns = 0;
+  for (const f of familiesOf(data.entries)) {
+    if (f.campaign) { campaigns++; continue; }
+    const weeks = new Set();
+    for (const v of f.versions) {
+      if (v[0].campaign) weeks.add(gameYearOf(cardSpan(v, periods)[0])); else quests++;
+    }
+    quests += weeks.size;
+  }
+  return { quests, campaigns, kept: data.pinned ? data.pinned.name : null };
+}
+
 function catalogPage(index, ctx = {}) {
   const periods = ctx.periods || special.PERIODS, cur = ctx.period;
   const names = { drop: () => [], objective: () => [], dropTypes: () => [], objectiveTypes: () => [], ...(ctx.names || {}) };
@@ -762,5 +778,5 @@ function detailPage(index, evStageId, ctx = {}) {
 }
 
 // CSS, DETAIL_CSS, esc, niceDay, monthYear, icon: shared with the Raid Catalog pages (server/raid-pages.js), which follow this style
-module.exports = { gameYearOf, GAME_YEARS, YEAR_SPAN, entryYears, SHOW_SETS, catalogPage, detailPage, familiesOf, buildNames, typesOf, SPECIAL_ICON_KEYS, RANK_JS, khuxRank, MATCH_JS, khuxMatch,
+module.exports = { gameYearOf, GAME_YEARS, YEAR_SPAN, entryYears, SHOW_SETS, catalogPage, catalogFacts, detailPage, familiesOf, buildNames, typesOf, SPECIAL_ICON_KEYS, RANK_JS, khuxRank, MATCH_JS, khuxMatch,
   CSS, DETAIL_CSS, NARROW_CSS, esc, niceDay, monthYear, icon, CROWN, PROG_OPTS, progCls };

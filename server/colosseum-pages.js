@@ -151,6 +151,8 @@ const searchOf = (row, boards) => [monthYear(`${row.month}-01`), ...boards].join
 const baseOf = (row) => row.base || (row.state === 'kept' ? 'can' : row.state);
 const pillInner = (html) => html.slice(html.indexOf('>') + 1, html.lastIndexOf('</span>'));
 
+// Game Catalog hub (game-catalog-pages.js, user 26-11): the served seasons and the kept one's name
+const catalogFacts = (rows) => { const k = rows.find((r) => r.state === 'kept'); return { seasons: rows.length, kept: k ? titleOf(k) : null }; };
 function catalogPage(rows, ctx = {}) {
   const keptRow = rows.find((r) => r.state === 'kept');
   const html = rows.map((row) => {
@@ -297,4 +299,4 @@ function detailPage(rows, id, det, ctx = {}) {
     + `<p class="n">The Coliseum Catalog is an addition of this server: in the original game a season was played only in its own month.</p>${back}<script>${keepJs(BASE, 'season', WHERE)}</script></body></html>`;
 }
 
-module.exports = { catalogPage, detailPage, statusOf, progressOf, PILLS };
+module.exports = { catalogPage, catalogFacts, detailPage, statusOf, progressOf, PILLS };

@@ -472,6 +472,12 @@ function catalogOf(index, ctx, m) {
       .replace('__QUERY__', `'${m === MODES.board ? boardQuery(ctx.from) : '?from=catalog'}'`)}</script>`
     + `${packed.length ? `<script>${js}</script>` : ''}${back}</body></html>`;
 }
+// Game Catalog hub (game-catalog-pages.js, user 26-11): the entries of the Event Catalog (board: of the Avatar Board Catalog, with
+// their boards) and the kept one's name
+function catalogFacts(index, ctx = {}, board = false) {
+  const entries = board ? boardEntriesOf(index) : eventEntriesOf(index), kept = keptOf(entries, ctx);
+  return { entries: entries.length, boards: board ? entries.reduce((n, e) => n + boardsOf(e).length, 0) : 0, kept: kept ? catName(kept) : null };
+}
 // GET /web/event/catalog: the Event Catalog (events only)
 const catalogPage = (index, ctx = {}) => catalogOf(index, ctx, MODES.event);
 // GET /web/avatar/catalog: the Avatar Board Catalog (Task 5b)
@@ -792,5 +798,5 @@ function boardDetailPage(index, evStageId, ctx = {}) {
     + `<p class="n">The Avatar Board Catalog is an addition of this server: in the original game a board was sold only in its own dates.</p>${back}<script>${BOARD_KEEP_JS}</script></body></html>`;
 }
 
-module.exports = { catalogPage, TYPE_OPTS, detailPage, noticePage, statusOf, boardCatalogPage, boardDetailPage, boardStatusOf, whyPlain, boardWhyPlain, entriesOf, eventEntriesOf, boardEntriesOf,
+module.exports = { catalogPage, catalogFacts, TYPE_OPTS, detailPage, noticePage, statusOf, boardCatalogPage, boardDetailPage, boardStatusOf, whyPlain, boardWhyPlain, entriesOf, eventEntriesOf, boardEntriesOf,
   boardOnly, expandCatalog, informative };

@@ -1,0 +1,195 @@
+// Game Catalog (user 26-11): the banner row of make-game-catalog.js, the Events tab order with it (events-tab-order.js), the hub page
+// and the hub BACK bar (game-catalog-pages.js), then the server.js wiring on a scratch copy of the local master_data with the banner
+// row added (hard links, the real master is never written): one catalogue banner, first in Events, none in Special, the hub page
+// with its cards and links, the BACK bars of the catalogue pages, the banner picture route.
+//   node server/test-game-catalog.js
+'use strict';
+const assert = require('assert');
+const fs = require('fs'); const os = require('os'); const path = require('path');
+const makeGameCatalog = require('./make-game-catalog');
+const { eventsTabOrder } = require('./events-tab-order');
+const pages = require('./game-catalog-pages');
+
+let failed = 0;
+const run = (name, fn) => { try { fn(); console.log(`ok ${name}`); } catch (e) { failed++; console.error(`FAIL ${name}: ${e.stack}`); } };
+
+// ---- generator ----
+run('banner_row', () => {
+  assert.strictEqual(makeGameCatalog.bannerRow([{ stageId: 1 }]), null, 'no row without the Training Grounds stage');
+  const r = makeGameCatalog.bannerRow([{ stageId: 970000 }]);
+  assert.deepStrictEqual([r.eventStageId, r.eventType, r.eventCategory, r.validStageId, r.stageId, r.detailUrl, r.bannerUrl],
+    [5000, 0, 2, 1, [970000], '/web/catalog', '/web/catalog/img/v1/5000.png']);
+  assert.strictEqual(r.endTime, '2030-12-31 23:59:59');
+});
+run('banner_patch', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-game-catalog-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'stage.json'), JSON.stringify([{ stageId: 970000 }]));
+    fs.writeFileSync(path.join(dir, 'evStage.json'), JSON.stringify([{ eventStageId: 6000 }, { eventStageId: 5000, old: 1 }]));
+    const log = console.log; console.log = () => {};
+    try { makeGameCatalog.patch(dir); makeGameCatalog.patch(dir); } finally { console.log = log; }
+    const ev = JSON.parse(fs.readFileSync(path.join(dir, 'evStage.json'), 'utf8'));
+    assert.deepStrictEqual(ev.map((r) => r.eventStageId), [6000, 5000], 'one row, the others kept, re-runnable');
+    assert.ok(!ev[1].old && ev[1].detailUrl === '/web/catalog');
+    // without the Training Grounds: our row dropped, nothing added
+    fs.writeFileSync(path.join(dir, 'stage.json'), '[]');
+    const warn = console.warn; console.warn = () => {};
+    try { assert.strictEqual(makeGameCatalog.patch(dir), null); } finally { console.warn = warn; }
+    assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'evStage.json'), 'utf8')).map((r) => r.eventStageId), [6000]);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- Events tab order ----
+const card = (id, eventType, kept = false) => ({ eventStageId: id, eventType, bannerUrl: `/x/${id}${kept ? '-kept' : ''}.png` });
+run('tab_order_with_game_catalog', () => {
+  const raids = [card(8000, 0), card(8101, 2, true), card(8102, 2)], evCat = [card(20000, 0)], events = [card(20101, 1, true), card(20102, 1)], coli = [card(6000, 0)];
+  const ids = (l) => l.map((c) => c.eventStageId);
+  assert.deepStrictEqual(ids(eventsTabOrder(raids, evCat, events, coli, [card(5000, 0)])), [5000, 8101, 20101, 8102, 20102], 'the hub banner only, first');
+  assert.deepStrictEqual(ids(eventsTabOrder(raids, evCat, events, coli, [])), [6000, 8000, 20000, 8101, 20101, 8102, 20102], 'older master: the three banners');
+  assert.deepStrictEqual(ids(eventsTabOrder(raids, evCat, events, coli)), [6000, 8000, 20000, 8101, 20101, 8102, 20102]);
+});
+
+// ---- hub page ----
+const CARDS = pages.KEYS.map((key, i) => ({ key, title: `${key} Catalog`, href: `/web/${key}/catalog`, img: `/web/${key}/img/${i}.png`, line: `All of ${key}.`,
+  count: `${i + 1} things`, kept: key === 'raid' ? 'Darkside · Tier 3' : null, keptNone: `No ${key} kept`,
+  wallet: key === 'special' ? null : { ic: 'raid', label: `${key} Coins`, value: 1200 + i }, note: key === 'colosseum' ? 'The Coliseum opens at Story Quest 130' : null }));
+run('hub_page_cards', () => {
+  const html = pages.hubPage([...CARDS].reverse());
+  assert.ok(html.includes('<title>Game Catalog</title>') && html.includes('<h1>Game Catalog</h1>'), 'title and header');
+  assert.ok(/<p class="n">Every catalogue of this server[^<]*Banner Catalog is in the Shop[^<]*addition of this server\.<\/p>/.test(html), 'short explanation');
+  assert.deepStrictEqual([...html.matchAll(/<div class="row[^"]*" id="c-([a-z]+)" data-href="([^"]+)">/g)].map((m) => [m[1], m[2]]),
+    pages.KEYS.map((k) => [k, `/web/${k}/catalog`]), 'one card per catalogue, in the fixed order, the row opens the catalogue');
+  for (const [i, k] of pages.KEYS.entries()) {
+    const row = html.slice(html.indexOf(`id="c-${k}"`)).split('<a class="go"')[0];
+    assert.ok(row.includes(`<a class="im" href="/web/${k}/catalog"><img width="320" height="70" src="/web/${k}/img/${i}.png"`), `${k}: banner picture link`);
+    assert.ok(row.includes(`<a class="nm" href="/web/${k}/catalog">${k} Catalog</a>`) && row.includes(`<div class="d">All of ${k}.</div>`), `${k}: name and line`);
+    assert.ok(row.includes(`<div class="ct">${i + 1} things</div>`), `${k}: count`);
+    assert.ok(k === 'raid' ? row.includes('Kept: Darkside · Tier 3</div>') : row.includes(`<div class="pg no">No ${k} kept</div>`), `${k}: kept line`);
+    assert.strictEqual(row.includes(`<small>${k} Coins</small><b>${(1200 + i).toLocaleString('en-US')}</b>`), k !== 'special', `${k}: coin chip`);
+  }
+  assert.ok(html.includes('<div class="lk"><img class="ic" src="/web/special/icon/lock.png" alt="">The Coliseum opens at Story Quest 130</div>'), 'note line');
+  assert.ok(html.includes('class="row pinned" id="c-raid"'), 'a kept item colours its card');
+  assert.ok(!html.includes('class="back"'), 'the hub has no BACK bar of its own (the game\'s BACK closes it)');
+  assert.ok(html.includes('<div id="rows">'), 'the #rows grid of the phone layout');
+  assert.ok(pages.hubPage([]).includes('No catalogue is served yet.'));
+});
+run('hub_page_phone', () => {
+  const html = require('./phone-css').withPhone(pages.hubPage(CARDS));
+  assert.ok(html.includes('<style data-phone>') && html.includes('#rows>.row'), 'the phone card grid applies');
+});
+run('hub_back_bar', () => {
+  const plain = '<!doctype html><html><head><style>x</style></head><body><h1>Raid Catalog</h1></body></html>';
+  const out = pages.withHubBack(plain);
+  assert.ok(out.includes('<body class="hb">') && out.includes('<div class="bar"><a class="back" href="/web/catalog">BACK<span></span></a></div></body>'), out);
+  assert.ok(out.includes(`<style>${pages.BAR_CSS}</style></head>`) && pages.BAR_CSS.startsWith('.bar{') && pages.BAR_CSS.endsWith('body.hb{padding-bottom:90px}'), 'the bar look');
+  assert.ok(pages.withHubBack('<html><head></head><body class="x"><p></p></body></html>').includes('<body class="x hb">'), 'body class kept');
+  const own = '<html><head></head><body class="hb"><div class="bar"><a class="back" href="/web/special/catalog">BACK<span></span></a></div></body></html>';
+  assert.strictEqual(pages.withHubBack(own), own, 'a page with its own BACK bar is unchanged');
+});
+
+// ---- server.js wiring on a scratch master with the banner row ----
+function wiring() {
+  const REAL = process.env.KHUX_MASTER_DIR || path.join(__dirname, 'master_data');
+  let stage = [];
+  try { stage = JSON.parse(fs.readFileSync(path.join(REAL, 'stage.json'), 'utf8')); } catch { /* none */ }
+  if (!stage.some((r) => r.stageId === 970000) || !fs.existsSync(path.join(__dirname, 'game_data', 'special.json'))) { console.log('wiring: skipped (no Training Grounds in master_data / no game_data)'); return; }
+  // the scratch master next to the real one (same volume: hard links, nothing copied), evStage.json written with the banner row
+  const master = fs.mkdtempSync(path.join(path.dirname(REAL), '.khux-test-game-catalog-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-game-catalog-'));
+  const cleanup = () => { fs.rmSync(master, { recursive: true, force: true }); fs.rmSync(tmp, { recursive: true, force: true }); };
+  process.on('exit', cleanup);
+  for (const f of fs.readdirSync(REAL)) {
+    const src = path.join(REAL, f);
+    if (!fs.statSync(src).isFile() || f === 'evStage.json') continue;
+    try { fs.linkSync(src, path.join(master, f)); } catch { fs.copyFileSync(src, path.join(master, f)); }
+  }
+  const ev = JSON.parse(fs.readFileSync(path.join(REAL, 'evStage.json'), 'utf8')).filter((r) => r.eventStageId !== 5000);
+  fs.writeFileSync(path.join(master, 'evStage.json'), JSON.stringify([...ev, makeGameCatalog.bannerRow(stage)]));
+  process.env.KHUX_MASTER_DIR = master;
+  process.env.KHUX_SAVE = path.join(tmp, 'save.json');
+  process.env.KHUX_CATALOG_IMG = path.join(tmp, 'catalog_img');
+  fs.mkdirSync(process.env.KHUX_CATALOG_IMG);
+  delete process.env.KHUX_REAL_NOW;
+  delete process.env.KHUX_SERVER_TIME;
+  const log = console.log, warn = console.warn;
+  const quiet = (fn) => { console.log = () => {}; console.warn = () => {}; try { return fn(); } finally { console.log = log; console.warn = warn; } };
+  const { _test: t } = quiet(() => require('./server'));
+  const call = (fn, ...a) => { let b = null; quiet(() => fn({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, ...a)); return b; };
+  const web = (fn, url) => { const o = { code: 0, body: '', type: '' }; quiet(() => fn({ writeHead(c, h) { o.code = c; o.type = (h || {})['Content-Type']; }, end(x) { o.body = x; } }, url)); return o; };
+  const p = t.player;
+  call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
+  // story quest 300 cleared: the Special tab and the Coliseum are open
+  const q = t.masterRows('stage').find((r) => r.stageKind === 1 && r.id === 300);
+  p.stageScores = { ...(p.stageScores || {}), [q.stageId]: 1 };
+  const avatarId = (t.eventIndex() || {}).avatarCatalog?.evStageId;
+  const special = t.specialIndex().catalog?.evStageId;
+
+  run('wiring_events_tab', () => {
+    assert.strictEqual(t.gameCatalogOn(), true);
+    const tab = call(t.respondStageEvent, { eventCategory: 2 }).events;
+    assert.strictEqual(tab[0].eventStageId, 5000, 'the Game Catalog banner first');
+    assert.deepStrictEqual([tab[0].eventType, tab[0].stages.map((s) => s.stageId), tab[0].bannerUrl.endsWith('/web/catalog/img/v1/5000.png')], [0, [970000], true]);
+    assert.deepStrictEqual(tab.filter((c) => c.eventType === 0).map((c) => c.eventStageId), [5000], 'the only catalogue banner of the Events tab');
+    for (const id of [6000, 8000, 20000]) assert.ok(!tab.some((c) => c.eventStageId === id), `banner ${id} no longer listed`);
+    assert.deepStrictEqual(t.eventsTabNow().map((c) => c.eventStageId), tab.map((c) => c.eventStageId), 'home banners / Progress see the same list');
+  });
+  run('wiring_special_tab', () => {
+    const tab = call(t.respondStageEvent, { eventCategory: 1 }).events;
+    assert.ok(tab.length > 0, 'the Special tab lists its quests');
+    assert.ok(!tab.some((c) => c.eventStageId === special), 'no Special Catalog banner');
+    if (avatarId) assert.ok(!tab.some((c) => c.eventStageId === avatarId), 'no Avatar Board Catalog banner');
+    assert.ok(!tab.some((c) => c.stages.some((s) => s.stageId === 970000)), 'the Training Grounds only in the Events tab');
+  });
+  run('wiring_hub_page', () => {
+    assert.strictEqual(t.route('/web/catalog'), 'catalogweb');
+    assert.strictEqual(t.route('/web/catalog/img/v1/5000.png'), 'catalogweb');
+    assert.strictEqual(t.route('/web/gacha/catalog'), 'gachaweb', 'the Banner Catalog unchanged');
+    p.colosseum = { ...(p.colosseum || {}), kept: 800 };
+    const o = web(t.respondGameCatalogWeb, '/web/catalog');
+    assert.strictEqual(o.code, 200);
+    const html = o.body.toString('utf8');
+    assert.ok(html.includes('<h1>Game Catalog</h1>') && html.includes('<style data-phone>'));
+    const keys = [...html.matchAll(/id="c-([a-z]+)"/g)].map((m) => m[1]);
+    assert.deepStrictEqual(keys, ['colosseum', 'raid', 'event', ...(avatarId ? ['avatar'] : []), 'special']);
+    assert.ok(/id="c-colosseum"[^]*?<div class="ct">\d+ seasons<\/div><div class="pg"><img[^>]*>Kept: Coliseum · April 2016<\/div>[^]*?<small>Coliseum Coins · April 2016<\/small>/.test(html), 'Coliseum card: seasons, kept season, its coins');
+    assert.ok(/id="c-raid"[^]*?<div class="ct">[\d,]+ raids[^<]*<\/div><div class="pg no">No raid kept<\/div>[^]*?<small>Raid Coins<\/small>/.test(html), 'Raid card');
+    assert.ok(/id="c-event"[^]*?<div class="ct">[\d,]+ events<\/div>[^]*?<small>Event Coins<\/small>/.test(html), 'Event card');
+    if (avatarId) assert.ok(/id="c-avatar"[^]*?<div class="ct">[\d,]+ entries · [\d,]+ boards<\/div>[^]*?<small>Avatar Coins<\/small>/.test(html), 'Avatar Board card');
+    assert.ok(/id="c-special"[^]*?<div class="ct">[\d,]+ quests · [\d,]+ campaigns<\/div><div class="pg no">No quest kept<\/div><\/div>/.test(html), 'Special card (no coins)');
+    assert.ok(html.includes(`src="/web/special/img/v`) && html.includes(`/${special}.png"`), 'the Special Catalog banner picture');
+    // the Special count is the catalogue's own summary line
+    const sp = web(t.respondSpecialWeb, '/web/special/catalog').body.toString('utf8');
+    const sum = /<span class="n1">([\d,]+ quests?)<\/span> · ([\d,]+ campaigns?)/.exec(sp);
+    assert.ok(sum && html.includes(`<div class="ct">${sum[1]} · ${sum[2]}</div>`), `Special counts match the catalogue ${sum && sum.slice(1)}`);
+    p.colosseum.kept = null;
+  });
+  run('wiring_catalog_back_bars', () => {
+    const pagesOf = [[t.respondColosseumWeb, '/web/colosseum/catalog'], [t.respondRaidWeb, '/web/raid/catalog'], [t.respondEventWeb, '/web/event/catalog'],
+      [t.respondSpecialWeb, '/web/special/catalog'], ...(avatarId ? [[t.respondAvatarWeb, '/web/avatar/catalog']] : [])];
+    for (const [fn, url] of pagesOf) {
+      const html = web(fn, url).body.toString('utf8');
+      assert.ok(html.includes('<a class="back" href="/web/catalog">BACK'), `${url}: BACK to the hub`);
+      assert.strictEqual(html.split('class="back"').length, 2, `${url}: one BACK bar`);
+      assert.ok(/<body class="[^"]*\bhb\b/.test(html), `${url}: room for the bar`);
+    }
+    if (avatarId) {
+      const html = web(t.respondAvatarWeb, '/web/avatar/catalog?from=special').body.toString('utf8');
+      assert.ok(html.includes('<a class="back" href="/web/special/catalog">BACK') && !html.includes('href="/web/catalog"'), 'from=special keeps its own BACK');
+    }
+    // a detail page's BACK still goes to its catalogue (which then leads to the hub)
+    const raidRow = (t.raidIndex().entries || [])[0];
+    if (raidRow) assert.ok(web(t.respondRaidWeb, `/web/raid/raid/${raidRow.evStageId}?from=catalog`).body.toString('utf8').includes('href="/web/raid/catalog#q'), 'detail BACK unchanged');
+  });
+  run('wiring_banner_image', () => {
+    assert.strictEqual(web(t.respondGameCatalogWeb, '/web/catalog/img/v1/5000.png').code, 404, 'no picture yet: 404');
+    fs.writeFileSync(path.join(process.env.KHUX_CATALOG_IMG, '5000.png'), 'banner');
+    const o = web(t.respondGameCatalogWeb, '/web/catalog/img/v1/5000.png');
+    assert.deepStrictEqual([o.code, o.type, o.body.toString()], [200, 'image/png', 'banner']);
+    assert.strictEqual(web(t.respondGameCatalogWeb, '/web/catalog/img/v1/..%2Fx.png').code, 404);
+    assert.strictEqual(web(t.respondGameCatalogWeb, '/web/catalog/other').code, 404);
+  });
+}
+wiring();
+
+if (failed) { console.error(`${failed} test(s) failed`); process.exit(1); }
+console.log('all Game Catalog tests passed');

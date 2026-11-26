@@ -1,13 +1,14 @@
 """Banners of the Special tab (640x140 PNG) and their -kept copies (spec 2026-10-30-special-tab-design.md 4, 10).
 
     python -I recon/tools/make_special_banners.py [--index F] [--rules F] [--src D] [--out D] [--enemies D]
-        [--mode palette|full] [--section all|special|raid|event|colosseum] [--raid-index F] [--raid-img D]
-        [--event-index F] [--event-config F] [--event-img D] [--colosseum-img D]
+        [--mode palette|full] [--section all|special|raid|event|colosseum|game] [--raid-index F] [--raid-img D]
+        [--event-index F] [--event-config F] [--event-img D] [--colosseum-img D] [--catalog-img D]
         -> server/game_data/special_img/<evStageId>.png and <evStageId>-kept.png (git-ignored)
         -> raid section: server/game_data/raid_img/8000.png (Raid Catalog banner) and <evStageId>-kept.png (git-ignored)
         -> event section: server/game_data/event_img/20000.png (Event Catalog banner) and <evStageId>-kept.png (git-ignored)
         -> colosseum section: server/game_data/colosseum_img/6000.png (Coliseum Catalog banner) and <colosseumStageId>.png
            (the season cards of the catalogue page; git-ignored)
+        -> game section: server/game_data/catalog_img/5000.png (Game Catalog banner, git-ignored)
 
 Event section (Events Part 1, Task 6; run after make_event_banners.py, whose event cards it reads; not part of «all»): the
 Event Catalog banner (server/event_config.json catalogEvStage, 20000), its own design (user 06-11: never the Raid Catalog
@@ -1301,6 +1302,63 @@ def build_colosseum(out_dir, seasons=None, pieces=None):
     return {'catalog': 1, 'seasons': len(seasons)}
 
 
+# ---- Game Catalog (user 26-11): the ONE catalogue banner of the Events tab (server/make-game-catalog.js, evStage 5000) ----
+# Its Details opens the hub of the Coliseum, Raid, Event, Avatar Board and Special Catalogs, so the card shows the emblem of each one,
+# all original pieces of the game UI: the Coliseum Coin (img/incentive/IncentiveIcon_17.png), the Raid Coin (cocostudio/publish/
+# SpherePointIcon_Raid.png), the Event Coin (IncentiveIcon_15.png), the Avatar Coin (IncentiveIcon_30.png) and the Moogle medal of the
+# Special quests (Medal_L_90016), in an arc on a royal blue -> violet background with gold rays, then the family finish (gold title,
+# white subtitle, TRAINING sticker, square gold frame). Local game files only (never in the repo); a missing piece is left out with a
+# WARNING. Output: server/game_data/catalog_img/5000.png (git-ignored). After a change bump GAME_CATALOG_IMG_VERSION
+# (server/make-game-catalog.js), then the master revision.
+GAME_CATALOG_EV = 5000
+GAME_CATALOG_TITLE, GAME_CATALOG_SUB = 'GAME CATALOG', 'Tap: Training Grounds · Details: all catalogs'
+GAME_TOP, GAME_BOT = (60, 70, 190), (34, 8, 80)          # royal blue -> deep violet (apart from the five catalogue cards)
+GAME_INK = (24, 10, 70)
+GAME_TITLE_RIGHT = 392       # the title ends here: the emblems keep the right part of the card
+# (piece key, centre x, centre y, size): two coins each side of the Moogle medal (in the middle and largest), clear of the sticker
+GAME_ARC = (('raid', 462, 64, 48), ('coliseum', 470, 112, 40), ('special', 534, 88, 80), ('event', 600, 72, 46), ('avatar', 604, 114, 38))
+
+
+def game_pieces():
+    """{'coliseum', 'raid', 'event', 'avatar', 'special'}: paths of the original emblems (None when not on disk)"""
+    raid = None
+    try:
+        import private_tools
+        raid = private_tools.local_path('jp_data', 'cocostudio', 'publish', 'SpherePointIcon_Raid.png')
+    except Exception:  # noqa: BLE001 - no local data: no Raid Coin
+        pass
+    return {'coliseum': jp_img('incentive', 'IncentiveIcon_17.png'), 'raid': raid, 'event': event_coin_path(),
+            'avatar': avatar_coin_path(), 'special': os.path.join(MEDALS, 'Medal_L_90016.png')}
+
+
+def game_option(style='A', pieces=None):
+    """640x140 RGBA of the Game Catalog card (evStage 5000): the five catalogue emblems in an arc, a soft glow behind them, then
+    the family finish with the title kept left of the art"""
+    if style != 'A':
+        raise ValueError('game style %r' % style)
+    _ART_BOXES.clear()
+    pieces = pieces if pieces is not None else game_pieces()
+    im = background(GAME_TOP, GAME_BOT, ray=(255, 226, 150), centre=(530, 74), n=20, ray_alpha=30)
+    glow = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse((430, -4, 640, 150), fill=(255, 226, 255, 120))
+    im = Image.alpha_composite(im, inner_clip(glow.filter(ImageFilter.GaussianBlur(20))))
+    for key, cx, cy, size in sorted(GAME_ARC, key=lambda a: a[3]):     # the small ones first, the medal on top
+        piece = art(pieces.get(key), 128, '%s emblem' % key)
+        if piece is None:
+            continue
+        k = size / max(piece.width, piece.height)
+        piece = piece.resize((max(1, int(piece.width * k)), max(1, int(piece.height * k))), Image.LANCZOS)
+        im = paste_shadowed(im, piece, (cx - piece.width / 2, cy - piece.height / 2), blur=3, alpha=120, colour=(10, 0, 40))
+    return family_finish(left_shade(im, (14, 6, 50), 160, 400), GAME_CATALOG_TITLE, GAME_CATALOG_SUB, GAME_INK, GAME_TITLE_RIGHT)
+
+
+def build_game(out_dir, pieces=None):
+    """writes out_dir/5000.png (the Game Catalog banner); -> its path"""
+    path = os.path.join(out_dir, '%d.png' % GAME_CATALOG_EV)
+    save_catalog(game_option('A', pieces), path)
+    return path
+
+
 # ---- Raid option B variants (user 06-11: «Raid B, improved»): dark red / black, raid board cells, one big boss ----
 RAID_B_VARIANTS = ('B1', 'B2', 'B3', 'B4')
 
@@ -1540,10 +1598,11 @@ def main():
     ap.add_argument('--rules', default=os.path.join(REPO, 'server', 'special_periods.json'),
                     help='campaigns[key].reconstruct: banners rebuilt from local sources (originals lost)')
     ap.add_argument('--mode', choices=['palette', 'full'], default='palette')
-    ap.add_argument('--section', choices=['all', 'special', 'raid', 'event', 'colosseum'], default='all',
+    ap.add_argument('--section', choices=['all', 'special', 'raid', 'event', 'colosseum', 'game'], default='all',
                     help='special: the Special tab banners; raid: the Raid Catalog banner and the kept raid cards; '
                          'event (not in all): the Event Catalog banner and the kept event cards; '
-                         'colosseum (not in all): the Coliseum Catalog banner and the season cards')
+                         'colosseum (not in all): the Coliseum Catalog banner and the season cards; '
+                         'game (not in all): the Game Catalog banner')
     ap.add_argument('--raid-index', default=os.path.join(REPO, 'server', 'game_data', 'raids.json'))
     ap.add_argument('--raid-rigs', default=RAID_RIGS, help='raid boss rigs lwf/character/raid (LWF + textures) for the Raid Catalog banner')
     ap.add_argument('--catalog-only', action='store_true', help='raid section: only the Raid Catalog banner, not the kept raid cards')
@@ -1556,6 +1615,8 @@ def main():
                     help='the event cards of make_event_banners.py (run it first); output goes here too')
     ap.add_argument('--colosseum-img', default=os.path.join(REPO, 'server', 'game_data', 'colosseum_img'),
                     help='colosseum section: output folder of the Coliseum Catalog banner 6000.png and the season cards')
+    ap.add_argument('--catalog-img', default=os.path.join(REPO, 'server', 'game_data', 'catalog_img'),
+                    help='game section: output folder of the Game Catalog banner 5000.png')
     ap.add_argument('--catalog-style', help='build only these catalogue cards in the chosen option, e.g. special=B,raid=A,event=C '
                     '(Catalog options: A/B/C each; 7000 in --out, 8000 in --raid-img, 20000 in --event-img)')
     ap.add_argument('--raid-b-sheets', help='write raid_b_variants.png and raid_family.png (Raid B variants B1-B4) in this folder')
@@ -1576,6 +1637,9 @@ def main():
             os.makedirs(os.path.dirname(targets[k]), exist_ok=True)
             save_catalog(im, targets[k])
             print('catalog %s: option %s -> %s (bump its image version, then the master revision)' % (k, st, targets[k]))
+        return
+    if a.section == 'game':
+        print('game catalog banner -> %s' % build_game(a.catalog_img))
         return
     if a.section == 'colosseum':
         cr = build_colosseum(a.colosseum_img)
