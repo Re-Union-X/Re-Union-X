@@ -456,3 +456,7 @@ Resources 188, master revision 397, saves `colip2a` (August 2016), `colip2n` (No
 - **Phone grid alignment** (user 26-11): a progress line of two lines («Cleared up to Tier 7, Round 1 · 401 Coliseum Coins»)
   pushed the state pill of its card below the neighbours'. `phone-css.js` now gives `.pg` the fixed two-line height of the
   dates of the other catalogs and the board strip a fixed 44 px height, so pills and buttons line up across a row.
+- **v2 (user 26-11)**: the board cards sit under the season card in a left column (`.lc`) on wide screens and in the phone
+  cards, so rows are shorter; the detail page is a set of section cards with a header band and icon (Season, Coliseum Boards,
+  Tiers, Score thresholds, Maps), values in gold, rounds in cyan, taken / reached in green, not yet in a muted grey; its
+  Keep / Remove button carries `pkd`, compact on phones (`phone-css.js` `.sb .pk.pkd`, never full width).

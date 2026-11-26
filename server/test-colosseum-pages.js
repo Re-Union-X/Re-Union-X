@@ -260,6 +260,9 @@ const tests = {
     const html = pages.catalogPage(ROWS, ctx);
     const may = rowHtml(html, 900);
     assert.ok(may.includes('<div class="bcs">'), 'the card strip');
+    assert.ok(/<div class="lc"><a class="im" href="[^"]*"><img [^>]*><\/a><div class="bcs">/.test(may), 'v2: the board cards under the season card (left column)');
+    assert.ok(!/<div class="info">[\s\S]*class="bcs"/.test(may), 'not in the text column');
+    assert.ok(html.includes('.lc{flex:0 0 320px;'), 'left column as wide as the card');
     assert.ok(may.includes('<img width="44" height="44" src="/web/colosseum/board/v77/2200002.png" loading="lazy" alt="" onerror="kxNb(this)">'), 'versioned, lazy, placeholder on error');
     assert.ok(!may.includes('/2200023.png') && may.includes('<span class="nb"></span>'), 'no card: the neutral box');
     assert.ok(may.includes('<b class="bt">Tier 10</b>'), 'the bonus board marked with its tier');
@@ -315,21 +318,21 @@ const tests = {
     assert.ok(html.startsWith('<!doctype html>') && html.includes('<h1>Coliseum · May 2016</h1>'));
     assert.ok(html.includes('src="/web/colosseum/img/v3/900.png"'), 'the season card');
     // boards: card, name, nodes, coins still needed; bonus with its tier; a completed board
-    const boards = html.slice(html.indexOf('<h2>Coliseum Boards</h2>'), html.indexOf('<h2>Tiers</h2>'));
+    const boards = html.slice(html.indexOf('id="sec-boards"'), html.indexOf('id="sec-tiers"'));
     assert.ok(boards.includes('src="/web/colosseum/board/v5/2200002.png"') && boards.includes('<span class="nb"></span>'), 'card, or the box without one');
-    assert.ok(boards.includes('6★ Scrooge') && boards.includes('5 / 22') && boards.includes('900 Coliseum Coins'), boards);
+    assert.ok(boards.includes('6★ Scrooge') && boards.includes('5</b> / 22') && boards.includes('900 Coliseum Coins'), boards);
     assert.ok(boards.includes('Unlocks at Tier 10') && boards.includes('Completed'), 'bonus board, completed');
     // tiers: rounds (the endless one as the game shows it), AP, rewards and the taken ones
-    const tiers = html.slice(html.indexOf('<h2>Tiers</h2>'), html.indexOf('<h2>Score thresholds</h2>'));
-    assert.ok(tiers.includes('30 Coliseum Coins') && tiers.includes('Goofy') && tiers.includes('Donald x2'), tiers);
+    const tiers = html.slice(html.indexOf('id="sec-tiers"'), html.indexOf('id="sec-ranked"'));
+    assert.ok(tiers.includes('30 Coliseum Coins') && tiers.includes('Goofy') && tiers.includes('Donald <b class="v">x2</b>'), tiers);
     assert.ok(/<tr class="got">[\s\S]*?Taken/.test(tiers) && tiers.includes('Not taken yet'));
     assert.ok(tiers.includes('999') && tiers.includes('endless'), 'endless tier');
     // thresholds: brackets top first, the rounds needed, prizes, reached ones marked
-    const sc = html.slice(html.indexOf('<h2>Score thresholds</h2>'), html.indexOf('<h2>Maps</h2>'));
+    const sc = html.slice(html.indexOf('id="sec-ranked"'), html.indexOf('id="sec-maps"'));
     assert.ok(sc.indexOf('1st – 100th') < sc.indexOf('101st – 1,000th'), 'top first');
-    assert.ok(sc.includes('200 rounds') && sc.includes('Scrooge x3 <span class="sk">(Attack Boost)</span>') && /<tr class="got">[\s\S]*?Reached/.test(sc) && sc.includes('Your best: 25 rounds'), sc);
+    assert.ok(sc.includes('200 rounds') && sc.includes('Scrooge <b class="v">x3</b></span> <span class="sk">(Attack Boost)</span>') && /<tr class="got">[\s\S]*?Reached/.test(sc) && sc.includes('Your best: <span class="rd">25 rounds</span>'), sc);
     // maps: the wording of the «Coliseum» notice and a link to it
-    const maps = html.slice(html.indexOf('<h2>Maps</h2>'));
+    const maps = html.slice(html.indexOf('id="sec-maps"'));
     assert.ok(maps.includes('original') && maps.includes('2016 worldwide game files') && maps.includes('href="/web/notices#coliseum"'));
     assert.ok(pages.detailPage(rows, 900, { ...det, maps: 'japanese' }, ctx).includes('Japanese version'));
     assert.ok(pages.detailPage(rows, 900, { ...det, maps: 'generated' }, ctx).includes('generated maps'));
@@ -340,9 +343,19 @@ const tests = {
     assert.ok(!pages.detailPage(rows, 900, det, { ...ctx, fromCatalog: false }).includes('class="back"'));
     assert.ok(html.includes('function kxKeep('), 'the keep script');
     assert.strictEqual(pages.detailPage(rows, 31, det, ctx), null, 'unknown season');
+    // v2 (user 26-11): section cards with a header band and an icon, colours for values (gold), rounds (cyan), taken / reached (green),
+    // not yet (muted), tier and board names emphasized
+    for (const k of ['season', 'boards', 'tiers', 'ranked', 'maps']) assert.ok(new RegExp(`<div class="cs" id="sec-${k}"><h2 class="csh"><img class="ic"`).test(html), `section ${k}`);
+    assert.ok(tiers.includes('<span class="yes">Taken') && tiers.includes('<span class="mu">Not taken yet</span>') && tiers.includes('<span class="tn">Tier 1</span>'));
+    assert.ok(sc.includes('<span class="yes">Reached') && sc.includes('<span class="mu">Not reached</span>') && boards.includes('<span class="tn">6★ Scrooge</span>'));
+    assert.ok(boards.includes('<span class="cc">900 Coliseum Coins</span>') && tiers.includes('<span class="cc">30 Coliseum Coins</span>'));
+    assert.ok(/\.yes\{color:#6fd47f/.test(html) && /\.mu\{color:#8fa9ba/.test(html) && /h2\.csh\{[^}]*color:#ffcd4a/.test(html), 'the colours');
+    // the Keep / Remove button of the box: class pkd, compact on phones
+    assert.ok(html.includes('class="pk pkd" data-id="900"'));
     // phone: the 70 % layout of the other detail pages
     const ph = withPhone(html);
     assert.ok(ph.includes('<style data-phone>') && ph.includes('html{zoom:.7}') && ph.includes('table{table-layout:auto!important}'));
+    assert.ok(/\.sb \.pk\.pkd\{[^}]*width:auto!important[^}]*min-height:26px[^}]*font-size:13px!important/.test(ph), 'compact Keep / Remove on phones');
   },
   empty() {
     const html = pages.catalogPage([], CTX);

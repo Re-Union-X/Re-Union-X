@@ -33,7 +33,9 @@ const BOARD_CSS = '.bcs{display:flex;flex-wrap:nowrap;align-items:center;gap:6px
   + '.bk{position:relative;flex:0 0 44px;width:44px;height:44px}.bk img,.bk .nb{display:block;width:44px;height:44px;border-radius:6px}'
   + '.nb{display:inline-block;box-sizing:border-box;border:1px solid #2f6f93;border-radius:6px;background:#06283e}'
   + '.bt{position:absolute;left:0;right:0;bottom:0;background:rgba(6,40,62,.88);color:#ffcd4a;font-size:10px;line-height:1.5;text-align:center;border-radius:0 0 6px 6px;white-space:nowrap}'
-  + '.nob{color:#b9cfdc;font-size:13px}';
+  + '.nob{color:#b9cfdc;font-size:13px}'
+  // the left column of a row: the season card, its board cards under it
+  + '.lc{flex:0 0 320px;max-width:100%;display:flex;flex-direction:column;gap:6px}.lc .bcs{margin:0}@media (max-width:700px) and (min-height:481px){.lc{flex:1 1 100%}}';
 const cardTag = (ctx, id, size) => (hasCard(ctx, id) ? `<img width="${size}" height="${size}" src="${boardImg(ctx, id)}" loading="lazy" alt="" onerror="kxNb(this)">` : NB);
 function boardStrip(row, ctx) {
   const ids = row.boardIds || [];
@@ -158,8 +160,9 @@ function catalogPage(rows, ctx = {}) {
     return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-show="${row.state}" data-name="${name}"`
       + ` data-base="${esc(base)}" data-bcls="${esc(bst.cls)}" data-bpill="${esc(pillInner(bst.pill))}"`
       + ` data-p="${yearsOf(row).join(' ')}" data-boards="${esc(row.boards || 'none')}" data-tiers="${row.tiersDone ? 'done' : 'todo'}" data-search="${esc(searchOf(row, boards))}">`
-      + `<a class="im" href="${href}"><img width="320" height="70" src="${imgOf(ctx, row.colosseumStageId)}" alt=""></a>`
-      + `<div class="info"><a class="nm" href="${href}">${name}</a><div class="d">${line}</div><div class="pg">${esc(progressOf(row))}</div>${boardStrip(row, ctx)}${st.pill}${replaces}${button}</div>`
+      // the left column (user 26-11): the season card with its board cards under it, so a row is no taller than its text
+      + `<div class="lc"><a class="im" href="${href}"><img width="320" height="70" src="${imgOf(ctx, row.colosseumStageId)}" alt=""></a>${boardStrip(row, ctx)}</div>`
+      + `<div class="info"><a class="nm" href="${href}">${name}</a><div class="d">${line}</div><div class="pg">${esc(progressOf(row))}</div>${st.pill}${replaces}${button}</div>`
       + `<a class="go" href="${href}" aria-label="Details">›</a></div>\n`;
   }).join('');
   const locked = ctx.unlocked === false
@@ -212,16 +215,29 @@ const COIN = 17;
 const num = (n) => Number(n || 0).toLocaleString('en-US');
 const ord = (n) => { const k = n % 100, s = k >= 11 && k <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'); return `${num(n)}${s}`; };
 const FALLBACK = { 3: 'Medal', 17: 'Coliseum Coins', 19: 'Avatar part', 20: 'Avatar part', 23: 'Avatar part' };
+// the colours of the detail page (user 26-11: «colours in the text like the other detail pages and the notices»): .v a value (gold),
+// .cc Coliseum Coins (gold), .rd rounds (cyan), .yes taken / reached (green), .mu not yet / locked (muted), .tn a tier or board name
 function itemText(x, ctx) {
-  if (x.type === COIN) return `${num(x.num)} Coliseum Coin${x.num === 1 ? '' : 's'}`;
+  if (x.type === COIN) return `<span class="cc">${num(x.num)} Coliseum Coin${x.num === 1 ? '' : 's'}</span>`;
   const name = (ctx.itemName && ctx.itemName(x.type, x.id)) || FALLBACK[x.type] || 'Reward';
   const skill = x.skillId && ctx.skillName ? ctx.skillName(x.skillId) : '';
-  return `${esc(name)}${x.num > 1 ? ` x${num(x.num)}` : ''}${skill ? ` <span class="sk">(${esc(skill)})</span>` : ''}`;
+  return `<span class="it">${esc(name)}${x.num > 1 ? ` <b class="v">x${num(x.num)}</b>` : ''}</span>${skill ? ` <span class="sk">(${esc(skill)})</span>` : ''}`;
 }
-const COLI_DETAIL_CSS = '.tt{table-layout:auto}.tt td.r{color:#ffcd4a}.tt small{display:block;color:#b9cfdc;font-size:13px}.tt tr.got td{background:#0d4a3a}.sk{color:#b9cfdc;font-size:13px}'
-  + 'td.bc{width:64px;padding-right:0}td.bc img,td.bc .nb{display:block;width:64px;height:64px;border-radius:6px}.tt td.nw{white-space:nowrap}'
-  + '.mp{background:#06283e;border:1px solid #2f6f93;border-radius:8px;padding:8px 10px;margin:6px 0 10px;line-height:1.45}.mp a{color:#9fd4ff}'
-  + '.ng{display:inline-block;background:#e0521a;border:1px solid #ffc27a;color:#fff;border-radius:10px;padding:0 8px;font-size:11px;font-weight:bold;letter-spacing:.6px;line-height:1.7;vertical-align:1px}';
+const rounds = (n) => `<span class="rd">${num(n)} round${n === 1 ? '' : 's'}</span>`;
+const OK = (t) => `<span class="yes">${t}${CROWN}</span>`, MU = (t) => `<span class="mu">${t}</span>`;
+// a section of the page: a card with its header band (the «Original notice» card of the raid notices, catalog-pages.js ONC_CSS)
+const section = (key, ic, title, body) => `<div class="cs" id="sec-${key}"><h2 class="csh">${icon(ic)}${esc(title)}</h2><div class="csb">${body}</div></div>`;
+const COLI_DETAIL_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06283e;margin:16px 0 12px;overflow:hidden}'
+  + '.cs>h2.csh{margin:0;padding:8px 14px 7px;color:#ffcd4a;font-size:18px;letter-spacing:.03em;background:#0a4466;background:linear-gradient(#0f5a85,#0a4466);border-bottom:2px solid #39a7cf}'
+  + '.cs>h2.csh:before{content:""}.csh .ic{width:1.35em;height:1.35em;margin-right:8px}.csb{padding:6px 10px 8px}.csb>table{margin:4px 0 6px}.csb>p.n{margin:6px 2px 2px}'
+  + '.tt{table-layout:auto}.tt small{display:block;color:#b9cfdc;font-size:13px}.tt td.nw{white-space:nowrap}.tt tr.got td{background:#0d4a3a}'
+  + 'td.bc{width:64px;padding-right:0}td.bc img,td.bc .nb{display:block;width:64px;height:64px;border-radius:6px}'
+  + '.v,.cc{color:#ffcd4a;font-weight:bold}.rd{color:#00d4ed;font-weight:bold}.yes{color:#6fd47f;font-weight:bold}.yes .ic{margin-left:4px}.mu{color:#8fa9ba}'
+  + '.tn{color:#fff;font-weight:bold}.it{color:#fff}.sk{color:#b9cfdc;font-size:13px}.bns{color:#ffcd4a;font-size:13px}'
+  + '.kv td b{color:#ffcd4a}.mp{line-height:1.5;margin:2px}.mp b{color:#ffcd4a}.mp a{color:#9fd4ff}'
+  + '.ng{display:inline-block;background:#e0521a;border:1px solid #ffc27a;color:#fff;border-radius:10px;padding:0 8px;font-size:11px;font-weight:bold;letter-spacing:.6px;line-height:1.7;vertical-align:1px}'
+  // the Keep / Remove button of the box: compact, as in the other detail pages (phone-css.js sizes .pkd on phones)
+  + '.sb .pk.pkd{margin:6px 0 2px}';
 
 function detailPage(rows, id, det, ctx = {}) {
   const row = rows.find((r) => r.colosseumStageId === Number(id));
@@ -232,48 +248,57 @@ function detailPage(rows, id, det, ctx = {}) {
   const q = row.state === 'later' && ctx.unlockQuestOf ? ctx.unlockQuestOf(row) : null;
   const st = { ...st0, why: q ? `Your Story has not reached this month yet: it unlocks at Story Quest ${q}.` : WHY[whyKey] || '' };
   const button = st.button === null ? ''
-    : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', '', WHERE)}</div>`;
+    : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(){b.style.display=\'none\';})"', ' pkd', WHERE)}</div>`;
   const box = srvFrame(st, { after: `<div id="pinmsg" class="pinmsg"></div>${parts.replacesLine(st, keptRow && keptRow !== row ? titleOf(keptRow) : null)}${button}`,
     intro: `This server follows your Story, not the calendar: this season of the original game (${esc(monthYear(`${row.month}-01`))}) plays when your Story week reaches its month, or when you keep it here.`,
     links: [[NOTICE_LINK, '«Coliseum» notice ›'], [`${BASE}/catalog`, 'Coliseum Catalog ›']] }, 'pin');
-  const kv = [['Month', monthYear(`${row.month}-01`)], ['Game year', GAME_YEARS[gameYearOf(`${row.month}-01`)].name], ['Tiers', `${plural(row.tiers, 'tier')} · ${apText(row)}`],
-    ['Your progress', progressOf(row)]].map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
+  const aps = row.apMin === row.apMax ? `<b>${row.apMin} AP</b>` : `<b>${row.apMin}–${row.apMax} AP</b>`;
+  const progress = row.userStageTotalCount
+    ? `Cleared up to <span class="tn">Tier ${row.userRank}</span>, <span class="rd">Round ${num(row.userStageCount)}</span>` : MU('Not played yet');
+  const kv = [['Month', `<b>${esc(monthYear(`${row.month}-01`))}</b>`], ['Game year', esc(GAME_YEARS[gameYearOf(`${row.month}-01`)].name)],
+    ['Tiers', `<b>${row.tiers}</b> tier${row.tiers === 1 ? '' : 's'} · ${aps} per round`], ['Your progress', progress],
+    ['Coliseum Coins', row.coins ? `<span class="cc">${num(row.coins)}</span> to spend on the boards` : MU('None yet')]]
+    .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
   // Coliseum Boards
   const boardRows = det.boards.map((b) => {
     const name = b.name || (ctx.boardName && ctx.boardName(b.id)) || `Board ${b.id}`;
-    const sub = b.bonusTier ? `<small>Unlocks at Tier ${b.bonusTier}</small>` : '';
-    if (!b.served) return `<tr><td class="bc">${NB}</td><td>${esc(name)}${sub}</td><td>—</td><td class="r">Not served yet</td></tr>`;
+    const sub = b.bonusTier ? `<small class="bns">Unlocks at Tier ${b.bonusTier}</small>` : '';
+    if (!b.served) return `<tr><td class="bc">${NB}</td><td><span class="tn">${esc(name)}</span>${sub}</td><td>—</td><td>${MU('Not served yet')}</td></tr>`;
     const done = b.nodes > 0 && b.unlocked >= b.nodes;
-    return `<tr${done ? ' class="got"' : ''}><td class="bc">${cardTag(ctx, b.id, 64)}</td><td>${esc(name)}${sub}</td>`
-      + `<td class="nw">${b.unlocked} / ${b.nodes}</td><td>${done ? `Completed${CROWN}` : `${num(b.coinsLeft)} Coliseum Coins<small>of ${num(b.coinsTotal)}</small>`}</td></tr>`;
+    return `<tr${done ? ' class="got"' : ''}><td class="bc">${cardTag(ctx, b.id, 64)}</td><td><span class="tn">${esc(name)}</span>${sub}</td>`
+      + `<td class="nw"><b class="${b.unlocked ? 'v' : 'mu'}">${b.unlocked}</b> / ${b.nodes}</td>`
+      + `<td>${done ? OK('Completed') : `<span class="cc">${num(b.coinsLeft)} Coliseum Coins</span><small>of ${num(b.coinsTotal)}</small>`}</td></tr>`;
   }).join('');
   const boards = det.boards.length
     ? `<table class="tt cb"><tr><th></th><th>Board</th><th>Nodes unlocked</th><th>Coins still needed</th></tr>${boardRows}</table>`
       + '<p class="n">The nodes of a board are bought with the Coliseum Coins of this season, in the Coliseum Boards of the Coliseum while the season plays. A Tier Bonus board appears when you reach its tier.</p>'
-    : '<p class="n">No Coliseum Board this season.</p>';
+    : `<p class="n">${MU('No Coliseum Board this season.')}</p>`;
   // Tiers
   const tierRows = det.tiers.map((t) => {
     const rewards = [...(t.coins ? [itemText({ type: COIN, num: t.coins }, ctx)] : []), ...t.items.map((x) => itemText(x, ctx))];
     const has = rewards.length > 0;
-    return `<tr${has && t.taken ? ' class="got"' : ''}><td class="nw">Tier ${t.tier}</td><td class="nw">${t.endless ? `${num(t.rounds)}<small>endless</small>` : num(t.rounds)}</td><td>${t.ap}</td>`
-      + `<td>${t.roundCoins || '—'}</td><td>${has ? rewards.join(', ') : '—'}</td><td>${!has ? '—' : t.taken ? `Taken${CROWN}` : 'Not taken yet'}</td></tr>`;
+    return `<tr${has && t.taken ? ' class="got"' : ''}><td class="nw"><span class="tn">Tier ${t.tier}</span></td>`
+      + `<td class="nw"><span class="rd">${num(t.rounds)}</span>${t.endless ? '<small>endless</small>' : ''}</td><td><b class="v">${t.ap}</b></td>`
+      + `<td>${t.roundCoins ? `<span class="cc">${t.roundCoins}</span>` : MU('—')}</td><td>${has ? rewards.join(', ') : MU('—')}</td>`
+      + `<td>${!has ? MU('—') : t.taken ? OK('Taken') : MU('Not taken yet')}</td></tr>`;
   }).join('');
   const last = det.tiers[det.tiers.length - 1];
   const tiers = `<table class="tt"><tr><th>Tier</th><th>Rounds</th><th>AP</th><th>Coins per round</th><th>Tier Reward</th><th>Status</th></tr>${tierRows}</table>`
     + (last && last.endless ? `<p class="n">Tier ${last.tier} is the endless one: the game counts its rounds up to ${num(last.rounds)}, as in the original.</p>` : '');
   // Score thresholds (the original rank brackets as thresholds on the furthest round cleared)
-  const rk = det.ranked.map((b) => `<tr${b.reached ? ' class="got"' : ''}><td class="nw">${ord(b.startRank)} – ${ord(b.endRank)}</td><td class="nw">${num(b.rounds)} round${b.rounds === 1 ? '' : 's'}</td>`
-    + `<td>${b.rewards.map((x) => itemText(x, ctx)).join(', ') || '—'}</td><td>${b.reached ? `Reached${CROWN}` : 'Not reached'}</td></tr>`).join('');
+  const rk = det.ranked.map((b) => `<tr${b.reached ? ' class="got"' : ''}><td class="nw"><span class="tn">${ord(b.startRank)} – ${ord(b.endRank)}</span></td><td class="nw">${rounds(b.rounds)}</td>`
+    + `<td>${b.rewards.map((x) => itemText(x, ctx)).join(', ') || MU('—')}</td><td>${b.reached ? OK('Reached') : MU('Not reached')}</td></tr>`).join('');
   const ranked = det.ranked.length
-    ? `<p class="n">Your best: ${num(det.best || 0)} round${det.best === 1 ? '' : 's'} cleared. Each original ranking bracket is a score threshold here <span class="ng">NOT ORIGINAL</span>: clear that many rounds and its prizes go to your Present Box, once.</p>`
+    ? `<p class="n">Your best: ${rounds(det.best || 0)} cleared. Each original ranking bracket is a score threshold here <span class="ng">NOT ORIGINAL</span>: clear that many rounds and its prizes go to your Present Box, once.</p>`
       + `<table class="tt"><tr><th>Original rank</th><th>Rounds needed</th><th>Prizes</th><th>Status</th></tr>${rk}</table>`
-    : '<p class="n">No ranking rewards are known for this season.</p>';
-  const maps = `<div class="mp">${MAPS[det.maps] || MAPS.worldwide} The ten maps of a season repeat in every tier. See the <a href="${NOTICE_LINK}">«Coliseum» notice ›</a></div>`;
+    : `<p class="n">${MU('No ranking rewards are known for this season.')}</p>`;
+  const maps = `<p class="mp">${MAPS[det.maps] || MAPS.worldwide} The ten maps of a season repeat in every tier. See the <a href="${NOTICE_LINK}">«Coliseum» notice ›</a></p>`;
   const back = ctx.fromCatalog ? backBar(`${BASE}/catalog#q${row.colosseumStageId}`) : '';
   return PAGE_HEAD(title, CSS + DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS + COLI_DETAIL_CSS) + `<body${back ? ' class="hb"' : ''}>`
     + `<script>${BOARD_NC_JS}</script><h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, row.colosseumStageId)}" alt="">${box}`
-    + `<h2>Season</h2><table class="kv">${kv}</table>`
-    + `<h2>Coliseum Boards</h2>${boards}<h2>Tiers</h2>${tiers}<h2>Score thresholds</h2>${ranked}<h2>Maps</h2>${maps}`
+    + section('season', 'weekday', 'Season', `<table class="kv">${kv}</table>`)
+    + section('boards', 'bdone', 'Coliseum Boards', boards) + section('tiers', 'tleg', 'Tiers', tiers)
+    + section('ranked', 'medal', 'Score thresholds', ranked) + section('maps', 'replaced', 'Maps', maps)
     + `<p class="n">The Coliseum Catalog is an addition of this server: in the original game a season was played only in its own month.</p>${back}<script>${keepJs(BASE, 'season', WHERE)}</script></body></html>`;
 }
 

@@ -718,7 +718,7 @@ function wiring() {
     const det = web('/web/colosseum/season/800?from=catalog');
     assert.strictEqual(det.code, 200);
     const h = det.body.toString('utf8');
-    for (const s of ['<h2>Coliseum Boards</h2>', '<h2>Tiers</h2>', '<h2>Score thresholds</h2>', '<h2>Maps</h2>']) assert.ok(h.includes(s), s);
+    for (const s of ['Coliseum Boards</h2>', 'Tiers</h2>', 'Score thresholds</h2>', 'Maps</h2>']) assert.ok(h.includes(s), s);
     assert.ok(h.includes('<style data-phone>'), 'phone layout');
     assert.ok(h.includes('href="/web/colosseum/catalog#q800"'), 'BACK to the catalog row');
     assert.ok(h.includes('6★ Cid') && h.includes('src="/web/colosseum/board/v4242/2200001.png"'), 'the board with its card');

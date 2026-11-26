@@ -45,6 +45,7 @@ check(PHONE_CSS.includes('table{table-layout:auto!important}') && /\.ntb th,\.nt
 check(/\.nm\{[^}]*-webkit-line-clamp:2[^}]*height:2\.7em/.test(PHONE_CSS), 'titles: two lines, fixed height');
 check(/\.d,[^{]*\.cat>\.b \.n\{[^}]*-webkit-line-clamp:2[^}]*;height:2\.8em/.test(PHONE_CSS), 'dates (and banner dates .n): exactly two lines high, clamped (the phone 110 %% font made two-line dates taller than a min-height)');
 check(/#rows>\.row \.pg,[^{]*\{[^}]*-webkit-line-clamp:2[^}]*;height:2\.8em/.test(PHONE_CSS) && /#rows>\.row \.bcs,[^{]*\.bcs\{[^}]*height:44px/.test(PHONE_CSS), 'Coliseum Catalog: progress line two lines high and board strip of fixed height (state pills level across a row, user 26-11)');
+check(/#rows>\.row \.lc,[^{]*\{[^}]*flex-direction:column[^}]*width:100%/.test(PHONE_CSS) && /\.sb \.pk\.pkd\{[^}]*width:auto!important/.test(PHONE_CSS), 'Coliseum: season card + board cards one column in the phone card; compact Keep / Remove on the season page');
 
 check(/border-left-width:4px!important/.test(PHONE_CSS) && PHONE_CSS.includes(':where(') , 'same left border on every card, colour from the page state');
 check(/\.pk\{[^}]*display:flex[^}]*align-items:center[^}]*justify-content:center/.test(PHONE_CSS), 'button text centred');
