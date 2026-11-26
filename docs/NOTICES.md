@@ -267,11 +267,13 @@ Rounds cost their original **3 to 5 AP**. The Coliseum AP campaigns of 2016 are 
 
 From **May 2017** every round costs **0 AP**, as in the original data.
 
-From **April 2018** the Coliseum Coins are paid when you **complete a Tier**, in one sum (9,000 in April 2018, 8,100 a month after), and no longer round by round. A one-turn clear can skip up to **99 rounds**: when you clear the later round, every Tier you completed pays its sum once. From **December 2018** a round pays **no coin** at all.
+The «1 AP» rate is (rebuilt): this version of the game rounds the original rate up to 2 AP on a round, so the rate is adjusted to keep 1 AP.
+
+From **April 2018** each Tier also pays its Coliseum Coins **in one sum** when you complete it (9,000 in April 2018, 8,100 from May 2018); the rounds still pay 1 to 10 coins until November 2018. A one-turn clear can skip up to **99 rounds**: when you clear the later round, every Tier you completed pays its sum once. From **December 2018** a round pays **no coin** at all.
 
 The Tier Rewards of these seasons include the **Magic Broom**, the **Fantasia Mickey B** and the **Moon Gem**.
 
-The «1 AP» rate is (rebuilt): this version of the game rounds the original rate up to 2 AP on a round, so the rate is adjusted to keep 1 AP.
+From **December 2018** the Coliseum Boards add the **Tier 11, 12 and 13 Bonus** boards, as in the original.
 
 ### Ranking — brackets became score thresholds
 
@@ -285,7 +287,7 @@ About 100,000 players a month were ranked in 2017, so almost everyone was in the
 
 The rewards of each bracket are the original ones: from the game data and the notices of their season up to November 2016, from the community wiki from December 2016. The December 2016 **Pegasus Knight Helm** goes to the top 10,000, as its notice says. The **December 2017** Santa Hat, Beard and Brows are **Spirit parts**, as its notice says.
 
-From **April 2018** the border ranks are rare: April and June 2018 and April 2019 use the few ranks posted by players for that month, the other months the curve of the whole 2018-2019 era (rebuilt). **December 2018** has **nine** reward brackets (Gems after the 27 December 2018 increase) and **March and April 2019 twelve**; **January and February 2019** pay the **Dual Meow Wow** medals.
+From **April 2018** the border ranks are rare: April and June 2018 and April 2019 use the few ranks posted by players for that month, the other months the curve of the whole 2018-2019 era (rebuilt). Most months have **eight** reward brackets; **December 2018** has **nine** reward brackets (Gems after the 27 December 2018 increase) and **March and April 2019 twelve**; **January and February 2019** pay the **Dual Meow Wow** medals.
 
 In May 2016 every ranked player got the same reward, as in the original: one cleared round is enough. Before your first round of May 2016 the goal reads **10000000th**: that was the original lowest bracket of that season (5,000,001st to 10,000,000th).
 
@@ -332,8 +334,6 @@ The card pictures of the Coliseum Boards are original art: from the 2016 worldwi
 The cards of the **Mango Sweetie** (July 2017) and **Illusionist** (September 2017) boards are (rebuilt) from the small picture of the community wiki, the only one that survives.
 
 The **Puppy Medium** and **Puppy Bob** boards were in the Japanese version only: they are not here.
-
-From **December 2018** the Coliseum Boards add the **Tier 11, 12 and 13 Bonus** boards, as in the original.
 
 The icon of the **Coliseum Boards** button is not in any surviving game file: the **Multi Board** icon stands in for it (not original).
 

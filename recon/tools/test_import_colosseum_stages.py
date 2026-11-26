@@ -145,6 +145,15 @@ try:
     rep = ics.run([(4000, 20181002), (4000, 20181001)], [('jp431', ics.iter_cl_files(only))], {'OC_0001_00_00'}, AllIds(),
                   os.path.join(t, 'o_nopart'))
     check([s['status'] for s in rep['stages']] == ['skipped', 'skipped'], 'no part file: rejected')
+    # a sibling whose header the rebuild refuses is skipped: the next sibling of the month is tried
+    bad_sib = os.path.join(t, 'badsib')
+    os.makedirs(bad_sib)
+    open(os.path.join(bad_sib, 'cl_stg20181000.bin'), 'wb').write(b'not an stg')   # lowest id of the month, unusable
+    for k in (None, 0):
+        shutil.copyfile(JPH[(20181002, k)], os.path.join(bad_sib, 'cl_stg20181002%s.bin' % ('' if k is None else '_00')))
+    shutil.copyfile(JPH[(20181001, 0)], os.path.join(bad_sib, 'cl_stg20181001_00.bin'))
+    got = ics.rebuild_from_sibling(20181001, 'jp431', ics.iter_cl_files(bad_sib))
+    check(got is not None and got[0] == 20181002, 'rebuild: a failing sibling is skipped, the next one used: %s' % (got and got[0]))
     master = os.path.join(t, 'm')
     os.makedirs(master)
     json.dump([{'colosseumStageId': 4000, 'validStage': 1, 'stageId': [20181002]}], open(os.path.join(master, 'colosseumStage.json'), 'w'))

@@ -1105,6 +1105,7 @@ test('patch: the Part 3 seasons enter the master with their prizes; a relux seas
     const out = mc.patch(dir, { src, seasons: [S800[0], S1500, S2100] });
     assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId), [800, 1500, 2100]);
     assert.ok(!said.some((m) => /not built yet/.test(m)), `no «not built yet» warning: ${said.join(' | ')}`);
+    assert.ok(said.some((m) => /medal\.json is missing or empty.*medal checks are OFF/.test(m)), `relux seasons without a medal master warn: ${said.join(' | ')}`);
     assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'colosseumStage.json'), 'utf8')).map((r) => r.colosseumStageId), [800, 1500, 2100]);
     assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'rankingReward.json'), 'utf8')).filter((r) => r.rankingRewardId >= 35300 && r.rankingRewardId < 35350).length, 8,
       '2017-05 (ranking 4022): its eight reward rows');

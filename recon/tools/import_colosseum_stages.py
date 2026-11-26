@@ -98,8 +98,10 @@ def season_stage_ids(rows):
 
 
 def rebuild_from_sibling(sid, name, files):
-    """-> (sibling stage id, rebuilt STG bytes) for a one-part stage of a REBUILD_SOURCES source whose STG is absent,
-    else None. Sibling = the same-month stage (id // 100) with the lowest id that has an STG and one part."""
+    """-> (sibling stage id, rebuilt STG bytes) for a stage of a REBUILD_SOURCES source whose STG is absent and whose
+    first part file is present (a stage with a second part is refused), else None. Siblings = the same-month stages
+    (id // 100) that have an STG, lowest id first; the first one the rebuild accepts is used, one that raises
+    FormatError is skipped."""
     if name not in REBUILD_SOURCES or (sid, 0) not in files or (sid, 1) in files:
         return None
     sibs = sorted(k[0] for k in files if k[1] is None and k[0] // 100 == sid // 100)
@@ -108,7 +110,7 @@ def rebuild_from_sibling(sid, name, files):
         try:
             return sib, rebuild_stg(open(files[(sid, 0)], 'rb').read(), sb)
         except mapfile.FormatError:
-            return None
+            continue
     return None
 
 

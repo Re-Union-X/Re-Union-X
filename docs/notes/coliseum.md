@@ -533,7 +533,7 @@ its old last tier, the earlier 999-round tiers in the client, the 2017-02 100-co
 ## Part 3b summary (26 November 2026)
 
 Plan `docs/superpowers/plans/2026-11-26-coliseum-part-2018.md`, ledger `.superpowers/sdd/2026-11-26-coliseum-part-2018/progress.md`.
-Master revision **401** (regenerated 26-11, HANDOFF recipe, twice); resources and bench walk: pending (controller).
+Master revision **401** (regenerated 26-11, HANDOFF recipe, twice); resources **190**, bench walk done 26-11.
 
 - **Seasons**: 37 served, 2016-04 .. 2019-04. New: 2018-04 .. 2019-04 = 3200 .. 4400 (rankingId 4033 .. 4045), all from the ReLux
   season extract, arrays truncated to `valid*`.
@@ -568,19 +568,26 @@ Master revision **401** (regenerated 26-11, HANDOFF recipe, twice); resources an
 - **Notice** «Coliseum»: 37 seasons, lump sums and 99 skips, no round coins from 2018-12, Broom / Mickey B / Moon Gem, Tier 11-13
   Bonus boards, the five rebuilt headers and the 2018-07 pin, 2019-shape rows never used and the Jewel Sorceress copy, 8 / 9 / 12
   brackets, 2018-2019 thresholds.
-- **Hygiene**: Reddit handle and post ids dropped from the module comment; dead `T18` const removed from the test.
+- **Hygiene**: the Reddit handle is dropped from the module comment (post ids stay, as in ERA17; no user handle appears); dead `T18` const removed from the test.
 
 Master regen diff (26-11, against a backup of `server/master_data`, run 1 then run 2 then run 3 = no change): colosseum +297
 rows (693 tiers in all), colosseumStage +13, stage +130, enemy +61, enemyAttack +7, enemy_display_orig +61 rows (2 distinct),
 ranking +13, rankingReward +113, sphere / sphereArray / sphereMasu +44 each; nothing removed, nothing else changed.
 
-Bench walk (controller, pending): see the task-6 brief (2018-04 lump sums / 99 skip / Broom, 2018-05, 2018-10 rebuilt header,
-2018-12 no round coin / Bonus boards / 9 brackets / gem threshold, 2019-03 12 brackets, Catalog Moon Gem).
+### Bench walk 26-11 (Part 3b)
+
+Resources 190, master revision 401.
+
+- April 2018: Round 1 one turn pays 1 coin; the one-turn window opens up to round 100 and the clear of round 100 pays the
+  lump sums once.
+- December 2018: no round coin, 1,250 coins, the Rewards screen with nine brackets.
+- March 2019: the Rewards screen with twelve brackets.
+- October 2018, map 1 (rebuilt STG header 20181001): loads and plays.
 
 ### Follow-ups for the next part (final review, 26-11)
 
 - Enemy rule rows now stop the build when the base exists only as a row of our master (`MASTER_BASE_APPROVED`, empty): find an original base or ask the user.
 - Enemy 20114 (raw ReLux row) uses the 2017 month curve and equals 20112 at LV 1 / 100 / 300: checked, the same pattern as every month row, not a clone. Nothing to change.
 - The private ReLux path default in `make-colosseum.js` names a donor folder: resolve it through the private path helper / environment in the planned legal sweep.
-- `reluxShape` checks knots and the ATK cap only: add an HP-scale check (HP at LV 300 / LV 100 in the old-curve band) to it and to the «no 2019 row» assertion before more raw rows are consumed.
-- 21557 (JP 20180106 / 20180406 sets) is not served yet: an open named case of the 2018-04 part.
+- The HP-scale check in `reluxShape` was done in Part 3b (measured band, boundary tests).
+- 21557 (JP 20180106 / 20180406 sets) is in no stage served so far: keep it open for Part 4.

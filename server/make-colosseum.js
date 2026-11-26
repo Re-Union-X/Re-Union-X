@@ -1068,6 +1068,8 @@ function patch(masterDir, opts = {}) {
   const reluxEnemies = opts.reluxEnemies || (opts.src ? [] : readReluxEnemies(reluxEnemyFile));
   if (!reluxEnemies) console.warn(`colosseum: the raw ReLux enemy table ${reluxEnemyFile} is not readable: the ids that need it stop the run`);
   const medals = readMaster(path.join(masterDir, 'medal.json')).map((r) => r.medalId);
+  // without a medal master the medal stops of the ReLux seasons are off: say so (a warning, not a stop: test masters have no medal.json)
+  if (!medals.length && seasons.some((x) => x.source === 'relux')) console.warn(`colosseum: WARNING medal.json is missing or empty in ${masterDir}: the ReLux medal checks are OFF (build the master with KHUX_MEDALS_ALL=1)`);
   const out = seasonRows({ ...src, relux, masterMedalIds: medals.length ? new Set(medals) : null, masterEnemyIds: master.enemy.map((r) => r.enemyId), masterEnemies: master.enemy, stageEnemies, reluxEnemies }, seasons);
   // the flag of an unchecked run (out.enemyCheck); make-game-tables prints it as a banner. Not a stop: on a clean machine the
   // stage files come after this run (build-resources.ps1), the stage import then refuses a missing enemy
