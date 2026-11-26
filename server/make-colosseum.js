@@ -115,7 +115,47 @@
 // rows' own lump sums (2018-04 9,000, then 8,100); per-round coins to 2018-11, none from 2018-12 (validStageReward 0, stageReward*
 // zeroed by tierRow). The ReLux medal ids of the tier rewards 90135 / 90136 are Magic Broom 300948 / Fantasia Mickey B 300913
 // (RELUX_MEDAL); with the medal master known (src.masterMedalIds) any other id missing from it stops the build. T15 = Moon Gem
-// (reward type 5, id 52). Until the ranking prizes exist (Task 5) the default SEASONS leave these seasons out with a warning.
+// (reward type 5, id 52).
+//
+// Coliseum Part 3b Task 5: ranking prizes and thresholds of 2018-04 .. 2019-04 (every one of the 37 seasons is in the default build now).
+// Prizes: khuxwiki monthly tables (private PART3_AUDIT.md §6, PART4_AUDIT.md §5; ReLux = khuxwiki for these months, only its item types and
+// counts read, every skill id looked up BY NAME in skill.json, none taken from ReLux). Each RELUX_RANKING entry now carries its own edges
+// (`edges`; BRACKETS8 for 2016-06 .. 2018-11 and 2019-01 / 02, so the Part 2-3 rows are byte-identical, BRACKETS9 for 2018-12, BRACKETS12
+// for 2019-03 / 04). 2018-04 .. 11: the eight brackets, the month's skill on 6★ Scrooge x3 / x2 / x1 / x1 to rank 10,000, no avatar part:
+// 04 ATK Boost VI & Lux+, 05 Defense Boost V, 06 ATK B VI Max & Lux+, 07 ATK B VII Max & GA 2, 08 ATK B VII Max & Lux+, 09 Attack Boost
+// VIII, 10 ATK B VIII & Lux+, 11 ATK B VIII Max & GA 2. 2018-12 (ATK B VIII Max & Lux+): nine brackets, P / S / M Gems (type 5, materials
+// 48 / 49 / 50) 50 / 45 / 40 / 35 / 20 to rank 15,000, the values after the 27-12-2018 increase (notice 47137; khuxwiki and ReLux equal).
+// 2019-01 Attack Boost IX / 2019-02 ATK B IX & Lux+: eight brackets, Dual Meow Wow [SAB LV 9 / 8 / 7] (ours 301684 / 301683 / 301682)
+// x15 / 25 / 35 on top, then 10 / 20 / 30, 5 / 15 / 25, 15 / 20 (rank 10,000). 2019-03 ATK B IX Max & GA 2 / 2019-04 ATK B IX Max & Lux+: the
+// twelve brackets, Dual Meow Wow x15 / 25 / 30 on top; the featured skill x3 and the previous month's skill of the same line x1 on top, a
+// ladder of the earlier months (VIII, VII, VI, V, IV) below. khuxwiki lists only the top bracket; the other eleven are the ReLux rows
+// (both sources agree where both exist; ladder: ReLux skill names ATK B VIII .. IV Max & GA 2 / Lux+, matched by name).
+// Thresholds: ERA18 (same interface as ERA17), fitted on the recorded border ranks of the era (private CUTOFFS_2018.md, 34 scattered
+// rows: u/xamaxin's border posts stopped after 2017-12 and nobody took over). Global round = enemy level = 1,570 + the round of the
+// 999-round tier. Controller ruling: only season-end / late-month points calibrate; the six used (ERA18_POINTS, r/KingdomHearts posts
+// 8g8ebk, 8vj3yy, 8un0ma, 8uyc6n, bhctoi): 2018-04 rank 4,068 at 1,840 (T16 R~270, told after the month); 2018-06 rank 10,000 at
+// 2,120 (T16 5xx, season-end upper bound, midpoint) and 2,070 (T16 midway, 06-28), rank 1,395 at 3,396 (T17 R827, reset day), rank ~230
+// at 4,567 (about to start T19, 06-28); 2019-04 rank ~100 at 4,575 (T19 R5 .. 12, 04-25). Listed, NOT fitted (mid-month, day-1..10 or
+// context rows, mostly one-sided): 2018-04 ranks 100 / ~385 / ~2,100 / ~2,000 (days 2-10, lower bounds: a player climbs on, the
+// fitted month curve lies above them), 2018-05 ~7,000 on day 3 and T16 R670, 2018-06 the 06-16 / 06-26 / 06-25 posts and the reset jump
+// (8,700 -> 15,000), 2018-07 rank ~150 on day 1 and the stuck-round posts, 2018-10 .. 2019-03 rank-only or round-only posts (rank 1,749 /
+// ~10,000 / 800 / ~2,700 / 714, rounds 2,560 .. 3,920), 2019-04 rank 102 (T19 R5, day 10) and 972 (day 10), the stuck-round posts.
+// So 2018-07 .. 2019-03 have no calibrating point of their own: the era curve gives them (the real 2018-07 retune lowered the rounds
+// reached by the top 150 .. 1,000 to T17-T18, ~2,600-3,300, which this curve reproduces at rank 1,000-2,500: 3,138 / 2,616).
+// Method as Part 3: least squares log10(round) = a + b x log10(rank), a = 4.0928, b = -0.1987 (ERA18.a / .b), every fit point within
+// x / ÷ 1.30 of it (ERA18.tolerance; worst 2018-04 rank 4,068: 1,840 recorded, 2,374 on the era curve); a per-month curve of the same
+// form where the month has calibrating points (ERA18.months): 2018-06 own fit (ranks 230 .. 10,000; a 4.1698, b -0.2107; every point within
+// x / ÷ 1.06, ERA18.monthTolerance 1.15), 2018-04 and 2019-04 one point each, so the era slope with their own intercept (exactly through
+// the point); outside a month's own rank span the era slope goes on from the nearest point (the guard: 2018-06 rank 100). Beyond rank
+// 10,000 log-linear to 1 round at rank 100,000 (every ranked player inside); the 9 / 12-bracket seasons read the same curve at their own
+// edges. Thresholds 100 / 1,000 / 2,500 / 10,000 / 50,000 (then 1, 1, 1; label «fitted» inside a month's rank span, else «interpolated»):
+//   2018-04 own intercept (rank 4,068; 8g8ebk):    3,843 / 2,432 / 2,027 / 1,539 / 464
+//   2018-06 own fit (ranks 230 .. 10,000):         5,546 / 3,448 / 2,843 / 2,123 / 640
+//   2019-04 own intercept (rank 100; bhctoi):      4,575 / 2,895 / 2,413 / 1,832 / 552
+//   2018-05, 2018-07 .. 2019-03: the era curve:    4,959 / 3,138 / 2,616 / 1,986 / 599 (2018-12 edge 7,000: 2,132; 15,000: 1,636;
+//                                                  2019-03 / 04 edges 17,500 / 25,000 / 45,000: 1,504 / 1,196 / 689)
+// The values at rank 100 are lower bounds read off 4,500 .. 5,500 (T19 starts at 4,567): the top is open-ended, and the top brackets lie in
+// the endless tiers as in the earlier eras. Private sources are named by their public evidence only.
 //
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
@@ -162,7 +202,7 @@ const SEASONS = [
   { month: '2018-02', colosseumStageId: 3000, source: 'relux' },
   { month: '2018-03', colosseumStageId: 3100, source: 'relux' },
   // Coliseum Part 3b (ReLux rows 3200 .. 4400, rankingId 4033 .. 4045): the lump-sum era. Their stage sets are the JP 4.3.1 sets of
-  // the rows; a season is served only once its RELUX_RANKING entry exists (patch() leaves the others out with a warning)
+  // the rows; every season has its RELUX_RANKING entry (a missing one stops the run, seasonRows)
   { month: '2018-04', colosseumStageId: 3200, source: 'relux' },
   { month: '2018-05', colosseumStageId: 3300, source: 'relux' },
   { month: '2018-06', colosseumStageId: 3400, source: 'relux' },
@@ -196,18 +236,28 @@ const REWARD_BASE = 35000, REWARD_BLOCK = 50, REWARD_FIRST_RANKING = 4016;
 const STAGE_TEMPLATE = 1400;
 // the constant fields of the 1.1.3 Coliseum ranking rows 4009-4016 (category 4 = Coliseum)
 const RANKING_ROW = { category: 4, unionStartRank: [1, 1, 1, 1, 1], unionEndRank: [1, 1, 1, 1, 1], validReward: 1 };
-// Ranking rewards of the relux seasons (Task 5), one list per bracket (BRACKETS8, the edges of every month 2016-06 .. 2017-04), in
-// the order of the source. An item: «<medal>[:<skillId>][x<num>]» (MEDAL ids of our master; a skill rides on a Scrooge medal, skillType
+// Ranking rewards of the relux seasons (Task 5), one list per bracket (the entry's edges: BRACKETS8 for every month 2016-06 .. 2018-11 and
+// 2019-01 / 02, BRACKETS9 2018-12, BRACKETS12 2019-03 / 04), in the order of the source. An item: «g:<materialId>x<n>» (a material, type 5:
+// the P / S / M Gems 48 / 49 / 50) or «<medal>[:<skillId>][x<num>]» (MEDAL ids of our master; a skill rides on a Scrooge medal, skillType
 // 3, at the skill's maxLv as in all 86 skill medals of the 1.1.3 rankingReward rows) or «p<type>:<avatarPartsId>» (types as the
 // 2016-08 .. 2016-10 1.1.3 rows pay avatar parts: 19 the head parts, styles and hats, 20 the other accessories; the server pays both
 // the same) or «p33:<petPartsId>» (a Spirit part, Part 3: 2017-12). Names -> ids: medal.json, skill.json, avatarParts.json,
 // petParts.json (test-make-colosseum.js checks every id and level).
-const MEDAL = { scrooge3: 90123, scrooge5: 90125, scrooge6: 90126, chip5: 90055, chip6: 90056, dale5: 90065, dale6: 90066, cid: 90076, mirror: 90156 };
+const MEDAL = { scrooge3: 90123, scrooge5: 90125, scrooge6: 90126, chip5: 90055, chip6: 90056, dale5: 90065, dale6: 90066, cid: 90076, mirror: 90156,
+  dmw7: 301682, dmw8: 301683, dmw9: 301684 }; // Dual Meow Wow [SAB LV 7 / 8 / 9] (Part 3b: 2019-01 .. 2019-04)
 const SKILL_LV = { 1112: 10, 1113: 15, 1114: 20, 1119: 20, 1124: 20, 1127: 20, 1180: 20, 1230: 20, // skill.json maxLv
   // Part 3: Second Chance II / III / IV, Attack Boost IV Max, ATK B IV Max & GA 2, ATK Boost IV & Lux+, Defense Boost II Max,
   // Defense Boost I Max, Attack Boost V, ATK B V & Lux+, Defense Boost III Max, ATK B V Max & Lux+
-  1226: 20, 1227: 20, 1228: 20, 1136: 20, 1232: 20, 1188: 20, 1152: 20, 1151: 15, 1128: 20, 1189: 20, 1153: 20, 1198: 20 };
+  1226: 20, 1227: 20, 1228: 20, 1136: 20, 1232: 20, 1188: 20, 1152: 20, 1151: 15, 1128: 20, 1189: 20, 1153: 20, 1198: 20,
+  // Part 3b, by name: ATK Boost VI & Lux+, Defense Boost V, ATK B VI Max & Lux+, ATK B VII Max & GA 2, ATK B VII Max & Lux+, Attack Boost
+  // VIII, ATK B VIII & Lux+, ATK B VIII Max & GA 2, ATK B VIII Max & Lux+, Attack Boost IX, ATK B IX & Lux+, ATK B IX Max & GA 2,
+  // ATK B IX Max & Lux+; the 2019-03 / 04 ladder adds ATK B VI Max & GA 2, ATK B V Max & GA 2, ATK Boost IV Max & Lux+
+  1190: 20, 1149: 20, 1200: 20, 1241: 20, 1202: 20, 1131: 20, 1192: 20, 1244: 20, 1204: 20, 1132: 20, 1193: 20, 1247: 20, 1206: 20,
+  1238: 20, 1235: 20, 1196: 20 };
 const BRACKETS8 = [[1, 100], [101, 1000], [1001, 2500], [2501, 10000], [10001, 50000], [50001, 100000], [100001, 250000], [250001, 500000]];
+// 2018-12: nine brackets (2,501-7,000 / 7,001-15,000 instead of 2,501-10,000); 2019-03 / 04: twelve (Part 3b)
+const BRACKETS9 = [[1, 100], [101, 1000], [1001, 2500], [2501, 7000], [7001, 15000], [15001, 50000], [50001, 100000], [100001, 250000], [250001, 500000]];
+const BRACKETS12 = [[1, 100], [101, 500], [501, 1000], [1001, 2000], [2001, 3000], [3001, 5000], [5001, 7500], [7501, 10000], [10001, 17500], [17501, 25000], [25001, 45000], [45001, 100000]];
 // 2017-01 .. 2017-04 (khuxwiki): one featured skill on 6★ Scrooge (x3 / x2 / x1 to rank 10,000), the month's avatar part ♂ / ♀ to
 // rank 100,000, Chip / Dale / Cid / Magic Mirror
 const wiki2017 = (skill, m, f) => [
@@ -222,6 +272,23 @@ const wiki2017 = (skill, m, f) => [
 ];
 // 2017-05 .. 2018-03 (Part 3): the same table, the avatar parts only in the months that have them
 const wikiP3 = (skill, m, f) => wiki2017(skill, m, f).map((b) => b.filter(Boolean));
+// 2018-12: P / S / M Gems (materials 48 / 49 / 50)
+const gems = (n) => [48, 49, 50].map((m) => `g:${m}x${n}`);
+// 2019-01 / 02: Dual Meow Wow SAB LV 9 / 8 / 7 on top (RX counts: 15 / 25 / 35, 10 / 20 / 30, 5 / 15 / 25, then 15 / 20 to rank 10,000)
+const dmw8 = (skill) => [
+  ['dmw9x15', 'dmw8x25', 'dmw7x35', `scrooge6:${skill}x3`, 'chip6x5', 'dale6x5', 'cidx5', 'mirrorx5'],
+  ['dmw9x10', 'dmw8x20', 'dmw7x30', `scrooge6:${skill}x2`, 'chip6x3', 'dale6x3', 'cidx3', 'mirrorx4'],
+  ['dmw9x5', 'dmw8x15', 'dmw7x25', `scrooge6:${skill}`, 'chip6x2', 'dale6x2', 'cidx3', 'mirrorx4'],
+  ['dmw8x15', 'dmw7x20', `scrooge6:${skill}`, 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
+  ['chip6', 'dale6', 'cid', 'mirror'], ['chip5x3', 'dale5x3'], ['chip5x2', 'dale5x2'], ['chip5', 'dale5']];
+// 2019-03 / 04: twelve brackets; ladder[0] = the featured skill, ladder[k] the skill of k months before on the same line
+const twelve = (ladder) => {
+  const sk = (k, n) => `scrooge6:${ladder[k]}${n > 1 ? `x${n}` : ''}`;
+  return [
+    ['dmw9x15', 'dmw8x25', 'dmw7x30', sk(0, 3), sk(1, 1)], ['dmw9x13', 'dmw8x23', 'dmw7x25', sk(0, 2), sk(1, 1)], ['dmw9x10', 'dmw8x20', 'dmw7x23', sk(0, 1), sk(1, 2)],
+    ['dmw9x8', 'dmw8x18', 'dmw7x20', sk(0, 1), sk(1, 1), sk(2, 1)], ['dmw9x3', 'dmw8x15', 'dmw7x18', sk(0, 1), sk(2, 2)], ['dmw9x2', 'dmw8x13', 'dmw7x15', sk(0, 1), sk(2, 1), sk(3, 1)],
+    ['dmw9x1', 'dmw8x10', 'dmw7x13', sk(0, 1), sk(3, 2)], ['dmw8x8', 'dmw7x10', sk(0, 1), sk(3, 1)], ['dmw7x8', sk(3, 2)], [sk(3, 1), sk(4, 1)], [sk(4, 1), sk(5, 1)], [sk(5, 1)]];
+};
 const RELUX_RANKING = {
   // 2016-11, notice 22105 «November Coliseum Update!» (the wiki table is the same): Defense Boost III / II / I on 6★ / 5★ / 3★
   // Scrooge, Timothy Mouse: Hat ♂ / ♀ (101215 / 101216) to rank 250,000, Timothy Mouse: Earrings ♂ / ♀ (103215 / 103216) to 10,000
@@ -273,9 +340,42 @@ const RELUX_RANKING = {
   2900: { source: 'khuxwiki', brackets: wikiP3(1153) }, // 2018-01 Defense Boost III Max
   3000: { source: 'khuxwiki', brackets: wikiP3(1198) }, // 2018-02 ATK B V Max & Lux+
   3100: { source: 'khuxwiki', brackets: wikiP3(1228) }, // 2018-03 Second Chance IV
+  // Part 3b (PART3_AUDIT §6, PART4_AUDIT §5; RX = khuxwiki for these months, only the item types and counts read from RX, every skill
+  // by NAME in skill.json). 2018-04 .. 11: the eight brackets, the featured skill on 6★ Scrooge x3 / x2 / x1 / x1, no avatar part
+  3200: { source: 'khuxwiki', brackets: wikiP3(1190) }, // 2018-04 ATK Boost VI & Lux+
+  3300: { source: 'khuxwiki', brackets: wikiP3(1149) }, // 2018-05 Defense Boost V
+  3400: { source: 'khuxwiki', brackets: wikiP3(1200) }, // 2018-06 ATK B VI Max & Lux+
+  3500: { source: 'khuxwiki', brackets: wikiP3(1241) }, // 2018-07 ATK B VII Max & GA 2
+  3600: { source: 'khuxwiki', brackets: wikiP3(1202) }, // 2018-08 ATK B VII Max & Lux+
+  3700: { source: 'khuxwiki', brackets: wikiP3(1131) }, // 2018-09 Attack Boost VIII
+  3800: { source: 'khuxwiki', brackets: wikiP3(1192) }, // 2018-10 ATK B VIII & Lux+
+  3900: { source: 'khuxwiki', brackets: wikiP3(1244) }, // 2018-11 ATK B VIII Max & GA 2
+  // 2018-12 ATK B VIII Max & Lux+: nine brackets, P / S / M Gems (materials 48 / 49 / 50) 50 / 45 / 40 / 35 / 20 to rank 15,000 (the
+  // values after the 27-12-2018 increase, notice 47137)
+  4000: { source: 'khuxwiki', edges: BRACKETS9, brackets: [
+    [...gems(50), 'scrooge6:1204x3', 'chip6x5', 'dale6x5', 'cidx5', 'mirrorx5'],
+    [...gems(45), 'scrooge6:1204x2', 'chip6x3', 'dale6x3', 'cidx3', 'mirrorx4'],
+    [...gems(40), 'scrooge6:1204', 'chip6x2', 'dale6x2', 'cidx3', 'mirrorx4'],
+    [...gems(35), 'scrooge6:1204', 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
+    [...gems(20), 'scrooge6:1204', 'chip6', 'dale6', 'cid', 'mirrorx2'],
+    ['chip6', 'dale6', 'cid', 'mirror'], ['chip5x3', 'dale5x3'], ['chip5x2', 'dale5x2'], ['chip5', 'dale5']] },
+  // 2019-01 Attack Boost IX / 2019-02 ATK B IX & Lux+: Dual Meow Wow [SAB LV 9 / 8 / 7] x15 / 25 / 35 on top, eight brackets
+  4100: { source: 'khuxwiki + relux', brackets: dmw8(1132) },
+  4200: { source: 'khuxwiki + relux', brackets: dmw8(1193) },
+  // 2019-03 ATK B IX Max & GA 2 (the previous GA 2 skills VIII .. IV Max below it) / 2019-04 ATK B IX Max & Lux+ (VIII .. IV Max Lux+): twelve
+  // brackets. khuxwiki lists the top bracket (featured x3 + the previous skill x1); the lower brackets are the ReLux rows (types / counts)
+  4300: { source: 'khuxwiki + relux', edges: BRACKETS12, brackets: twelve([1247, 1244, 1241, 1238, 1235, 1232]) },
+  4400: { source: 'khuxwiki + relux', edges: BRACKETS12, brackets: twelve([1206, 1204, 1202, 1200, 1198, 1196]) },
 };
+for (const spec of Object.values(RELUX_RANKING)) spec.edges = spec.edges || BRACKETS8; // Part 2-3: the eight brackets
 // one item of RELUX_RANKING -> {type, id, skillType, skillId, skillLv, num}
 function rankItem(tok) {
+  // «g:<materialId>x<n>»: a material (type 5; 48 / 49 / 50 = Power / Speed / Magic Gem as in our master)
+  const g = /^g:(\d+)(?:x(\d+))?$/.exec(tok);
+  if (g) {
+    if (![48, 49, 50].includes(Number(g[1]))) throw new Error(`colosseum: ranking reward item «${tok}» unknown (materials 48 / 49 / 50)`);
+    return { type: 5, id: Number(g[1]), skillType: 1, skillId: 0, skillLv: 1, num: g[2] ? Number(g[2]) : 1 };
+  }
   const p = /^p(19|20|33):(\d+)$/.exec(tok);
   if (p) return { type: Number(p[1]), id: Number(p[2]), skillType: 1, skillId: 0, skillLv: 1, num: 1 };
   const m = /^([a-z]+?\d?)(?::(\d+))?(?:x(\d+))?$/.exec(tok);
@@ -287,11 +387,11 @@ function rankItem(tok) {
 // the rankingReward rows of a relux season (RELUX_RANKING), ids from base
 function reluxRewardRows(colosseumStageId, base) {
   const spec = RELUX_RANKING[colosseumStageId];
-  if (!spec || spec.brackets.length !== BRACKETS8.length) throw new Error(`colosseum: season ${colosseumStageId} has no ranking rewards (RELUX_RANKING)`);
+  if (!spec || spec.brackets.length !== spec.edges.length) throw new Error(`colosseum: season ${colosseumStageId} has no ranking rewards (RELUX_RANKING)`);
   return spec.brackets.map((items, i) => {
     if (!items.length || items.length > 10) throw new Error(`colosseum: season ${colosseumStageId} bracket ${i + 1}: ${items.length} rewards (1-10)`);
     const it = items.map(rankItem), col = (k) => it.map((x) => x[k]);
-    return schemaRow('rankingReward', { rankingRewardId: base + i, startRank: BRACKETS8[i][0], endRank: BRACKETS8[i][1], validReward: it.length,
+    return schemaRow('rankingReward', { rankingRewardId: base + i, startRank: spec.edges[i][0], endRank: spec.edges[i][1], validReward: it.length,
       type: col('type'), id: col('id'), skillType: col('skillType'), skillId: col('skillId'), skillLv: col('skillLv'), burstUpperNumber: it.map(() => 0), num: col('num') });
   });
 }
@@ -443,20 +543,32 @@ function eraCurve(a, b, lo, hi, guardB) {
 // per-month calibration (controller ruling 26-11): a month with its own season-end points gets its own curve; both parameters when
 // its points span at least one decade of rank (MONTH_SPAN), else the era slope and its own intercept; the other months the era curve
 const ERA17_MONTH_SPAN = 1;
-const ERA17 = (() => {
-  const { a, b } = logFit(ERA17_POINTS);
-  const era = eraCurve(a, b, Math.min(...ERA17_POINTS.map((p) => p[1])), ERA17_FIT_RANK);
+// the era object of a points table: the era curve (least squares over all points) and a month curve for every month that has points;
+// `of(colosseumStageId)` = the month's curve, else the era curve, null outside the era's seasons [lo, hi]
+function makeEra(points, lo, hi, tolerance, monthTolerance) {
+  const { a, b } = logFit(points);
+  const era = eraCurve(a, b, Math.min(...points.map((p) => p[1])), ERA17_FIT_RANK);
   const months = {};
-  for (const m of [...new Set(ERA17_POINTS.map((p) => p[0]))]) {
-    const pts = ERA17_POINTS.filter((p) => p[0] === m), ranks = pts.map((p) => p[1]);
+  for (const m of [...new Set(points.map((p) => p[0]))]) {
+    const pts = points.filter((p) => p[0] === m), ranks = pts.map((p) => p[1]);
     const both = Math.log10(Math.max(...ranks) / Math.min(...ranks)) >= ERA17_MONTH_SPAN;
     const f = logFit(pts, both ? undefined : b);
     months[m] = { ...eraCurve(f.a, f.b, Math.min(...ranks), Math.max(...ranks), b), method: both ? 'own fit' : 'era slope, own intercept', points: pts };
   }
-  const seasons = new Map(SEASONS.filter((s) => s.colosseumStageId >= 2100 && s.colosseumStageId <= 3100).map((s) => [s.colosseumStageId, s.month]));
-  return { seasons, points: ERA17_POINTS, a, b, curve: era.curve, round: era.round, label: era.label, tolerance: 2.85, months, monthTolerance: 1.15,
+  const seasons = new Map(SEASONS.filter((s) => s.colosseumStageId >= lo && s.colosseumStageId <= hi).map((s) => [s.colosseumStageId, s.month]));
+  return { seasons, points, a, b, curve: era.curve, round: era.round, label: era.label, tolerance, months, monthTolerance,
     of: (colosseumStageId) => (seasons.has(colosseumStageId) ? months[seasons.get(colosseumStageId)] || era : null) };
-})();
+}
+const ERA17 = makeEra(ERA17_POINTS, 2100, 3100, 2.85, 1.15);
+// the 2018-04 .. 2019-04 era (Part 3b Task 5, private CUTOFFS_2018.md): [month, rank, global round, reddit id]; only the season-end /
+// late-month points (the module comment lists which of the 34 recorded rows are fitted and why); global round = 1,570 + the round of
+// the 999-round tier stated (the rounds before T16)
+const ERA18_POINTS = [
+  ['2018-04', 4068, 1840, '8g8ebk'],
+  ['2018-06', 10000, 2120, '8vj3yy'], ['2018-06', 10000, 2070, '8un0ma'], ['2018-06', 1395, 3396, '8uyc6n'], ['2018-06', 230, 4567, '8un0ma'],
+  ['2019-04', 100, 4575, 'bhctoi'],
+];
+const ERA18 = makeEra(ERA18_POINTS, 3200, 4400, 1.3, 1.15);
 
 let schemaCache = null;
 const schema = () => schemaCache || (schemaCache = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'recon', 'out', 'master_types_ww431.json'), 'utf8')));
@@ -543,8 +655,8 @@ function bracketsOf(rewardRows) {
 // thresholds of a season (finiteRounds = rounds before its first endless tier), one per bracket, lowest first
 // a bracket reaching EVERYONE (2016-05: ranks to 5,000,000 and 10,000,000) was open to every ranked player: one round
 const EVERYONE = 1000000;
-// colosseumStageId of an ERA17 season: its own curve (Part 3 Task 5), the finite-round shift does not apply
-const thresholdsOf = (brackets, finiteRounds, colosseumStageId, c = ERA17.of(colosseumStageId)) => brackets.map((b) => (c
+// colosseumStageId of an ERA17 / ERA18 season: its own curve (Part 3 Task 5, Part 3b Task 5), the finite-round shift does not apply
+const thresholdsOf = (brackets, finiteRounds, colosseumStageId, c = ERA17.of(colosseumStageId) || ERA18.of(colosseumStageId)) => brackets.map((b) => (c
   ? { startRank: b.startRank, endRank: b.endRank, score: c.round(b.endRank), label: c.label(b.endRank) }
   : { startRank: b.startRank, endRank: b.endRank, score: b.endRank >= EVERYONE ? 1 : cutoffRound(b.endRank, finiteRounds), label: 'interpolated' }));
 // {brackets, thresholds} of a season from its tier rows and the rankingReward rows of its ranking (master or 1.1.3); the era from
@@ -633,7 +745,7 @@ function seasonRows(src, seasons = SEASONS) {
       if (!rewards.length) throw new Error(`colosseum: ${s.month}: ranking ${rk.rankingId} has no rankingReward rows (the client's Rewards button would crash)`);
     } else {
       // own ranking row (RANKING_ROW) and the rewards of RELUX_RANKING, ids in the season's block
-      const base = REWARD_BASE + (cs.rankingId - REWARD_FIRST_RANKING) * REWARD_BLOCK, n = BRACKETS8.length;
+      const base = REWARD_BASE + (cs.rankingId - REWARD_FIRST_RANKING) * REWARD_BLOCK, n = (RELUX_RANKING[id] || { edges: BRACKETS8 }).edges.length;
       if (cs.rankingId < REWARD_FIRST_RANKING || n > REWARD_BLOCK || base + n - 1 > RANGES.rankingReward[2]) throw new Error(`colosseum: ${s.month}: no reward id block for ranking ${cs.rankingId}`);
       rkRow = schemaRow('ranking', { ...clone(RANKING_ROW), rankingId: cs.rankingId, startRank: base, endRank: base + n - 1, startDatetime: START, endDatetime: END });
       rewards = reluxRewardRows(id, base);
@@ -948,14 +1060,6 @@ function patch(masterDir, opts = {}) {
       seasons = seasons.filter((s) => s.source !== 'relux');
     }
   }
-  // Part 3b until its Task 5: of the default SEASONS a relux season whose ranking prizes are not written yet (RELUX_RANKING, 2018-04 ..
-  // 2019-04) is left out whole with a warning, never served without its Rewards rows; an explicit opts.seasons list stops on it
-  // (seasonRows)
-  const notBuilt = opts.seasons ? [] : seasons.filter((s) => s.source === 'relux' && !RELUX_RANKING[s.colosseumStageId]);
-  if (notBuilt.length) {
-    console.warn(`colosseum: WARNING ${notBuilt.map((s) => s.month).join(', ')} not built yet (no ranking prizes in RELUX_RANKING): left out`);
-    seasons = seasons.filter((s) => !notBuilt.includes(s));
-  }
   // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the raw ReLux enemy table (opts.reluxEnemies,
   // else KHUX_COLOSSEUM_RELUX_ENEMY / DEFAULT_RELUX_ENEMY); without the lists only the 1.1.3 variants are checked (the stage import
   // still refuses a stage with an enemy missing from the master); without the table an id that needs it stops the run (enemyRows).
@@ -990,4 +1094,4 @@ function patch(masterDir, opts = {}) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
 module.exports = { MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
-  PART3_ENEMY_IDS, PART3B_ENEMY_IDS, MONTH_COPY_OF, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS, ERA17 };
+  PART3_ENEMY_IDS, PART3B_ENEMY_IDS, MONTH_COPY_OF, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, BRACKETS9, BRACKETS12, RELUX_RANKING, rankItem, ENDLESS, ERA17, ERA18, reluxRewardRows, REWARD_BASE, REWARD_BLOCK, REWARD_FIRST_RANKING };
