@@ -160,6 +160,11 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     return s ? { colosseumStageId: s.id, date: serverTimeAt(seasonBounds(realMs, s).end) } : null;
   }
 
+  // the closeDate served for every other season row (fake time): the end of this real week. A season kept later (Catalog) may
+  // still be read from a master the client cached before the keep: with the 2030 master date it showed «Ends in 3688 days»
+  // (user 26-11: cap it like the rest of the week-bound content)
+  const weekCloseDate = (realMs = realNow()) => serverTimeAt(clock.weekEnd(realMs));
+
   const unavailable = () => ({ colosseumInfo: { colosseumStageId: 0, status: STATUS_UNAVAILABLE }, colosseumStages: [], colosseumRank: 0,
     userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 } });
   function stagesOf(s, st) {
@@ -380,7 +385,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
       complete: stages.every((x) => [1, 2, 3].every((m) => (x.clearMissionIds || []).includes(m))) ? 1 : 0 }];
   }
 
-  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, tierReached, addCoins, closeDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
+  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, tierReached, addCoins, closeDate, weekCloseDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
     catalogRows, catalogEvents,
     seasons: () => SEASONS.map((x) => season(x.colosseumStageId)).filter(Boolean) };
 }

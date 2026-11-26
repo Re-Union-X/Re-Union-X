@@ -753,7 +753,11 @@ function servedMasterRows(name, realMs) {
   if (name === 'colosseumStage') {
     try {
       const c = colosseum().closeDate(realMs);
-      return c ? rows.map((r) => (r.colosseumStageId === c.colosseumStageId ? { ...r, closeDate: c.date, rankingCloseDate: c.date } : r)) : rows;
+      const week = colosseum().weekCloseDate(realMs); // every other season: this week's end (routes-colosseum.js weekCloseDate)
+      return rows.map((r) => {
+        const d = c && r.colosseumStageId === c.colosseumStageId ? c.date : week;
+        return { ...r, closeDate: d, rankingCloseDate: d };
+      });
     } catch (e) { console.log(`[colosseum] served rows: ${e.message}`); return rows; }
   }
   if (name === 'moogleshop') {
@@ -823,7 +827,7 @@ function masterBody(name) {
   // real week of their countdown, and the avatar board index (servedMasterRows)
   if (name === 'sphere') key += `:${sphereServedKey()}`;
   // colosseumStage: the live season and its end (a keep can change mid-session)
-  if (name === 'colosseumStage') { try { const c = colosseum().closeDate(sessionRealMs()); key += `:col${c ? `${c.colosseumStageId}@${c.date}` : '-'}`; } catch (e) { key += `:err${Date.now()}`; } }
+  if (name === 'colosseumStage') { try { const c = colosseum().closeDate(sessionRealMs()); key += `:col${c ? `${c.colosseumStageId}@${c.date}` : '-'}:${colosseum().weekCloseDate(sessionRealMs())}`; } catch (e) { key += `:err${Date.now()}`; } }
   // evStage: the HSC rows served open follow the listed cards (a keep can change mid-session)
   // evMedalList: the phantom's merged list follows the same listed cards (I-287)
   if (name === 'evStage' || name === 'evMedalList') { const ids = hscListedIds(sessionRealMs()); key += `:hsc${ids ? [...ids].sort((a, b) => a - b).join(',') : 'all'}`; }

@@ -248,13 +248,13 @@ The «1 AP» rate is (rebuilt): this version of the game rounds the original rat
 
 There is only one player on this server, so the monthly ranking cannot be a real ranking. Each reward bracket of a season is a **score threshold** instead (not original), on the original measure: the furthest round you cleared. Reach a threshold and its rewards go to your **Present Box**, once; the Ranking screen lists the thresholds.
 
-The thresholds are (rebuilt): no ranking cutoff of these four seasons survives, so they are interpolated from the only worldwide 2016 cutoffs on record (recordings of the August 2016 ranking) and adjusted to the number of rounds of each season. In May 2016 every ranked player got the same reward, as in the original: one cleared round is enough.
+The thresholds are (rebuilt): no ranking cutoff of these four seasons survives, so they are interpolated from the only worldwide 2016 cutoffs on record (recordings of the August 2016 ranking) and adjusted to the number of rounds of each season. In May 2016 every ranked player got the same reward, as in the original: one cleared round is enough. Before your first round of May 2016 the goal reads **10000000th**: that was the original lowest bracket of that season (5,000,001st to 10,000,000th).
 
 ### Coliseum Catalog — list every season, keep one past season
 
 The **Coliseum Catalog** is (not original): it is an addition of this server, like the Event and Raid Catalogs. Its banner is the **first of the Events tab** and appears from Story Quest 130, when the Coliseum opens; tap it to open the Training Grounds, and its **Details** button lists every season here with its tiers, AP, Coliseum Boards and your progress.
 
-One **past season** at a time can be **kept**: the Coliseum then plays the kept season until you **remove** it, whatever your Story week, also when your Story week goes back to an earlier month. Only past seasons can be kept: not the season of your Story week, nor a month your Story week has only just reached. Keeping or removing a season loses nothing, since each season keeps its progress and coins.
+One **past season** at a time can be **kept**: the Coliseum then plays the kept season until you **remove** it, whatever your Story week, also when your Story week goes back to an earlier month. Only past seasons can be kept: not the season of your Story week, nor a month your Story week has only just reached. Keeping or removing a season loses nothing, since each season keeps its progress and coins. A kept season shows **«Ends in»** the end of the current week (not original): it never ends on its own, but the screen needs a date.
 
 The Coliseum Catalog banner and the season cards are our own design (not original), made from original pieces of the game: the Olympus arena panel, the Coliseum Coin and the Tier crown.
 

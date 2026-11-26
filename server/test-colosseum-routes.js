@@ -549,13 +549,14 @@ function wiring() {
     quiet(() => t.grantItem(17, 0, 12));
     assert.strictEqual(call(t.respondUser, {}).userData.userPoint.colosseumSpherePoint, 12, 'type 17 into the live season');
     assert.strictEqual(p.colosseum.seasons[800].coins, 12);
-    // served master: the live season's closeDate is the fake-time season end, the others keep the master date
+    // served master: the live season's closeDate is the fake-time season end, the others end with this week (never the 2030 master date)
     const served = t.servedMasterRows('colosseumStage', Date.now());
     const live = served.find((r) => r.colosseumStageId === 800), other = served.find((r) => r.colosseumStageId === 900);
     assert.strictEqual(live.closeDate, quiet(() => t.colosseum().closeDate()).date);
     assert.notStrictEqual(live.closeDate, '2030-12-31 23:59:59');
     assert.strictEqual(live.rankingCloseDate, live.closeDate);
-    assert.strictEqual(other.closeDate, '2030-12-31 23:59:59');
+    assert.strictEqual(other.closeDate, quiet(() => t.colosseum().weekCloseDate()));
+    assert.notStrictEqual(other.closeDate, '2030-12-31 23:59:59');
     assert.strictEqual(call(t.respondUser, {}).userData.stageResumption.colosseumStageId, 800);
   });
   run('wiring_start_clear', () => {
