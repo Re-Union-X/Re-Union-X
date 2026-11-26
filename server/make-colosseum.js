@@ -58,7 +58,7 @@
 //   (notice 23117: top 10,000, the notice wins); the monthly notices give only the featured prizes and the top 2,500 / 10,000 /
 //   100,000 edges, all equal to the wiki brackets. Ids
 //   REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK so they stay in 30000-39999 (the original 4021 range 40000-40007 does not).
-//   Thresholds: 2016-08 = the August 2016 cutoffs themselves (the curve anchors are that month's ranking, 110 finite rounds:
+//   Thresholds: 2016-08 = the curve through that month's footage (the recorded August 2016 ranking, 110 finite rounds:
 //   64 / 76 / 93 / 105 / 134 / 159 / 175 / 216); 2016-09 / 10 the same structure (110 rounds), so the same values; 2016-11 ..
 //   2017-04 the curve shifted to their 120 finite rounds (+10: 74 / 86 / 103 / 115 / 144 / 169 / 185 / 226), label «interpolated».
 //   The top brackets lie in the endless tier, as on the August 2016 footage (the Top 10 at Tier 10 147-184/999).

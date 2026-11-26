@@ -378,7 +378,7 @@ only), imported by `build-resources.ps1` like the raid / event board cards.
 ## Part 2 summary (26 November 2026)
 
 Plan `docs/superpowers/plans/2026-11-26-coliseum-part2.md`. Served: master revision **397** (regenerated 26-11 with the env of the
-10-11 block of HANDOFF.md + `KHUX_WORLDTOUR=0` + `KHUX_AVATAR_BOARDS`); resource build, install and bench walk pending.
+10-11 block of HANDOFF.md + `KHUX_WORLDTOUR=0` + `KHUX_AVATAR_BOARDS`), resources **188**; benched 26-11 (below).
 
 - **Seasons** 2016-08 (1200), 2016-09 (1300), 2016-10 (1400) from the 1.1.3 master rows; 2016-11 (1500) .. 2017-04 (2000) from
   the ReLux season extract (private, read at build time, `KHUX_COLOSSEUM_RELUX`). Tiers stop at the first endless tier
@@ -400,15 +400,32 @@ Plan `docs/superpowers/plans/2026-11-26-coliseum-part2.md`. Served: master revis
   the 2016-12 Pegasus Knight Helm goes to the top 10,000 (notice 23117 over the wiki). Reward ids 35000 + (rankingId - 4016) x 50.
 - **Boards.** 30 boards (2210037-2210066); cards by `recon/tools/coliseum_board_cards.py` (see «Board card pictures»): 4 JP
   4.3.1 twins, 26 khuxwiki previews at native size.
-- **Coliseum Catalog** 13 rows; Filters (I-328): FIND, state, Coliseum Boards completed / not, Tier Rewards all taken / not.
+- **Coliseum Catalog** 13 rows; Filters (I-328): FIND, state, Coliseum Boards completed / not, Tier Rewards all taken / not;
+  game year tabs (962a2b17, 8c728856: a season sits in the game year of its start, as the Raid / Event / Special cards).
+- **Catalog season cards** (`server/game_data/colosseum_img/<colosseumStageId>.png`, git-ignored): written by
+  `python -I recon/tools/make_special_banners.py --section colosseum` from SEASONS of make-colosseum.js. **After a change of
+  SEASONS** run it (build-resources.ps1 runs it next to gen_colosseum_stages.py since 26-11); make-game-tables prints a banner
+  when a served season has no card. Without it the Catalog row shows an empty frame (the server answers 404).
 - **AP campaigns**: the «0 AP!» days of 2016-11-01..03 now reach the November 2016 season.
 - **Notice** «Coliseum» (11/26): thirteen seasons, eleven tiers, thresholds and prizes, new section «Maps» (generated maps,
-  dropped buffs, generator positions), board card sources, filters.
+  dropped buffs, generator positions), board card sources, filters. Final review wording (26-11): «maps» 1-10 (a map repeats
+  every ten rounds of a tier), JP maps «most likely reused», August-October thresholds «values read from» the cutoffs.
 
 Master regen diff (26-11, against a backup of `server/master_data`): only additions, in colosseum (+96 tiers), colosseumStage (+9),
 stage (+90), ranking (+9), rankingReward (+72), sphere / sphereArray / sphereMasu (+30 each); enemy unchanged; no stage-enemy
 check banner (the stage lists were on disk).
 
-Bench walk (controller, pending): story clock in each era (2016-08 generated set, 2016-11 extra tier, 2017-03 JP set), round
-list and levels, a generated stage plays, one-turn window across a tier, a board purchase with its card, Catalog keep of a
-Part 2 season, the Catalog filters and phone layout, a threshold Present.
+### Bench walk 26-11
+
+Resources 188, master revision 397, saves `colip2a` (August 2016), `colip2n` (November 2016), `colip2m` / `colip2m80` (March 2017).
+
+- August 2016 generated set plays; enemy level = the global round number (in-game rounds are numbered per tier, the map is
+  ((round - 1) mod 10) + 1); a one-turn clear opened the window up to round 19.
+- Board cards sharp: Summer Mickey / Minnie, Timothy Mouse, Royal Knight; board START bottom left, not covered.
+- November 2016: eleven tiers. March 2017: the JP set plays, LV 81 at round 81.
+- Coliseum Catalog: keep of August 2016 OK; filters («Later in the Story» = 8 seasons); year tabs All years / Launch year;
+  phone render 640x320 = the same 3-column grid as the Raid Catalog.
+- Threshold Present «Coliseum March 2017: 250,001st – 500,000th» (Chip + Dale) arrived.
+- Found: the season cards 1200-2000 were missing until `make_special_banners.py --section colosseum` ran (now a build step).
+- Pending user decisions: OK on the 30-card sheet `screenshots\coli_part2_cards_review.png`; re-placing the 8 Part 1 cards
+  6-7 px higher.

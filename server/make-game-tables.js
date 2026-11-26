@@ -1148,6 +1148,16 @@ require('./make-campaigns').patch(OUT);
     console.warn(['', '#'.repeat(78), `# COLISEUM: stage enemies NOT checked (${coli.enemyCheck.reason}).`,
       '# Run build-resources.ps1 (stage files + reports), then make-game-tables again.', '#'.repeat(78), ''].join('\n'));
   }
+  // Coliseum Catalog cards (game_data/colosseum_img, git-ignored, make_special_banners.py --section colosseum, also run by
+  // build-resources.ps1): a served season without its card shows an empty frame in the Catalog
+  if (coli) {
+    const imgDir = process.env.KHUX_COLOSSEUM_IMG || path.join(__dirname, 'game_data', 'colosseum_img');
+    const noCard = JSON.parse(fs.readFileSync(path.join(OUT, 'colosseumStage.json'), 'utf8')).map((r) => r.colosseumStageId).filter((id) => !fs.existsSync(path.join(imgDir, `${id}.png`)));
+    if (noCard.length) {
+      console.warn(['', '#'.repeat(78), `# COLISEUM: no Catalog card for season(s) ${noCard.join(', ')}.`,
+        '# Run: python -I recon/tools/make_special_banners.py --section colosseum', '#'.repeat(78), ''].join('\n'));
+    }
+  }
 }
 // Limited, returning and level avatar boards (Events Part 7, avatar-boards.js): the 6 skills of the donated master (KHUX_DONOR_MASTER,
 // label skillFromDonor) into skill.json, then the rows of the private board records (KHUX_AVATAR_BOARDS; without it no board)

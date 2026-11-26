@@ -129,6 +129,10 @@ if ($LASTEXITCODE) { throw 'make_quest_thumbs fallito' }
 # Task 2) into $sg\colosseum_gen (+ report.json); a wiki name with no Coliseum variant id stops the build
 python -I recon\tools\gen_colosseum_stages.py --templates "$jpData\stage" --out "$sg\colosseum_gen"
 if ($LASTEXITCODE) { throw 'gen_colosseum_stages failed' }
+# Coliseum Catalog cards (server images, git-ignored): the catalogue banner 6000.png and one card per season of SEASONS
+# (make-colosseum.js) into server\game_data\colosseum_img; a season without its card shows an empty frame in the Catalog
+python -I recon\tools\make_special_banners.py --section colosseum
+if ($LASTEXITCODE) { throw 'make_special_banners --section colosseum failed' }
 # Coliseum round stages cl_stg<stageId>.bin + _00.bin of the served seasons (master colosseumStage rows), WW 2016 copy
 # first, then JP 4.3.1 (Coliseum Part 1 Task 4), then the generated ones; a stage that fails its checks stops the build.
 # Report $sg\colosseum_stages.json
