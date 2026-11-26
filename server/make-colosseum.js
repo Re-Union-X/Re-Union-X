@@ -7,7 +7,8 @@
 //   season lies outside head..term, the client never reads it, so it is left out);
 // - stage: the season's 10 round stages, stageKind 3, world 5, map "Coliseum", stageId YYYYMMNN (cl_stg<stageId>.bin),
 //   id 81001+ as in 1.1.3;
-// - enemy: 1.1.3 Coliseum variants (ids 20000-29999) missing from our master only (today none: the 111 rows are there);
+// - enemy: 1.1.3 Coliseum variants (ids 20000-29999) missing from our master only (today none: the 111 rows are there), and
+//   (Part 2 Task 3, enemyRows) every id the served stages use missing from our master (today none: 93 ids over 130 stages);
 // - ranking (category 4, ids 4009-4012) + rankingReward (its brackets, ids = the ranking's startRank..endRank): the client's
 //   «Rewards» button crashes for a season whose rankingId has no rankingReward rows;
 // - sphere / sphereArray / sphereMasu: the 1.1.3 Coliseum boards (type 3) of the season (SEASON_BOARDS), arryId and masuId
@@ -68,6 +69,8 @@ const path = require('path');
 const DEFAULT_2016 = 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data';
 // the cleaned ReLux season extract (private, outside the repo) when KHUX_COLOSSEUM_RELUX names none
 const DEFAULT_RELUX = 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\coliseum_seasons.json';
+// the cleaned ReLux Coliseum enemy rows (next to the season extract) when KHUX_COLOSSEUM_RELUX_ENEMIES names none
+const DEFAULT_RELUX_ENEMIES = path.join(path.dirname(DEFAULT_RELUX), 'coliseum_enemies.json');
 const START = '2015-01-01 00:00:00', END = '2030-12-31 23:59:59';
 // source: '113' = the 1.1.3 master rows, 'relux' = the cleaned ReLux extract; genStages: the stage set is GEN_STAGE_IDS(month)
 const SEASONS = [
@@ -291,14 +294,77 @@ function seasonRows(src, seasons = SEASONS) {
       for (const r of out[t]) { if (seen.has(r[k])) throw new Error(`colosseum: ${t} ${k} ${r[k]} served twice`); seen.add(r[k]); }
     }
   }
-  const have = new Set(src.masterEnemyIds || []);
-  for (const e of [...(src.enemy || [])].sort(byKey('enemyId'))) {
-    if (e.enemyId < ENEMY_RANGE[0] || e.enemyId > ENEMY_RANGE[1] || have.has(e.enemyId)) continue;
-    have.add(e.enemyId);
-    out.enemy.push(schemaRow('enemy', e, validMap(e, ENEMY_VALID)));
-  }
+  enemyRows(src, out);
   for (const [t, [key]] of Object.entries(RANGES)) out[t].sort(byKey(key));
   return out;
+}
+
+// HP of a Coliseum variant at LV 300 = 3 x its base, at LV 999 = 40/11 x its own LV 300 (the variant rule, see enemyRows)
+const RULE_HP300 = 3, RULE_HP999 = 40 / 11;
+// the variant row of `id` from its base row (id - 20000) by the variant rule, null when the base has no LV 300 and LV 999 knots
+function ruleRow(id, base) {
+  const n = base.validGrowth || 0, keep = [];
+  for (let i = 0; i < n; i++) if (base.baseLv[i] <= 999) keep.push(i);
+  const lv = keep.map((i) => base.baseLv[i]);
+  if (!lv.includes(300) || !lv.includes(999)) return null;
+  const pick = (f) => keep.map((i) => (Array.isArray(base[f]) ? base[f][i] : 0));
+  const hp = pick('hp').map((v, k) => (lv[k] === 300 ? v * RULE_HP300 : v));
+  hp[lv.indexOf(999)] = Math.round(hp[lv.indexOf(300)] * RULE_HP999);
+  const r = { ...base, enemyId: id, validGrowth: keep.length, baseLv: lv, hp, attack: pick('attack'), defense: pick('defense'), exp: pick('exp'),
+    money: keep.map(() => 0), raidPoint: keep.map(() => 0), lux: pick('lux'), score: pick('score') };
+  return schemaRow('enemy', r, validMap(r, ENEMY_VALID));
+}
+
+// Enemy rows (Coliseum Part 2 Task 3). Every Coliseum variant of the 1.1.3 master missing from ours (as in Part 1), then every id
+// the served stages use (src.stageEnemies {stageId: [enemyId]}, readStageEnemies) missing from our master, from the first source
+// that has it: the 1.1.3 row ('113'), else the variant rule against its base row id - 20000 of our master ('rule', docs/notes/
+// coliseum.md «Enemy variant rule»: same level knots up to LV 999, same ATK / DEF / EXP / lux / score, same HP below LV 300, HP x3
+// at LV 300, 40/11 x that at LV 999, no munny or raid points; the rest of the row as the base, though the originals also differ in
+// score / CP / skills, which no rule gives), else the ReLux row (src.reluxEnemies, 'relux'). Original Coliseum variant ids
+// (ENEMY_RANGE) only. No source at all stops the run: an estimate ('estimate', as for the raids) is a per-enemy decision, never
+// made here. Rows of our master are never written again. out.colosseumEnemies = [{enemyId, source, label, stages}], label
+// colosseumEnemy<source> (the notice labels colosseumEnemyRule / colosseumEnemyEstimate for the non-original values).
+const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', estimate: 'colosseumEnemyEstimate' };
+function enemyRows(src, out) {
+  const masterRows = src.masterEnemies || [];
+  const have = new Set([...(src.masterEnemyIds || []), ...masterRows.map((r) => r.enemyId)]);
+  const added = new Map(); // enemyId -> report entry
+  const add = (id, row, source, stages) => {
+    have.add(id);
+    out.enemy.push(row);
+    added.set(id, { enemyId: id, source, label: ENEMY_LABEL[source], stages });
+  };
+  const variant = (id) => id >= ENEMY_RANGE[0] && id <= ENEMY_RANGE[1];
+  const row113 = new Map((src.enemy || []).map((e) => [e.enemyId, e]));
+  for (const e of [...(src.enemy || [])].sort(byKey('enemyId'))) {
+    if (!variant(e.enemyId) || have.has(e.enemyId)) continue;
+    add(e.enemyId, schemaRow('enemy', e, validMap(e, ENEMY_VALID)), '113', []);
+  }
+  if (src.stageEnemies) {
+    const need = new Map(); // enemyId -> [stageId]
+    for (const cs of out.colosseumStage) {
+      for (const sid of cs.stageId.slice(0, cs.validStage)) {
+        const ids = src.stageEnemies[sid];
+        if (!ids || !ids.length) throw new Error(`colosseum: stage ${sid} (season ${cs.colosseumStageId}) has no enemy list (stage import report, generated report, JP stage parse)`);
+        for (const id of ids) { if (!need.has(id)) need.set(id, []); if (!need.get(id).includes(sid)) need.get(id).push(sid); }
+      }
+    }
+    const base = new Map(masterRows.map((r) => [r.enemyId, r]));
+    const relux = new Map((src.reluxEnemies || []).map((r) => [r.enemyId, r]));
+    for (const [id, stages] of [...need].sort((a, b) => a[0] - b[0])) {
+      if (added.has(id)) { added.get(id).stages = stages; continue; }
+      if (have.has(id)) continue;
+      const where = `enemy ${id} of stage ${stages.join(', ')}`;
+      if (!variant(id)) throw new Error(`colosseum: ${where} is missing from the master and is not a Coliseum variant id`);
+      const e113 = row113.get(id), b = base.get(id - 20000), rule = b && ruleRow(id, b), rx = relux.get(id);
+      if (e113) add(id, schemaRow('enemy', e113, validMap(e113, ENEMY_VALID)), '113', stages);
+      else if (rule) add(id, rule, 'rule', stages);
+      else if (rx) add(id, schemaRow('enemy', rx, validMap(rx, ENEMY_VALID)), 'relux', stages);
+      else throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no base ${id - 20000} for the variant rule, no ReLux row): an estimate is needed`);
+    }
+  }
+  out.enemy.sort(byKey('enemyId'));
+  out.colosseumEnemies = out.enemy.map((r) => added.get(r.enemyId));
 }
 
 const rowsOf = (text) => { const r = JSON.parse(text); return Array.isArray(r) ? r : Object.values(r)[0]; };
@@ -313,6 +379,41 @@ function readRelux(file) {
   try { j = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
   const seasons = Array.isArray(j && j.seasons) ? j.seasons : [];
   return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum || []) };
+}
+// the cleaned ReLux Coliseum enemy rows ({rows: [...]}, arrays already cut), null when not readable
+function readReluxEnemies(file) {
+  try { const j = JSON.parse(fs.readFileSync(file, 'utf8')); return Array.isArray(j && j.rows) ? j.rows : null; } catch { return null; }
+}
+// The enemy lists of the stages, local files outside the repo (env names them, else the local defaults), the first one holding a
+// stage wins: the stage import report (import_colosseum_stages.py: the files actually served, status «imported»), the generated
+// stages report (gen_colosseum_stages.py), the JP 4.3.1 stage parse (cl_stages_jp431.json).
+const ROOT = 'D:\\Progetto_Restauro_KH_UX';
+const stageEnemyFiles = () => [
+  process.env.KHUX_COLOSSEUM_STAGE_REPORT || path.join(ROOT, 'stage_gen', 'colosseum_stages.json'),
+  process.env.KHUX_COLOSSEUM_GEN_REPORT || path.join(ROOT, 'stage_gen', 'colosseum_gen', 'report.json'),
+  process.env.KHUX_COLOSSEUM_CL_PARSE || path.join(ROOT, 'private', 'events', 'sources', 'coliseum', 'cl_stages_jp431.json'),
+];
+// {stageId: [enemyId, sorted, unique]} from those files (unreadable ones skipped), null when none is readable
+function readStageEnemies(files) {
+  const out = {};
+  let any = false;
+  const put = (sid, ids) => { if (!(sid in out)) out[sid] = [...new Set(ids)].sort((a, b) => a - b); };
+  for (const f of files) {
+    let j;
+    try { j = JSON.parse(fs.readFileSync(f, 'utf8')); } catch { continue; }
+    any = true;
+    if (Array.isArray(j && j.stages)) {
+      for (const s of j.stages) {
+        if (Array.isArray(s.enemyIds)) put(s.stageId, s.enemyIds); // generated report
+        else if (s.status === 'imported' && Array.isArray(s.enemies)) put(s.stageId, s.enemies); // import report
+      }
+    } else {
+      for (const [sid, st] of Object.entries(j || {})) {
+        if (st && st.parts) put(Number(sid), Object.values(st.parts).flatMap((p) => (p.enemies || []).map((e) => e.enemyId)));
+      }
+    }
+  }
+  return any ? out : null;
 }
 // a missing master table is empty; a corrupt one stops the run (it would be rewritten with our rows only)
 function readMaster(file) {
@@ -358,7 +459,13 @@ function patch(masterDir, opts = {}) {
       seasons = seasons.filter((s) => s.source !== 'relux');
     }
   }
-  const out = seasonRows({ ...src, relux, masterEnemyIds: master.enemy.map((r) => r.enemyId) }, seasons);
+  // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the ReLux enemy rows (opts.reluxEnemies, else
+  // KHUX_COLOSSEUM_RELUX_ENEMIES / DEFAULT_RELUX_ENEMIES); without the lists only the 1.1.3 variants are checked (the stage import
+  // still refuses a stage with an enemy missing from the master). With opts.src (tests) the local files are never read.
+  const stageEnemies = opts.stageEnemies || (opts.src ? null : readStageEnemies(stageEnemyFiles()));
+  if (!stageEnemies && !opts.src) console.warn(`colosseum: no stage enemy lists (${stageEnemyFiles().join(', ')}): the stage enemies are not checked`);
+  const reluxEnemies = opts.reluxEnemies || (opts.src ? [] : readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMIES || DEFAULT_RELUX_ENEMIES) || []);
+  const out = seasonRows({ ...src, relux, masterEnemyIds: master.enemy.map((r) => r.enemyId), masterEnemies: master.enemy, stageEnemies, reluxEnemies }, seasons);
   const stageIds = new Set(out.stage.map((r) => r.stageId));
   const clash = master.stage.find((r) => stageIds.has(r.stageId));
   if (clash) throw new Error(`colosseum: stageId ${clash.stageId} already in the master (id ${clash.id})`);
@@ -370,11 +477,11 @@ function patch(masterDir, opts = {}) {
   if (opts.artFile) fs.writeFileSync(opts.artFile, artLines(out.sphere.map((r) => r.sphereBoardId)));
   if (!banner) console.warn(`colosseum: no Coliseum Catalog banner: the Training Grounds stage ${CATALOG_STAGE} is not in the master (make-special first)`);
   console.log(`colosseum: ${out.colosseumStage.length} seasons (${seasons.map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
-    + `+${out.enemy.length} enemies, +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
+    + `+${out.enemy.length} enemies (${['113', 'rule', 'relux'].map((k) => `${k} ${out.colosseumEnemies.filter((e) => e.source === k).length}`).join(', ')}), +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
   return out;
 }
 
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
+module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMIES, readReluxEnemies, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
