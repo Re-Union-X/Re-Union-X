@@ -34,7 +34,7 @@ const qb = cards.questBlock('Q', [['AP', '<span class="v">5</span>']], [['done',
 assert.ok(qb.startsWith('<div class="qb"><h3 class="qh">Q</h3><div class="qs"><span class="st"><small>AP</small><b><span class="v">5</span></b></span></div><div class="qt"><h4>'));
 assert.ok(qb.includes('Drops<span class="ng">NOT ORIGINAL</span></h4><p>x</p>'));
 // a stat with an icon is a line of its own (Target / Where of the Special details)
-assert.ok(cards.questBlock('Q', [['AP', '5'], ['Where', 'Agrabah', 'camp']], []).includes('<div class="ql"><div><img class="ic" src="/web/special/icon/camp.png" alt=""><small>Where</small><span>Agrabah</span></div></div>'));
+assert.ok(cards.questBlock('Q', [['AP', '5'], ['Where', 'Agrabah', 'camp']], []).includes('<div class="ql"><small><img class="ic" src="/web/special/icon/camp.png" alt="">Where</small><b>Agrabah</b></div>'));
 // every section card is collapsible: a <details> open by default whose header band is the <summary> with a turning chevron
 assert.ok(cards.section('k', 'medal', 'T', 'b', cards.NG) === '<details class="cs" id="sec-k" open><summary class="csh"><img class="ic" src="/web/special/icon/medal.png" alt=""><h2>T</h2>' + cards.NG + cards.CHEV + '</summary><div class="csb">b</div></details>');
 assert.ok(/details\.cs>summary\.csh\{[^}]*cursor:pointer[^}]*min-height:30px/.test(cards.CARD_CSS) && /details\.cs\[open\]>summary \.chev\{transform:rotate\(90deg\)\}/.test(cards.CARD_CSS), 'tap target and turning chevron');

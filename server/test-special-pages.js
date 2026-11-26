@@ -130,7 +130,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   // with amount and rate, NOT ORIGINAL in its heading and the reconstructed note as a plain sentence
   const dq = pages.detailPage(ix2, 7102, ctxD);
   check(dq.includes('<div class="qb"><h3 class="qh">Quest Two</h3><div class="qs"><span class="st"><small>AP</small><b><span class="v">12</span></b></span>') && d.includes('<table class="tt qtt ob">'), 'details: quest block, stat chips, objectives');
-  check(dq.includes('<small>Where</small><span>Agrabah · Bazaar</span>') && dq.includes('<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff7a5c"') && !/camp\.png" alt=""><small>Where/.test(dq), 'details: Where with a map pin, not a present');
+  check(dq.includes('</svg>Where</small><b>Agrabah · Bazaar</b>') && dq.includes('<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff7a5c"') && !/camp\.png" alt="">Where/.test(dq), 'details: Where with a map pin, not a present');
   check(dq.includes('Drops<span class="ng">NOT ORIGINAL</span></h4><p class="n">The original drop data is lost. These drops and their rates are reconstructed.</p><table class="tt qtt dt">')
     && dq.includes('<span class="tn">Huey Ver. A</span>') && !dq.includes('reconstructed: the original'), 'details: Drops table with the badge');
   const dr = pages.detailPage(ix2, 7102, { ...ctxD, names: { ...dn, dropRows: (rid) => (rid === 1 ? [{ type: 3, name: 'Huey', num: 1, odds: 2500 }, { type: 5, name: 'Mythril Shard', num: 2, odds: 1000 }] : []) } });
