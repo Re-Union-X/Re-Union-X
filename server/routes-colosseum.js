@@ -28,6 +28,7 @@
 const rules = require('./colosseum-rules');
 const ranked = require('./ranked-rewards');
 const calendar = require('./calendar-util');
+const core = require('./sphere-board-core');
 const { SEASONS, SEASON_BOARDS, CATALOG_EV, COLOSSEUM_IMG_VERSION, rankedOf } = require('./make-colosseum');
 const { bracketText } = require('./routes-hsc');
 const { deliverReward } = require('./raid-rewards');
@@ -339,6 +340,19 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   // season whatever its month (ruling 10: it plays until it is removed, so its row always offers Remove)
   const baseState = (s, c) => calendar.rowState(monthRow(s), { ...c, kept: null });
   function rowState(s, c = catalogCtx()) { return c.kept === s.id ? 'kept' : baseState(s, c); }
+  // Catalog filters (I-328): «Coliseum Boards» 'done' when every node of every served board of the season is unlocked in the save
+  // (player.colosseumSphere, routes-colosseum-boards.js; a board never handed out = not done), 'todo' otherwise, 'none' without boards
+  function boardsOf(s) {
+    const box = (player.colosseumSphere || {})[s.id] || {};
+    const boards = (SEASON_BOARDS[s.id] || []).map((id) => masterRows('sphere').find((r) => r.sphereBoardId === id)).filter(Boolean);
+    if (!boards.length) return 'none';
+    return boards.every((b) => { const got = new Set(((box[b.sphereBoardId] || {}).unlock || []).map(Number)); return core.nodesOf(masterRows, b).every((n) => got.has(n)); }) ? 'done' : 'todo';
+  }
+  // «Tier rewards»: all taken when the season's last rewarded tier (the highest with a tier reward) is among the paid tiers
+  function tierRewardsDone(s, st) {
+    const last = Math.max(0, ...s.rows.filter((t) => (t.validReward || 0) > 0).map((t) => t.round));
+    return last > 0 && st.tierRewards.map(Number).includes(last);
+  }
   function catalogCard(id, c = catalogCtx()) {
     const s = season(id);
     if (!s) return null;
@@ -346,7 +360,8 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     // base: the row's state with nothing kept (now / can / other / later), which the page restores after a Remove (a kept season can
     // sit on the story month or later, ruling 10)
     return { colosseumStageId: s.id, month: s.month, state: rowState(s, c), base: baseState(s, c), tiers: s.tiers.length, apMin: Math.min(...aps), apMax: Math.max(...aps),
-      boardIds: [...(SEASON_BOARDS[s.id] || [])], coins: st.coins, ...userColosseum(s, st.last), tierRewards: [...st.tierRewards].sort((a, b) => a - b) };
+      boardIds: [...(SEASON_BOARDS[s.id] || [])], coins: st.coins, ...userColosseum(s, st.last), tierRewards: [...st.tierRewards].sort((a, b) => a - b),
+      boards: boardsOf(s), tiersDone: tierRewardsDone(s, st) };
   }
   // the rows of the catalogue page: every served season, oldest first
   function catalogRows() {

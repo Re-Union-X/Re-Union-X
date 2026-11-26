@@ -48,15 +48,19 @@
 // - Stage sets: genStages seasons (2016-08 .. 2016-11: no original WW set; the 1.1.3 sets 20160101/0201/0301 and the extract's
 //   20160401 are JP sets WW did not play) serve GEN_STAGE_IDS(month) = 2116MMNN (generated files, Task 2); 2016-12 .. 2017-04
 //   serve the extract's JP 4.3.1 sets 20160501 .. 20160901. Stage rows: the 1.1.3 row of the original stage when it exists
-//   (1200 .. 1400 keep its id 81041 .. 81070, stageId replaced), else (no 1.1.3 row: 1500 .. 2000) the previous season's row at
-//   the same set position with the next free id (81071+) and name strDummy.
-// - Ranking: ReLux holds no rankingReward rows for 2016-12 .. 2018-03 (its 4019 rows are the donor's invention) and the 1.1.3
-//   row 4016 points to the 4015 rows: every relux season gets its own ranking row (rankingId of its colosseumStage row; the 1.1.3
-//   row when there is one, else the previous season's as template) and PROVISIONAL reward rows = the previous season's
-//   brackets and rewards (2016-10, the last original WW set, the same eight bracket edges the wiki lists to 2017-04),
-//   renumbered to REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK so the ids stay in 30000-39999 (the original 4021 range
-//   40000-40007 does not). Task 5 replaces brackets, rewards and thresholds; until then the thresholds are the curve above
-//   (2016-11 .. 2017-04: 120 finite rounds, so +10 over 2016-08 .. 2016-10).
+//   (1200 .. 1400 keep its id 81041 .. 81070, stageId replaced), else (no 1.1.3 row: 1500 .. 2000) the 1.1.3 row of the
+//   STAGE_TEMPLATE season (1400, the last 1.1.3 season) at the same set position, with the next free id (81071+) and name strDummy.
+// - Ranking (Task 5): 2016-08 .. 2016-10 = the 1.1.3 rows of rankings 4013-4015 (eight brackets 1-100 .. 250,001-500,000; every
+//   bracket equal to the monthly notices 19886, 20641, 21481: test-make-colosseum.js real_part2). ReLux holds no rankingReward rows
+//   for 2016-12 .. 2018-03 (its 4019 rows are the donor's invention) and the 1.1.3 row 4016 points to the 4015 rows, so every relux
+//   season gets its own ranking row (RANKING_ROW: the constant fields of the 1.1.3 rows 4009-4016, rankingId of its colosseumStage
+//   row) and the reward rows of RELUX_RANKING: 2016-11 = notice 22105 (the full table), 2016-12 .. 2017-04 = khuxwiki (the monthly
+//   notices give only the featured prizes and the top 2,500 / 10,000 / 100,000 edges, all equal to the wiki brackets). Ids
+//   REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK so they stay in 30000-39999 (the original 4021 range 40000-40007 does not).
+//   Thresholds: 2016-08 = the August 2016 cutoffs themselves (the curve anchors are that month's ranking, 110 finite rounds:
+//   64 / 76 / 93 / 105 / 134 / 159 / 175 / 216); 2016-09 / 10 the same structure (110 rounds), so the same values; 2016-11 ..
+//   2017-04 the curve shifted to their 120 finite rounds (+10: 74 / 86 / 103 / 115 / 144 / 169 / 185 / 226), label «interpolated».
+//   The top brackets lie in the endless tier, as on the August 2016 footage (the Top 10 at Tier 10 147-184/999).
 //
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
@@ -97,8 +101,85 @@ function GEN_STAGE_IDS(month) {
 }
 const ENDLESS = 999; // rounds of the endless tier
 const COIN_MAX = 10000; // a type-17 tier reward above it is the ReLux x100 artefact
-// provisional reward ids of the relux seasons (see the comment block): REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK
+// reward ids of the relux seasons (see the comment block): REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK
 const REWARD_BASE = 35000, REWARD_BLOCK = 50, REWARD_FIRST_RANKING = 4016;
+// the 1.1.3 season whose stage rows are the template of the relux seasons' stage rows (no source has those rows)
+const STAGE_TEMPLATE = 1400;
+// the constant fields of the 1.1.3 Coliseum ranking rows 4009-4016 (category 4 = Coliseum)
+const RANKING_ROW = { category: 4, unionStartRank: [1, 1, 1, 1, 1], unionEndRank: [1, 1, 1, 1, 1], validReward: 1 };
+// Ranking rewards of the relux seasons (Task 5), one list per bracket (BRACKETS8, the edges of every month 2016-06 .. 2017-04), in
+// the order of the source. An item: «<medal>[:<skillId>][x<num>]» (MEDAL ids of our master; a skill rides on a Scrooge medal, skillType
+// 3, at the skill's maxLv as in all 86 skill medals of the 1.1.3 rankingReward rows) or «p<type>:<avatarPartsId>» (types as the
+// 2016-08 .. 2016-10 1.1.3 rows pay avatar parts: 19 the head parts, styles and hats, 20 the other accessories; the server pays both
+// the same). Names -> ids: medal.json, skill.json, avatarParts.json (test-make-colosseum.js checks every id and level).
+const MEDAL = { scrooge3: 90123, scrooge5: 90125, scrooge6: 90126, chip5: 90055, chip6: 90056, dale5: 90065, dale6: 90066, cid: 90076, mirror: 90156 };
+const SKILL_LV = { 1112: 10, 1113: 15, 1114: 20, 1119: 20, 1124: 20, 1127: 20, 1180: 20, 1230: 20 }; // skill.json maxLv
+const BRACKETS8 = [[1, 100], [101, 1000], [1001, 2500], [2501, 10000], [10001, 50000], [50001, 100000], [100001, 250000], [250001, 500000]];
+// 2017-01 .. 2017-04 (khuxwiki): one featured skill on 6★ Scrooge (x3 / x2 / x1 to rank 10,000), the month's avatar part ♂ / ♀ to
+// rank 100,000, Chip / Dale / Cid / Magic Mirror
+const wiki2017 = (skill, m, f) => [
+  [`scrooge6:${skill}x3`, m, f, 'chip6x5', 'dale6x5', 'cidx5', 'mirrorx5'],
+  [`scrooge6:${skill}x2`, m, f, 'chip6x3', 'dale6x3', 'cidx3', 'mirrorx4'],
+  [`scrooge6:${skill}`, m, f, 'chip6x2', 'dale6x2', 'cidx3', 'mirrorx4'],
+  [`scrooge6:${skill}`, m, f, 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
+  [m, f, 'chip6', 'dale6', 'cid', 'mirror'],
+  [m, f, 'chip5x3', 'dale5x3'],
+  ['chip5x2', 'dale5x2'],
+  ['chip5', 'dale5'],
+];
+const RELUX_RANKING = {
+  // 2016-11, notice 22105 «November Coliseum Update!» (the wiki table is the same): Defense Boost III / II / I on 6★ / 5★ / 3★
+  // Scrooge, Timothy Mouse: Hat ♂ / ♀ (101215 / 101216) to rank 250,000, Timothy Mouse: Earrings ♂ / ♀ (103215 / 103216) to 10,000
+  1500: { source: 'notice 22105', brackets: [
+    ['scrooge6:1119', 'scrooge5:1113x2', 'scrooge3:1112x3', 'p19:101215', 'p19:101216', 'p20:103215', 'p20:103216', 'chip6x5', 'dale6x5', 'cidx5'],
+    ['scrooge6:1119', 'scrooge5:1113x2', 'scrooge3:1112x3', 'p19:101215', 'p19:101216', 'p20:103215', 'p20:103216', 'chip6x2', 'dale6x2', 'cidx2'],
+    ['scrooge6:1119', 'scrooge5:1113x2', 'scrooge3:1112x3', 'p19:101215', 'p19:101216', 'p20:103215', 'p20:103216', 'chip6', 'dale6', 'cid'],
+    ['scrooge5:1113', 'scrooge3:1112x2', 'p19:101215', 'p19:101216', 'p20:103215', 'p20:103216', 'chip6', 'dale6', 'cid'],
+    ['scrooge3:1112x2', 'p19:101215', 'p19:101216', 'chip6', 'dale6', 'cid'],
+    ['scrooge3:1112', 'p19:101215', 'p19:101216', 'chip5x3', 'dale5x3'],
+    ['p19:101215', 'p19:101216', 'chip5x2', 'dale5x2'],
+    ['chip5', 'dale5']] },
+  // 2016-12, khuxwiki: ATK Boost II & Lux Plus (1114) on 6★ Scrooge; Pegasus Knight: Tail ♂ / ♀ (107291 / 107292) to rank 2,500 (notice
+  // 23117: top 2,500), Pegasus Knight: Helm ♂ / ♀ (101291 / 101292) to 250,000 (notice 23117 says «top 10,000»: see the Task 5 report)
+  1600: { source: 'khuxwiki', brackets: [
+    ['scrooge6:1114x3', 'p20:107291', 'p19:101291', 'p20:107292', 'p19:101292', 'chip6x5', 'dale6x5', 'cidx5', 'mirrorx5'],
+    ['scrooge6:1114x2', 'p20:107291', 'p19:101291', 'p20:107292', 'p19:101292', 'chip6x3', 'dale6x3', 'cidx3', 'mirrorx4'],
+    ['scrooge6:1114', 'p20:107291', 'p19:101291', 'p20:107292', 'p19:101292', 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
+    ['scrooge6:1114', 'p19:101291', 'p19:101292', 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
+    ['p19:101291', 'p19:101292', 'chip6', 'dale6', 'cid', 'mirror'],
+    ['p19:101291', 'p19:101292', 'chip5x3', 'dale5x3'],
+    ['p19:101291', 'p19:101292', 'chip5x2', 'dale5x2'],
+    ['chip5', 'dale5']] },
+  // 2017-01 SP Attack Gauge I (1124), Armored Terra: Mask / Armored Aqua: Mask (notice 23796: top 100,000)
+  1700: { source: 'khuxwiki', brackets: wiki2017(1124, 'p19:101297', 'p19:101298') },
+  // 2017-02 ATK Boost III & ATK Prize+ (1180), Cowboy Goth: Hat / Cowgirl Goth: Hat
+  1800: { source: 'khuxwiki', brackets: wiki2017(1180, 'p19:101303', 'p19:101304') },
+  // 2017-03 Attack Boost IV (1127), Royal Knight: Cape ♂ / ♀
+  1900: { source: 'khuxwiki', brackets: wiki2017(1127, 'p20:108309', 'p20:108310') },
+  // 2017-04 ATK B III Max & SP GA 2 (1230), Ninja / Kunoichi: Toy Katana
+  2000: { source: 'khuxwiki', brackets: wiki2017(1230, 'p20:108171', 'p20:108172') },
+};
+// one item of RELUX_RANKING -> {type, id, skillType, skillId, skillLv, num}
+function rankItem(tok) {
+  const p = /^p(19|20):(\d+)$/.exec(tok);
+  if (p) return { type: Number(p[1]), id: Number(p[2]), skillType: 1, skillId: 0, skillLv: 1, num: 1 };
+  const m = /^([a-z]+?\d?)(?::(\d+))?(?:x(\d+))?$/.exec(tok);
+  if (!m || !MEDAL[m[1]]) throw new Error(`colosseum: ranking reward item «${tok}» unknown`);
+  const skill = m[2] ? Number(m[2]) : 0;
+  if (skill && !SKILL_LV[skill]) throw new Error(`colosseum: ranking reward item «${tok}»: no level for skill ${skill}`);
+  return { type: 3, id: MEDAL[m[1]], skillType: skill ? 3 : 1, skillId: skill, skillLv: skill ? SKILL_LV[skill] : 1, num: m[3] ? Number(m[3]) : 1 };
+}
+// the rankingReward rows of a relux season (RELUX_RANKING), ids from base
+function reluxRewardRows(colosseumStageId, base) {
+  const spec = RELUX_RANKING[colosseumStageId];
+  if (!spec || spec.brackets.length !== BRACKETS8.length) throw new Error(`colosseum: season ${colosseumStageId} has no ranking rewards (RELUX_RANKING)`);
+  return spec.brackets.map((items, i) => {
+    if (!items.length || items.length > 10) throw new Error(`colosseum: season ${colosseumStageId} bracket ${i + 1}: ${items.length} rewards (1-10)`);
+    const it = items.map(rankItem), col = (k) => it.map((x) => x[k]);
+    return schemaRow('rankingReward', { rankingRewardId: base + i, startRank: BRACKETS8[i][0], endRank: BRACKETS8[i][1], validReward: it.length,
+      type: col('type'), id: col('id'), skillType: col('skillType'), skillId: col('skillId'), skillLv: col('skillLv'), burstUpperNumber: it.map(() => 0), num: col('num') });
+  });
+}
 // type-3 boards of each season, = the wiki board list of the month (6★ Cid 04/16; 6★ Scrooge + Tier 10 Bonus 3390 05/16;
 // KH Chip M/F + Tier 10 Bonus 3090 06/16; Moogle M/F + Tier 10 Bonus 07/16; Part 2 Task 4: avatar M/F (19 nodes, 1100 coins) +
 // Tier 10 Bonus (3090, proven on video) every month 08/16 .. 04/17, + Tier 11 Bonus (3390) from 02/17). Rows: the 1.1.3 sphere rows
@@ -248,7 +329,13 @@ function seasonRows(src, seasons = SEASONS) {
   const clone = (r) => JSON.parse(JSON.stringify(r));
   // the next free stage id: after the 1.1.3 Coliseum stage rows (stage rows the sources lack, see the comment block)
   let nextStageId = Math.max(RANGES.stage[1] - 1, ...(src.stage || []).filter((r) => r.stageKind === 3 && r.id >= RANGES.stage[1] && r.id <= RANGES.stage[2]).map((r) => r.id)) + 1;
-  let prev = null; // the previous season's {stages, ranking, rewards}: templates of the rows the sources lack
+  // the template stage row at set position i (STAGE_TEMPLATE, see the comment block)
+  const templateStage = (i, what) => {
+    const t = (src.colosseumStage || []).find((x) => x.colosseumStageId === STAGE_TEMPLATE);
+    const st = t && i < t.validStage && (src.stage || []).find((x) => x.stageId === t.stageId[i] && x.stageKind === 3);
+    if (!st) throw new Error(`colosseum: ${what}: no 1.1.3 stage row of season ${STAGE_TEMPLATE} at position ${i + 1} (stage template)`);
+    return schemaRow('stage', st, validMap(st, STAGE_VALID), STAGE_DEFAULTS);
+  };
   for (const s of seasons) {
     const id = s.colosseumStageId, relux = s.source === 'relux';
     if (relux && !src.relux) throw new Error(`colosseum: ${s.month}: the ReLux season extract is not loaded`);
@@ -282,8 +369,8 @@ function seasonRows(src, seasons = SEASONS) {
       if (st) {
         if (st.stageKind !== 3) throw new Error(`colosseum: ${s.month}: stage ${cs.stageId[i]} is not a Coliseum stage`);
         r = schemaRow('stage', st, validMap(st, STAGE_VALID), STAGE_DEFAULTS);
-      } else if (relux && prev && prev.stages[i]) {
-        r = Object.assign(clone(prev.stages[i]), { id: nextStageId++, name: 'strDummy' });
+      } else if (relux) {
+        r = Object.assign(templateStage(i, s.month), { id: nextStageId++, name: 'strDummy' });
       } else throw new Error(`colosseum: ${s.month}: 1.1.3 stage ${cs.stageId[i]} missing`);
       r.stageId = row.stageId[i];
       stages.push(r);
@@ -297,19 +384,15 @@ function seasonRows(src, seasons = SEASONS) {
         .map((r) => schemaRow('rankingReward', r, validFor(RANK_REWARD, r.validReward)));
       if (!rewards.length) throw new Error(`colosseum: ${s.month}: ranking ${rk.rankingId} has no rankingReward rows (the client's Rewards button would crash)`);
     } else {
-      // PROVISIONAL (Task 5): the previous season's brackets and rewards, own ids
-      if (!prev) throw new Error(`colosseum: ${s.month}: a ReLux season needs an earlier season (ranking template)`);
-      const base = REWARD_BASE + (cs.rankingId - REWARD_FIRST_RANKING) * REWARD_BLOCK, n = prev.rewards.length;
+      // own ranking row (RANKING_ROW) and the rewards of RELUX_RANKING, ids in the season's block
+      const base = REWARD_BASE + (cs.rankingId - REWARD_FIRST_RANKING) * REWARD_BLOCK, n = BRACKETS8.length;
       if (cs.rankingId < REWARD_FIRST_RANKING || n > REWARD_BLOCK || base + n - 1 > RANGES.rankingReward[2]) throw new Error(`colosseum: ${s.month}: no reward id block for ranking ${cs.rankingId}`);
-      const tpl = (src.ranking || []).find((x) => x.rankingId === cs.rankingId);
-      rkRow = Object.assign(tpl ? schemaRow('ranking', tpl) : clone(prev.ranking),
-        { rankingId: cs.rankingId, startRank: base, endRank: base + n - 1, startDatetime: START, endDatetime: END });
-      rewards = prev.rewards.map((r, i) => Object.assign(clone(r), { rankingRewardId: base + i }));
+      rkRow = schemaRow('ranking', { ...clone(RANKING_ROW), rankingId: cs.rankingId, startRank: base, endRank: base + n - 1, startDatetime: START, endDatetime: END });
+      rewards = reluxRewardRows(id, base);
     }
     out.ranking.push(rkRow);
     out.rankingReward.push(...rewards);
     out.ranked[id] = rankedOf(tierRows, rewards);
-    prev = { stages, ranking: rkRow, rewards };
     // the boards: the 1.1.3 rows (dated: the month checked) or the ReLux board extract (undated: the month is SEASON_BOARDS)
     for (const boardId of SEASON_BOARDS[id] || []) {
       const b = from('sphere', 'sphereBoardId', boardId, s.month);
@@ -536,4 +619,5 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMIES, readReluxEnemies, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
+module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMIES, readReluxEnemies, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
+  STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS };

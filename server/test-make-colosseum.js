@@ -24,7 +24,10 @@ const fixture = () => ({
   colosseumStage: [{ colosseumStageId: 800, openDate: '2016-04-01 07:00:00', closeDate: '2016-05-01 06:59:59', rankingCloseDate: '2016-05-01 06:59:59',
     headColosseumId: 801, termColosseumId: 806, rankingId: 4009, validStage: 10, stageId: Array.from({ length: 10 }, (_, i) => 20150701 + i), loopStageCount: 10, lvPerLoop: 10 },
   { colosseumStageId: 700, openDate: '2016-03-01 08:00:00', closeDate: '2016-04-01 06:59:59', rankingCloseDate: '2016-04-01 06:59:59', headColosseumId: 701,
-    termColosseumId: 701, rankingId: 4008, validStage: 1, stageId: [20160301, ...G, ...G, ...G].slice(0, 10), loopStageCount: 10, lvPerLoop: 10 }],
+    termColosseumId: 701, rankingId: 4008, validStage: 1, stageId: [20160301, ...G, ...G, ...G].slice(0, 10), loopStageCount: 10, lvPerLoop: 10 },
+  // the stage template season of the relux seasons (make-colosseum.js STAGE_TEMPLATE): here on the same fixture stage rows
+  { colosseumStageId: 1400, openDate: '2016-10-01 07:00:00', closeDate: '2016-11-01 06:59:59', rankingCloseDate: '2016-11-01 06:59:59', headColosseumId: 1401,
+    termColosseumId: 1410, rankingId: 4015, validStage: 10, stageId: Array.from({ length: 10 }, (_, i) => 20150701 + i), loopStageCount: 10, lvPerLoop: 10 }],
   colosseum: [
     tier(801, 1, 3, 20, 18, 1, 2, [17, 3, 32, 0], [0, 90013, 32, 0], [30, 1, 0, 0]),
     tier(802, 2, 3, 15, 15, 3, 2, [17, 3, 32, 0], [0, 90015, 32, 0], [40, 1, 0, 0]),
@@ -528,6 +531,97 @@ test('extra tier 2016-11', () => {
   assert.deepStrictEqual(R.tierRound(tiers, R.globalRound(tiers, 11, 1) + 1500), { tier: 11, round: 1501 });
 });
 
+// ---- Coliseum Part 2 Task 5: ranking brackets and thresholds ----
+// The monthly notices' ranking tables (worldwide, public): «<medalId>[:<skillId>][x<num>]» per reward, avatar parts by id.
+// 19886 (2016-08), 20641 (2016-09), 21481 (2016-10): the 1.1.3 rows must equal them; 22105 (2016-11): make-colosseum.js RELUX_RANKING.
+const EDGES = [[1, 100], [101, 1000], [1001, 2500], [2501, 10000], [10001, 50000], [50001, 100000], [100001, 250000], [250001, 500000]];
+const CDC = (n) => [90056, 90066, 90076].map((id) => (n > 1 ? `${id}x${n}` : String(id))); // 6★ Chip / Dale / Cid
+const NOTICES = {
+  1200: [['90125:1107', '90125:1101x2', '101195', '101196', '102195', '102196', ...CDC(5)], ['90125:1107', '90125:1101x2', '101195', '101196', '102195', '102196', ...CDC(2)],
+    ['90125:1107', '90125:1101', '101195', '101196', '102195', '102196', ...CDC(1)], ['90125:1101', '101195', '101196', '102195', '102196', ...CDC(1)],
+    ['90125:1101', '101195', '101196', '102195', '102196', '90056', '90066'], ['101195', '101196', '90056', '90066'], ['90056', '90066'], ['90055x2', '90065x2']],
+  1300: [['90126:1115', '101203', '101204', '90125:1101x2', ...CDC(5)], ['90126:1115', '101203', '101204', '90125:1101x2', ...CDC(2)],
+    ['90126:1115', '101203', '101204', '90125:1101', ...CDC(1)], ['101203', '101204', '90125:1101', ...CDC(1)], ['101203', '101204', '90125:1101', '90056', '90066'],
+    ['101203', '101204', '90056', '90066'], ['90056', '90066'], ['90055x2', '90065x2']],
+  1400: [['90126:1117', '90125:1107x2', '90125:1101x3', '40051', '41051', '108209', '108210', ...CDC(5)], ['90126:1117', '90125:1107x2', '90125:1101x3', '40051', '41051', '108209', '108210', ...CDC(2)],
+    ['90126:1117', '90125:1107x2', '90125:1101x3', '40051', '41051', '108209', '108210', ...CDC(1)], ['90125:1107', '90125:1101x2', '40051', '41051', '108209', '108210', ...CDC(1)],
+    ['90125:1101x2', '40051', '41051', ...CDC(1)], ['90125:1101', '40051', '41051', '90055x3', '90065x3'], ['40051', '41051', '90055x2', '90065x2'], ['90055', '90065']],
+  1500: [['90126:1119', '90125:1113x2', '90123:1112x3', '101215', '101216', '103215', '103216', ...CDC(5)], ['90126:1119', '90125:1113x2', '90123:1112x3', '101215', '101216', '103215', '103216', ...CDC(2)],
+    ['90126:1119', '90125:1113x2', '90123:1112x3', '101215', '101216', '103215', '103216', ...CDC(1)], ['90125:1113', '90123:1112x2', '101215', '101216', '103215', '103216', ...CDC(1)],
+    ['90123:1112x2', '101215', '101216', ...CDC(1)], ['90123:1112', '101215', '101216', '90055x3', '90065x3'], ['101215', '101216', '90055x2', '90065x2'], ['90055', '90065']],
+};
+const tokenOf = (x) => `${x.id}${x.skillId ? `:${x.skillId}` : ''}${x.num > 1 ? `x${x.num}` : ''}`;
+// a season's brackets (ranked) against a notice table: edges, then the rewards as a set (the notices list them in another order)
+function assertNotice(ranked, id) {
+  const top = [...ranked.brackets].reverse(); // highest bracket first, as the notices
+  assert.deepStrictEqual(top.map((b) => [b.startRank, b.endRank]), EDGES, `${id} bracket edges`);
+  top.forEach((b, i) => assert.deepStrictEqual(b.rewards.map(tokenOf).sort(), [...NOTICES[id][i]].sort(), `${id} bracket ${EDGES[i].join('-')}`));
+}
+const finiteOf = (out, id) => { const t = out.colosseum.filter((r) => r.colosseumStageId === id).sort((a, b) => a.round - b.round); return t.slice(0, -1).reduce((n, r) => n + r.arrivalStageCount, 0); };
+
+test('relux ranking: own rows of RELUX_RANKING, keyed off the season itself (no earlier season needed)', () => {
+  const out = mc.seasonRows(p2(), [S1500]); // 2016-11 alone: nothing to copy from
+  const rk = out.ranking[0];
+  assert.deepStrictEqual([rk.rankingId, rk.category, rk.startRank, rk.endRank, rk.validReward, rk.unionStartRank, rk.unionEndRank],
+    [4016, 4, 35000, 35007, 1, [1, 1, 1, 1, 1], [1, 1, 1, 1, 1]], 'ranking row: the 1.1.3 constant fields, own reward block');
+  assert.deepStrictEqual(out.rankingReward.map((r) => r.rankingRewardId), [35000, 35001, 35002, 35003, 35004, 35005, 35006, 35007]);
+  assertNotice(out.ranked[1500], 1500);
+  // the row itself: notice order, skills on Scrooge (skillType 3) at maxLv, tails zeroed, padded to the schema
+  const r = out.rankingReward[0];
+  assert.deepStrictEqual([r.startRank, r.endRank, r.validReward], [1, 100, 10]);
+  assert.deepStrictEqual(r.type, [3, 3, 3, 19, 19, 20, 20, 3, 3, 3]);
+  assert.deepStrictEqual(r.skillType, [3, 3, 3, 1, 1, 1, 1, 1, 1, 1]);
+  assert.deepStrictEqual(r.skillLv, [20, 15, 10, 1, 1, 1, 1, 1, 1, 1]);
+  const last = out.rankingReward[7];
+  assert.deepStrictEqual([last.validReward, last.id.slice(2), last.num.slice(2)], [2, Array(8).fill(0), Array(8).fill(0)]);
+  // 2017-01 (1700): the wiki table, Magic Mirror, masks to rank 100,000
+  const o2 = mc.seasonRows(p2(), [S1700]);
+  assert.deepStrictEqual(o2.ranking[0].startRank, 35100);
+  const b = [...o2.ranked[1700].brackets].reverse();
+  assert.deepStrictEqual(b[0].rewards.map(tokenOf), ['90126:1124x3', '101297', '101298', '90056x5', '90066x5', '90076x5', '90156x5']);
+  assert.deepStrictEqual(b[5].rewards.map(tokenOf), ['101297', '101298', '90055x3', '90065x3']);
+  assert.deepStrictEqual(b[6].rewards.map(tokenOf), ['90055x2', '90065x2'], 'no mask past rank 100,000 (notice 23796)');
+  // a season with no RELUX_RANKING entry stops (never a copy of another season)
+  const f = p2(); f.relux.colosseumStage[0] = { ...f.relux.colosseumStage[0], colosseumStageId: 2100 };
+  f.relux.colosseum.forEach((t) => { if (t.colosseumStageId === 1500) t.colosseumStageId = 2100; });
+  f.relux.colosseumStage[0].headColosseumId = 1501;
+  assert.throws(() => mc.seasonRows(f, [{ month: '2017-05', colosseumStageId: 2100, source: 'relux' }]), /2017-05|2100/);
+});
+
+test('RELUX_RANKING: every medal, skill level and avatar part exists in our master', () => {
+  const M = (t) => JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', `${t}.json`), 'utf8'));
+  const medals = new Set(M('medal').map((r) => r.medalId)), skills = new Map(M('skill').map((r) => [r.skillId, r])), parts = new Map(M('avatarParts').map((r) => [r.avatarPartsId, r]));
+  for (const [k, id] of Object.entries(mc.MEDAL)) assert.ok(medals.has(id), `${k} ${id}`);
+  for (const [id, lv] of Object.entries(mc.SKILL_LV)) assert.strictEqual(skills.get(Number(id)).maxLv, lv, `skill ${id} maxLv`);
+  for (const [sid, spec] of Object.entries(mc.RELUX_RANKING)) {
+    assert.strictEqual(spec.brackets.length, 8, `${sid} eight brackets`);
+    for (const items of spec.brackets) {
+      for (const it of items.map(mc.rankItem)) {
+        if (it.type === 3) assert.ok(medals.has(it.id), `${sid} medal ${it.id}`);
+        else assert.ok(parts.has(it.id), `${sid} avatar part ${it.id}`);
+        if (it.skillId) assert.strictEqual(it.id === 90126 || it.id === 90125 || it.id === 90123, true, `${sid} skill ${it.skillId} rides on a Scrooge medal`);
+      }
+      // ♂ and ♀ of the same part together
+      const avatar = items.map(mc.rankItem).filter((x) => x.type !== 3).map((x) => parts.get(x.id));
+      assert.strictEqual(avatar.filter((p) => p.gender === 1).length, avatar.filter((p) => p.gender === 2).length, `${sid} ♂ / ♀`);
+    }
+  }
+  assert.throws(() => mc.rankItem('moogle6'), /unknown/);
+  assert.deepStrictEqual(mc.rankItem('cidx5'), { type: 3, id: 90076, skillType: 1, skillId: 0, skillLv: 1, num: 5 });
+});
+
+test('thresholds: >= 1, never down, at most the rounds a season can reach (finite tiers + the endless one)', () => {
+  const out = mc.seasonRows(p2(), [S800[0], S1500, S1700]);
+  for (const id of [800, 1500, 1700]) {
+    const t = out.ranked[id], cap = finiteOf(out, id) + mc.ENDLESS;
+    t.thresholds.forEach((x, i) => { assert.ok(x.score >= 1 && x.score <= cap, `${id} ${x.score} in 1..${cap}`); if (i) assert.ok(x.score >= t.thresholds[i - 1].score); });
+  }
+  // 2016-11 .. 2017-04: 120 rounds before the endless tier, the August 2016 curve shifted by +10
+  assert.strictEqual(finiteOf(out, 1500), 120);
+  assert.deepStrictEqual(out.ranked[1500].thresholds.map((x) => x.score), [74, 86, 103, 115, 144, 169, 185, 226]);
+  assert.ok(out.ranked[1500].thresholds.every((x) => x.label === 'interpolated'));
+});
+
 // the real sources: the 1.1.3 master and the cleaned ReLux extract (both private, outside the repo)
 test('real_part2 (the nine seasons from the 1.1.3 master and the ReLux extract)', () => {
   const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
@@ -577,8 +671,18 @@ test('real_part2 (the nine seasons from the 1.1.3 master and the ReLux extract)'
     for (const r of rows) assert.ok(r.rankingRewardId >= mc.RANGES.rankingReward[1] && r.rankingRewardId <= mc.RANGES.rankingReward[2], `${r.rankingRewardId}`);
     const t = out.ranked[s.colosseumStageId];
     assert.ok(t.thresholds.length >= 1 && t.thresholds.length === t.brackets.length, `${s.month} thresholds`);
-    t.thresholds.forEach((x, i) => { assert.ok(Number.isInteger(x.score) && x.score >= 1); if (i) assert.ok(x.score >= t.thresholds[i - 1].score, `${s.month} never down`); });
+    const cap = finiteOf(out, s.colosseumStageId) + mc.ENDLESS;
+    t.thresholds.forEach((x, i) => { assert.ok(Number.isInteger(x.score) && x.score >= 1 && x.score <= cap, `${s.month} ${x.score} in 1..${cap}`); if (i) assert.ok(x.score >= t.thresholds[i - 1].score, `${s.month} never down`); });
   }
+  // Task 5: 2016-08 thresholds = the recorded August 2016 cutoffs (curve anchored on that month, 110 finite rounds); 2016-09 / 10
+  // the same structure; 2016-11 .. 2017-04 120 rounds (+10). Brackets of 2016-08 .. 2016-11 = the monthly notices
+  for (const id of [1200, 1300, 1400]) assert.strictEqual(finiteOf(out, id), 110, `${id} finite rounds`);
+  for (const id of [1500, 1600, 1700, 1800, 1900, 2000]) assert.strictEqual(finiteOf(out, id), 120, `${id} finite rounds`);
+  assert.deepStrictEqual(out.ranked[1200].thresholds.map((x) => x.score), [64, 76, 93, 105, 134, 159, 175, 216], '2016-08 = the August 2016 cutoffs');
+  for (const id of [1300, 1400]) assert.deepStrictEqual(out.ranked[id].thresholds, out.ranked[1200].thresholds, `${id} thresholds`);
+  for (const id of [1600, 1700, 1800, 1900, 2000]) assert.deepStrictEqual(out.ranked[id].thresholds.map((x) => x.score), [74, 86, 103, 115, 144, 169, 185, 226], `${id} thresholds`);
+  for (const id of [1200, 1300, 1400, 1500]) assertNotice(out.ranked[id], id);
+  for (const id of [1600, 1700, 1800, 1900, 2000]) assert.deepStrictEqual([...out.ranked[id].brackets].reverse().map((b) => [b.startRank, b.endRank]), EDGES, `${id} wiki edges`);
   // Part 1 rows unchanged by the new seasons
   const part1 = mc.seasonRows({ ...src }, mc.SEASONS.slice(0, 4));
   const p1 = (rows, key, ids) => rows.filter((r) => ids.includes(r[key]));

@@ -53,6 +53,31 @@ function fakeRows(html) {
   return { rows, row, view, kx: (id, on) => win.kxRow(String(id), on) };
 }
 
+// one season of each kind for the filters: kept + boards done + tier rewards taken; can + both to do; now + boards to do, tier rewards
+// taken; later + no boards (neither completed nor not), tier rewards to do
+const FILTER_ROWS = [row(800, '2016-04', 'kept', { base: 'can', boardIds: [2200001], boards: 'done', tiersDone: true }),
+  row(900, '2016-05', 'can', { base: 'can', boardIds: [2200002, 2200023], boards: 'todo', tiersDone: false }),
+  row(1000, '2016-06', 'now', { base: 'now', boardIds: [2210029], boards: 'todo', tiersDone: true }),
+  row(1100, '2016-07', 'later', { base: 'later', boardIds: [2210043], boards: 'none', tiersDone: false })];
+Object.assign(BOARDS, { 2210029: 'KH Chip (M)', 2210043: 'Vampire (M)' });
+
+// The whole page script on a stub DOM (vm, ES5 as in the WebView): rows with attributes and class, every id an element, the sheet
+// chips none (the test drives the filters through window.kxFilter, the same render the chips call)
+function fakePage(html) {
+  const dec = (v) => v.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  const attrsOf = (tag) => Object.fromEntries([...tag.matchAll(/([\w-]+)="([^"]*)"/g)].map((m) => [m[1], dec(m[2])]));
+  const mk = (attrs = {}) => { const e = { attrs, innerHTML: '', textContent: '', value: '', style: {}, q: {}, className: attrs.class || '' };
+    e.getAttribute = (k) => (k in e.attrs ? e.attrs[k] : null); e.setAttribute = (k, v) => { e.attrs[k] = String(v); }; e.querySelector = (sel) => e.q[sel] || null; return e; };
+  const rows = [...html.matchAll(/<div class="row [^"]*"[^>]*>/g)].map((m) => { const e = mk(attrsOf(m[0])); e.q['.s'] = mk(); return e; });
+  const ids = {};
+  const el = (id) => (ids[id] ||= mk({ id }));
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+  const win = {};
+  require('vm').runInNewContext(scripts, { window: win, document: { body: { className: '' }, getElementById: el,
+    querySelectorAll: (sel) => (sel === '#rows .row' ? rows : []) } });
+  return { rows, el, win };
+}
+
 const tests = {
   lists_every_season() {
     const html = pages.catalogPage(ROWS, CTX);
@@ -133,6 +158,55 @@ const tests = {
     assert.ok(/<div id="rows">\s*<div class="row /.test(html), 'rows are direct children of #rows (phone grid #rows>.row)');
     assert.ok(html.includes('class="im"') && html.includes('class="info"') && html.includes('class="nm"'), 'the catalog row parts');
     assert.ok(!html.includes('class="go"'), 'no details page: no «›»');
+  },
+  // Catalog filters (I-328, user 26-11): the FILTER sheet of catalog-pages.js as the Raid / Event Catalogs; SHOW (state), COLISEUM
+  // BOARDS (every node of the season's boards unlocked) and TIER REWARDS (the last rewarded tier cleared), each hiding the right rows
+  filters_sheet() {
+    const html = pages.catalogPage(FILTER_ROWS, CTX);
+    assert.ok(html.includes('<div class="hdr"><h1>Coliseum Catalog</h1><button type="button" class="fbtn" id="fbtn">'), 'the ⚙ Filters button in the header');
+    assert.ok(html.includes('id="sheet"') && html.includes('<h4>FIND</h4>') && html.includes('id="fok"') && html.includes('Show 4 results'), 'the shared sheet');
+    for (const [g, title, vals] of [['show', 'SHOW', ['all', 'now', 'can', 'kept', 'later']], ['bd', 'COLISEUM BOARDS', ['all', 'done', 'todo']], ['tr', 'TIER REWARDS', ['all', 'done', 'todo']]]) {
+      const i = html.indexOf(`<h4>${title}</h4><div class="opts" data-g="${g}">`);
+      assert.ok(i > 0, `group ${title}`);
+      const box = html.slice(i, html.indexOf('</div>', i));
+      assert.deepStrictEqual([...box.matchAll(/data-v="(\w+)"/g)].map((m) => m[1]), vals, `${title} options`);
+    }
+    assert.ok(html.includes('Completed') && html.includes('Not completed') && html.includes('All taken') && html.includes('Not all taken'));
+    assert.ok(rowHtml(html, 800).includes('data-boards="done"') && rowHtml(html, 800).includes('data-tiers="done"'));
+    assert.ok(rowHtml(html, 900).includes('data-boards="todo"') && rowHtml(html, 900).includes('data-tiers="todo"'));
+    assert.ok(rowHtml(html, 900).includes('data-search="May 2016 | 6★ Scrooge | Tier 10 Bonus"'), 'FIND: month and board names');
+    assert.ok(html.includes('<div class="sum" id="sum">') && html.includes('id="none"'));
+  },
+  filters_hide_rows() {
+    const p = fakePage(pages.catalogPage(FILTER_ROWS, CTX));
+    const shown = () => p.rows.filter((r) => !/ hide/.test(r.className)).map((r) => Number(r.attrs['data-eid']));
+    assert.deepStrictEqual(shown(), [800, 900, 1000, 1100], 'no filter: every season');
+    assert.ok(p.el('sum').innerHTML.includes('4 seasons') && p.el('sum').innerHTML.includes('no filters'));
+    const f = (s) => { p.win.kxFilter(s); return shown(); };
+    assert.deepStrictEqual(f({ bd: 'done' }), [800], 'Coliseum Boards: completed');
+    assert.deepStrictEqual(f({ bd: 'todo' }), [900, 1000], 'Coliseum Boards: not completed (a season without boards is neither)');
+    assert.deepStrictEqual(f({ tr: 'done' }), [800, 1000], 'Tier rewards: all taken');
+    assert.deepStrictEqual(f({ tr: 'todo' }), [900, 1100], 'Tier rewards: not all taken');
+    assert.deepStrictEqual(f({ show: 'kept' }), [800]);
+    assert.deepStrictEqual(f({ show: 'can' }), [900]);
+    assert.deepStrictEqual(f({ show: 'later' }), [1100]);
+    assert.deepStrictEqual(f({ show: 'now' }), [1000]);
+    assert.deepStrictEqual(f({ show: 'can', bd: 'done' }), [], 'filters combine');
+    assert.ok(p.el('none').textContent.includes('No seasons match your filters'));
+    assert.ok(p.el('sum').innerHTML.includes('Coliseum Boards: ') && p.el('sum').innerHTML.includes('Clear all'), p.el('sum').innerHTML);
+    assert.deepStrictEqual(f({ q: 'vampire' }), [1100], 'FIND: a board name');
+    assert.deepStrictEqual(f({ q: 'june' }), [1000], 'FIND: the month');
+    assert.deepStrictEqual(f({}), [800, 900, 1000, 1100]);
+    // a keep re-applies the filters with the new state: May kept, «Kept» now shows May
+    p.win.kxFilter({ show: 'kept' });
+    p.win.kxRow('900', 1);
+    assert.deepStrictEqual(shown(), [900]);
+  },
+  filters_phone_layout() {
+    const html = withPhone(pages.catalogPage(FILTER_ROWS, CTX));
+    assert.ok(/<div id="rows">\s*<div class="row /.test(html), 'rows stay direct children of #rows (phone cards #rows>.row)');
+    assert.ok(html.includes('#rows>.row.hide') || html.includes('#rows>.row.hide,'), 'phone CSS hides filtered cards');
+    assert.ok(html.includes('.fbtn{flex:0 0 auto!important'), 'the phone header keeps the Filters button on the title line');
   },
   empty() {
     const html = pages.catalogPage([], CTX);

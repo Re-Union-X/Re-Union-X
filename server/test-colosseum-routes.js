@@ -433,6 +433,46 @@ const tests = {
     delete after[0][1100];
     assert.strictEqual(JSON.stringify(after), before);
   },
+  // Catalog filters (I-328): boards = every node of every served board of the season unlocked; tiersDone = the last rewarded tier paid
+  catalog_filter_fields() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    // board 2200001 (SEASON_BOARDS[800]) with nodes 1, 2, 3 on its grid
+    w.tables.sphere = [{ sphereBoardId: 2200001, arryId: 2200001, masuId: 2200001, type: 3, boardName: '6★ Cid' }];
+    w.tables.sphereArray = [{ arryId: 2200001, spCol4: [1000, 1, 1002, 2, 0, 0, 0, 0, 0], spCol3: Array(9).fill(0), spCol2: [0, 0, 0, 0, 3, 0, 0, 0, 0], spCol1: Array(9).fill(0), spCol0: Array(9).fill(0) }];
+    const card = () => w.c.catalogCard(800);
+    assert.deepStrictEqual([card().boards, card().tiersDone], ['todo', false], 'nothing done (a board never handed out is not done)');
+    w.player.colosseumSphere = { 800: { 2200001: { id: 1, unlock: [1, 3] } } };
+    assert.strictEqual(card().boards, 'todo', 'one node short');
+    w.player.colosseumSphere[800][2200001].unlock = [3, 2, 1];
+    assert.strictEqual(card().boards, 'done', 'every node unlocked');
+    assert.strictEqual(w.c.catalogCard(900).boards, 'none', 'a season whose boards are not served: neither');
+    // fixture tiers: tier 1 and 2 pay a tier reward, tier 3 (endless) none: the last rewarded tier is 2
+    w.player.colosseum = { seasons: { 800: { last: 3, open: 4, coins: 0, cleared: [1, 2, 3], tierRewards: [1], bestAt: null } } };
+    assert.strictEqual(card().tiersDone, false, 'tier 2 reward not taken');
+    w.player.colosseum.seasons[800].tierRewards = [2, 1];
+    assert.strictEqual(card().tiersDone, true, 'tier 2 (last rewarded) taken');
+  },
+  // Part 2 (Task 5): the 13 seasons 2016-04 .. 2017-04 in month order; a story clock in 2016-12: December now, April .. November can
+  // be kept, January .. April 2017 later
+  catalog_13_seasons() {
+    const w = world();
+    const more = [[1200, 4013], [1300, 4014], [1400, 4015], [1500, 4016], [1600, 4017], [1700, 4018], [1800, 4019], [1900, 4020], [2000, 4021]]
+      .map(([sid, rk], i) => seasonRows(sid, rk, 21160801 + i * 100));
+    w.tables.colosseumStage.push(...more.map((x) => x.stage));
+    w.tables.colosseum.push(...more.flatMap((x) => x.tiers));
+    w.week = { storyQuest: 400, shopFrom: '2016-12-08', shopTo: '2016-12-14' };
+    const rows = w.c.catalogRows();
+    assert.deepStrictEqual(rows.map((r) => r.month), ['2016-04', '2016-05', '2016-06', '2016-07', '2016-08', '2016-09', '2016-10', '2016-11', '2016-12',
+      '2017-01', '2017-02', '2017-03', '2017-04'], 'month order');
+    const st = Object.fromEntries(rows.map((r) => [r.month, r.state]));
+    for (const m of ['2016-04', '2016-05', '2016-06', '2016-07', '2016-08', '2016-09', '2016-10', '2016-11']) assert.strictEqual(st[m], 'can', m);
+    assert.strictEqual(st['2016-12'], 'now');
+    for (const m of ['2017-01', '2017-02', '2017-03', '2017-04']) assert.strictEqual(st[m], 'later', m);
+    const html = require('./colosseum-pages').catalogPage(rows, { unlocked: true });
+    assert.strictEqual([...html.matchAll(/<div class="row /g)].length, 13);
+    assert.ok(html.includes('Show 13 results') && html.includes('13 seasons'));
+  },
   // ruling 10: the kept season plays whatever the story month, also when the Shop rotation loops back onto or before it; its row
   // stays 'kept' with its Remove button
   catalog_kept_through_loop_back() {
@@ -599,7 +639,11 @@ function wiring() {
     assert.strictEqual(page.code, 200);
     const html = page.body.toString('utf8');
     assert.ok(html.includes('<h1>Coliseum Catalog</h1>') && html.includes('<style data-phone>'), 'the catalog page with the phone layout');
-    for (const id of [800, 900, 1000, 1100]) assert.ok(html.includes(`id="q${id}"`), `season ${id} listed`);
+    // every served season of the master (Part 1: 800-1100; with Part 2 the 13 seasons 800-2000), oldest first
+    const served = require('./make-colosseum').SEASONS.map((s) => s.colosseumStageId)
+      .filter((id) => t.masterRows('colosseumStage').some((r) => r.colosseumStageId === id));
+    assert.deepStrictEqual([...html.matchAll(/<div class="row [^"]*" id="q(\d+)"/g)].map((m) => Number(m[1])), served, 'one row per served season, in month order');
+    assert.ok(html.includes('id="fbtn"') && html.includes('data-g="bd"') && html.includes('data-g="tr"'), 'the Filters sheet');
     // the cards: game_data/colosseum_img/<id>.png; none: 404
     fs.writeFileSync(path.join(process.env.KHUX_COLOSSEUM_IMG, '6000.png'), 'banner');
     const img = web('/web/colosseum/img/v1/6000.png');
@@ -608,7 +652,7 @@ function wiring() {
     assert.strictEqual(web('/web/colosseum/nothing').code, 404);
     // keep / unkeep follow the catalog states of the story week
     const rows = t.colosseum().catalogRows();
-    assert.deepStrictEqual(rows.map((r) => [r.colosseumStageId, r.state]), [[800, 'can'], [900, 'now'], [1000, 'later'], [1100, 'later']]);
+    assert.deepStrictEqual(rows.map((r) => [r.colosseumStageId, r.state]), served.map((id) => [id, id === 800 ? 'can' : id === 900 ? 'now' : 'later']));
     assert.deepStrictEqual(post('/web/colosseum/keep/900'), { code: 409, body: { ok: false, why: 'now' } });
     assert.deepStrictEqual(post('/web/colosseum/keep/800'), { code: 200, body: { ok: true } });
     assert.deepStrictEqual([p.colosseum.kept, t.colosseum().liveSeason().id], [800, 800]);

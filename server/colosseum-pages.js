@@ -6,14 +6,14 @@
 // and script; special-pages.js CSS and icons), so the phone layout of phone-css.js (#rows>.row cards, 70 %) applies unchanged.
 // One row per season: its card (game_data/colosseum_img/<colosseumStageId>.png, make_special_banners.py --section colosseum), the
 // month, tiers / AP / Coliseum Boards, the player's progress in that season, ONE status line and at most ONE Keep / Remove button.
-// Only playable rows (served seasons); no Filters (four seasons) and no details page (everything is on the row).
+// Only playable rows (served seasons), the Filters of the other catalogs (FJS) and no details page (everything is on the row).
 // ctx: {unlocked (story quest 130 reached), imgVersion, boardName(sphereBoardId) -> name | null, unlockQuestOf(row) -> N | null}.
 'use strict';
 const special = require('./special-pages');
 const parts = require('./catalog-pages');
 
-const { CSS: SPECIAL_CSS, esc, monthYear, icon } = special;
-const { PAGE_HEAD, pill, keepJs } = parts;
+const { CSS: SPECIAL_CSS, esc, monthYear, icon, MATCH_JS } = special;
+const { PAGE_HEAD, pill, keepJs, FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet } = parts;
 const BASE = '/web/colosseum', WHERE = 'the Coliseum';
 const UNLOCK_QUEST = 130; // routes-colosseum.js UNLOCK_QUEST (not required here: the page module stays free of the routes)
 
@@ -52,7 +52,51 @@ function progressOf(row) {
 // Raid and Event Catalogs), then the line of the season of the Story (whether another season is kept)
 const JS = "var PILL=__PILL__,R=[].slice.call(document.querySelectorAll('#rows .row'));"
   + "kxRows(R,PILL,{after:function(){var k=false,i,s;for(i=0;i<R.length;i++)if(R[i].getAttribute('data-show')==='kept')k=true;"
-  + "for(i=0;i<R.length;i++)if(R[i].getAttribute('data-show')==='now'){s=R[i].querySelector('.s');if(s)s.innerHTML=PILL[k?'nowKept':'now'][1];}}});";
+  + "for(i=0;i<R.length;i++)if(R[i].getAttribute('data-show')==='now'){s=R[i].querySelector('.s');if(s)s.innerHTML=PILL[k?'nowKept':'now'][1];}"
+  + "if(window.kxRender)window.kxRender();}});";
+
+// Filters (I-328, user 26-11: as the Raid / Event Catalogs, catalog-pages.js FILTER_BUTTON / filterSheet): FIND (month and board
+// names), SHOW (the row's state, read live: a keep changes it), COLISEUM BOARDS (row data-boards: done / todo / none, routes-colosseum.js
+// boardsOf) and TIER REWARDS (data-tiers: done / todo). A filtered row only gets « hide» (phone-css.js #rows>.row.hide, special-pages
+// .hide), so the phone card grid is the same as the other catalogs.
+const SHOW_OPTS = [['all', 'All seasons'], ['now', 'Season of your Story', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later']];
+const SHOW_SETS = { later: ['later', 'other'] }; // «its month starts this week» is not reached as a season yet
+const BOARD_OPTS = [['all', 'All'], ['done', 'Completed', 'bdone'], ['todo', 'Not completed', 'btodo']];
+const TIER_OPTS = [['all', 'All'], ['done', 'All taken', 'done'], ['todo', 'Not all taken', 'todo']];
+const FILTER_CSS = '.o.bd-done.on{background:#2e9e3e;border-color:#6fd47f}.o.bd-todo.on{background:#5a6470;border-color:#9aa4ae}';
+const FJS = '(function(){var LAB=__LAB__,SETS=__SETS__;' + MATCH_JS
+  + 'function $(i){return document.getElementById(i);}function at(e,a){return e&&e.getAttribute?e.getAttribute(a):null;}'
+  + "if(!$('sum'))return;"
+  + "var R=[].slice.call(document.querySelectorAll('#rows .row')),cur=blank(),dr=null;"
+  + "function blank(){return {show:'all',bd:'all',tr:'all',q:''};}function copy(s){return {show:s.show,bd:s.bd,tr:s.tr,q:s.q};}"
+  + "function ok(el,s){var st=at(el,'data-show');if(s.show!=='all'&&(SETS[s.show]||[s.show]).indexOf(st)<0)return false;"
+  + "if(s.bd!=='all'&&at(el,'data-boards')!==s.bd)return false;if(s.tr!=='all'&&at(el,'data-tiers')!==s.tr)return false;"
+  + "return !s.q||khuxMatch(s.q,at(el,'data-search')||'');}"
+  + 'function count(s){var n=0,i;for(i=0;i<R.length;i++)if(ok(R[i],s))n++;return n;}'
+  + "function nf(s){return (s.show!=='all'?1:0)+(s.bd!=='all'?1:0)+(s.tr!=='all'?1:0)+(s.q?1:0);}"
+  + "function pl(n,w){return n+' '+w+(n===1?'':'s');}"
+  + "function esc(t){return String(t).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
+  + 'function tag(g,l){return \'<span class="tag">\'+l+\'<a href="#" data-x="\'+g+\'" aria-label="Remove">×</a></span>\';}'
+  + "function render(){var n=0,i,on;for(i=0;i<R.length;i++){on=ok(R[i],cur);R[i].className=R[i].className.replace(/ hide/g,'')+(on?'':' hide');if(on)n++;}"
+  + "var f=nf(cur),h='<span class=\"n1\">'+pl(n,'season')+'</span>';if(!f)h+=' · no filters';else{h+=' match your filters:';"
+  + "if(cur.show!=='all')h+=' '+tag('show',LAB.show[cur.show]);if(cur.bd!=='all')h+=' '+tag('bd',LAB.bd[cur.bd]);if(cur.tr!=='all')h+=' '+tag('tr',LAB.tr[cur.tr]);"
+  + "if(cur.q)h+=' '+tag('q','Find: &quot;'+esc(cur.q)+'&quot;');h+=' <a href=\"#\" class=\"clear\" data-x=\"all\">Clear all</a>';}"
+  + "$('sum').innerHTML=h;$('fdot').textContent=f?f:'';var no=$('none');no.textContent=n?'':(cur.q?'No seasons match \"'+cur.q+'\"':'No seasons match your filters');no.style.display=n?'none':'';}"
+  + "function sync(){[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){var g=at(box,'data-g');[].forEach.call(box.children,function(o){o.className=o.className.replace(/ on/g,'')+(at(o,'data-v')===dr[g]?' on':'');});});"
+  + "$('fok').textContent='Show '+pl(count(dr),'result');}"
+  + "function openF(){dr=copy(cur);$('fq').value=dr.q;if(document.body.className.indexOf('fo')<0)document.body.className+=' fo';sync();}"
+  + "function closeF(){dr=null;document.body.className=document.body.className.replace(/ ?fo/g,'');}"
+  + "$('fbtn').onclick=openF;$('fx').onclick=closeF;$('dim').onclick=closeF;"
+  + "$('fq').oninput=function(){dr.q=this.value.replace(/\\s+/g,' ').replace(/^ | $/g,'');sync();};"
+  + "$('fq').onkeydown=function(e){if(e.keyCode===13)this.blur();};"
+  + "[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){box.onclick=function(e){var t=e.target;while(t&&t!==box&&!at(t,'data-v'))t=t.parentNode;var v=at(t,'data-v');if(!v||!dr)return;dr[at(box,'data-g')]=v;sync();};});"
+  + "$('freset').onclick=function(e){e.preventDefault();dr=blank();$('fq').value='';sync();};"
+  + "$('fok').onclick=function(){if(!dr)return;var s=dr;closeF();cur=s;render();};"
+  + "$('sum').onclick=function(e){var t=e.target;while(t&&t!==this&&!at(t,'data-x'))t=t.parentNode;var x=at(t,'data-x');if(!x)return;e.preventDefault();"
+  + "if(x==='show'||x==='all')cur.show='all';if(x==='bd'||x==='all')cur.bd='all';if(x==='tr'||x==='all')cur.tr='all';if(x==='q'||x==='all')cur.q='';render();};"
+  + 'window.kxRender=render;window.kxFilter=function(s){cur=blank();for(var k in s)cur[k]=s[k];render();};render();})();';
+// FIND names of a row: the month («May 2016») and its board names
+const searchOf = (row, boards) => [monthYear(`${row.month}-01`), ...boards].join(' | ');
 // the state a row returns to when it is not kept (routes-colosseum.js catalogCard base; a row without one: «can» when kept)
 const baseOf = (row) => row.base || (row.state === 'kept' ? 'can' : row.state);
 const pillInner = (html) => html.slice(html.indexOf('>') + 1, html.lastIndexOf('</span>'));
@@ -68,21 +112,31 @@ function catalogPage(rows, ctx = {}) {
       : `<div>${parts.keepButton(BASE, row.colosseumStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(on){kxRow(b.getAttribute(\'data-id\'),on);})"', '', WHERE)}</div>`;
     const base = baseOf(row), bst = base === row.state ? st : statusOf({ ...row, state: base }, ctx, keptRow);
     return `<div class="row ${st.cls}" id="q${row.colosseumStageId}" data-eid="${row.colosseumStageId}" data-show="${row.state}" data-name="${name}"`
-      + ` data-base="${esc(base)}" data-bcls="${esc(bst.cls)}" data-bpill="${esc(pillInner(bst.pill))}">`
+      + ` data-base="${esc(base)}" data-bcls="${esc(bst.cls)}" data-bpill="${esc(pillInner(bst.pill))}"`
+      + ` data-boards="${esc(row.boards || 'none')}" data-tiers="${row.tiersDone ? 'done' : 'todo'}" data-search="${esc(searchOf(row, boards))}">`
       + `<div class="im"><img width="320" height="70" src="${imgOf(ctx, row.colosseumStageId)}" alt=""></div>`
       + `<div class="info"><span class="nm">${name}</span><div class="d">${line}</div><div class="pg">${esc(progressOf(row))}</div>${st.pill}${replaces}${button}</div></div>\n`;
   }).join('');
   const locked = ctx.unlocked === false
     ? `<div class="lk">${icon('lock')}The Coliseum opens at Story Quest ${UNLOCK_QUEST}: then a past season can be kept here.</div>` : '';
   const js = JS.replace('__PILL__', JSON.stringify(PILLS));
-  return PAGE_HEAD('Coliseum Catalog', CSS) + '<body>'
-    + '<div class="hdr"><h1>Coliseum Catalog</h1></div>'
+  const prefixed = (list, p) => Object.fromEntries(list.slice(1).map((o) => [o[0], `${p}${optLabel(o)}`]));
+  const fjs = FJS.replace('__LAB__', () => JSON.stringify({ show: JSON.parse(optLabels(SHOW_OPTS)), bd: prefixed(BOARD_OPTS, 'Coliseum Boards: '), tr: prefixed(TIER_OPTS, 'Tier rewards: ') }))
+    .replace('__SETS__', () => JSON.stringify(SHOW_SETS));
+  const cls = (p) => (v) => (v === 'all' ? '' : ` ${p}-${v}`);
+  const sheet = rows.length ? filterSheet({ placeholder: 'Month or board name', hint: 'Matches the start of words in the month and in the Coliseum Board names (e.g. June, Vampire, Bonus).', n: rows.length,
+    groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(SHOW_OPTS, cls('st'))}</div>`], ['COLISEUM BOARDS', `<div class="opts" data-g="bd">${filterOpts(BOARD_OPTS, cls('bd'))}</div>`],
+      ['TIER REWARDS', `<div class="opts" data-g="tr">${filterOpts(TIER_OPTS, cls('pr'))}</div>`]] }) : '';
+  return PAGE_HEAD('Coliseum Catalog', CSS + FILTER_CSS) + '<body>'
+    + `<div class="hdr"><h1>Coliseum Catalog</h1>${rows.length ? FILTER_BUTTON : ''}</div>`
     + '<p class="n">Every Coliseum season of this server, one per month as in the original game. The Coliseum plays the season of your Story; '
     + 'a past season can be kept here, one at a time, and the Coliseum then plays it until you remove it. Each season keeps its own progress, '
     + 'Coliseum Coins and Coliseum Boards. The Coliseum Catalog is an addition of this server.</p>'
     + locked
+    + (rows.length ? `<div class="sum" id="sum"><span class="n1">${plural(rows.length, 'season')}</span> · no filters</div><div id="none" class="none" style="display:none"></div>` : '')
     + `<div id="rows">${html || '<p class="n">No Coliseum season is served yet.</p>'}</div>`
-    + `<div id="pinmsg" class="pinmsg"></div><script>${keepJs(BASE, 'season', WHERE)}</script><script>${js}</script></body></html>`;
+    + sheet
+    + `<div id="pinmsg" class="pinmsg"></div><script>${keepJs(BASE, 'season', WHERE)}</script><script>${js}</script>${rows.length ? `<script>${fjs}</script>` : ''}</body></html>`;
 }
 
 module.exports = { catalogPage, statusOf, progressOf, PILLS };
