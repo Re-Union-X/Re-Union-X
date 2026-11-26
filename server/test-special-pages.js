@@ -234,7 +234,7 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(qp.indexOf('2016–2017 · VIP') > qp.indexOf('2018–2020 · Free') && /id="v1"[\s\S]*data-pin="\/web\/special\/pin\/7301"/.test(qp), 'Power: the VIP version (older, second) with its own Keep');
   check(/<details class="vq cs" open><summary>Quests · 2018–2020 · Free<\/summary>/.test(qp) && /<details class="vq cs"><summary>Quests · 2016–2017 · VIP<\/summary>/.test(qp), 'quests per version, newest open');
   check(qp.includes('class="back" href="/web/special/catalog#q7302"'), 'BACK to the row');
-  check(pages.detailPage(ix, 7351, c4).includes('Week of Jun 12, 2017'), 'campaign details: its week');
+  check(pages.detailPage(ix, 7351, c4).includes('Week of Jun 12, 2017'), 'campaign details: its week');
 
   // REWARDS on rows
   const nm = { drop: (rid) => (rid === 1 ? ['Huey', 'Mythril'] : []), objective: () => [],
