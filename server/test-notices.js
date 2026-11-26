@@ -684,5 +684,27 @@ for (const web of [false, true]) {
   check(/summary:before\{[^}]*margin-right:8px/.test(h) && /summary i\{[^}]*margin-left:8px/.test(h), 'summary spacing without flex gap (Chrome 70 WebView)');
   check(!n.NOTICES.some((x) => x.body.some((l) => l.includes('**differs from the original**'))), 'no bold «differs from the original» left');
 }
+// a status tag never ends a line alone (coordinator 26-11, «Events of 2016-2018»: «... wiki [NOT ORIGINAL] / .»): in every notice a tag
+// followed by punctuation (or after an opening bracket) is wrapped with it in a nowrap .tg span
+{
+  const h = n.noticesPage(U(2026, 11, 26));
+  const loose = [...h.matchAll(/(<span class="tg">\(?)?<span class="tag [a-z]+">[A-Z ]+<\/span>[.,;:!?)]/g)].filter((m) => !m[1]);
+  check(loose.length === 0, `notice_tag_punctuation: ${loose.length} tags with loose punctuation`);
+  check(/<span class="tg">\(<span class="tag rb">REBUILT<\/span>\)\.<\/span>/.test(h) || /<span class="tg"><span class="tag no">NOT ORIGINAL<\/span>\.<\/span>/.test(h), 'notice_tag_punctuation: wrapped');
+  check(/\.tg\{white-space:nowrap\}/.test(h), 'notice_tag_punctuation: nowrap style');
+  const fx = n.noticesPage(U(2026, 11, 26), { notices: [{ date: '11/26', tag: 'INFO', title: 'F', body: ['a {not original}. b ({rebuilt}) c {later}', '## S', 'x'] }] });
+  check(fx.includes('a <span class="tg"><span class="tag no">NOT ORIGINAL</span>.</span> b <span class="tg">(<span class="tag rb">REBUILT</span>)</span> c <span class="tag la">LATER</span>'), 'notice_tag_punctuation: fixture');
+  const ev = n.NOTICES.find((x) => x.title === 'Events of 2016-2018');
+  const box = ev ? n.noticesPage(U(2026, 11, 26), { notices: [ev] }) : '';
+  check(/<div class="brief">[^]*?wiki <span class="tg"><span class="tag no">NOT ORIGINAL<\/span>\.<\/span>/.test(box), 'Events of 2016-2018: the first box keeps the full stop with its tag');
+}
+// «Your Story is your calendar»: the 451-475 example is ONE item (coordinator 26-11), with all its facts
+{
+  const r = n.NOTICES.find((x) => x.pinned === 1), body = r ? r.body : [];
+  const i = body.findIndex((l) => l.startsWith('## 📅 Your Story is your calendar')), sec = body.slice(i + 1, body.findIndex((l, j) => j > i && l.startsWith('## ')));
+  const ex = sec.filter((l) => /451|Oct(ober)? 13/.test(l));
+  check(ex.length === 1 && ex[0].length <= 260, `calendar example in one item: ${ex.length}`);
+  check(ex[0] && /451-475/.test(ex[0]) && /Oct 13 - Nov 9, 2016/.test(ex[0]) && /4 weeks/.test(ex[0]) && /each Monday/.test(ex[0]) && /Oct 13-19 again/.test(ex[0]), 'calendar example: facts');
+}
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');

@@ -546,8 +546,7 @@ const RULES_NOTICE = { date: '11/13', tag: 'READ FIRST', title: 'Differences fro
     'How far you are in the **Story** decides which part of the original game (2016-2021) you are playing in. Each group of Story Quests matches a **period** of the original calendar, and a period usually lasts **several weeks**.',
     'The **Shop**, **Raids**, **Events** and **Special Quests** show **one week of your period at a time**: what the original game offered in that week.',
     'Every **Monday** (08:00 UTC) they move on to the **next week of the same period**. After the last week of the period they start again from its first week, so nothing is lost.',
-    '**Example:** your highest cleared Story Quest is between **451 and 475**. That is the period from **October 13 to November 9, 2016**: **4 weeks**.',
-    'The first week you see October 13-19, 2016; the next Monday October 20-26; then October 27 - November 2; then November 3-9; then October 13-19 again.',
+    '**Example:** Story Quests **451-475** = **Oct 13 - Nov 9, 2016**, **4 weeks**. You see Oct 13-19 first; each Monday the next week (Oct 20-26, Oct 27 - Nov 2, Nov 3-9), then Oct 13-19 again.',
     'Clear **Story Quest 476** to reach the next period (from November 10, 2016), with its new banners, raids and events.',
     '**Seasonal banners** (New Year, Halloween, Holidays...) follow the **real calendar** instead.',
     '## 🔄 Resets (UTC)',
@@ -1140,7 +1139,10 @@ function noticesPage(realMs = Date.now(), opts = {}) {
   // readable notices (plan 2026-11-23-notices-readable): {not original} / {rebuilt} / {later} = small status tags
   const TAGS = { 'not original': ['no', 'NOT ORIGINAL'], rebuilt: ['rb', 'REBUILT'], later: ['la', 'LATER'] };
   const rich = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="k">$1</b>')
-    .replace(/\{(not original|rebuilt|later)\}/g, (_, k) => `<span class="tag ${TAGS[k][0]}">${TAGS[k][1]}</span>`);
+    .replace(/(\(?)\{(not original|rebuilt|later)\}([.,;:!?)]*)/g, (_, a, k, z) => {
+      const tag = `${a}<span class="tag ${TAGS[k][0]}">${TAGS[k][1]}</span>${z}`;
+      return a || z ? `<span class="tg">${tag}</span>` : tag;
+    });
   // «## Title | one-liner»: split at the first « | »
   const head = (line) => { const t = line.slice(3), i = t.indexOf(' | '); return i < 0 ? [t, ''] : [t.slice(0, i), t.slice(i + 3)]; };
   // «#= 539 events · 4,092 of 4,243 quests»: the leading number of each part in gold
@@ -1204,6 +1206,7 @@ function noticesPage(realMs = Date.now(), opts = {}) {
     + 'border-color:transparent transparent transparent #2fd0e8;margin-right:8px}details[open] summary:before{transform:rotate(90deg)}'
     + 'summary span{flex:1}summary i{margin-left:8px;font-style:normal;font-weight:normal;color:#9fc3d6;font-size:14px;text-align:right;max-width:45%}'
     + '.body{padding:0 2px 8px 17px;line-height:1.55}.body p{margin:0 0 8px}'
+    + '.tg{white-space:nowrap}' // a tag and its punctuation on one line (rich)
     + '.tag{display:inline-block;font-size:11px;font-weight:bold;color:#fff;padding:0 5px;border-radius:3px;vertical-align:1px;line-height:17px;letter-spacing:.5px}'
     + '.tag.no{background:#8a4fc2}.tag.rb{background:#d07a12}.tag.la{background:#5c6b75}'
     // pinned notice: gold row at the top of the list, its page as cards
