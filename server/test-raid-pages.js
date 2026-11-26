@@ -309,6 +309,10 @@ const tests = {
     assert(/<td>Beginner<\/td><td>Trickmaster<\/td>/.test(d) && /<td>Advanced<\/td><td>Blue Trident Tail<\/td>/.test(d), 'tier table');
     assert(/150,000,000/.test(d), 'HP');
     assert(/Enhancement Boards/.test(d) && /Lux Crystal/.test(d), 'boards and their rewards');
+    // the description over the Raid Boards table (user 26-11), no list of the board names repeating the table
+    const named = pages.detailPage(index(), 8100, ctx({ boardName: () => 'Enhancement Boards 5/2/16' }));
+    assert(named.includes('<p class="n">The Raid Boards of this raid: unlock their nodes with Raid Coins') && !named.includes('<p>Enhancement Boards</p>'), 'generic description, names only in the table');
+    assert(d.includes('The Raid Boards of this raid (Enhancement Boards): unlock'), 'a census name the table lacks stays in the description');
     // the one «On this server» box at the top (user 06-11): status, Keep messages, rule, rebuilt values closed (group cards with one
     // short line each, the full sentences of user 04-11 folded), links; then the Week table
     assert(d.indexOf('<div class="sb">') > d.indexOf('<img class="banner"') && d.indexOf('<div class="sb">') < d.indexOf('<h2>Week</h2>') && !d.includes('<h2>Reconstructed values</h2>'), 'box at the top');

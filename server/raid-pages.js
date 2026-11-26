@@ -484,7 +484,13 @@ function detailPage(index, evStageId, ctx = {}) {
   // a Japan-only raid with nothing known of its board (label jpNoBoard, user decision 06-11) says why it has none
   const noBoard = row.entries.some((e) => (e.reconstructed || []).includes('jpNoBoard'))
     ? '<p class="n">No Raid Boards: the Japanese board of this raid is not known, so none is served.</p>' : '<p class="n">No Raid Boards this week.</p>';
-  const boards = (names.length ? `<p>${names.map(esc).join(', ')}</p>` : ids.length ? '' : noBoard)
+  // a short description over the table (user 26-11: the census names repeated the table); a raid whose boards are known only by
+  // their census names (none served) keeps those names
+  // (a census name no board of the table carries, e.g. a board with no name of its own, stays in the description)
+  const tableNames = ids.map((id) => String((ctx.boardName && ctx.boardName(id)) || '').toLowerCase());
+  const extraNames = names.filter((n) => !tableNames.some((t) => t.startsWith(String(n).toLowerCase())));
+  const boards = (ids.length ? `<p class="n">The Raid Boards of this raid${extraNames.length ? ` (${extraNames.map(esc).join(', ')})` : ''}: unlock their nodes with Raid Coins, earned by defeating its boss.</p>`
+    : names.length ? `<p>${names.map(esc).join(', ')}</p><p class="n">These Raid Boards are not served on this server yet.</p>` : noBoard)
     // the boards table of every catalog detail page (detail-cards.js boardTable, user 26-11): card, name, rewards, nodes unlocked,
     // Raid Coins still needed
     + (ids.length ? cards.boardTable(ids.map((id) => {
