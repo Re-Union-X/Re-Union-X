@@ -167,7 +167,7 @@
   },
   {
    "title": "Special Quests",
-   "hash": "0fddfb2169614ae3",
+   "hash": "babdcfe7866348ad",
    "thread": "1569381203411210381",
    "ids": [
     "1569381203411210381",
@@ -223,7 +223,7 @@
   },
   {
    "title": "Raid Bosses",
-   "hash": "56f1c04ba4c4474f",
+   "hash": "1030f6da079583b0",
    "thread": "1569381234348658763",
    "ids": [
     "1569381234348658763",
@@ -244,7 +244,7 @@
   },
   {
    "title": "Avatar boards",
-   "hash": "07b6eec34b5e3df3",
+   "hash": "22cc6514aa734e50",
    "date": "11/16",
    "thread": "1574499391182737432",
    "ids": [
@@ -291,7 +291,7 @@
   },
   {
    "title": "Event Quests: how they work",
-   "hash": "f09ab04cdc075f99",
+   "hash": "81a2e3f48f69380f",
    "date": "11/16",
    "thread": "1574499419833892980",
    "ids": [
@@ -305,12 +305,21 @@
   },
   {
    "title": "Coliseum",
-   "hash": "2d24ab390afc3f37",
+   "hash": "e264047ae7bd578b",
    "date": "11/26",
    "thread": "1575223208305762464",
    "ids": [
     "1575223208305762464",
     "1575419498125598761"
+   ]
+  },
+  {
+   "title": "Game Catalog",
+   "hash": "a3eb7f5c07f9ac76",
+   "date": "11/26",
+   "thread": "1575535096713445458",
+   "ids": [
+    "1575535096713445458"
    ]
   },
   {
@@ -325,7 +334,7 @@
   },
   {
    "title": "Differences from the original game",
-   "hash": "82bce92ebd2c2490",
+   "hash": "3a8a600e810844ff",
    "thread": "1569381118124499130",
    "ids": [
     "1569381118124499130",
