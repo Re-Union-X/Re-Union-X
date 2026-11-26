@@ -1510,9 +1510,7 @@ test('real_part3_enemies (every enemy id of the 24 seasons, the named cases)', (
   const raw = mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY);
   if (!src || !relux || !stageEnemies || !raw) { results.push('skip real_part3_enemies: 1.1.3 master, ReLux extracts or stage enemy lists not on disk'); return; }
   // the 48 rows Part 3 adds (Task 3), left out of the served master first: the test reads the same before and after a master regen
-  const P3_ADDED = [20057, 20097, 20114, 20161, 20240, 20251, 20255, 21500, 21502, 21503, 21504, 21505, 21506, 21508, 21509, 21510, 21515, 21517,
-    21521, 21525, 21527, 21530, 21534, 22500, 22501, 22502, 22503, 22506, 22507, 22508, 22510, 120097, 161020007, 161020011, 161020015,
-    161020022, 161020033, 161020036, 161020059, 161020092, 161020093, 161020099, 161020110, 161020116, 161020126, 161020137, 161020153, 161020154];
+  const P3_ADDED = [...mc.PART3_ENEMY_IDS];
   const masterRows = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).filter((r) => !P3_ADDED.includes(r.enemyId));
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
   const P3 = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100).map((s) => s.colosseumStageId);

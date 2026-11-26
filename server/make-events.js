@@ -1146,11 +1146,11 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     const evIds = opts.eventEnemyIds ? new Set(opts.eventEnemyIds) : require('./make-event-enemies').eventIds();
     const byName = new Map();
     const evByName = new Map(); // the event rows of a name: only to report them (genMapOf eventOnly), never an answer
-    // Coliseum rows (variant ids 20000-29999 and their month ids, make-colosseum.js) answer a name only when it has no other row: the
-    // Part 3 rule row 21534 «Barrier Master» made EV-0682 / EV-0744 ambiguous against the story row 11534 (Coliseum Part 3 Task 6)
+    // the Part 3 Coliseum rows (make-colosseum.js PART3_ENEMY_IDS; opts.part3EnemyIds in the tests) answer a name only when it has no
+    // other row: the rule row 21534 «Barrier Master» made EV-0682 / EV-0744 ambiguous against the story row 11534 (Coliseum Part 3)
     const coliByName = new Map();
-    const { monthBase } = require('./make-colosseum');
-    const coliId = (id) => (id >= 20000 && id <= 29999) || monthBase(id) !== null;
+    const p3 = opts.part3EnemyIds ? new Set(opts.part3EnemyIds) : require('./make-colosseum').PART3_ENEMY_IDS;
+    const coliId = (id) => p3.has(id);
     for (const e of master.enemy || []) {
       if (!e.name) continue;
       const to = evIds.has(e.enemyId) ? evByName : coliId(e.enemyId) ? coliByName : byName;

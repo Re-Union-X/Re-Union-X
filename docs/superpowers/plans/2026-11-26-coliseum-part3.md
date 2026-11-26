@@ -153,7 +153,7 @@ thresholds), `server/test-make-colosseum.js`. Research output (private): `privat
 - Consumes: PART3_AUDIT.md §6 (prizes by month, featured skills by name, avatar parts, Spirit parts); reddit cutoffs.
 - Produces: ranking + rankingReward rows for 4022 .. 4032; thresholds per season.
 
-- [ ] **Step 1: Research:** fetch the r/KingdomHearts «border ranks analysis» posts for 2017-10 / 11 / 12 (u/xamaxin, linked
+- [ ] **Step 1: Research:** fetch the r/KingdomHearts «border ranks analysis» posts for 2017-10 / 11 / 12 (a community member, linked
   from R-7v2d0d) and any 2017-05 .. 2018-03 border data; record every point (month, rank, tier/round, date, URL) in
   CUTOFFS_2017.md. Read-only public pages.
 - [ ] **Step 2: Failing tests:** each season's brackets and prizes equal the audit table (skill ids looked up by name in

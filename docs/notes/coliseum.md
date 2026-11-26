@@ -498,7 +498,7 @@ Master revision **398** (regenerated 26-11, HANDOFF recipe); resources and bench
   Chip & Dale; the month's avatar parts to rank 100,000; 2017-12 Santa Hat / Beard / Brows as **Spirit parts** (type 33),
   `grantItem` now records a Spirit part also with the pet system off). Reward ids 35300 .. 35800.
 - **Thresholds, per-month calibration**: season-end border ranks of 2017 (r/KingdomHearts posts via the Arctic Shift archive,
-  u/xamaxin's 2017-10 / 11 / 12 posts; private `CUTOFFS_2017.md`, 23 points). A month with its own points gets its own curve
+  a community member's 2017-10 / 11 / 12 border-rank posts; private `CUTOFFS_2017.md`, 23 points). A month with its own points gets its own curve
   log10(round) = a + b log10(rank) (both a and b when its points span a decade of rank, else the era slope with its own
   intercept), within x / ÷ 1.15 of its points; outside the ranks of its points the era slope continues from the nearest point
   (guard, 2017-07 rank 100 = 1,131); months without data (2017-08, 2018-01 .. 03) use the era curve (a 3.5122, b -0.1509).
@@ -521,7 +521,7 @@ Master revision **398** (regenerated 26-11, HANDOFF recipe); resources and bench
   Spirit parts, maps (JP for 2017-05 / 2018, generated 2017-06 .. 12, buffs and the Ringmaster counter dropped, the two named
   bosses), new section «Enemies» (original rows, month copies, the variant rule, no estimate), rebuilt cards, Puppy boards.
 
-Master regen diff (26-11, against `D:Progetto_Restauro_KH_UX	mpmaster_before_coli_p3`): colosseum +264 tiers,
+Master regen diff (26-11, against a backup of `server/master_data`): colosseum +264 tiers,
 colosseumStage +11 (and term ids of 1700 / 1800 / 1900 / 2000 extended), stage +110, enemy +48 (and the names of 184 / 20184),
 enemyAttack +16 (attacks of the new rows), enemy_display_orig +48, ranking +11, rankingReward +88, sphere / sphereArray /
 sphereMasu +40 each. Nothing else changed (events identical).

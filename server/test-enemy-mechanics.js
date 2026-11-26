@@ -37,9 +37,10 @@ check(byId.get(2103001650)?.absorbAttribute === 16 && byId.get(2509)?.absorbAttr
 check(u(1501) === '[1,2,5,0,1501001]', `Gold Tricholoma originale toccato ${u(1501)}`);
 // event rows (make-event-enemies.js, Events Parts 1-10) keep the counters of their WW row: not ours, left out here
 const evIds = require('./make-event-enemies').eventIds();
-// Coliseum rows (make-colosseum.js: 20000-29999 and their month ids) keep the counters of their original row: not ours either
-const { monthBase } = require('./make-colosseum');
-const coli = (id) => (id >= 20000 && id <= 29999) || monthBase(id) !== null;
+// the Part 3 Coliseum rows (make-colosseum.js PART3_ENEMY_IDS) keep the counters of their original row: not ours either; every
+// other Coliseum row is checked as before
+const P3 = require('./make-colosseum').PART3_ENEMY_IDS;
+const coli = (id) => P3.has(id);
 const counted = master.filter((e) => e.validUrgency > 0 && e.enemyId !== 1501 && !(e.enemyId >= 160911501 && e.enemyId <= 160951501)
   && !evIds.has(e.enemyId) && !coli(e.enemyId));
 // mosse a 0 verificate (26-10): 44 nemici di 24 famiglie, ognuno con una riga d'attacco esistente; Chocolate Monster resta spento

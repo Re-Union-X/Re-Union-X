@@ -82,7 +82,7 @@
 // Hat 402007 to rank 2,500, Beard 411002 to 50,000, Brows 401004 to 100,000; notice 34668 calls them Spirit parts, the wiki
 // «avatar»). Thresholds: one era curve ERA17 for the eleven seasons, replaced by a month curve where the month has data (below) (all with the same tiers: 570 rounds, then nine 999-round tiers,
 // 9,561 rounds served), fitted on the recorded border ranks of the era (private CUTOFFS_2017.md: 23 season-end points, reddit
-// r/KingdomHearts 6e01rg, 6f291y, 6o1ra2, 6o76ek, 6qhit7, 73i23q and u/xamaxin's border-rank posts 7aafnf / 7gtzkx / 7p6gif for
+// r/KingdomHearts 6e01rg, 6f291y, 6o1ra2, 6o76ek, 6qhit7, 73i23q and a community member's border-rank posts 7aafnf / 7gtzkx / 7p6gif for
 // 2017-10 / 11 / 12; global round = rounds before the tier + round): least squares
 //   log10(round) = a + b x log10(rank),  a = 3.5122, b = -0.1509  (ERA17.a / .b, computed from ERA17.points)
 // every fit point within x / ÷ 2.85 of the curve (ERA17.tolerance; worst 2017-11 rank 1,000: 3,222 recorded, 1,147 on the curve).
@@ -634,6 +634,13 @@ function ruleRow(id, base) {
 // missing or do not cover every served stage (a clean machine before its first resource build: make-game-tables runs before
 // gen_colosseum_stages / import_colosseum_stages, so a hard stop there would break the build; the stage import still refuses a
 // missing enemy).
+// the enemy rows the Part 3 seasons add (raw ReLux old shape 12, month copies 6, variant rule 30; test-make-colosseum.js checks that
+// a build on a master without them adds exactly these): original rows with their own counters and status attacks, so the
+// master-wide checks of our story rows (test-enemy-attack / test-enemy-mechanics) and the event name lookups (make-events.js) treat
+// them apart. The master carries no label, and a second regen adds none (the rows are already there): hence the explicit list.
+const PART3_ENEMY_IDS = new Set([20057, 20097, 20114, 20161, 20240, 20251, 20255, 21500, 21502, 21503, 21504, 21505, 21506, 21508, 21509, 21510, 21515, 21517,
+  21521, 21525, 21527, 21530, 21534, 22500, 22501, 22502, 22503, 22506, 22507, 22508, 22510, 120097, 161020007, 161020011, 161020015,
+  161020022, 161020033, 161020036, 161020059, 161020092, 161020093, 161020099, 161020110, 161020116, 161020126, 161020137, 161020153, 161020154]);
 const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', monthCopy: 'colosseumEnemyMonthCopy',
   estimate: 'colosseumEnemyEstimate' };
 const variantId = (id) => id >= ENEMY_RANGE[0] && id <= ENEMY_RANGE[1];
@@ -871,4 +878,4 @@ function patch(masterDir, opts = {}) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
 module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
-  STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS, ERA17 };
+  PART3_ENEMY_IDS, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS, ERA17 };

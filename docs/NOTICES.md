@@ -300,7 +300,7 @@ On the eighth map of **November 2016**, three Shadows of the third wave stand on
 
 The Coliseum enemies of 2017 and 2018 have their **original stats**: from the original Coliseum enemy table (ReLux Team donation), or a copy of the original row when a season reuses an enemy under the id of its month.
 
-Where no original row survives (the June 2017 **Ringmaster** among them), the enemy is (rebuilt) by the variant rule from its original base enemy, as for earlier seasons. No value is estimated.
+Where no original row survives (the June 2017 **Ringmaster** among them), the row is (rebuilt): derived from its original base enemy by the variant rule of the original Coliseum rows (same moves, HP raised from level 300). No value is estimated.
 
 ### Graphics — board cards, one button icon stands in
 

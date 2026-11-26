@@ -27,9 +27,10 @@ check(byId.get(9301)?.poison === 10000, `9301 poison ${byId.get(9301)?.poison}`)
 // rows outside that set; both are checked by applyEnemyAttacks above
 const evIds = require('./make-event-enemies').eventIds();
 const donorAtt = new Set(Object.keys(require('./enemy-motion-fix').readOriginalMoves()?.attacks || {}).map(Number));
-// Coliseum rows (make-colosseum.js: 20000-29999 and their month ids) bring the attacks of their original row, as the event rows
-const { monthBase } = require('./make-colosseum');
-const coli = (id) => (id >= 20000 && id <= 29999) || monthBase(id) !== null;
+// the Part 3 Coliseum rows (make-colosseum.js PART3_ENEMY_IDS: raw ReLux / rule rows) bring the status attacks of their original
+// row, as the event rows; every other Coliseum row is checked as before
+const P3 = require('./make-colosseum').PART3_ENEMY_IDS;
+const coli = (id) => P3.has(id);
 const storyCited = new Set(enemies.filter((e) => !evIds.has(e.enemyId) && !coli(e.enemyId)).flatMap((e) => [...(e.skillId || []), ...(e.urgencySkillId || [])]));
 const storyStatus = atts.filter((a) => storyCited.has(a.enemyAttackId) && !donorAtt.has(a.enemyAttackId)
   && !(a.enemyAttackId >= 992070000 && a.enemyAttackId < 992080000) && (a.poison || a.deepPoison || a.sleep || a.paralysis));
