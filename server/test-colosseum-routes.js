@@ -736,6 +736,12 @@ function wiring() {
     assert.ok(t.masterRows('evStage').some((r) => r.eventStageId === 6000), 'evStage 6000 (Coliseum Catalog) in master_data');
     let b = null;
     quiet(() => t.respondStageEvent({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, { eventCategory: 2 }));
+    // with the Game Catalog banner (user 26-11) it alone comes first; the Coliseum Catalog opens from its hub page
+    if (t.gameCatalogOn()) {
+      assert.deepStrictEqual([b.events[0].eventStageId, b.events[0].eventType], [5000, 0], 'the Game Catalog banner first');
+      assert.ok(!b.events.some((e) => e.eventStageId === 6000 || e.eventStageId === 8000), 'no Coliseum / Raid Catalog banner');
+      return;
+    }
     assert.strictEqual(b.events[0].eventStageId, 6000, 'the Coliseum Catalog banner first');
     assert.strictEqual(b.events[0].eventType, 0);
     assert.ok(b.events[0].bannerUrl.endsWith(`/web/colosseum/img/v${routesColosseum.COLOSSEUM_IMG_VERSION}/6000.png`));

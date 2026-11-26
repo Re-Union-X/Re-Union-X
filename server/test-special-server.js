@@ -34,8 +34,9 @@ const byId = (list, id) => list.find((e) => e.eventStageId === id);
 // Special tab right after the Special Catalog banner, both open the Training Grounds 970000) of game_data/events.json; null without them
 const evCatalogId = (t.eventIndex()?.catalog || {}).evStageId || null;
 const avatarCatId = t.eventRoutes().avatarCatalogId();
-// the KEPT card of the Special tab: after the Special Catalog banner and the Avatar Board Catalog banner
-const KEPT_AT = avatarCatId ? 2 : 1;
+// the KEPT card of the Special tab: after the Special Catalog banner and the Avatar Board Catalog banner; first with the Game Catalog
+// banner in the master (make-game-catalog.js, user 26-11: those two banners are not listed, their catalogues open from its hub)
+const KEPT_AT = t.gameCatalogOn() ? 0 : avatarCatId ? 2 : 1;
 
 // 1. sblocco dopo la missione 6 (misc 122): prima nessun evento Special
 p.stageScores = {}; p.clearMissions = {};
@@ -46,16 +47,20 @@ p.stageScores[sid(5)] = 1;
 check(ev(1).events.length === 0, 'missione 5: Special non vuoto');
 p.stageScores[sid(6)] = 1;
 const q6 = ev(1).events;
-check(q6.length >= 1 && q6[0].eventStageId === 7000, `missione 6 (periodo 1): ${q6.map((e) => e.eventStageId)}`);
+// with the Game Catalog banner in the master (make-game-catalog.js, user 26-11) the Special and Avatar Board Catalog banners are not
+// listed (their catalogues open from the Game Catalog hub of the Events tab)
+const hub = t.gameCatalogOn();
+check(q6.length >= 1 && (hub ? !q6.some((e) => e.eventStageId === 7000 || e.eventType === 0 && e.stages.some((s) => s.stageId === 970000)) : q6[0].eventStageId === 7000),
+  `missione 6 (periodo 1): ${q6.map((e) => e.eventStageId)}`);
 
 // 2. storia nel periodo 4 (missione 925, giugno 2020), martedi'
 p.stageScores[sid(925)] = 1;
 let list = ev(1).events;
-check(list[0] && list[0].eventStageId === 7000, `primo evento ${list[0] && list[0].eventStageId}`);
+check(list[0] && (hub ? list[0].eventStageId !== 7000 : list[0].eventStageId === 7000), `primo evento ${list[0] && list[0].eventStageId}`);
 check(byId(list, 7012) && byId(list, 7012).isLock === 0, `EXP & Evolve Power (martedi'): isLock ${byId(list, 7012)?.isLock}`);
 check(byId(list, 7011) && byId(list, 7011).isLock === 1, `Evolve Legendary (lunedi'): isLock ${byId(list, 7011)?.isLock}`);
 check(list.every((e) => e.bannerUrl.startsWith(t.WEB_BASE + (e.eventStageId === avatarCatId ? '/web/event/img/' : '/web/special/img/'))), 'bannerUrl senza WEB_BASE');
-check(!avatarCatId || (list[1]?.eventStageId === avatarCatId && list[1].eventType === 0), `Avatar Board Catalog dopo il catalogo Special: ${list[1]?.eventStageId}`);
+check(!avatarCatId || (hub ? !byId(list, avatarCatId) : list[1]?.eventStageId === avatarCatId && list[1].eventType === 0), `Avatar Board Catalog dopo il catalogo Special: ${list[1]?.eventStageId}`);
 process.env.KHUX_VIP = '1';
 list = ev(1).events;
 // VIP apre anche la quest del lunedi': isLock 2 (piastra «Available», regola del Task 2), il martedi' resta 0
@@ -68,7 +73,7 @@ check(t.ret().functionFlags === 4, `functionFlags ${t.ret().functionFlags}`);
 // and the Event Catalog banner (eventType 0) when the indexes have them, the Coliseum Catalog banner (evStage 6000, Coliseum Part 1,
 // from story quest 130); no Special banner (nor the Avatar Board Catalog)
 check(ev(2).events.every((e) => !e.bannerUrl.includes('/web/special/') && e.eventStageId !== avatarCatId
-  && (e.eventType === 2 || e.eventType === 3 || (e.eventType === 0 && (e.eventStageId === 8000 || e.eventStageId === 6000 || e.eventStageId === evCatalogId)))),
+  && (e.eventType === 2 || e.eventType === 3 || (e.eventType === 0 && (e.eventStageId === 8000 || e.eventStageId === 6000 || e.eventStageId === 5000 || e.eventStageId === evCatalogId)))),
   'Events (eventCategory 2): only raid and event quests, the Coliseum, Raid and Event Catalog banners');
 
 // 4. drop dei nemici: tipi per posizione della riga del POI; uid e conteggi attesi si ricavano dal POI e dalle righe
@@ -138,7 +143,7 @@ check(evRows.find((r) => r.eventStageId === 7000)?.detailUrl === t.WEB_BASE + '/
 const isRaidEv = (id) => id >= 8001 && id <= 8999; // raid banners: Details = the original notice (make-raid.js, ce87672)
 const isEventEv = (id) => id >= 20000; // event banners (make-events.js): Details = the original notice, or a catalogue page
 check(evRows.find((r) => r.eventStageId === 6000)?.detailUrl === t.WEB_BASE + '/web/colosseum/catalog', 'evStage 6000 detailUrl (Coliseum Catalog)');
-check(evRows.filter((r) => r.eventStageId !== 7000 && r.eventStageId !== 8000 && r.eventStageId !== 6000 && !isRaidEv(r.eventStageId) && !isEventEv(r.eventStageId)).every((r) => r.detailUrl === ''), 'detailUrl vuoti cambiati');
+check(evRows.filter((r) => r.eventStageId !== 7000 && r.eventStageId !== 8000 && r.eventStageId !== 6000 && r.eventStageId !== 5000 && !isRaidEv(r.eventStageId) && !isEventEv(r.eventStageId)).every((r) => r.detailUrl === ''), 'detailUrl vuoti cambiati');
 check(evRows.filter((r) => isEventEv(r.eventStageId)).every((r) => r.detailUrl === (r.eventStageId === evCatalogId ? t.WEB_BASE + '/web/event/catalog'
   : r.eventStageId === avatarCatId ? t.WEB_BASE + '/web/avatar/catalog' : r.detailUrl && `${t.WEB_BASE}/web/event/notice/${r.eventStageId}`)), 'evStage event detailUrl: vuoto, la notizia o il catalogo, assoluto');
 check(evRows.filter((r) => isRaidEv(r.eventStageId)).every((r) => r.detailUrl === '' || r.detailUrl === `${t.WEB_BASE}/web/raid/notice/${r.eventStageId}`), 'evStage raid detailUrl: vuoto o la notizia, assoluto');
@@ -151,8 +156,10 @@ const special = t.specialEvents(Date.now()).filter((e) => e.eventStageId !== 700
 const nStages = special.reduce((a, e) => a + e.stages.length, 0);
 p.clearMissions[970030] = [1, 2]; p.clearMissions[970100] = [3]; p.clearMissions[970000] = [1, 2, 3];
 let a = call(t.respondStageAchievements).stageAchievement;
-// bench 25-11: the catalog banners count too, their shared Training Grounds once (3 objectives, all done): 8 stages, 6 / 24
-check(nStages === 7 && a.strengthDenominator === 24 && a.strengthNumerator === 6, `Special ${a.strengthNumerator}/${a.strengthDenominator} (${nStages} stage + Training Grounds)`);
+// bench 25-11: the catalog banners count too, their shared Training Grounds once (3 objectives, all done): 8 stages, 6 / 24; with the
+// Game Catalog banner (26-11) the Training Grounds is in the Events tab only: 7 stages, 3 / 21
+if (t.gameCatalogOn()) check(nStages === 7 && a.strengthDenominator === 21 && a.strengthNumerator === 3, `Special ${a.strengthNumerator}/${a.strengthDenominator} (${nStages} stage)`);
+else check(nStages === 7 && a.strengthDenominator === 24 && a.strengthNumerator === 6, `Special ${a.strengthNumerator}/${a.strengthDenominator} (${nStages} stage + Training Grounds)`);
 const saved = p.stageScores; p.stageScores = { [sid(5)]: 1 };
 a = call(t.respondStageAchievements).stageAchievement;
 check(a.strengthNumerator === 0 && a.strengthDenominator === 1, `Special chiusa: ${a.strengthNumerator}/${a.strengthDenominator}`);
@@ -235,9 +242,11 @@ check(raw(t.respondSpecialWeb, '/web/special/icon/nope.png').code === 404 && raw
 {
   const keep = p.clearMissions[970000];
   p.clearMissions[970000] = [1, 2, 3];
-  check(ev(1).events[0]?.eventStageId === 7000 && ev(1).events[0].complete === 1, `catalogo con [1,2,3]: complete ${ev(1).events[0]?.complete}`);
+  // the catalogue banner: the Special Catalog's, or the Game Catalog's of the Events tab when the master has it (26-11)
+  const cat = () => (t.gameCatalogOn() ? ev(2).events[0] : ev(1).events[0]);
+  check([7000, 5000].includes(cat()?.eventStageId) && cat().complete === 1, `catalogo con [1,2,3]: complete ${cat()?.complete}`);
   p.clearMissions[970000] = [1, 2];
-  check(ev(1).events[0].complete === 0, 'catalogo con [1,2]: complete 0');
+  check(cat().complete === 0, 'catalogo con [1,2]: complete 0');
   if (keep === undefined) delete p.clearMissions[970000]; else p.clearMissions[970000] = keep;
 }
 

@@ -1435,7 +1435,8 @@ function wiring() {
   assert.strictEqual(t.route('/web/raid/img/8001.png'), 'raidweb');
 
   const ev = call(t.respondStageEvent, { eventCategory: 2 }).events;
-  assert.deepStrictEqual(ev.map((e) => [e.eventStageId, e.eventType]), [[8999, 2]]);
+  // the Game Catalog banner (evStage 5000 of make-game-catalog.js) first when the master has it
+  assert.deepStrictEqual(ev.map((e) => [e.eventStageId, e.eventType]), [...(t.gameCatalogOn() ? [[5000, 0]] : []), [8999, 2]]);
   // the raids follow the Shop week of storyCtx(): a row that ends before shopFrom is gone, one that holds it is listed
   {
     const wk = quiet(() => t.storyCtx()), k = t.raidIndex().entries[0];
@@ -1443,11 +1444,11 @@ function wiring() {
     Object.assign(k, { start: '2015-01-01', end: dayBefore });
     assert.deepStrictEqual(call(t.respondStageEvent, { eventCategory: 2 }).events.filter((e) => e.eventType === 2), [], `row ending ${dayBefore}`);
     Object.assign(k, { start: wk.shopFrom, end: wk.shopFrom });
-    assert.deepStrictEqual(call(t.respondStageEvent, { eventCategory: 2 }).events.map((e) => e.eventStageId), [8999]);
+    assert.deepStrictEqual(call(t.respondStageEvent, { eventCategory: 2 }).events.filter((e) => e.eventType !== 0).map((e) => e.eventStageId), [8999]);
     Object.assign(k, { start: '2015-01-01', end: '2099-12-31' });
   }
-  assert.strictEqual(ev[0].bannerUrl, `${t.WEB_BASE}/web/raid/img/v${RAID_IMG_VERSION}/8999.png`);
-  assert.strictEqual(ev[0].stages[0].useAp, 90);
+  assert.strictEqual(ev.find((e) => e.eventStageId === 8999).bannerUrl, `${t.WEB_BASE}/web/raid/img/v${RAID_IMG_VERSION}/8999.png`);
+  assert.strictEqual(ev.find((e) => e.eventStageId === 8999).stages[0].useAp, 90);
 
   p.ap = 200; p.apTime = TUE;
   const before = t.userPointData(t.serverTime()).ap;

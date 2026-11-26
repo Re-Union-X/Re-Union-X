@@ -485,8 +485,10 @@ function wiring() {
     call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
     // events_after_raids: Raid Catalog banner, Event Catalog banner (second), (kept raid), the week's raids, then the events
     const ev = call(t.respondStageEvent, { eventCategory: 2 }).events;
-    assert.deepStrictEqual(ev.map((e) => [e.eventStageId, e.eventType]), [[8000, 0], [20000, 0], [8999, 2], [29901, 3]]); // raids 2 (Raid Boards), events their own type
-    assert.strictEqual(ev[3].bannerUrl, `${t.WEB_BASE}/web/event/img/v${EVENT_IMG_VERSION}/29901.png`);
+    // with the Game Catalog banner (evStage 5000, user 26-11) it is the only catalogue banner, first
+    const cats = t.gameCatalogOn() ? [[5000, 0]] : [[8000, 0], [20000, 0]];
+    assert.deepStrictEqual(ev.map((e) => [e.eventStageId, e.eventType]), [...cats, [8999, 2], [29901, 3]]); // raids 2 (Raid Boards), events their own type
+    assert.strictEqual(ev[cats.length + 1].bannerUrl, `${t.WEB_BASE}/web/event/img/v${EVENT_IMG_VERSION}/29901.png`);
     console.log('ok events_after_raids');
     // drops: the event quest reads the POI of its map key (stageBinId), as the client loads mappoi_stg<stageBinId>
     assert.strictEqual(t.poiStageId(S1), 1010);
@@ -507,7 +509,7 @@ function wiring() {
     call(t.respondStageClear, { getEnemyDropItems: [], getMaterials: [], clearMissionIds: [1, 2, 3], getPoint: { lux: 0 } });
     assert.deepStrictEqual([p.freeStone, p.money, p.raidSpherePoint || 0], [stone + 10, money + 100, coins], 'objectives_once: second clear pays nothing');
     assert.strictEqual(bonusOf().length, 1, 'community bonus once');
-    assert.deepStrictEqual(call(t.respondStageEvent, { eventCategory: 2 }).events[3].stages[0].clearMissionIds, [1, 2, 3]);
+    assert.deepStrictEqual(call(t.respondStageEvent, { eventCategory: 2 }).events.find((e) => e.eventStageId === 29901).stages[0].clearMissionIds, [1, 2, 3]);
     console.log('ok wiring_stage_clear');
   } finally {
     fs.readFileSync = readFile;
