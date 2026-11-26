@@ -328,6 +328,13 @@ const SEASON_BOARDS = {
   2900: [2210098, 2210099, 2210100], // Puppy Ears (Shag) & (Bob), Tier 10 / 11 Bonus
   3000: [2210101, 2210102, 2210103], // Heart-Shaped Balloon, Tier 10 / 11 Bonus
   3100: [2210104, 2210105, 2210106], // Mushroom Cut & Kitty Ears, Tier 10 / 11 Bonus (2018-03)
+  // Part 3b Task 4: the ReLux boards 2210107 .. 2210150, in id order (private research; the board names and counts per month
+  // checked against khuxwiki): 2018-04 .. 11 one both-gender 3500-coin board + Tier 10 / 11 Bonus; 2018-12 .. 2019-04 a Coliseum
+  // Board (1230) + Tier 11 / 12 / 13 Bonus (1470 / 1900 / 3500), 8,100 coins = the tier coins
+  3200: [2210107, 2210108, 2210109], 3300: [2210110, 2210111, 2210112], 3400: [2210113, 2210114, 2210115], 3500: [2210116, 2210117, 2210118],
+  3600: [2210119, 2210120, 2210121], 3700: [2210122, 2210123, 2210124], 3800: [2210125, 2210126, 2210127], 3900: [2210128, 2210129, 2210130],
+  4000: [2210131, 2210132, 2210133, 2210134], 4100: [2210135, 2210136, 2210137, 2210138], 4200: [2210139, 2210140, 2210141, 2210142],
+  4300: [2210143, 2210144, 2210145, 2210146], 4400: [2210147, 2210148, 2210149, 2210150],
 };
 // the «Tier N Bonus» boards (boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum Board!»;
 // routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
@@ -335,7 +342,9 @@ const BONUS_TIER = {
   2200023: 10, 2210031: 10, 2210035: 10, 2210039: 10, 2210042: 10, 2210045: 10, 2210048: 10, 2210051: 10, 2210054: 10,
   2210057: 10, 2210058: 11, 2210061: 10, 2210062: 11, 2210065: 10, 2210066: 11,
   // Part 3: the last two boards of every month 2017-05 .. 2018-03
-  ...Object.fromEntries([2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100].flatMap((sid) => SEASON_BOARDS[sid].slice(-2).map((id, i) => [id, 10 + i]))),
+  ...Object.fromEntries([2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900].flatMap((sid) => SEASON_BOARDS[sid].slice(-2).map((id, i) => [id, 10 + i]))),
+  // Part 3b: 2018-12 .. 2019-04 the last three boards are the Tier 11 / 12 / 13 Bonus
+  ...Object.fromEntries([4000, 4100, 4200, 4300, 4400].flatMap((sid) => SEASON_BOARDS[sid].slice(-3).map((id, i) => [id, 11 + i]))),
 };
 const CORNER_FREE = (a) => [a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]].every((v) => !v);
 // Board card pictures img/sphere_incentive/<sphereBoardId>.png (client Select_Base layer, docs/notes/coliseum.md «Board card
@@ -357,7 +366,13 @@ const BOARD_ART = { 2200001: 'b16', 2210037: 'jp:2200037.png', 2210038: 'jp:2200
   2210067: 'jp:2200017.png', 2210068: 'jp:2200018.png', 2210079: 'jp:2200095.png', 2210080: 'jp:2200096.png', 2210087: 'jp:2200105.png',
   2210088: 'jp:2200106.png', 2210091: 'jp:2200110.png', 2210092: 'jp:2200111.png', 2210095: 'jp:2200115.png',
   ...Object.fromEntries([2210069, 2210070, 2210071, 2210072, 2210073, 2210074, 2210075, 2210076, 2210077, 2210078, 2210081, 2210082, 2210083, 2210084, 2210085, 2210086, 2210089,
-    2210090, 2210093, 2210094, 2210096, 2210097, 2210098, 2210099, 2210100, 2210101, 2210102, 2210103, 2210104, 2210105, 2210106].map((id) => [id, 'loc'])) };
+    2210090, 2210093, 2210094, 2210096, 2210097, 2210098, 2210099, 2210100, 2210101, 2210102, 2210103, 2210104, 2210105, 2210106].map((id) => [id, 'loc'])),
+  // Part 3b Task 4 (user-approved cards, private board_art_all.json): 2210107 .. 127 loc (the wiki preview placed as on the board
+  // screenshot), 2210128 .. 150 the JP cards of the same pictures; Tier 11 / 12 / 13 Bonus = JP 2200169 / 170 / 171
+  ...Object.fromEntries(Array.from({ length: 21 }, (_, i) => [2210107 + i, 'loc'])),
+  2210128: 'jp:2200168.png', 2210129: 'jp:2200169.png', 2210130: 'jp:2200170.png', 2210131: 'jp:2200172.png', 2210135: 'jp:2200176.png',
+  2210139: 'jp:2200180.png', 2210143: 'jp:2200184.png', 2210147: 'jp:2200188.png',
+  ...Object.fromEntries([2210132, 2210136, 2210140, 2210144, 2210148].flatMap((b) => [[b, 'jp:2200169.png'], [b + 1, 'jp:2200170.png'], [b + 2, 'jp:2200171.png']])) };
 // Mango Sweetie M / F 2210075 / 076 and Illusionist M / F 2210083 / 084: loc cards rebuilt from the small (144 px) wiki picture,
 // approved by the user 26-11; no board waits for its card now
 const PENDING_ART = new Set();
@@ -483,6 +498,16 @@ const byKey = (key) => (a, b) => a[key] - b[key];
 
 // a ReLux tier row with its type-3 reward ids mapped to ours (RELUX_MEDAL); with masterMedalIds (our medal master) an id that is
 // neither mapped nor in it stops the build
+// the same mapping for a board's cells (sphereMasu: rewardSelect 3 = medal, rewardId the medal): 90135 -> Magic Broom 300948
+function reluxCellMedals(m, masterMedalIds, boardId) {
+  const r = { ...m, rewardId: [...m.rewardId] };
+  m.rewardSelect.forEach((sel, i) => {
+    if (sel !== 3 || !RELUX_MEDAL[m.rewardId[i]]) return;
+    r.rewardId[i] = RELUX_MEDAL[m.rewardId[i]];
+    if (masterMedalIds && !masterMedalIds.has(r.rewardId[i])) throw new Error(`colosseum: board ${boardId} cell ${i} pays medal ${r.rewardId[i]} (mapped), not in our medal master (build it with KHUX_MEDALS_ALL=1)`);
+  });
+  return r;
+}
 function reluxMedals(t, masterMedalIds, month) {
   if (!(t.validReward > 0)) return t;
   const r = { ...t, rewardId: [...t.rewardId] };
@@ -616,7 +641,7 @@ function seasonRows(src, seasons = SEASONS) {
     for (const boardId of SEASON_BOARDS[id] || []) {
       const b = from('sphere', 'sphereBoardId', boardId, s.month);
       if (b.type !== 3 || (!relux && String(b.startDatetime).slice(0, 7) !== s.month)) throw new Error(`colosseum: board ${boardId} (type ${b.type}, ${b.startDatetime}) is not a Coliseum board of ${s.month}`);
-      const arr = from('sphereArray', 'arryId', b.arryId, `board ${boardId}`), masu = from('sphereMasu', 'masuId', b.masuId, `board ${boardId}`);
+      const arr = from('sphereArray', 'arryId', b.arryId, `board ${boardId}`), masu = reluxCellMedals(from('sphereMasu', 'masuId', b.masuId, `board ${boardId}`), relux ? src.masterMedalIds : null, boardId);
       const grid = Object.assign(schemaRow('sphereArray', arr), { arryId: boardId });
       if (grid.spCol4[0] !== 1000) throw new Error(`colosseum: board ${boardId}: START is not at row 4 column 0`);
       if (!CORNER_FREE(grid)) throw new Error(`colosseum: board ${boardId}: a cell in the top-left 2 x 2 corner (under the board picture)`);

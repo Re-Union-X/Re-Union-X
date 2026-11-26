@@ -127,6 +127,13 @@ const P3_BOARDS = {
   3000: [2210101, 2210102, 2210103], // Heart-Shaped Balloon
   3100: [2210104, 2210105, 2210106], // Mushroom Cut & Kitty Ears (2018-03)
 };
+// Part 3b Task 4: the ReLux boards 2210107 .. 2210150 (3 per month to 2018-11, 4 from 2018-12)
+const P3B_BOARDS = {
+  3200: [2210107, 2210108, 2210109], 3300: [2210110, 2210111, 2210112], 3400: [2210113, 2210114, 2210115], 3500: [2210116, 2210117, 2210118],
+  3600: [2210119, 2210120, 2210121], 3700: [2210122, 2210123, 2210124], 3800: [2210125, 2210126, 2210127], 3900: [2210128, 2210129, 2210130],
+  4000: [2210131, 2210132, 2210133, 2210134], 4100: [2210135, 2210136, 2210137, 2210138], 4200: [2210139, 2210140, 2210141, 2210142],
+  4300: [2210143, 2210144, 2210145, 2210146], 4400: [2210147, 2210148, 2210149, 2210150],
+};
 test('each new season lists exactly its wiki boards; every bonus board has its tier', () => {
   for (const [id, ids] of Object.entries(WIKI_BOARDS)) assert.deepStrictEqual(mc.SEASON_BOARDS[id], ids, `boards of ${id}`);
   const all = Object.values(mc.SEASON_BOARDS).flat();
@@ -135,7 +142,16 @@ test('each new season lists exactly its wiki boards; every bonus board has its t
   for (const ids of Object.values(WIKI_BOARDS)) for (const b of ids.slice(2)) bonus[b] = TIER11.includes(b) ? 11 : 10;
   // Part 3: the last two boards of every month are the Tier 10 / Tier 11 Bonus
   for (const ids of Object.values(P3_BOARDS)) { bonus[ids[ids.length - 2]] = 10; bonus[ids[ids.length - 1]] = 11; }
+  // Part 3b: 2018-04 .. 11 the last two boards are Tier 10 / 11; 2018-12 .. 2019-04 the last three are Tier 11 / 12 / 13
+  for (const ids of Object.values(P3B_BOARDS)) ids.slice(1).forEach((b, i) => { bonus[b] = (ids.length === 3 ? 10 : 11) + i; });
   assert.deepStrictEqual(mc.BONUS_TIER, { 2200023: 10, 2210031: 10, 2210035: 10, ...bonus });
+});
+
+test('part3b seasons list exactly their ReLux boards, bonus tiers from the board names', () => {
+  for (const [id, ids] of Object.entries(P3B_BOARDS)) assert.deepStrictEqual(mc.SEASON_BOARDS[id], ids, `boards of ${id}`);
+  assert.deepStrictEqual(Object.values(P3B_BOARDS).flat(), Array.from({ length: 44 }, (_, i) => 2210107 + i), 'the contiguous ids 2210107 .. 2210150');
+  assert.deepStrictEqual([2210108, 2210109, 2210132, 2210133, 2210134].map((b) => mc.BONUS_TIER[b]), [10, 11, 11, 12, 13]);
+  assert.strictEqual(mc.BONUS_TIER[2210107], undefined); assert.strictEqual(mc.BONUS_TIER[2210131], undefined);
 });
 
 test('part3 seasons list exactly their ReLux boards', () => {
@@ -371,7 +387,7 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
 
 test('board card pictures: 6★ Cid from the 2016 bundle, every other served board from --loc', () => {
   const all = Object.values(mc.SEASON_BOARDS).flat();
-  assert.strictEqual(all.length, 9 + 30 + 40);
+  assert.strictEqual(all.length, 9 + 30 + 40 + 44);
   // a board whose card waits for the user's review (PENDING_ART: no card of its own yet) gets no line: the client keeps its
   // default card slot, the Catalog its placeholder; every other board one line, in the order of the boards
   for (const id of mc.PENDING_ART) assert.ok(all.includes(id) && id >= 2210067 && !(id in mc.BOARD_ART), `${id} pending: a Part 3 board without BOARD_ART`);
@@ -381,6 +397,11 @@ test('board card pictures: 6★ Cid from the 2016 bundle, every other served boa
   assert.deepStrictEqual(rows.map((l) => l.split('\t')[0]), served.map((id) => `img/sphere_incentive/${id}.png`), 'in the order of the boards');
   // Part 3 (cards prepared ahead, private board_art_all.json): every board of 2210067 .. 2210106 has a BOARD_ART value or is pending
   for (let id = 2210067; id <= 2210106; id++) assert.ok(id in mc.BOARD_ART !== mc.PENDING_ART.has(id), `${id}: BOARD_ART or PENDING_ART, one of them`);
+  // Part 3b (user-approved, private board_art_all.json): all 44 boards of 2210107 .. 2210150 have a card, none pending; loc to 2210127, JP from 2210128
+  for (let id = 2210107; id <= 2210150; id++) assert.ok(id in mc.BOARD_ART && !mc.PENDING_ART.has(id), `${id}: a card`);
+  for (let id = 2210107; id <= 2210127; id++) assert.strictEqual(mc.BOARD_ART[id], 'loc', `${id} loc`);
+  assert.deepStrictEqual([2210128, 2210129, 2210130, 2210131, 2210132, 2210133, 2210134, 2210135, 2210147, 2210150].map((id) => mc.BOARD_ART[id]),
+    ['jp:2200168.png', 'jp:2200169.png', 'jp:2200170.png', 'jp:2200172.png', 'jp:2200169.png', 'jp:2200170.png', 'jp:2200171.png', 'jp:2200176.png', 'jp:2200188.png', 'jp:2200171.png']);
   assert.deepStrictEqual([2210067, 2210068, 2210079, 2210080].map((id) => mc.BOARD_ART[id]), ['jp:2200017.png', 'jp:2200018.png', 'jp:2200095.png', 'jp:2200096.png'],
     'KH Dale (user 26-11) and Buzz Cut: the JP twins');
   assert.strictEqual(rows[0], 'img/sphere_incentive/2200001.png\tb16');
@@ -1463,6 +1484,37 @@ test('real_part3b (2018-04 .. 2019-04 from the ReLux extract: tiers, lump sums, 
   assert.throws(() => withRanking([3200], () => mc.seasonRows({ ...src, relux: bogus, masterMedalIds: ids }, only3200)), /99999999.*not in our medal master/);
   assert.ok(withRanking([3200], () => mc.seasonRows({ ...src, masterMedalIds: ids }, only3200)), 'with the mapped medals in the master it builds');
   assert.throws(() => withRanking([3200], () => mc.seasonRows({ ...src, masterMedalIds: new Set([...ids].filter((m) => m !== 300948)) }, only3200)), /300948.*KHUX_MEDALS_ALL/);
+  // Task 4: the boards of the 13 seasons = their ReLux rows; START at row 4 column 0, the top-left 2 x 2 empty; cells without 90135
+  const donor = new Map(relux.sphere.map((r) => [r.sphereBoardId, r]));
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const P3B_TOTAL = { 3200: [3500, 3090, 3390], 3900: [3500, 3090, 3390], 4000: [1230, 1470, 1900, 3500], 4400: [1230, 1470, 1900, 3500] };
+  for (const sid of P3B) {
+    const ids = mc.SEASON_BOARDS[sid];
+    assert.strictEqual(ids.length, sid <= 3900 ? 3 : 4, `${sid} board count`);
+    assert.deepStrictEqual(out.sphere.filter((r) => ids.includes(r.sphereBoardId)).map((r) => r.sphereBoardId), ids, `${sid} boards served`);
+    const tot = ids.map((id) => sum(out.sphereMasu.find((r) => r.masuId === id).spherePoint.slice(0, 22)));
+    if (P3B_TOTAL[sid]) assert.deepStrictEqual(tot, P3B_TOTAL[sid], `${sid} board totals`);
+    if (sid >= 4000) assert.strictEqual(sum(tot), 8100, `${sid}: the board totals = the tier coins`);
+    for (const id of ids) {
+      const s = out.sphere.find((r) => r.sphereBoardId === id), m = out.sphereMasu.find((r) => r.masuId === id), a = out.sphereArray.find((r) => r.arryId === id);
+      assert.deepStrictEqual([s.boardName, s.kindId, s.type], [donor.get(id).boardName, 0, 3], `${id} from its ReLux row`);
+      const bonus = mc.BONUS_TIER[id];
+      if (bonus) assert.strictEqual(s.boardName, `Tier ${bonus} Bonus`, `${id} bonus name`);
+      assert.strictEqual(a.spCol4[0], 1000, `${id} START`);
+      assert.deepStrictEqual([a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]], [0, 0, 0, 0], `${id} corner`);
+      assert.deepStrictEqual([s.arryId, s.masuId, m.sphereBoardId], [id, id, id], `${id} renumbered`);
+      const medalCells = m.rewardSelect.map((t, i) => (t === 3 ? m.rewardId[i] : 0)).filter(Boolean);
+      assert.ok(!medalCells.includes(90135) && !medalCells.includes(90136), `${id}: no ReLux-only medal in a cell`);
+    }
+  }
+  // the 90135 cells of the Tier 11 / 12 / 13 Bonus boards pay Magic Broom (the source rows pay the ReLux id)
+  const srcMasu = (id) => relux.sphereMasu.find((r) => r.sphereBoardId === id);
+  assert.strictEqual(srcMasu(2210132).rewardId[10], 90135, 'the source cell pays the ReLux id');
+  assert.strictEqual(out.sphereMasu.find((r) => r.masuId === 2210132).rewardId[10], 300948, 'cell 10 of 2210132 = Magic Broom');
+  assert.strictEqual(out.sphereMasu.find((r) => r.masuId === 2210134).rewardId[7], 300948, 'cell 7 of 2210134 = Magic Broom');
+  // the cell medals are checked like the tier medals: a mapped one our medal master lacks stops the build
+  const only4000 = mc.SEASONS.filter((s) => s.colosseumStageId === 4000);
+  assert.throws(() => withRanking([4000], () => mc.seasonRows({ ...src, masterMedalIds: new Set([...ids].filter((m) => m !== 300948)) }, only4000)), /300948/);
   // the Part 1-3 seasons: the same rows with or without the new seasons, and the same as the served master
   for (const t of ['colosseumStage', 'colosseum']) {
     assert.strictEqual(JSON.stringify(out[t].filter((r) => r.colosseumStageId <= 3100)), JSON.stringify(outOld[t]), `${t}: Part 1-3 rows unchanged`);

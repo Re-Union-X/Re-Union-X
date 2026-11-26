@@ -26,12 +26,12 @@ const sphereRow = (id, name) => ({ sphereBoardId: id, boardName: name, kindId: 0
 const APR = SEASON_BOARDS[800][0], MAY1 = SEASON_BOARDS[900][0], MAY2 = SEASON_BOARDS[900][1];
 const TABLES = () => ({
   sphere: [sphereRow(APR, '6★ Cid'), sphereRow(MAY1, '6★ Scrooge'), sphereRow(MAY2, 'Tier 10 Bonus'), { ...sphereRow(4999001, 'Event'), type: 4 },
-    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800]].map((id) => sphereRow(id, BONUS_TIER[id] ? `Tier ${BONUS_TIER[id]} Bonus` : 'Avatar'))],
-  sphereArray: [rb.gridRow(APR, 2), rb.gridRow(MAY1, 1), rb.gridRow(MAY2, 1), rb.gridRow(4999001, 1), ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800]].map((id) => rb.gridRow(id, 1))],
+    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000]].map((id) => sphereRow(id, BONUS_TIER[id] ? `Tier ${BONUS_TIER[id]} Bonus` : 'Avatar'))],
+  sphereArray: [rb.gridRow(APR, 2), rb.gridRow(MAY1, 1), rb.gridRow(MAY2, 1), rb.gridRow(4999001, 1), ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000]].map((id) => rb.gridRow(id, 1))],
   sphereMasu: [masu(APR, [[30, 3, 90035, 0], [50, 2, 0, 5]], [7, 17001, 0]), masu(MAY1, [[70, 3, 90125, 0]], [7, 17002, 0]), masu(MAY2, [[300, 3, 90016, 0]], [3, 90016, 0]),
     masu(4999001, [[1, 2, 0, 1]], [2, 0, 1]),
     // Coliseum Part 2: the 2016-12 (1600) and 2017-02 (1800: Tier 10 and Tier 11 Bonus) boards
-    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800]].map((id) => masu(id, [[50, 3, 90076, 0]], [3, 90076, 0]))],
+    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000]].map((id) => masu(id, [[50, 3, 90076, 0]], [3, 90076, 0]))],
 });
 
 function world(opts = {}) {
@@ -198,6 +198,26 @@ const tests = {
     w.reached[1800] = 11;
     assert.deepStrictEqual(w.cb.check(HOME), { add: [T11], close: [] }, 'the Tier 11 Bonus announced at Tier 11');
     assert.deepStrictEqual(w.cb.list({ setSent: true }), [M, F, T10, T11]);
+  },
+  // Coliseum Part 3b: a season with Tier 11 / 12 / 13 Bonus boards (2018-12 .. 2019-04): each appears on reaching its own tier
+  tier12_13_bonus_after_tier() {
+    const [BOARD, T11, T12, T13] = SEASON_BOARDS[4000];
+    assert.deepStrictEqual([BONUS_TIER[BOARD], BONUS_TIER[T11], BONUS_TIER[T12], BONUS_TIER[T13]], [undefined, 11, 12, 13]);
+    const w = world({ live: 4000, reached: { 4000: 10 } });
+    w.coins = { 4000: 5000 };
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [BOARD], 'Tier 10: the plain board only');
+    for (const [id, tier] of [[T11, 11], [T12, 12], [T13, 13]]) {
+      assert.deepStrictEqual([w.cb.update(id, 1).ok, w.cb.update(id, 1).why], [false, 'not handed out'], `${id} not before Tier ${tier}`);
+    }
+    w.reached[4000] = 11;
+    assert.deepStrictEqual(w.cb.check(HOME), { add: [BOARD, T11], close: [] });
+    w.reached[4000] = 12;
+    assert.deepStrictEqual(w.cb.check(HOME), { add: [T12], close: [] }, 'the Tier 12 Bonus announced at Tier 12');
+    assert.strictEqual(w.cb.update(T13, 1).ok, false, 'Tier 13 Bonus not yet at Tier 12');
+    w.reached[4000] = 13;
+    assert.deepStrictEqual(w.cb.check(HOME), { add: [T13], close: [] }, 'the Tier 13 Bonus announced at Tier 13');
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [BOARD, T11, T12, T13]);
+    assert.strictEqual(w.cb.update(T13, 1).ok, true);
   },
   // a medal cell with the medal storage full goes to the Presents (as the raid rewards), the coins are still spent
   medal_over_cap_to_presents() {
