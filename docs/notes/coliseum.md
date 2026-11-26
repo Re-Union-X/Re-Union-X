@@ -357,8 +357,8 @@ only), imported by `build-resources.ps1` like the raid / event board cards.
   wings of the worldwide card. JP twins served as `jp`: Summer Mickey / Minnie, Mushroom Hunt M / F; the other 26 are `loc`
   previews at native size (fits 6.1 .. 17.6, scales 0.990 .. 1.010). The previews of the JP twins sit at canvas y = 6 on the JP
   cards: the 26-11 Part 1 cards (y = 12, bottom edge) are 6-7 px lower than the screenshots show (one canvas origin per
-  screenshot size taken from the 6★ Cid screenshot, whose card is 6 px higher than in the other 1280 x 544 ones). Left as
-  approved; `--ids part1` rebuilds them into a scratch folder and reports both places.
+  screenshot size taken from the 6★ Cid screenshot, whose card is 6 px higher than in the other 1280 x 544 ones). Kept as
+  approved (user 26-11, after a side-by-side); `--ids part1` rebuilds them into a scratch folder and reports both places.
 
 ## Open points of 25-11 closed (26 November 2026, resources 187 / master revision 395)
 
@@ -427,5 +427,5 @@ Resources 188, master revision 397, saves `colip2a` (August 2016), `colip2n` (No
   phone render 640x320 = the same 3-column grid as the Raid Catalog.
 - Threshold Present «Coliseum March 2017: 250,001st – 500,000th» (Chip + Dale) arrived.
 - Found: the season cards 1200-2000 were missing until `make_special_banners.py --section colosseum` ran (now a build step).
-- Pending user decisions: OK on the 30-card sheet `screenshots\coli_part2_cards_review.png`; re-placing the 8 Part 1 cards
-  6-7 px higher.
+- User decisions 26-11: the 30 Part 2 cards approved; the 8 Part 1 cards stay as they are (compared with the re-placed
+  ones, not wanted).
