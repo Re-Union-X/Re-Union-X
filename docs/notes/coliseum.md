@@ -347,8 +347,18 @@ only), imported by `build-resources.ps1` like the raid / event board cards.
   fitted place (moved up 4-6 px where the fit would cut opaque rows). Private files in `--loc` `img/sphere_incentive_coli/`.
 - 2200002 6★ Scrooge: the 2016 bundle file shows Scrooge alone, but the worldwide board screenshot shows Scrooge with Cid,
   Chip and Dale: the screenshot rules (as for the event boards), so it takes the wiki picture.
-- The boards of later seasons (244, not served yet): private research `private\events\sources\coliseum\BOARD_IMAGES.md`;
+- The boards of later seasons (214 after Part 2, not served yet): private research `private\events\sources\coliseum\BOARD_IMAGES.md`;
   same method when their season is built (JP 4.3.1 card when it matches the board screenshot, else the wiki preview).
+- Coliseum Part 2 (26-11, 30 boards 2016-08 .. 2017-04): the method is now `recon/tools/coliseum_board_cards.py` (test
+  `test_coliseum_board_cards.py`). The canvas is found in each screenshot (the card blob around the gold pixels = the 306 px
+  canvas; calibration on 2200001: origin offset 0, ratio 0.998), so screenshots of any size work. A JP 4.3.1 candidate is kept
+  only when it fits the screenshot (difference at most 17.81, the worst 26-11 fit) **and** the wiki preview is a cut of it
+  (native difference 0.00): the screenshot difference alone let the JP Vampire (F) through (12.8) although it lacks the bat
+  wings of the worldwide card. JP twins served as `jp`: Summer Mickey / Minnie, Mushroom Hunt M / F; the other 26 are `loc`
+  previews at native size (fits 6.1 .. 17.6, scales 0.990 .. 1.010). The previews of the JP twins sit at canvas y = 6 on the JP
+  cards: the 26-11 Part 1 cards (y = 12, bottom edge) are 6-7 px lower than the screenshots show (one canvas origin per
+  screenshot size taken from the 6★ Cid screenshot, whose card is 6 px higher than in the other 1280 x 544 ones). Left as
+  approved; `--ids part1` rebuilds them into a scratch folder and reports both places.
 
 ## Open points of 25-11 closed (26 November 2026, resources 187 / master revision 395)
 

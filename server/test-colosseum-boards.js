@@ -25,23 +25,29 @@ const sphereRow = (id, name) => ({ sphereBoardId: id, boardName: name, kindId: 0
 // April 2016 (800): one board of 2 cells (medal 30 coins, jewels 50 coins; completion title); May 2016 (900): two boards
 const APR = SEASON_BOARDS[800][0], MAY1 = SEASON_BOARDS[900][0], MAY2 = SEASON_BOARDS[900][1];
 const TABLES = () => ({
-  sphere: [sphereRow(APR, '6★ Cid'), sphereRow(MAY1, '6★ Scrooge'), sphereRow(MAY2, 'Tier 10 Bonus'), { ...sphereRow(4999001, 'Event'), type: 4 }],
-  sphereArray: [rb.gridRow(APR, 2), rb.gridRow(MAY1, 1), rb.gridRow(MAY2, 1), rb.gridRow(4999001, 1)],
+  sphere: [sphereRow(APR, '6★ Cid'), sphereRow(MAY1, '6★ Scrooge'), sphereRow(MAY2, 'Tier 10 Bonus'), { ...sphereRow(4999001, 'Event'), type: 4 },
+    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800]].map((id) => sphereRow(id, BONUS_TIER[id] ? `Tier ${BONUS_TIER[id]} Bonus` : 'Avatar'))],
+  sphereArray: [rb.gridRow(APR, 2), rb.gridRow(MAY1, 1), rb.gridRow(MAY2, 1), rb.gridRow(4999001, 1), ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800]].map((id) => rb.gridRow(id, 1))],
   sphereMasu: [masu(APR, [[30, 3, 90035, 0], [50, 2, 0, 5]], [7, 17001, 0]), masu(MAY1, [[70, 3, 90125, 0]], [7, 17002, 0]), masu(MAY2, [[300, 3, 90016, 0]], [3, 90016, 0]),
-    masu(4999001, [[1, 2, 0, 1]], [2, 0, 1])],
+    masu(4999001, [[1, 2, 0, 1]], [2, 0, 1]),
+    // Coliseum Part 2: the 2016-12 (1600) and 2017-02 (1800: Tier 10 and Tier 11 Bonus) boards
+    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800]].map((id) => masu(id, [[50, 3, 90076, 0]], [3, 90076, 0]))],
 });
 
 function world(opts = {}) {
   // reached: the highest tier reached per season (colosseum().tierReached of the live season); default Tier 10 everywhere
   const w = { live: opts.live === undefined ? 800 : opts.live, reached: opts.reached || { 800: 10, 900: 10 }, coins: {}, grants: [], presents: [], logs: [], nextId: 100, medals: opts.medals || 0, cap: opts.cap || 300 };
+  // w.kept (a kept season) wins over w.live (the season of the story clock), as routes-colosseum.js liveSeason
+  w.kept = opts.kept || null;
+  const liveOf = () => w.kept || w.live;
   w.player = opts.player || {};
   w.tables = TABLES();
   // the colosseum() factory as far as the boards use it: the live season and its coins
   const col = {
-    liveSeason: () => (w.live ? { id: w.live, month: { 800: '2016-04', 900: '2016-05' }[w.live] || '2016-06' } : null),
-    coinsOf: () => (w.live ? w.coins[w.live] || 0 : 0),
-    tierReached: (t) => !!w.live && (w.reached[w.live] || 1) >= t,
-    spendCoins: (n) => { if (!w.live || (w.coins[w.live] || 0) < n) return false; w.coins[w.live] -= n; return true; },
+    liveSeason: () => (liveOf() ? { id: liveOf(), month: { 800: '2016-04', 900: '2016-05', 1600: '2016-12', 1800: '2017-02' }[liveOf()] || '2016-06', kept: !!w.kept } : null),
+    coinsOf: () => (liveOf() ? w.coins[liveOf()] || 0 : 0),
+    tierReached: (t) => !!liveOf() && (w.reached[liveOf()] || 1) >= t,
+    spendCoins: (n) => { const l = liveOf(); if (!l || (w.coins[l] || 0) < n) return false; w.coins[l] -= n; return true; },
   };
   w.cb = colosseumBoardRoutes({
     player: w.player, master: (t) => w.tables[t] || [], now: () => 1234, colosseum: () => col,
@@ -163,6 +169,36 @@ const tests = {
     assert.deepStrictEqual(w.cb.list({ setSent: true }), [MAY1, MAY2], 'still listed when May comes back');
     assert.deepStrictEqual(w.player.colosseumSphere[900][MAY2].unlock, [1]);
   },
+  // Coliseum Part 2: a kept 2016-05 season lists only its own boards while the story is in 2016-12; removing the keep brings
+  // the 2016-12 boards (its Tier 10 Bonus only once Tier 10 is reached); May's progress stays apart
+  kept_season_boards_stay_apart() {
+    const w = world({ live: 1600, kept: 900, reached: { 900: 10, 1600: 1 } });
+    w.coins = { 900: 500, 1600: 500 };
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [MAY1, MAY2], 'kept May: May boards only');
+    for (const id of SEASON_BOARDS[1600]) assert.deepStrictEqual([w.cb.update(id, 1).ok, w.cb.update(id, 1).why], [false, 'not handed out'], `${id} not while May is kept`);
+    assert.strictEqual(w.cb.update(MAY1, 1).ok, true);
+    assert.deepStrictEqual(w.coins, { 900: 430, 1600: 500 }, 'May coins only (cell 1: 70)');
+    w.kept = null;
+    const [M, F, BONUS] = SEASON_BOARDS[1600];
+    assert.deepStrictEqual(w.cb.check(CLOSE).close, [MAY1, MAY2], 'May closed');
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [M, F], 'the story season, its bonus board hidden before Tier 10');
+    w.reached[1600] = 10;
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [M, F, BONUS]);
+    assert.deepStrictEqual(Object.keys(w.player.colosseumSphere).sort(), ['1600', '900'], 'stored per season');
+    assert.deepStrictEqual(w.player.colosseumSphere[900][MAY1].unlock, [1], 'May progress kept apart');
+  },
+  // a season with a Tier 10 and a Tier 11 Bonus (2017-02 .. 2017-04): each appears with its own tier
+  tier11_bonus_after_tier11() {
+    const [M, F, T10, T11] = SEASON_BOARDS[1800];
+    assert.deepStrictEqual([BONUS_TIER[T10], BONUS_TIER[T11], BONUS_TIER[M], BONUS_TIER[F]], [10, 11, undefined, undefined]);
+    const w = world({ live: 1800, reached: { 1800: 9 } });
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [M, F]);
+    w.reached[1800] = 10;
+    assert.deepStrictEqual(w.cb.check(HOME), { add: [M, F, T10], close: [] });
+    w.reached[1800] = 11;
+    assert.deepStrictEqual(w.cb.check(HOME), { add: [T11], close: [] }, 'the Tier 11 Bonus announced at Tier 11');
+    assert.deepStrictEqual(w.cb.list({ setSent: true }), [M, F, T10, T11]);
+  },
   // a medal cell with the medal storage full goes to the Presents (as the raid rewards), the coins are still spent
   medal_over_cap_to_presents() {
     const w = world({ medals: 300, cap: 300 });
@@ -217,7 +253,10 @@ function wiring() {
       const m = r.type === 3 && /^Tier (\d+) Bonus$/.exec(r.boardName);
       if (m) named[r.sphereBoardId] = Number(m[1]);
     }
-    assert.deepStrictEqual(named, BONUS_TIER);
+    // the boards served by this master (Part 1 only until the regen of the nine new seasons)
+    const served = new Set(t.masterRows('sphere').filter((r) => r.type === 3).map((r) => r.sphereBoardId));
+    assert.deepStrictEqual(named, Object.fromEntries(Object.entries(BONUS_TIER).filter(([id]) => served.has(Number(id)))));
+    assert.ok(Object.keys(named).length >= 3);
   });
   run('wiring_no_live_season', () => {
     assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [], 'story below 130: no Coliseum board');
@@ -262,6 +301,22 @@ function wiring() {
     p.colosseum.kept = 800;
     const back = quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas.find((d) => d.sphereBoardId === CID);
     assert.deepStrictEqual([back.unlockMasuIds, back.userSphereBoardId], [[2], uid], 'April comes back as it was');
+  });
+  // Coliseum Part 2: a kept 2016-05 season lists only its boards while the story is in 2016-12; without the keep the 2016-12
+  // boards (skipped on a master without them: the full regen comes with the resources build)
+  const DEC = SEASON_BOARDS[1600];
+  if (!t.masterRows('sphere').some((r) => r.sphereBoardId === DEC[0])) console.log('wiring_kept_season_apart: skipped (no 2016-12 boards in master_data)');
+  else run('wiring_kept_season_apart', () => {
+    // the story in 2016-12: the first story quest whose shop week falls in December 2016
+    const story = t.masterRows('stage').filter((r) => r.stageKind === 1 && r.id >= 140 && r.id <= 979).sort((a, b) => a.id - b.id);
+    const monthAt = (r) => { p.stageScores = { [r.stageId]: 1 }; return String(quiet(() => t.storyCtx()).shopFrom).slice(0, 7); };
+    const q = story.find((r) => monthAt(r) >= '2016-12');
+    assert.ok(q && monthAt(q) === '2016-12', `a story quest in 2016-12 (${q && q.id})`);
+    p.colosseum.kept = 900;
+    const [SCROOGE, BONUS] = SEASON_BOARDS[900];
+    assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), [SCROOGE, BONUS], 'kept May: May boards only');
+    delete p.colosseum.kept;
+    assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), DEC.slice(0, 2), 'the story season, its Tier 10 Bonus later');
   });
   fs.rmSync(dir, { recursive: true, force: true });
 }

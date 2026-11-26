@@ -11,8 +11,9 @@
 //   (Part 2 Task 3, enemyRows) every id the served stages use missing from our master (today none: 93 ids over 130 stages);
 // - ranking (category 4, ids 4009-4012) + rankingReward (its brackets, ids = the ranking's startRank..endRank): the client's
 //   «Rewards» button crashes for a season whose rankingId has no rankingReward rows;
-// - sphere / sphereArray / sphereMasu: the 1.1.3 Coliseum boards (type 3) of the season (SEASON_BOARDS), arryId and masuId
-//   renumbered to the sphereBoardId (the 1.1.3 3200001+/4200001+ ids fall in the Raid Boards' range 3000000-3999999);
+// - sphere / sphereArray / sphereMasu: the Coliseum boards (type 3) of the season (SEASON_BOARDS; 1.1.3 rows, from 2016-11 the
+//   ReLux board extract), arryId and masuId renumbered to the sphereBoardId (the 3200001+/4200001+ ids fall in the Raid Boards'
+//   range 3000000-3999999);
 // - evStage 6000: the Coliseum Catalog banner of the Events tab (Task 6, CATALOG_EV), not a 1.1.3 row.
 // Every array is cut to its valid* count, the rest zeroed (the 1.1.3 array tails hold decoder garbage), and padded to the
 // 4.3.1 schema length (recon/out/master_types_ww431.json). Dates as make-raid.js writes its rows (START / END): the server
@@ -98,25 +99,55 @@ const ENDLESS = 999; // rounds of the endless tier
 const COIN_MAX = 10000; // a type-17 tier reward above it is the ReLux x100 artefact
 // provisional reward ids of the relux seasons (see the comment block): REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK
 const REWARD_BASE = 35000, REWARD_BLOCK = 50, REWARD_FIRST_RANKING = 4016;
-// type-3 boards of each season: 1.1.3 sphere rows (their startDatetime month, checked), = the wiki board list (6★ Cid
-// 04/16; 6★ Scrooge + Tier 10 Bonus 3390 05/16; KH Chip M/F + Tier 10 Bonus 3090 06/16; Moogle M/F + Tier 10 Bonus 07/16)
-const SEASON_BOARDS = { 800: [2200001], 900: [2200002, 2200023], 1000: [2210029, 2210030, 2210031], 1100: [2210033, 2210034, 2210035] };
-// the «Tier N Bonus» boards (1.1.3 boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum
-// Board!»; routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
-const BONUS_TIER = { 2200023: 10, 2210031: 10, 2210035: 10 };
+// type-3 boards of each season, = the wiki board list of the month (6★ Cid 04/16; 6★ Scrooge + Tier 10 Bonus 3390 05/16;
+// KH Chip M/F + Tier 10 Bonus 3090 06/16; Moogle M/F + Tier 10 Bonus 07/16; Part 2 Task 4: avatar M/F (19 nodes, 1100 coins) +
+// Tier 10 Bonus (3090, proven on video) every month 08/16 .. 04/17, + Tier 11 Bonus (3390) from 02/17). Rows: the 1.1.3 sphere rows
+// for the '113' seasons (their startDatetime month, checked), the cleaned ReLux board extract (readRelux, coliseum_boards.json,
+// no dates: the month of each id is the private research BOARD_IMAGES.md month column, by id order and board counts per month
+// checked against the khuxwiki months) for the 'relux' seasons. Every grid has START at row 4 column 0 and nothing in the
+// top-left 2 x 2 (the board picture covers it, raid-boards.js IMAGE_CORNER): checked, a row that breaks it stops the run.
+const SEASON_BOARDS = {
+  800: [2200001], 900: [2200002, 2200023], 1000: [2210029, 2210030, 2210031], 1100: [2210033, 2210034, 2210035],
+  1200: [2210037, 2210038, 2210039], // Summer Mickey, Summer Minnie, Tier 10 Bonus (2016-08)
+  1300: [2210040, 2210041, 2210042], // Mushroom Hunt M / F, Tier 10 Bonus
+  1400: [2210043, 2210044, 2210045], // Vampire M / F, Tier 10 Bonus
+  1500: [2210046, 2210047, 2210048], // Timothy Mouse M / F, Tier 10 Bonus
+  1600: [2210049, 2210050, 2210051], // Pegasus Knight M / F, Tier 10 Bonus
+  1700: [2210052, 2210053, 2210054], // Armored Terra, Armored Aqua, Tier 10 Bonus
+  1800: [2210055, 2210056, 2210057, 2210058], // Cowboy Goth, Cowgirl Goth, Tier 10 Bonus, Tier 11 Bonus
+  1900: [2210059, 2210060, 2210061, 2210062], // Royal Knight M / F, Tier 10 Bonus, Tier 11 Bonus
+  2000: [2210063, 2210064, 2210065, 2210066], // Ninja, Kunoichi, Tier 10 Bonus, Tier 11 Bonus (2017-04)
+};
+// the «Tier N Bonus» boards (boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum Board!»;
+// routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
+const BONUS_TIER = {
+  2200023: 10, 2210031: 10, 2210035: 10, 2210039: 10, 2210042: 10, 2210045: 10, 2210048: 10, 2210051: 10, 2210054: 10,
+  2210057: 10, 2210058: 11, 2210061: 10, 2210062: 11, 2210065: 10, 2210066: 11,
+};
+const CORNER_FREE = (a) => [a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]].every((v) => !v);
 // Board card pictures img/sphere_incentive/<sphereBoardId>.png (client Select_Base layer, docs/notes/coliseum.md «Board card
 // pictures»): b16 = the worldwide 2016 file of the same id (6★ Cid); every other served board = the khuxwiki «Preview - <board>»
 // picture placed on the 306x306 card where the original board screenshot draws it (native size, no resampling; private files
 // in --loc img/sphere_incentive_coli/). The 2016 bundle 2200002 (Scrooge alone) is not what the worldwide board showed: the
 // screenshot has Scrooge with Cid, Chip and Dale, so 2200002 uses the wiki picture too. Written to game_data/colosseum_board_art.tsv
 // for the served boards, imported by build-resources.ps1 like the raid / event board cards.
-const BOARD_ART = { 2200001: 'b16' };
+// Part 2 (Task 4, recon/tools/coliseum_board_cards.py, the method as a tool): jp:<file> = the JP 4.3.1 card of the same avatar set
+// when it fits the worldwide board screenshot AND the wiki preview is a cut of it (difference 0.00: the same picture); the four
+// JP twins are Summer Mickey / Minnie and Mushroom Hunt M / F. Vampire M / F (JP 2200045 / 2200046: no bat wings on the JP
+// cards), Ninja and Kunoichi (JP 2200025 / 2200026: other pictures) and every board without a JP candidate: loc (the wiki
+// preview at native size, placed as the screenshot shows it). A board missing here is loc.
+const BOARD_ART = { 2200001: 'b16', 2210037: 'jp:2200037.png', 2210038: 'jp:2200038.png', 2210040: 'jp:2200041.png', 2210041: 'jp:2200042.png' };
 function artLines(boardIds) {
   const head = ['# Coliseum Board card pictures, written by server/make-colosseum.js (BOARD_ART).',
-    '# Columns as in originals.tsv. b16 = the worldwide 2016 file of the same id; loc = the khuxwiki card picture placed as on the original board screenshot.'];
-  return [...head, ...boardIds.map((id) => (BOARD_ART[id] === 'b16'
-    ? `img/sphere_incentive/${id}.png\tb16`
-    : `img/sphere_incentive/${id}.png\tloc\t=img/sphere_incentive_coli/${id}.png`))].join('\n') + '\n';
+    '# Columns as in originals.tsv. b16 = the worldwide 2016 file of the same id; jp = the JP 4.3.1 card of the same picture (another id);'
+    + ' loc = the khuxwiki card picture placed as on the original board screenshot.'];
+  const line = (id) => {
+    const art = BOARD_ART[id] || 'loc';
+    if (art === 'b16') return `img/sphere_incentive/${id}.png\tb16`;
+    if (art.startsWith('jp:')) return `img/sphere_incentive/${id}.png\tjp\timg/sphere_incentive/${art.slice(3)}`;
+    return `img/sphere_incentive/${id}.png\tloc\t=img/sphere_incentive_coli/${id}.png`;
+  };
+  return [...head, ...boardIds.map(line)].join('\n') + '\n';
 }
 // Coliseum Catalog banner (Task 6; user 25-11: the first catalog banner of the Events tab): evStage CATALOG_EV, eventType 0,
 // Details -> CATALOG_URL (colosseum-pages.js), a tap opens the Training Grounds quest CATALOG_STAGE of make-special (the stage of
@@ -279,12 +310,16 @@ function seasonRows(src, seasons = SEASONS) {
     out.rankingReward.push(...rewards);
     out.ranked[id] = rankedOf(tierRows, rewards);
     prev = { stages, ranking: rkRow, rewards };
+    // the boards: the 1.1.3 rows (dated: the month checked) or the ReLux board extract (undated: the month is SEASON_BOARDS)
     for (const boardId of SEASON_BOARDS[id] || []) {
-      const b = find('sphere', 'sphereBoardId', boardId, s.month);
-      if (b.type !== 3 || String(b.startDatetime).slice(0, 7) !== s.month) throw new Error(`colosseum: board ${boardId} (type ${b.type}, ${b.startDatetime}) is not a Coliseum board of ${s.month}`);
-      const arr = find('sphereArray', 'arryId', b.arryId, `board ${boardId}`), masu = find('sphereMasu', 'masuId', b.masuId, `board ${boardId}`);
+      const b = from('sphere', 'sphereBoardId', boardId, s.month);
+      if (b.type !== 3 || (!relux && String(b.startDatetime).slice(0, 7) !== s.month)) throw new Error(`colosseum: board ${boardId} (type ${b.type}, ${b.startDatetime}) is not a Coliseum board of ${s.month}`);
+      const arr = from('sphereArray', 'arryId', b.arryId, `board ${boardId}`), masu = from('sphereMasu', 'masuId', b.masuId, `board ${boardId}`);
+      const grid = Object.assign(schemaRow('sphereArray', arr), { arryId: boardId });
+      if (grid.spCol4[0] !== 1000) throw new Error(`colosseum: board ${boardId}: START is not at row 4 column 0`);
+      if (!CORNER_FREE(grid)) throw new Error(`colosseum: board ${boardId}: a cell in the top-left 2 x 2 corner (under the board picture)`);
       out.sphere.push(Object.assign(schemaRow('sphere', b), { arryId: boardId, masuId: boardId, detailUrl: '', startDatetime: START, endDatetime: END }));
-      out.sphereArray.push(Object.assign(schemaRow('sphereArray', arr), { arryId: boardId }));
+      out.sphereArray.push(grid);
       out.sphereMasu.push(Object.assign(schemaRow('sphereMasu', masu), { masuId: boardId, sphereBoardId: boardId }));
     }
   }
@@ -382,13 +417,16 @@ const rowsOf = (text) => { const r = JSON.parse(text); return Array.isArray(r) ?
 function readSource(dir) {
   try { return Object.fromEntries(TABLES.map((t) => [t, rowsOf(fs.readFileSync(path.join(dir, `${t}.json`), 'utf8'))])); } catch { return null; }
 }
-// the cleaned ReLux season extract ({seasons: [{colosseumStage, colosseum[]}]}) as {colosseumStage[], colosseum[]}, null when
-// not readable
-function readRelux(file) {
-  let j;
-  try { j = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+// the cleaned ReLux season extract ({seasons: [{colosseumStage, colosseum[]}]}) and its board extract (boardsFile, default
+// coliseum_boards.json next to it: {boards: [{sphere, sphereArray, sphereMasu}]}) as {colosseumStage[], colosseum[], sphere[],
+// sphereArray[], sphereMasu[]}, null when either is not readable (the ReLux seasons are then left out whole)
+function readRelux(file, boardsFile = path.join(path.dirname(file), 'coliseum_boards.json')) {
+  let j, b;
+  try { j = JSON.parse(fs.readFileSync(file, 'utf8')); b = JSON.parse(fs.readFileSync(boardsFile, 'utf8')); } catch { return null; }
   const seasons = Array.isArray(j && j.seasons) ? j.seasons : [];
-  return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum || []) };
+  const boards = Array.isArray(b && b.boards) ? b.boards : [];
+  return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum || []),
+    sphere: boards.map((x) => x.sphere), sphereArray: boards.map((x) => x.sphereArray), sphereMasu: boards.map((x) => x.sphereMasu) };
 }
 // the cleaned ReLux Coliseum enemy rows ({rows: [...]}, arrays already cut), null when not readable
 function readReluxEnemies(file) {
@@ -465,7 +503,7 @@ function patch(masterDir, opts = {}) {
     const file = process.env.KHUX_COLOSSEUM_RELUX || DEFAULT_RELUX;
     relux = readRelux(file);
     if (!relux) {
-      console.warn(`colosseum: the ReLux season extract ${file} is not readable: ${seasons.filter((s) => s.source === 'relux').map((s) => s.month).join(', ')} left out`);
+      console.warn(`colosseum: the ReLux season extract ${file} (or coliseum_boards.json next to it) is not readable: ${seasons.filter((s) => s.source === 'relux').map((s) => s.month).join(', ')} left out`);
       seasons = seasons.filter((s) => s.source !== 'relux');
     }
   }

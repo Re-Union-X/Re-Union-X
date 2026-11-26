@@ -80,9 +80,31 @@ test('SEASONS and SEASON_BOARDS', () => {
     ['2016-12', 1600, 'relux', false], ['2017-01', 1700, 'relux', false], ['2017-02', 1800, 'relux', false], ['2017-03', 1900, 'relux', false],
     ['2017-04', 2000, 'relux', false]]);
   assert.deepStrictEqual(mc.SEASON_BOARDS[800], [2200001]);
-  // Part 1 seasons have their boards; the Part 2 ones get theirs in Task 4 (none yet is not an error)
-  for (const s of mc.SEASONS.slice(0, 4)) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
+  for (const s of mc.SEASONS) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
   for (const [t, [, lo, hi]] of Object.entries(mc.RANGES)) assert.ok(lo <= hi, t);
+});
+
+// Coliseum Part 2 Task 4: the boards of the nine seasons = the khuxwiki board list of each month (private BOARD_IMAGES.md, month
+// column: avatar M/F + Tier 10 Bonus; from 2017-02 also the Tier 11 Bonus)
+const WIKI_BOARDS = {
+  1200: [2210037, 2210038, 2210039], // Summer Mickey, Summer Minnie, Tier 10 Bonus (2016-08)
+  1300: [2210040, 2210041, 2210042], // Mushroom Hunt M/F, Tier 10 Bonus
+  1400: [2210043, 2210044, 2210045], // Vampire M/F, Tier 10 Bonus
+  1500: [2210046, 2210047, 2210048], // Timothy Mouse M/F, Tier 10 Bonus
+  1600: [2210049, 2210050, 2210051], // Pegasus Knight M/F, Tier 10 Bonus
+  1700: [2210052, 2210053, 2210054], // Armored Terra, Armored Aqua, Tier 10 Bonus
+  1800: [2210055, 2210056, 2210057, 2210058], // Cowboy Goth, Cowgirl Goth, Tier 10 Bonus, Tier 11 Bonus
+  1900: [2210059, 2210060, 2210061, 2210062], // Royal Knight M/F, Tier 10 Bonus, Tier 11 Bonus
+  2000: [2210063, 2210064, 2210065, 2210066], // Ninja, Kunoichi, Tier 10 Bonus, Tier 11 Bonus (2017-04)
+};
+const TIER11 = [2210058, 2210062, 2210066];
+test('each new season lists exactly its wiki boards; every bonus board has its tier', () => {
+  for (const [id, ids] of Object.entries(WIKI_BOARDS)) assert.deepStrictEqual(mc.SEASON_BOARDS[id], ids, `boards of ${id}`);
+  const all = Object.values(mc.SEASON_BOARDS).flat();
+  assert.strictEqual(new Set(all).size, all.length, 'a board in one season only');
+  const bonus = {};
+  for (const ids of Object.values(WIKI_BOARDS)) for (const b of ids.slice(2)) bonus[b] = TIER11.includes(b) ? 11 : 10;
+  assert.deepStrictEqual(mc.BONUS_TIER, { 2200023: 10, 2210031: 10, 2210035: 10, ...bonus });
 });
 
 test('GEN_STAGE_IDS: 2116MMNN, never a JP id', () => {
@@ -292,7 +314,7 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
   assert.strictEqual(new Set(out.stage.map((r) => r.id)).size, 40);
   assert.deepStrictEqual(out.ranking.map((r) => r.rankingId), [4009, 4010, 4011, 4012]);
   assert.deepStrictEqual(out.rankingReward.length, 4 + 2 + 8 + 8);
-  assert.deepStrictEqual(out.sphere.map((r) => r.sphereBoardId), Object.values(mc.SEASON_BOARDS).flat().sort((a, b) => a - b));
+  assert.deepStrictEqual(out.sphere.map((r) => r.sphereBoardId), [800, 900, 1000, 1100].flatMap((id) => mc.SEASON_BOARDS[id]).sort((a, b) => a - b));
   assert.strictEqual(out.enemy.length, 0, 'the 111 Coliseum enemy rows are already in our master');
   for (const s of mc.SEASONS.slice(0, 4)) {
     const t = out.ranked[s.colosseumStageId];
@@ -304,10 +326,27 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
 });
 
 test('board card pictures: 6★ Cid from the 2016 bundle, every other served board from --loc', () => {
-  const rows = mc.artLines(Object.values(mc.SEASON_BOARDS).flat()).split('\n').filter((l) => l && !l.startsWith('#'));
-  assert.strictEqual(rows.length, 9);
+  const served = Object.values(mc.SEASON_BOARDS).flat();
+  const rows = mc.artLines(served).split('\n').filter((l) => l && !l.startsWith('#'));
+  assert.strictEqual(rows.length, served.length, 'one line per served board');
+  assert.strictEqual(served.length, 9 + 30);
+  assert.deepStrictEqual(rows.map((l) => l.split('\t')[0]), served.map((id) => `img/sphere_incentive/${id}.png`), 'in the order of the boards');
   assert.strictEqual(rows[0], 'img/sphere_incentive/2200001.png\tb16');
   assert.strictEqual(rows[1], 'img/sphere_incentive/2200002.png\tloc\t=img/sphere_incentive_coli/2200002.png');
+  // every value: b16 | loc | jp:<file>; a jp line copies that JP 4.3.1 file (import_originals.py source jp, highest revision)
+  for (const [id, v] of Object.entries(mc.BOARD_ART)) assert.match(v, /^(b16|loc|jp:\d{7}\.png)$/, `${id} ${v}`);
+  assert.strictEqual(mc.artLines([2210037]).split('\n').filter((l) => l && !l.startsWith('#'))[0],
+    `img/sphere_incentive/2210037.png\tjp\timg/sphere_incentive/${mc.BOARD_ART[2210037].slice(3)}`);
+  const jpLines = rows.filter((l) => l.split('\t')[1] === 'jp');
+  assert.ok(jpLines.length >= 1, 'the JP twins are served as JP files');
+  for (const l of jpLines) assert.match(l, /^img\/sphere_incentive\/\d{7}\.png\tjp\timg\/sphere_incentive\/\d{7}\.png$/, l);
+  // the JP file names exist in the local JP 4.3.1 data (private, skipped without it)
+  let jp = null;
+  try { jp = require('child_process').execFileSync('python', ['-I', path.join(__dirname, '..', 'recon', 'tools', 'private_tools.py'), 'path', 'jp_data'], { encoding: 'utf8' }).trim(); } catch { /* none */ }
+  if (jp && fs.existsSync(path.join(jp, 'img', 'sphere_incentive'))) {
+    const names = new Set(fs.readdirSync(path.join(jp, 'img', 'sphere_incentive')).map((f) => f.replace(/\.\d{8}(\.png)$/, '$1')));
+    for (const l of jpLines) assert.ok(names.has(path.basename(l.split('\t')[2])), `JP file of ${l}`);
+  } else results.push('skip art jp files: JP 4.3.1 data not on disk');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcart-'));
   try {
     const art = path.join(dir, 'art.tsv');
@@ -338,9 +377,23 @@ const reluxSeason = (sid, month, setFirst, hidden) => {
     headColosseumId: sid + 1, termColosseumId: term, rankingId: 4016 + (sid - 1500) / 100, validStage: 10, stageId: Array.from({ length: 10 }, (_, i) => setFirst + i),
     loopStageCount: 10, lvPerLoop: 10, _closeDate_derived: true }, colosseum: tiers };
 };
+// a donor board (coliseum_boards.json shape: own arryId 3210xxx / masuId 4210xxx, no dates): 19 nodes, START at row 4 column 0
+const reluxBoard = (id, name, kindId, coins) => {
+  const pts = Array(23).fill(0);
+  for (let i = 0; i < 19; i++) pts[i] = i < 18 ? 50 : coins - 18 * 50;
+  const row = (r) => Array.from({ length: 9 }, (_, c) => (r === 4 && c === 0 ? 1000 : r >= 2 || c >= 2 ? 1002 : 0));
+  return { sphere: { sphereBoardId: id, boardName: name, kindId, boardId: 3, arryId: id + 1000000, masuId: id + 2000000, type: 3, openId: 3, openParam: 0, price: 0, detailUrl: null },
+    sphereArray: { arryId: id + 1000000, spCol4: row(4), spCol3: row(3), spCol2: row(2), spCol1: row(1), spCol0: row(0) },
+    sphereMasu: { masuId: id + 2000000, sphereBoardId: id, spherePoint: pts, rewardSelect: pts.map((p) => (p ? 3 : 0)), medalCategory: Array(23).fill(0),
+      rewardId: pts.map((p) => (p ? 90076 : 0)), rewardExpand: Array(23).fill(0), rewardExpandId: Array(23).fill(0), rewardValue: Array(23).fill(0), burstUpperNumber: Array(23).fill(0) } };
+};
+const RELUX_BOARDS = [[2210046, 'Timothy Mouse', 1, 1100], [2210047, 'Timothy Mouse', 2, 1100], [2210048, 'Tier 10 Bonus', 0, 3090],
+  [2210052, 'Armored Terra', 1, 1100], [2210053, 'Armored Aqua', 2, 1100], [2210054, 'Tier 10 Bonus', 0, 3090]].map((b) => reluxBoard(...b));
 const reluxFixture = () => {
   const seasons = [reluxSeason(1500, '2016-11', 20160401, 0), reluxSeason(1700, '2017-01', 20160601, 4)];
-  return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum) };
+  const boards = JSON.parse(JSON.stringify(RELUX_BOARDS));
+  return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum),
+    sphere: boards.map((b) => b.sphere), sphereArray: boards.map((b) => b.sphereArray), sphereMasu: boards.map((b) => b.sphereMasu) };
 };
 const S1500 = { month: '2016-11', colosseumStageId: 1500, source: 'relux', genStages: true };
 const S1700 = { month: '2017-01', colosseumStageId: 1700, source: 'relux' };
@@ -352,9 +405,49 @@ test('readRelux: the extract flattened, null when not readable', () => {
     const f = path.join(dir, 'coliseum_seasons.json'), rf = reluxFixture();
     fs.writeFileSync(f, JSON.stringify({ _provenance: {}, seasons: [1500, 1700].map((sid) => ({
       colosseumStage: rf.colosseumStage.find((r) => r.colosseumStageId === sid), colosseum: rf.colosseum.filter((r) => r.colosseumStageId === sid) })) }));
-    assert.deepStrictEqual(mc.readRelux(f), rf);
+    assert.strictEqual(mc.readRelux(f), null, 'no board extract next to it: not readable');
+    fs.writeFileSync(path.join(dir, 'coliseum_boards.json'), JSON.stringify({ _provenance: {}, boards: RELUX_BOARDS.map((b) => ({ ...b, _meta: {} })) }));
+    assert.deepStrictEqual(mc.readRelux(f), rf, 'seasons and the boards next to them (coliseum_boards.json)');
     assert.strictEqual(mc.readRelux(path.join(dir, 'none.json')), null);
+    const other = path.join(dir, 'b.json');
+    fs.copyFileSync(path.join(dir, 'coliseum_boards.json'), other);
+    fs.rmSync(path.join(dir, 'coliseum_boards.json'));
+    assert.deepStrictEqual(mc.readRelux(f, other), rf, 'a board extract named by the caller');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('relux boards: the donor rows of the season, renumbered to the board id; a missing one stops', () => {
+  const out = mc.seasonRows(p2(), [S800[0], S1500, S1700]);
+  assert.deepStrictEqual(out.sphere.map((r) => r.sphereBoardId), [2200001, ...WIKI_BOARDS[1500], ...WIKI_BOARDS[1700]]);
+  for (const b of RELUX_BOARDS) {
+    const id = b.sphere.sphereBoardId, s = out.sphere.find((r) => r.sphereBoardId === id);
+    assert.deepStrictEqual([s.boardName, s.kindId, s.type, s.boardId, s.arryId, s.masuId, s.detailUrl, s.startDatetime, s.endDatetime],
+      [b.sphere.boardName, b.sphere.kindId, 3, 3, id, id, '', mc.START, mc.END], `${id} sphere`);
+    const a = out.sphereArray.find((r) => r.arryId === id);
+    assert.deepStrictEqual(a.spCol4, b.sphereArray.spCol4, `${id} grid`);
+    const m = out.sphereMasu.find((r) => r.masuId === id);
+    assert.deepStrictEqual([m.sphereBoardId, m.spherePoint], [id, b.sphereMasu.spherePoint], `${id} cells`);
+  }
+  const f = p2();
+  f.relux.sphere = f.relux.sphere.filter((r) => r.sphereBoardId !== 2210047);
+  assert.throws(() => mc.seasonRows(f, [S800[0], S1500]), /2210047/);
+  const g = p2();
+  g.relux.sphere.find((r) => r.sphereBoardId === 2210046).type = 4;
+  assert.throws(() => mc.seasonRows(g, [S800[0], S1500]), /2210046/, 'not a Coliseum board');
+});
+
+test('board grid: START at row 4 column 0 and nothing in the top-left 2 x 2 (the board picture), else the run stops', () => {
+  const out = mc.seasonRows(p2(), [S800[0], S1500, S1700]);
+  for (const a of out.sphereArray) {
+    assert.strictEqual(a.spCol4[0], 1000, `${a.arryId} START`);
+    assert.deepStrictEqual([a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]], [0, 0, 0, 0], `${a.arryId} corner`);
+  }
+  const f = p2();
+  f.relux.sphereArray.find((r) => r.arryId === 3210046).spCol1[1] = 1002;
+  assert.throws(() => mc.seasonRows(f, [S800[0], S1500]), /2210046.*corner/);
+  const g = p2();
+  g.relux.sphereArray.find((r) => r.arryId === 3210047).spCol4[0] = 1002;
+  assert.throws(() => mc.seasonRows(g, [S800[0], S1500]), /2210047.*START/);
 });
 
 test('relux seasons: extract rows, generated stage ids, wiki-visible tiers', () => {
@@ -494,6 +587,32 @@ test('real_part2 (the nine seasons from the 1.1.3 master and the ReLux extract)'
   assert.deepStrictEqual(p1(out.stage, 'stageId', part1.stage.map((r) => r.stageId)), part1.stage);
   assert.deepStrictEqual(p1(out.rankingReward, 'rankingRewardId', part1.rankingReward.map((r) => r.rankingRewardId)), part1.rankingReward);
   assert.deepStrictEqual(out.enemy, part1.enemy);
+  for (const t of ['sphere', 'sphereArray', 'sphereMasu']) {
+    const key = mc.RANGES[t][0], ids = part1[t].map((r) => r[key]);
+    assert.deepStrictEqual(out[t].filter((r) => ids.includes(r[key])), part1[t], `Part 1 ${t} rows unchanged`);
+  }
+  // boards: each season its wiki boards; avatar boards 19 nodes / 1100 coins, Tier 10 Bonus 3090 (proven on video), Tier 11
+  // Bonus 3390; START at row 4 column 0, nothing in the top-left 2 x 2; 1200-1400 = the 1.1.3 rows, 1500-2000 = the donor rows
+  const donor = new Map(relux.sphere.map((r) => [r.sphereBoardId, r]));
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  for (const [sid, ids] of Object.entries(WIKI_BOARDS)) {
+    assert.deepStrictEqual(out.sphere.filter((r) => ids.includes(r.sphereBoardId)).map((r) => r.sphereBoardId), ids, `${sid} boards served`);
+    for (const id of ids) {
+      const s = out.sphere.find((r) => r.sphereBoardId === id), m = out.sphereMasu.find((r) => r.masuId === id), a = out.sphereArray.find((r) => r.arryId === id);
+      const nodes = m.spherePoint.slice(0, 22).filter((p) => p > 0).length, coins = sum(m.spherePoint.slice(0, 22));
+      const bonus = mc.BONUS_TIER[id];
+      assert.strictEqual(s.boardName, bonus ? `Tier ${bonus} Bonus` : s.boardName, `${id} name`);
+      assert.deepStrictEqual([nodes, coins], bonus === 11 ? [19, 3390] : bonus === 10 ? [19, 3090] : [19, 1100], `${id} nodes / coins`);
+      if (!bonus) assert.ok([1, 2].includes(s.kindId), `${id} avatar board: male / female`);
+      assert.strictEqual(a.spCol4[0], 1000, `${id} START`);
+      assert.deepStrictEqual([a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]], [0, 0, 0, 0], `${id} corner`);
+      assert.deepStrictEqual([s.arryId, s.masuId, m.sphereBoardId, s.type], [id, id, id, 3], `${id} renumbered`);
+      const orig = Number(sid) <= 1400 ? src.sphere.find((r) => r.sphereBoardId === id) : donor.get(id);
+      assert.ok(orig, `${id} source row`);
+      assert.deepStrictEqual([s.boardName, s.kindId], [orig.boardName, orig.kindId], `${id} from its source`);
+      if (Number(sid) <= 1400) assert.strictEqual(String(orig.startDatetime).slice(0, 7), mc.SEASONS.find((x) => x.colosseumStageId === Number(sid)).month, `${id} 1.1.3 month`);
+    }
+  }
   // new seasons start fresh: a save with only the Part 1 seasons plays 2016-08 from Tier 1 Round 1 with 0 coins
   const save = { colosseum: { seasons: { 800: { last: 70, open: 71, coins: 50, cleared: [70], tierRewards: [1, 2, 3, 4, 5], bestAt: 'T' }, 1100: { last: 3, open: 4, coins: 4, cleared: [3], tierRewards: [], bestAt: 'T' } } } };
   const st = R.seasonState(save, 1200);
