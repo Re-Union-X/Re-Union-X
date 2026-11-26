@@ -59,7 +59,7 @@ run('hub_page_cards', () => {
   // the header of the catalogue pages (detail-cards.js catalogHead, user 26-11): gold title with its icon, NOT ORIGINAL badge, intro lines
   assert.ok(html.includes('<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1></div>'), 'header');
   assert.ok(/<details class="cs" id="sec-about" open><summary class="csh"><img class="ic" src="\/web\/special\/icon\/mog.png" alt=""><h2>How it works<\/h2>/.test(html)
-    && html.includes('<div class="ab"><img class="ic" src="/web/special/icon/medal.png" alt=""><span><span class="v">Every catalog</span> of this server in <span class="rd">one place</span>')
+    && html.includes('<div class="ab"><img class="ic" src="/web/special/icon/done.png" alt=""><span><span class="v">Every catalog</span> of this server in <span class="rd">one place</span>')
     && html.includes('<span class="v">Keep one past item</span>') && html.includes('The <span class="v">Banner Catalog</span> is in the Shop.'), '«How it works» card, one line per point with its icon');
   assert.ok(!/addition of this server/.test(html), 'the badge in place of the sentence');
   assert.deepStrictEqual([...html.matchAll(/<div class="row[^"]*" id="c-([a-z]+)" data-href="([^"]+)">/g)].map((m) => [m[1], m[2]]),

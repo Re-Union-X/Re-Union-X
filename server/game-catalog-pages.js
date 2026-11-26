@@ -100,7 +100,7 @@ function hubPage(cards = [], kept = []) {
   const { catalogHead, val, cyan } = detailCards;
   return parts.PAGE_HEAD('Game Catalog', HUB_CSS) + '<body>'
     + catalogHead({ title: 'Game Catalog', ic: 'done', lines: [
-      ['medal', `${val('Every catalog')} of this server in ${cyan('one place')}: pick one to see everything of the original game it holds.`],
+      ['done', `${val('Every catalog')} of this server in ${cyan('one place')}: pick one to see everything of the original game it holds.`],
       ['pin', `${val('Keep one past item')} in each catalog: it comes back in its own tab ${cyan('every week')}.`],
       ['jewel', `The ${val('Banner Catalog')} is in the Shop.`]] })
     + keptSection(kept)
