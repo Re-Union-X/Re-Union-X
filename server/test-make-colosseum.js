@@ -292,5 +292,18 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
   assert.deepStrictEqual(out.ranked[900].thresholds.map((x) => x.score), [1, 1]);
 });
 
+test('board card pictures: 6★ Cid from the 2016 bundle, every other served board from --loc', () => {
+  const rows = mc.artLines(Object.values(mc.SEASON_BOARDS).flat()).split('\n').filter((l) => l && !l.startsWith('#'));
+  assert.strictEqual(rows.length, 9);
+  assert.strictEqual(rows[0], 'img/sphere_incentive/2200001.png\tb16');
+  assert.strictEqual(rows[1], 'img/sphere_incentive/2200002.png\tloc\t=img/sphere_incentive_coli/2200002.png');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcart-'));
+  try {
+    const art = path.join(dir, 'art.tsv');
+    mc.patch(dir, { src: fixture(), seasons: S800, artFile: art });
+    assert.deepStrictEqual(fs.readFileSync(art, 'utf8').split('\n').filter((l) => l && !l.startsWith('#')), ['img/sphere_incentive/2200001.png\tb16']);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 console.log(results.join('\n'));
 if (process.exitCode) console.log('test-make-colosseum: FAIL'); else console.log('test-make-colosseum: OK');

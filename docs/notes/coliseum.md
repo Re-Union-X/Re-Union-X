@@ -322,3 +322,21 @@ Open (not changed in the walk):
 - The Quests tile shows «PVE ---» even with a ranked bracket (the tile reads a rank the server does not send yet).
 - Rank 0 «Me» row: third-place crown (known); what the original showed is not in the notes.
 - The ranking header bar shows «---» above «Ends in N days».
+
+## Board card pictures (26 November 2026)
+
+The board card is three client layers (docs/notes/bacheche.md «Card, name and coin»); the picture layer is
+`img/sphere_incentive/<sphereBoardId>.png`, 306x306 with transparency. Part 1 sent none, so the 9 served boards showed an
+empty gold card. Now `make-colosseum.js` `BOARD_ART` + `artLines` write `game_data/colosseum_board_art.tsv` (served boards
+only), imported by `build-resources.ps1` like the raid / event board cards.
+
+- 2200001 6★ Cid: the worldwide 2016 file (`b16`), the same picture as the khuxwiki board screenshot.
+- The other 8 (6★ Scrooge, Tier 10 Bonus x3, KH Chip M/F, Moogle M/F): the khuxwiki «Preview - <board>» picture (user 26-11:
+  wiki previews, never grainy). Each preview was fitted into the khuxwiki board screenshot of the same board (opaque pixels,
+  scale and offset), calibrated on 2200001 (306 px card = 0.628 of the 1280x544 screenshot): every preview fits at scale
+  0.994-1.000, so it is the original picture at native size, pasted on the 306x306 canvas **without resampling** at the
+  fitted place (moved up 4-6 px where the fit would cut opaque rows). Private files in `--loc` `img/sphere_incentive_coli/`.
+- 2200002 6★ Scrooge: the 2016 bundle file shows Scrooge alone, but the worldwide board screenshot shows Scrooge with Cid,
+  Chip and Dale: the screenshot rules (as for the event boards), so it takes the wiki picture.
+- The boards of later seasons (244, not served yet): private research `private\events\sources\coliseum\BOARD_IMAGES.md`;
+  same method when their season is built (JP 4.3.1 card when it matches the board screenshot, else the wiki preview).

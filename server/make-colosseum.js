@@ -58,6 +58,20 @@ const SEASON_BOARDS = { 800: [2200001], 900: [2200002, 2200023], 1000: [2210029,
 // the «Tier N Bonus» boards (1.1.3 boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum
 // Board!»; routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
 const BONUS_TIER = { 2200023: 10, 2210031: 10, 2210035: 10 };
+// Board card pictures img/sphere_incentive/<sphereBoardId>.png (client Select_Base layer, docs/notes/coliseum.md «Board card
+// pictures»): b16 = the worldwide 2016 file of the same id (6★ Cid); every other served board = the khuxwiki «Preview - <board>»
+// picture placed on the 306x306 card where the original board screenshot draws it (native size, no resampling; private files
+// in --loc img/sphere_incentive_coli/). The 2016 bundle 2200002 (Scrooge alone) is not what the worldwide board showed: the
+// screenshot has Scrooge with Cid, Chip and Dale, so 2200002 uses the wiki picture too. Written to game_data/colosseum_board_art.tsv
+// for the served boards, imported by build-resources.ps1 like the raid / event board cards.
+const BOARD_ART = { 2200001: 'b16' };
+function artLines(boardIds) {
+  const head = ['# Coliseum Board card pictures, written by server/make-colosseum.js (BOARD_ART).',
+    '# Columns as in originals.tsv. b16 = the worldwide 2016 file of the same id; loc = the khuxwiki card picture placed as on the original board screenshot.'];
+  return [...head, ...boardIds.map((id) => (BOARD_ART[id] === 'b16'
+    ? `img/sphere_incentive/${id}.png\tb16`
+    : `img/sphere_incentive/${id}.png\tloc\t=img/sphere_incentive_coli/${id}.png`))].join('\n') + '\n';
+}
 // Coliseum Catalog banner (Task 6; user 25-11: the first catalog banner of the Events tab): evStage CATALOG_EV, eventType 0,
 // Details -> CATALOG_URL (colosseum-pages.js), a tap opens the Training Grounds quest CATALOG_STAGE of make-special (the stage of
 // the Raid and Event Catalog banners too); the card game_data/colosseum_img/6000.png (recon/tools/make_special_banners.py
@@ -241,6 +255,7 @@ function patch(masterDir, opts = {}) {
   const ev = readMaster(path.join(masterDir, 'evStage.json')).filter((r) => r.eventStageId !== CATALOG_EV);
   const banner = catalogEvStage(master.stage);
   fs.writeFileSync(path.join(masterDir, 'evStage.json'), JSON.stringify(banner ? [...ev, banner] : ev));
+  if (opts.artFile) fs.writeFileSync(opts.artFile, artLines(out.sphere.map((r) => r.sphereBoardId)));
   if (!banner) console.warn(`colosseum: no Coliseum Catalog banner: the Training Grounds stage ${CATALOG_STAGE} is not in the master (make-special first)`);
   console.log(`colosseum: ${out.colosseumStage.length} seasons (${(opts.seasons || SEASONS).map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
     + `+${out.enemy.length} enemies, +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
@@ -250,4 +265,4 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { SEASONS, SEASON_BOARDS, BONUS_TIER, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
+module.exports = { SEASONS, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };

@@ -384,6 +384,13 @@ if (Test-Path server\game_data\event_board_art.tsv) {
     "$jpData" "$sg\files" --loc "$D\raid_loc" --report "$sg\originals_event_boards.json"
   if ($LASTEXITCODE) { throw 'import_originals (Event Board cards) fallito' }
 }
+# Coliseum Board card pictures, one per served board id (list written by server/make-colosseum.js BOARD_ART; the khuxwiki
+# card pictures are private files in --loc img/sphere_incentive_coli/, docs/notes/coliseum.md)
+if (Test-Path server\game_data\colosseum_board_art.tsv) {
+  python -I recon\tools\import_originals.py server\game_data\colosseum_board_art.tsv "$refWork\bundle2016\files" `
+    "$jpData" "$sg\files" --loc "$D\raid_loc" --report "$sg\originals_colosseum_boards.json"
+  if ($LASTEXITCODE) { throw 'import_originals (Coliseum Board cards) fallito' }
+}
 # I-317: quest-list icons of Special / event / raid rooms of another world, copied under the stage row's world
 # (stage_select_ico_<row world>_<W * 10000000 + thumb>; lists written by server/quest-thumbs.js copyLines from make-special.js,
 # make-events.js, make-raid.js)
