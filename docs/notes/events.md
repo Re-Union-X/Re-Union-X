@@ -1894,3 +1894,13 @@ The boards tables of the Raid / Event Catalog detail pages show the board cards 
 <ref_work>/bundle2016/files --loc D:\Progetto_Restauro_KH_UX\raid_loc --out server/game_data/<raid|event>_board_img --all --strict`.
 A card with no source stops the build (`--strict`), and so does a missing list (regenerate the master first). Before, they were
 made by hand (26-11: 501 raid and 115 event cards).
+
+### Coin icons of the catalogue chips (26 November 2026)
+
+The coin chips of the Game Catalog hub and of the Coliseum / Raid / Event / Avatar Board Catalog headers show the game's own reward
+icons (user 26-11: no drawn or substitute icons): IncentiveIcon_14 Avatar Coin, 15 Event Coin (one icon for every board set, as the
+Event Boards screen), 16 Raid Coin, 17 Coliseum Coin. `python -I recon/tools/make_coin_icons.py [--strict]` copies them (worldwide
+2016 bundle first, then JP 4.3.1 img/incentive, then JP cocostudio/publish; decoded only, own size) into
+`server/game_data/coin_icons/<key>.png` + `icons.json {version, keys}` (git-ignored; build-resources.ps1 runs it with --strict).
+server.js `coinWallet` serves them at `/web/coin/v<version>/<key>.png` (keys avatar / event / raid / coliseum only); a coin without
+its file shows no icon. Test: recon/tools/test_make_coin_icons.py, server/test-game-catalog.js `wiring_coin_icons`.

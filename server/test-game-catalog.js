@@ -73,6 +73,14 @@ run('hub_page_cards', () => {
   assert.ok(html.includes('<div id="rows">'), 'the #rows grid of the phone layout');
   assert.ok(pages.hubPage([]).includes('No catalogue is served yet.'));
 });
+// the coin chip with the game's own coin icon (user 26-11): img wins over an icon key, no icon without either
+run('wallet_chip_coin_icon', () => {
+  const { walletChip } = require('./catalog-pages');
+  assert.strictEqual(walletChip({ img: '/web/coin/v7/raid.png', label: 'Raid Coins', value: 5 }),
+    '<span class="wal"><img class="ic" src="/web/coin/v7/raid.png" alt=""><small>Raid Coins</small><b>5</b></span>');
+  assert.strictEqual(walletChip({ img: null, label: 'Raid Coins', value: 5 }), '<span class="wal"><small>Raid Coins</small><b>5</b></span>', 'no substitute icon');
+  assert.ok(walletChip({ ic: 'raid', label: 'R', value: 1 }).includes('/web/special/icon/raid.png'), 'an icon key still works');
+});
 run('hub_page_phone', () => {
   const html = require('./phone-css').withPhone(pages.hubPage(CARDS));
   assert.ok(html.includes('<style data-phone>') && html.includes('#rows>.row'), 'the phone card grid applies');
@@ -109,6 +117,11 @@ function wiring() {
   process.env.KHUX_SAVE = path.join(tmp, 'save.json');
   process.env.KHUX_CATALOG_IMG = path.join(tmp, 'catalog_img');
   fs.mkdirSync(process.env.KHUX_CATALOG_IMG);
+  // the coin icons of make_coin_icons.py (game_data/coin_icons): three of the four coins, version 7
+  process.env.KHUX_COIN_ICONS = path.join(tmp, 'coin_icons');
+  fs.mkdirSync(process.env.KHUX_COIN_ICONS);
+  for (const k of ['coliseum', 'raid', 'event']) fs.writeFileSync(path.join(process.env.KHUX_COIN_ICONS, `${k}.png`), `png ${k}`);
+  fs.writeFileSync(path.join(process.env.KHUX_COIN_ICONS, 'icons.json'), JSON.stringify({ version: 7, keys: ['coliseum', 'raid', 'event'] }));
   delete process.env.KHUX_REAL_NOW;
   delete process.env.KHUX_SERVER_TIME;
   const log = console.log, warn = console.warn;
@@ -179,6 +192,19 @@ function wiring() {
     // a detail page's BACK still goes to its catalogue (which then leads to the hub)
     const raidRow = (t.raidIndex().entries || [])[0];
     if (raidRow) assert.ok(web(t.respondRaidWeb, `/web/raid/raid/${raidRow.evStageId}?from=catalog`).body.toString('utf8').includes('href="/web/raid/catalog#q'), 'detail BACK unchanged');
+  });
+  run('wiring_coin_icons', () => {
+    assert.strictEqual(t.route('/web/coin/v7/raid.png'), 'coinweb');
+    const html = web(t.respondGameCatalogWeb, '/web/catalog').body.toString('utf8');
+    for (const k of ['coliseum', 'raid', 'event']) assert.ok(html.includes(`<span class="wal"`) && html.includes(`<img class="ic" src="/web/coin/v7/${k}.png" alt="">`), `${k}: the game's coin icon on the hub`);
+    if (avatarId) assert.ok(/id="c-avatar"[^]*?<span class="wal"><small>Avatar Coins<\/small>/.test(html), 'Avatar Coins without its icon file: no icon, no substitute');
+    assert.ok(!/class="wal"[^>]*><img class="ic" src="\/web\/special\/icon/.test(html), 'no drawn / substitute icon in a coin chip');
+    const raidPage = web(t.respondRaidWeb, '/web/raid/catalog').body.toString('utf8');
+    assert.ok(raidPage.includes('<span class="wal"><img class="ic" src="/web/coin/v7/raid.png" alt=""><small>Raid Coins</small>'), 'the Raid Catalog header chip');
+    assert.ok(web(t.respondEventWeb, '/web/event/catalog').body.toString('utf8').includes('<img class="ic" src="/web/coin/v7/event.png" alt=""><small>Event Coins</small>'), 'the Event Catalog header chip');
+    const icon = web(t.respondCoinIcon, '/web/coin/v7/raid.png');
+    assert.deepStrictEqual([icon.code, icon.type, icon.body.toString()], [200, 'image/png', 'png raid']);
+    for (const u of ['/web/coin/v7/avatar.png', '/web/coin/v7/icons.png', '/web/coin/v7/..%2Fraid.png', '/web/coin/raid.png']) assert.strictEqual(web(t.respondCoinIcon, u).code, 404, u);
   });
   run('wiring_banner_image', () => {
     assert.strictEqual(web(t.respondGameCatalogWeb, '/web/catalog/img/v1/5000.png').code, 404, 'no picture yet: 404');

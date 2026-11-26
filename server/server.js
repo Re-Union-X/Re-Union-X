@@ -225,6 +225,7 @@ function route(url) {
   if (p.startsWith('/web/event/')) return 'eventweb'; // Event Catalog, event details and notices, event cards
   if (p.startsWith('/web/avatar/')) return 'avatarweb'; // Avatar Board Catalog (Events Part 7 Task 5b)
   if (p === '/web/catalog' || p.startsWith('/web/catalog/')) return 'catalogweb'; // Game Catalog hub and its banner (user 26-11)
+  if (p.startsWith('/web/coin/')) return 'coinweb'; // the game's coin icons of the catalogue coin chips (user 26-11)
   if (p.startsWith('/web/medals/')) return 'medalweb'; // Medal Gallery and its pictures (I-242)
   if (p.includes('system/status')) return 'status';
   if (p.includes('system/login')) return 'login';
@@ -797,7 +798,8 @@ function hscListedIds(realMs) {
 // I-287 (user 22-11, option B): the client marks the score-bonus medals (medal views, lists, «High Score» sort) from ONE open HSC row,
 // the FIRST open one (bench 22-11: kept 22952 won over 22998; the 16-11 «highest» reading had a stale master); with two or more HSC listed (story week + kept event) a phantom row before every HSC row, below every evStage id,
 // carries a merged list, so the marks cover every listed HSC. The real rows keep their own lists (deck panel, battle multiplier).
-const HSC_PHANTOM = { eventStageId: 5999, listId: 19999, firstRowId: 9999000 };
+// eventStageId 4999: below the Game Catalog banner 5000 too (make-game-catalog.js, 26-11; it was 5999, below the Coliseum Catalog 6000)
+const HSC_PHANTOM = { eventStageId: 4999, listId: 19999, firstRowId: 9999000 };
 function hscListedRows(realMs) {
   const open = hscListedIds(realMs);
   return open ? masterRows('evStage').filter((r) => r.eventCategory === HSC_EVENT_CATEGORY && open.has(r.eventStageId)) : [];
@@ -5345,14 +5347,14 @@ function gameCatalogCards() {
     const index = raidIndex(), f = raidPages.catalogFacts(index, raid().catalogCtx());
     return { title: 'Raid Catalog', href: '/web/raid/catalog', img: `/web/raid/img/v${routesRaid.RAID_IMG_VERSION}/${(index.catalog || {}).evStageId || 8000}.png`,
       line: 'Every raid week of the game, with its bosses, tiers and Raid Boards.', count: `${countOf(f.raids, 'raid')}${f.jp ? ` · ${countOf(f.jp, 'Japan-only raid')}` : ''}`,
-      kept: f.kept, keptNone: 'No raid kept', wallet: { ic: 'raid', label: 'Raid Coins', value: Number(player.raidSpherePoint) || 0 } };
+      kept: f.kept, keptNone: 'No raid kept', wallet: raidWallet() };
   });
   add('event', () => {
     eventRoutes().pruneKept();
     const index = eventIndex(), f = eventPages.catalogFacts(index, eventRoutes().catalogCtx());
     return { title: 'Event Catalog', href: '/web/event/catalog', img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${(index.catalog || {}).evStageId || 20000}.png`,
       line: 'Every event of the game, with its quests, Event Boards and rewards.', count: countOf(f.entries, 'event'), kept: f.kept, keptNone: 'No event kept',
-      wallet: { ic: 'camp', label: 'Event Coins', value: eventCoinPoint(), title: 'The Event Coins of the board set the Events tab plays now (one balance per set)' } };
+      wallet: eventWallet() };
   });
   add('avatar', () => {
     const index = eventIndex();
@@ -5361,7 +5363,7 @@ function gameCatalogCards() {
     const f = eventPages.catalogFacts(index, eventRoutes().boardCatalogCtx(), true);
     return { title: 'Avatar Board Catalog', href: '/web/avatar/catalog', img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${index.avatarCatalog.evStageId}.png`,
       line: 'Every past limited Avatar Board, with its dates, price and card.', count: `${countOf(f.entries, 'entry', 'entries')} · ${countOf(f.boards, 'board')}`,
-      kept: f.kept, keptNone: 'No board kept', wallet: { ic: 'avatar', label: 'Avatar Coins', value: Number(player.spherePoint) || 0 } };
+      kept: f.kept, keptNone: 'No board kept', wallet: avatarWallet() };
   });
   add('special', () => {
     const index = specialIndex();
@@ -5450,13 +5452,47 @@ function boardNodeProgress(sphereBoardId) {
   const cost = (list) => list.reduce((t, n) => t + ((masu && masu.spherePoint[n - 1]) || 0), 0), todo = nodes.filter((n) => !unlock.has(n));
   return { nodes: nodes.length, unlocked: nodes.length - todo.length, coinsLeft: cost(todo), coinsTotal: cost(nodes) };
 }
+// Coin icons of the catalogue coin chips (user 26-11: the game's own icons, never drawn ones): game_data/coin_icons written by
+// recon/tools/make_coin_icons.py (git-ignored; IncentiveIcon_14..17 of the game data, build-resources.ps1): <key>.png and icons.json
+// {version, keys}, read at request time (a new run is seen without a restart; the version busts the WebView cache). Served at
+// /web/coin/v<version>/<key>.png (COIN_KEYS only, else 404); a coin without its icon: the chip shows none (no substitute).
+const COIN_ICONS = process.env.KHUX_COIN_ICONS || path.join(__dirname, 'game_data', 'coin_icons');
+const COIN_KEYS = ['avatar', 'event', 'raid', 'coliseum'];
+let coinIconsMemo = { mtime: -1, version: 1, keys: new Set() };
+function coinIcons() {
+  const f = path.join(COIN_ICONS, 'icons.json');
+  try {
+    const mtime = fs.statSync(f).mtimeMs;
+    if (mtime !== coinIconsMemo.mtime) {
+      const doc = JSON.parse(fs.readFileSync(f, 'utf8'));
+      coinIconsMemo = { mtime, version: Number(doc.version) || 1, keys: new Set((doc.keys || []).filter((k) => COIN_KEYS.includes(k))) };
+    }
+  } catch { coinIconsMemo = { mtime: -1, version: 1, keys: new Set() }; }
+  return coinIconsMemo;
+}
+const coinIconUrl = (key) => { const c = coinIcons(); return c.keys.has(key) ? `/web/coin/v${c.version}/${key}.png` : null; };
+// a coin chip (catalog-pages.js walletChip): the game's icon of the coin, its label and balance
+const coinWallet = (key, label, value, title) => ({ img: coinIconUrl(key), label, value: Number(value) || 0, ...(title ? { title } : {}) });
+const raidWallet = () => coinWallet('raid', 'Raid Coins', player.raidSpherePoint);
+// the Event Coins the game shows now (userPoint.stageSpherePoint: the board set of the week's or the kept event); one coin icon for
+// every set, as the Event Boards screen
+const eventWallet = () => coinWallet('event', 'Event Coins', eventCoinPoint(), 'The Event Coins of the board set the Events tab plays now (one balance per set)');
+const avatarWallet = () => coinWallet('avatar', 'Avatar Coins', player.spherePoint);
+function respondCoinIcon(res, url) {
+  const m = /^\/web\/coin\/v\d+\/([a-z]+)\.png$/i.exec(url.split('?')[0]);
+  const file = m && COIN_KEYS.includes(m[1].toLowerCase()) && path.join(COIN_ICONS, `${m[1].toLowerCase()}.png`);
+  if (!file || !fs.existsSync(file)) { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); }
+  const b = fs.readFileSync(file);
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length, 'Cache-Control': 'public, max-age=3600' });
+  return res.end(b);
+}
 function colosseumWallet() {
   try {
     const s = colosseum().liveSeason();
     if (!s) return null;
     const [y, m] = s.month.split('-').map(Number);
     const month = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
-    return { ic: 'tleg', label: `Coliseum Coins · ${month}`, value: colosseum().coinsOf(), title: s.kept ? 'The kept season' : 'The season of your Story' };
+    return coinWallet('coliseum', `Coliseum Coins · ${month}`, colosseum().coinsOf(), s.kept ? 'The kept season' : 'The season of your Story');
   } catch (e) { return null; }
 }
 function colosseumPageCtx(extra = {}) {
@@ -5639,7 +5675,7 @@ function raidBoardDoneLookup() {
 const raidPageCtx = (fromCatalog = false) => ({ ...raid().catalogCtx(), periods: special.PERIODS, imgVersion: routesRaid.RAID_IMG_VERSION, fromCatalog,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   // the Raid Coins owned, on the Raid Catalog header (catalog-pages.js walletChip; userPoint.raidSpherePoint)
-  wallet: { ic: 'raid', label: 'Raid Coins', value: Number(player.raidSpherePoint) || 0 },
+  wallet: raidWallet(),
   boardItems: raidBoardItems, boardName: raidBoardName, stageDone: (id) => catalogStageDone(id), boardDone: raidBoardDoneLookup(),
   boardNodes: boardNodeProgress, boardCardUrl: (id) => boardCardUrl('raid', id),
   hasNotice: (censusId) => !!raidNotices()?.rows?.[censusId] });
@@ -5679,7 +5715,7 @@ const eventPageCtx = (fromCatalog = false) => ({ ...eventRoutes().catalogCtx(), 
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   stageDone: (id) => catalogStageDone(id), hasNotice: (censusId) => !!eventNotices()?.rows?.[censusId],
   // the Event Coins the game shows now (userPoint.stageSpherePoint: the board set of the week's or the kept event), on the header
-  wallet: { ic: 'camp', label: 'Event Coins', value: eventCoinPoint(), title: 'The Event Coins of the board set the Events tab plays now (one balance per set)' },
+  wallet: eventWallet(),
   eventBoardCard: (id) => boardCardUrl('event', id), eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup(),
   boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)),
   // the HSC best run of an event (routes-hsc.js player.hsc): «Your best score» of the details page, HIGH SCORE filter (I-276)
@@ -5725,7 +5761,7 @@ const avatarPageCtx = (extra = {}) => ({ ...eventRoutes().boardCatalogCtx(), img
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...boardCardCtx(),
   // the Avatar Coins owned (userPoint.spherePoint), on the Avatar Board Catalog header
-  wallet: { ic: 'avatar', label: 'Avatar Coins', value: Number(player.spherePoint) || 0 }, ...extra });
+  wallet: avatarWallet(), ...extra });
 // Board cards and marks of the Avatar Board pages (Task 5c): game_data/avatar_img written by recon/tools/make_avatar_card_web.py
 // (git-ignored): <sphereBoardId>.png at most 160 px and cards.json {version, ids}, read at request time (a new run is seen without
 // a restart; the version busts the WebView cache). No cards.json: no card, every board shows the neutral box.
@@ -6179,6 +6215,7 @@ function handler(scheme) {
       if (kind === 'eventweb') return req.method === 'POST' ? respondEventPost(res, req.url) : respondEventWeb(res, req.url);
       if (kind === 'avatarweb') return req.method === 'POST' ? respondAvatarPost(res, req.url) : respondAvatarWeb(res, req.url);
       if (kind === 'catalogweb') return respondGameCatalogWeb(res, req.url);
+      if (kind === 'coinweb') return respondCoinIcon(res, req.url);
       if (kind === 'medalweb') return respondMedalWeb(res, req.url, req);
       // tempi del popup Notices (segnalazione dell'utente 19-10: a volte resta vuoto a lungo al primo avvio): la
       // pagina chiama /web/notices/shown appena disegnata; il log dice quanto e' passato dalla richiesta
@@ -6594,7 +6631,7 @@ module.exports._test = {
   eventBoards, // server/test-event-board-routes.js
   avatarBoards, avatarCtx, respondSphereBuy, grantSphereReward, // server/test-avatar-boards.js
   respondEventWeb, respondEventPost, respondAvatarWeb, respondAvatarPost, migrateAvatarKeep, // server/test-event-pages.js
-  respondGameCatalogWeb, gameCatalogEvents, gameCatalogCards, gameCatalogOn, eventsTabNow, // server/test-game-catalog.js
+  respondGameCatalogWeb, gameCatalogEvents, gameCatalogCards, gameCatalogOn, eventsTabNow, respondCoinIcon, coinWallet, // server/test-game-catalog.js
   raidIndex, respondSphereCheck, respondSphereUpdate, userSphereAll, raidPageCtx, // server/test-raid-boards.js
   storyCtx, // server/test-raid-routes.js, server/test-raid-boards.js (the Shop week the raids follow)
   respondShopCampaign, // server/test-shop-campaign.js (Task 15)

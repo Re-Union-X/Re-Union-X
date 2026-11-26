@@ -60,9 +60,11 @@ const keepJs = (base, noun, where = 'Events') => `var KX_KEEP=${JSON.stringify(k
 // the header, the chips of a group and the sheet (FIND with its hint, the groups, Reset / «Show N results»). Styles: special-pages
 // CSS (.fbtn, .sheet, .opts .o) and NARROW_CSS. An option is [value, label, icon key]; the first one of a group is on.
 const FILTER_BUTTON = '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>';
-// The coins the player owns, in the catalogue header next to Filters (user 26-11: no balance in the detail sections): w = {ic (icon
-// key), label, value (number), title (tooltip)}; '' without one. Pushes Filters to the right; on phones as compact as the button.
-const walletChip = (w) => (w && Number.isFinite(Number(w.value)) ? `<span class="wal"${w.title ? ` title="${esc(w.title)}"` : ''}>${icon(w.ic)}<small>${esc(w.label)}</small>`
+// The coins the player owns, in the catalogue header next to Filters (user 26-11: no balance in the detail sections): w = {img (the
+// URL of the game's own coin icon, server.js coinWallet: /web/coin/v<N>/<key>.png) or ic (an icon key of special-pages.js), label,
+// value (number), title (tooltip)}; no icon without either; '' without w. Pushes Filters to the right; on phones as compact as the button.
+const walletIcon = (w) => (w.img ? `<img class="ic" src="${esc(w.img)}" alt="">` : w.ic ? icon(w.ic) : '');
+const walletChip = (w) => (w && Number.isFinite(Number(w.value)) ? `<span class="wal"${w.title ? ` title="${esc(w.title)}"` : ''}>${walletIcon(w)}<small>${esc(w.label)}</small>`
   + `<b>${Number(w.value).toLocaleString('en-US')}</b></span>` : '');
 const WALLET_CSS = '.wal{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid #2f6f93;border-radius:18px;background:#06283e;padding:3px 12px 3px 6px;white-space:nowrap;font-size:14px;color:#d9e6ee}'
   + '.wal .ic{width:1.6em;height:1.6em}.wal b{color:#ffcd4a;font-size:16px}.hdr .wal+.fbtn{margin-left:0}'

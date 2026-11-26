@@ -146,6 +146,10 @@ if (Test-Path server\game_data\colosseum_board_art.tsv) {
 # Events tab (make-game-catalog.js); without it the banner shows an empty frame
 python -I recon\tools\make_special_banners.py --section game
 if ($LASTEXITCODE) { throw 'make_special_banners --section game failed' }
+# Coin icons of the catalogue coin chips (user 26-11, server images, git-ignored): the game's own reward icons IncentiveIcon_14..17
+# (Avatar, Event, Raid, Coliseum Coin) into server\game_data\coin_icons + icons.json; a coin with no source stops the build (--strict)
+python -I recon\tools\make_coin_icons.py --b16 "$refWork\bundle2016\files" --jp "$jpData" --strict
+if ($LASTEXITCODE) { throw 'make_coin_icons failed' }
 # Raid and Event Board web cards (26-11, server images, git-ignored): the board card pictures of the lists written by make-raid.js /
 # make-events.js (server\game_data\raid_board_art.tsv, event_board_art.tsv; the same sources as the game cards imported below) made
 # small for the boards tables of the Raid / Event Catalog detail pages into server\game_data\raid_board_img and event_board_img
