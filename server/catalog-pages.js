@@ -69,10 +69,11 @@ const walletIcon = (w) => (w.img ? `<img class="ic" src="${esc(w.img)}" alt="">`
 // the label breaks only at « · » where a narrow card lets it wrap (the Game Catalog cards): «Coliseum Coins» / «Dec 2017» stay whole
 const walletChip = (w) => (w && Number.isFinite(Number(w.value)) ? `<span class="wal"${w.title ? ` title="${esc(w.title)}"` : ''}><small>${walletIcon(w)}${String(w.label).includes(' · ') ? `<span class="wt">${String(w.label).split(' · ').map((t) => `<span class="wp">${esc(t)}</span>`).join(' · ')}</span>` : esc(w.label)}</small>`
   + `<b>${Number(w.value).toLocaleString('en-US')}</b></span>` : '');
-// the amount 1px higher at the bottom (user 26-11: label and amount on one baseline: the larger digits sat 1px lower)
+// the amount 1px higher at the bottom (user 26-11: label and amount on one baseline: the larger digits sat 1px lower); the coin
+// icon 1.5px up, centred on the capitals of the label instead of its line box (user 26-11)
 const WALLET_CSS = '.wal{margin-left:auto;display:inline-flex;align-items:stretch;border:1px solid #2f6f93;border-radius:12px;overflow:hidden;white-space:nowrap;line-height:1.3}'
   + '.wal small{background:#0a4466;color:#d9e6ee;font-size:13px;padding:3px 10px 3px 5px;display:flex;align-items:center;gap:6px}'
-  + '.wal .wp{white-space:nowrap}.wal .ic{width:1.6em;height:1.6em;margin:0;display:block;max-width:none}'
+  + '.wal .wp{white-space:nowrap}.wal .ic{width:1.6em;height:1.6em;margin:0;display:block;max-width:none;position:relative;top:-1.5px}'
   + '.wal b{background:#06283e;color:#ffcd4a;font-size:16px;font-weight:bold;padding:1px 12px 3px;display:flex;align-items:center;justify-content:center;min-width:1.6em}.hdr .wal+.fbtn{margin-left:0}'
   + '@media (max-width:700px) and (min-height:481px){.wal{-webkit-flex:1 1 100%;flex:1 1 100%;justify-content:center;min-height:40px;box-sizing:border-box}}';
 const optLabel = ([, l, k]) => (k ? icon(k) : '') + esc(l);
