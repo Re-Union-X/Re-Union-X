@@ -777,6 +777,41 @@
    "group": "CLOSED",
    "hash": "d4c5f3b6752c1d15",
    "name": "I-321 · Credits: Drybomber's real contribution"
+  },
+  "I-322": {
+   "thread": "1575423517204414510",
+   "msg": "1575423517204414510",
+   "group": "OPEN",
+   "hash": "be626fccce2c7ff3",
+   "name": "I-322 · Birthdate Registration: the year list is empty"
+  },
+  "I-323": {
+   "thread": "1575423520379371555",
+   "msg": "1575423520379371555",
+   "group": "OPEN",
+   "hash": "bfb0cad38454a22e",
+   "name": "I-323 · Zootopia Raid Boards «don't look right»"
+  },
+  "I-324": {
+   "thread": "1575423523579494502",
+   "msg": "1575423523579494502",
+   "group": "OPEN",
+   "hash": "2843f8a7987d44ce",
+   "name": "I-324 · Raid boss attack animation breaks apart: Queen Bee Ω"
+  },
+  "I-325": {
+   "thread": "1575423526058463262",
+   "msg": "1575423526058463262",
+   "group": "OPEN",
+   "hash": "70af2d4d55ae88cf",
+   "name": "I-325 · No Avatar Coins from level-ups"
+  },
+  "I-326": {
+   "thread": "1575423529891926057",
+   "msg": "1575423529891926057",
+   "group": "OPEN",
+   "hash": "0ed71fa5be81719c",
+   "name": "I-326 · Special Attack gauge kept after dying / quitting a quest"
   }
  }
 }
