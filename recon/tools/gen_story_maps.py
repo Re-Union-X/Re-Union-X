@@ -89,6 +89,7 @@ enemies = json.load(open(cfg['enemies'], encoding='utf-8'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import event_enemy_ids  # noqa: E402
 from special_room import named_room  # noqa: E402
+from stage_writer import map_part, materials_block  # noqa: E402
 enemies = event_enemy_ids.without_event_rows(enemies)
 rooms = json.load(open(cfg['rooms'], encoding='utf-8-sig'))
 tmpl = open(cfg['template'], 'rb').read()
@@ -378,10 +379,6 @@ def material_spots(mats, cands):
     if not items or not cands:
         return []
     return [cands[min(len(cands) - 1, int(len(cands) * (k + 0.5) / len(items)))] + (mid, q) for k, (mid, q) in enumerate(items)]
-
-
-def materials_block(mats):
-    return struct.pack('<i', len(mats)) + b''.join(struct.pack('<4i', *m) for m in mats)
 
 
 def build_part(folder, start, dist, groups, nchests, level=1, layout=None, zero_arena=False, chance=(), materials=(), extra=None):
@@ -709,36 +706,9 @@ def build_part_mr(folder, dist, groups, nchests, exits, uid, has_target):
 
 def mr_body(folder, exits, areas, ens, chests, npcs=(), mats=()):
     """MAP part with an exits block (several parts): header of the template, exits, areas, enemies, chests, objects (npcs:
-    (x, y, id) map objects of type 4, the portals of PORTAL_ROOMS; without them the old empty block, byte for byte)."""
-    body = bytearray(tmpl[:0x34])
-    nm = folder.encode()
-    body[0x0c:0x0c + 16] = nm + b'\0' * (16 - len(nm))
-    body += struct.pack('<i', len(exits))
-    for e in exits:
-        body += struct.pack('<9i', *e)
-    X = len(body) - 0x34                                            # = 4 + 36 n
-    body += struct.pack('<2i', len(areas), len(ens))
-    struct.pack_into('<2i', body, 0x20, 0, X)
-    for a in areas:
-        body += a
-    for e in ens:
-        body += struct.pack('<8i', *e)
-    A = len(body)
-    body += struct.pack('<i', len(chests))
-    for c in chests:
-        body += struct.pack('<5i', *c)
-    B = len(body)
-    body += materials_block(mats)
-    C = len(body)
-    if npcs:
-        # as the originals: count, 0x20 per object (x, y, id, short type 4, 0, facing 1, 0, talk 0, talk2 0, 0), no padding
-        body += struct.pack('<i', len(npcs))
-        for x, y, i in npcs:
-            body += struct.pack('<3i4h3i', x, y, i, 4, 0, 1, 0, 0, 0, 0)
-    else:
-        body += b'\0' * 64
-    struct.pack_into('<3i', body, 0x28, A - 0x34, B - 0x34, C - 0x34)
-    return bytes(body)
+    (x, y, id) map objects of type 4, the portals of PORTAL_ROOMS; without them the old empty block, byte for byte).
+    The writer is stage_writer.map_part (shared with gen_colosseum_stages.py)."""
+    return map_part(tmpl, folder, exits, areas, ens, chests, npcs, mats)
 
 
 # Corridor of Darkness rooms: the JP 4.3.1 maps put the purple portal 5528 on (almost) every exit (DG_0100_02_00 613 of 624,

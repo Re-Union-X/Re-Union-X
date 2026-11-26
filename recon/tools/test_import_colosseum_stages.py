@@ -3,8 +3,12 @@
 Needs the local reference data (private_tools ref_work bundle2016 + jp_data); without it the test says SKIP. Checks: the WW
 2016 copy wins over the JP one (20151108: the JP copy has a corrupt enemy id), the JP copy is used when the WW one is absent,
 files copied byte for byte under the client names, a stage with no STG anywhere or an enemy not in the master is left out,
-stale cl_stg files in the output are removed, other files there are kept, only the first validStage ids are taken.
+stale cl_stg files in the output are removed, other files there are kept, only the first validStage ids are taken, the
+generated stages of --gen are the third source (after b2016 and jp).
 """
+import contextlib
+import io
+import json
 import os
 import shutil
 import sys
@@ -66,6 +70,25 @@ try:
     check(rep2['stages'][0]['status'] == 'skipped' and 'enemy not in the master' in rep2['stages'][0]['why'], 'missing enemy')
     check(ics.run([(9, 20151009)], sources, set(), set(range(20000, 23000)), out)['stages'][0]['status'] == 'skipped',
           'room not served')
+    # third source: the generated stages of gen_colosseum_stages.py (--gen), after b2016 and jp
+    gen = os.path.join(t, 'gen')
+    os.makedirs(gen)
+    for sfx in ('', '_00'):
+        shutil.copyfile(os.path.join(B16, 'cl_stg20151009%s.bin' % sfx), os.path.join(gen, 'cl_stg21160801%s.bin' % sfx))
+        shutil.copyfile(os.path.join(B16, 'cl_stg20151009%s.bin' % sfx), os.path.join(gen, 'cl_stg20151108%s.bin' % sfx))
+    master = os.path.join(t, 'master')
+    os.makedirs(master)
+    json.dump([{'colosseumStageId': 1200, 'validStage': 2, 'stageId': [21160801, 20151108]}],
+              open(os.path.join(master, 'colosseumStage.json'), 'w'))
+    json.dump([{'enemyId': i} for i in range(20000, 23000)], open(os.path.join(master, 'enemy.json'), 'w'))
+    rp = os.path.join(t, 'rep.json')
+    with contextlib.redirect_stdout(io.StringIO()):
+        rc = ics.main(['--master', master, '--b2016', b16, '--jp', JP, '--gen', gen, '--out', out, '--report', rp])
+    st = {s['stageId']: s for s in json.load(open(rp))['stages']}
+    check(rc == 0 and st[21160801]['source'] == 'colosseumGen', 'generated stage from --gen: %s %s' % (rc, st.get(21160801)))
+    check(st[20151108]['source'] == 'bundle2016', 'b2016 wins over --gen')
+    check(open(os.path.join(out, 'cl_stg21160801_00.bin'), 'rb').read() ==
+          open(os.path.join(gen, 'cl_stg21160801_00.bin'), 'rb').read(), 'generated file copied')
 finally:
     shutil.rmtree(t)
 

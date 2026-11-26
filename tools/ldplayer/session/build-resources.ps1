@@ -125,9 +125,14 @@ if ($LASTEXITCODE) { throw 'make_stock_medal fallito' }
 # mostrava miniature di altre missioni o il «?», I-064), dalle anteprime di Roboloid in cache
 python recon\tools\make_quest_thumbs.py server\master_data\stage.json "$D\catalog\files\img\adventure\stage" "$D\external\roboloid\cache\map" "$sg\files" --report "$sg\quest_thumbs\report.json"
 if ($LASTEXITCODE) { throw 'make_quest_thumbs fallito' }
+# Generated Coliseum stages of WW 2016-08 .. 2016-11 (no original set; khuxwiki lineups, ids 2116MMNN, Coliseum Part 2
+# Task 2) into $sg\colosseum_gen (+ report.json); a wiki name with no Coliseum variant id stops the build
+python -I recon\tools\gen_colosseum_stages.py --templates "$jpData\stage" --out "$sg\colosseum_gen"
+if ($LASTEXITCODE) { throw 'gen_colosseum_stages failed' }
 # Coliseum round stages cl_stg<stageId>.bin + _00.bin of the served seasons (master colosseumStage rows), WW 2016 copy
-# first, then JP 4.3.1 (Coliseum Part 1 Task 4); a stage that fails its checks stops the build. Report $sg\colosseum_stages.json
-python -I recon\tools\import_colosseum_stages.py --out "$sg\files\stage" --report "$sg\colosseum_stages.json"
+# first, then JP 4.3.1 (Coliseum Part 1 Task 4), then the generated ones; a stage that fails its checks stops the build.
+# Report $sg\colosseum_stages.json
+python -I recon\tools\import_colosseum_stages.py --gen "$sg\colosseum_gen" --out "$sg\files\stage" --report "$sg\colosseum_stages.json"
 if ($LASTEXITCODE) { throw 'import_colosseum_stages fallito' }
 # animazione move delle grafiche di Dark Road usate dai nemici (copia di wait)
 $env:BGAD_KEY = $key
