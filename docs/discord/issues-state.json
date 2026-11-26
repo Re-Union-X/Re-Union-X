@@ -826,6 +826,13 @@
    "group": "CLOSED",
    "hash": "9188198239d7da9e",
    "name": "I-328 · Coliseum Catalog filters"
+  },
+  "I-329": {
+   "thread": "1575501885409071258",
+   "msg": "1575501885409071258",
+   "group": "OPEN",
+   "hash": "0cef4b8005a8168e",
+   "name": "I-329 · Pet unlocked from the start of a new game?"
   }
  }
 }
