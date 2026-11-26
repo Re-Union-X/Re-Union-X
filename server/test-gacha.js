@@ -601,14 +601,14 @@ try {
   // pagine
   const dctx = { ...sctx, ...pc, skillNames: new Set(), fromCatalog: true };
   const dk = g.detailPage(okb, undefined, medalNames, dctx);
-  check(dk.includes('📌 Keep in the Shop') && dk.includes(`/web/gacha/pin/${okb.drawMedalTypeId}`) && dk.includes('Pinned!') && dk.includes('Leave and re-enter the Shop to see it.') && dk.includes('class="pinmsg"') && dk.includes('scrollIntoView'), 'dettagli: pulsante Keep e riquadro di conferma');
+  check(dk.includes('<img class="ic" src="/web/special/icon/pin.png" alt="">Keep in the Shop') && dk.includes(`/web/gacha/pin/${okb.drawMedalTypeId}`) && dk.includes('Pinned!') && dk.includes('Leave and re-enter the Shop to see it.') && dk.includes('class="pinmsg"') && dk.includes('scrollIntoView'), 'dettagli: pulsante Keep e riquadro di conferma');
   check(!dk.includes('Replaces:'), 'dettagli: niente Replaces senza fissato');
   const dk2 = g.detailPage(okb, undefined, medalNames, { ...dctx, pinnedRowId: 'B1', pinnedName: 'Old <i>one</i>' });
   check(dk2.includes('Replaces: Old &lt;i&gt;one&lt;/i&gt;'), 'dettagli: Replaces con nome');
   const dr = g.detailPage(okb, undefined, medalNames, { ...dctx, pinnedRowId: okb.rowId });
   check(dr.includes('Remove from the Shop') && dr.includes('/web/gacha/unpin') && dr.includes('Removed.') && dr.includes('Leave and re-enter the Shop.') && dr.includes('pinmsg off') && !dr.includes('>📌 Keep in the Shop</a>'), 'dettagli: Remove');
   check(!g.detailPage(okb, undefined, medalNames, { ...dctx, fromCatalog: false }).includes('Keep in the Shop'), 'dettagli: niente pulsante fuori dal Catalog');
-check(dk.includes('<a class="btn pkd" id="pinbtn"'), 'details: the shared compact keep button on phones (phone-css.js DETAIL_KEEP)');
+check(dk.includes('<a class="pk pkd" id="pinbtn"') && dk.includes('.pk{display:inline-block;margin-top:6px;border:2px solid #ffe08a'), 'details: the keep button of the other detail pages (pk, detail-cards.js KEEP_BTN_CSS) with the shared compact class on phones (DETAIL_KEEP)');
   check(!g.detailPage(bad['prices [0]'], undefined, medalNames, dctx).includes('Keep in the Shop'), 'dettagli: niente pulsante se non fissabile');
   // verdetti dei Details (finale): stagionale fuori finestra, fissabile passato
   const wk = { day: '2016-06-01', periodEnd: '2016-06-30', from: '2016-06-06', to: '2016-06-12', k: 0, n: 1 };
@@ -685,7 +685,9 @@ try {
   const o1 = mk({ unlockQuest: 200, start: '2016-05-01', end: '2016-05-30', prices: [0, 3000] }), o2 = mk({ unlockQuest: 200, start: '2016-05-02', end: '2016-05-30', prices: [3000] }), no = mk({ unlockQuest: 200, start: '2016-07-01', end: '2016-07-30' });
   const cp = g.catalogPage([o1, o2, no], { ...sctx, ...pcx, pinnedRowId: o2.rowId });
   const rowHtml = (b) => cp.slice(cp.indexOf(`id="c${b.drawMedalTypeId}"`)).split('<div class="b ')[0];
-  check(rowHtml(o1).includes(`data-pin="/web/gacha/pin/${o1.drawMedalTypeId}" data-on="1">📌 Keep in the Shop</button>`), 'catalogo: pulsante Keep sulla riga fissabile');
+  // the rows and buttons of the other catalogs (user 26-11): a side bar on every row, the shared Keep / Remove button
+  check(cp.includes('.cat .b{border-left:5px solid #5d8aa6;padding-left:10px}') && cp.includes(require('./detail-cards').KEEP_BTN_CSS), 'catalogo: barra laterale e pulsante come gli altri cataloghi');
+  check(rowHtml(o1).includes(`data-pin="/web/gacha/pin/${o1.drawMedalTypeId}" data-on="1"><img class="ic" src="/web/special/icon/pin.png" alt="">Keep in the Shop</button>`), 'catalogo: pulsante Keep sulla riga fissabile');
   check(rowHtml(o2).includes('data-pin="/web/gacha/unpin" data-on="0">Remove from the Shop</button>') && rowHtml(o2).includes('📌 Kept in the Shop'), 'catalogo: Remove sulla riga fissata');
   check(!rowHtml(no).includes('class="pk"'), 'catalogo: niente pulsante se non fissabile');
   check(!/<a [^>]*>(?:(?!<\/a>)[\s\S])*class="pk"/.test(cp), 'catalogo: il pulsante non sta dentro un link ai Details');

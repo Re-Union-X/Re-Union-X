@@ -5315,6 +5315,48 @@ function colosseumBoardCards() {
   } catch { colosseumCardsMemo = { mtime: -1, version: 1, ids: new Set() }; }
   return colosseumCardsMemo;
 }
+// Raid and Event Board web cards (user 26-11: the boards tables of the detail pages show the board cards, as the Coliseum one):
+// game_data/raid_board_img and event_board_img, written by recon/tools/make_avatar_card_web.py --tsv game_data/<kind>_board_art.tsv
+// --all --strict (git-ignored; run by hand on 26-11, a build-resources.ps1 step to add), read at request time like the Coliseum ones; served at
+// /web/<kind>/board-img/v<version>/<sphereBoardId>.png (numeric ids only, else 404)
+const BOARD_CARD_DIRS = { raid: process.env.KHUX_RAID_BOARD_IMG || path.join(__dirname, 'game_data', 'raid_board_img'),
+  event: process.env.KHUX_EVENT_BOARD_IMG || path.join(__dirname, 'game_data', 'event_board_img') };
+const boardCardsMemo = {};
+function boardCards(kind) {
+  const f = path.join(BOARD_CARD_DIRS[kind], 'cards.json'), memo = boardCardsMemo[kind] || { mtime: -1, version: 1, ids: new Set() };
+  try {
+    const mtime = fs.statSync(f).mtimeMs;
+    if (mtime !== memo.mtime) {
+      const doc = JSON.parse(fs.readFileSync(f, 'utf8'));
+      boardCardsMemo[kind] = { mtime, version: Number(doc.version) || 1, ids: new Set((doc.ids || []).map(Number)) };
+    }
+  } catch { boardCardsMemo[kind] = { mtime: -1, version: 1, ids: new Set() }; }
+  return boardCardsMemo[kind];
+}
+// the URL of a board's web card, null when the folder has none
+const boardCardUrl = (kind, id) => { const c = boardCards(kind); return c.ids.has(Number(id)) ? `/web/${kind}/board-img/v${c.version}/${Number(id)}.png` : null; };
+function respondBoardCard(res, kind, p) {
+  const m = new RegExp(`^/web/${kind}/board-img/v\\d+/(\\d{1,9})\\.png$`, 'i').exec(p);
+  const file = m ? path.join(BOARD_CARD_DIRS[kind], `${Number(m[1])}.png`) : null;
+  if (!file || !fs.existsSync(file)) { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); }
+  const b = fs.readFileSync(file);
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length, 'Cache-Control': 'public, max-age=3600' });
+  return res.end(b);
+}
+// The node progress of any board for the boards tables of the detail pages (detail-cards.js boardTable): {nodes, unlocked,
+// coinsLeft, coinsTotal} from the master (sphereNodes, sphereMasu.spherePoint) and the save's unlocked nodes, read only (an
+// avatar board's KEPT twin reads its original); null for a board not in the master
+const BOARD_STORES = () => [player.sphere, player.raidSphere, player.eventSphere, ...Object.values(player.colosseumSphere || {}), player.avatarSphere];
+function boardNodeProgress(sphereBoardId) {
+  const ix = raidBoardIndex(), id = Number(sphereBoardId), board = ix.sphere.get(id);
+  if (!board) return null;
+  let orig = id;
+  try { orig = Number(avatarBoards().origOf(id)) || id; } catch { /* not an avatar board */ }
+  const st = BOARD_STORES().map((box) => (box || {})[id] || (box || {})[orig]).find((x) => x && Array.isArray(x.unlock));
+  const unlock = new Set(((st && st.unlock) || []).map(Number)), nodes = sphereNodes(board), masu = ix.masu.get(id) || ix.masu.get(orig);
+  const cost = (list) => list.reduce((t, n) => t + ((masu && masu.spherePoint[n - 1]) || 0), 0), todo = nodes.filter((n) => !unlock.has(n));
+  return { nodes: nodes.length, unlocked: nodes.length - todo.length, coinsLeft: cost(todo), coinsTotal: cost(nodes) };
+}
 function colosseumPageCtx(extra = {}) {
   const sphere = masterRows('sphere'), cards = colosseumBoardCards();
   const skills = new Map(masterRows('skill').map((r) => [r.skillId, r.name]));
@@ -5493,6 +5535,7 @@ function raidBoardDoneLookup() {
 const raidPageCtx = (fromCatalog = false) => ({ ...raid().catalogCtx(), periods: special.PERIODS, imgVersion: routesRaid.RAID_IMG_VERSION, fromCatalog,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   boardItems: raidBoardItems, boardName: raidBoardName, stageDone: (id) => catalogStageDone(id), boardDone: raidBoardDoneLookup(),
+  boardNodes: boardNodeProgress, boardCardUrl: (id) => boardCardUrl('raid', id),
   hasNotice: (censusId) => !!raidNotices()?.rows?.[censusId] });
 // GET /web/raid/img/<evStageId>.png and <id>-kept.png (the kept raid's card): as /web/special/img, from game_data/raid_img. No
 // card of its own: 0.png, the plate of make_special_banners.py (a missing -kept copy: the card itself); none: 404.
@@ -5516,6 +5559,7 @@ function respondRaidWeb(res, url) {
     const html = raidPages.detailPage(raidIndex(), Number(det[1]), raidPageCtx(new URLSearchParams(url.split('?')[1] || '').get('from') === 'catalog'));
     return html ? page(html) : notFound();
   }
+  if (/^\/web\/raid\/board-img\//i.test(p)) return respondBoardCard(res, 'raid', p);
   const m = /^\/web\/raid\/img\/(?:v\d+\/)?(\d+)(-kept)?\.png$/i.exec(p);
   const names = m ? [...(m[2] ? [`${Number(m[1])}-kept.png`] : []), `${Number(m[1])}.png`, '0.png'] : [];
   const file = names.map((n) => path.join(RAID_IMG, n)).find((x) => fs.existsSync(x));
@@ -5528,7 +5572,7 @@ function respondRaidWeb(res, url) {
 const eventPageCtx = (fromCatalog = false) => ({ ...eventRoutes().catalogCtx(), imgVersion: routesEvents.EVENT_IMG_VERSION, fromCatalog,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   stageDone: (id) => catalogStageDone(id), hasNotice: (censusId) => !!eventNotices()?.rows?.[censusId],
-  eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup(),
+  eventBoardCard: (id) => boardCardUrl('event', id), eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup(),
   boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)),
   // the HSC best run of an event (routes-hsc.js player.hsc): «Your best score» of the details page, HIGH SCORE filter (I-276)
   hscBest: (censusId) => { const r = (player.hsc || {})[censusId]; return r && Number.isFinite(r.best) ? r.best : null; }, ...boardCardCtx() });
@@ -5555,6 +5599,7 @@ function respondEventWeb(res, url) {
     const html = eventPages.detailPage(eventIndex(), Number(det[1]), eventPageCtx(from === 'catalog'));
     return html ? page(html) : notFound();
   }
+  if (/^\/web\/event\/board-img\//i.test(p)) return respondBoardCard(res, 'event', p);
   const m = /^\/web\/event\/img\/(?:v\d+\/)?(\d+)(-kept)?\.png$/i.exec(p);
   const names = m ? [...(m[2] ? [`${Number(m[1])}-kept.png`] : []), `${Number(m[1])}.png`, '0.png'] : [];
   const file = names.map((n) => path.join(EVENT_IMG, n)).find((x) => fs.existsSync(x));
@@ -5592,7 +5637,9 @@ function boardCardCtx() {
   return { boardImgVersion: cards.version, boardCard: (id) => cards.ids.has(Number(id)),
     // owned (bought, or a free board handed out / a node unlocked) and node progress: avatar-boards.js owned / progress
     boardOwned: (id) => { try { return avatarBoards().owned(player, id); } catch { return false; } },
-    boardProgress: (id) => { try { return avatarBoards().progress(player, id); } catch { return 'none'; } } };
+    boardProgress: (id) => { try { return avatarBoards().progress(player, id); } catch { return 'none'; } },
+    // nodes unlocked and Avatar Coins still needed (the boards table of the detail pages, detail-cards.js boardTable)
+    boardNodes: (id) => { try { return boardNodeProgress(id); } catch { return null; } } };
 }
 // GET /web/avatar/img/v<n>/<sphereBoardId>.png: a card of game_data/avatar_img; numeric ids only (no other name, no path), else 404
 function respondAvatarCard(res, p) {

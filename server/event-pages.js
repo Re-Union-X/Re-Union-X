@@ -557,7 +557,13 @@ function boardsSection(index, e, ctx) {
     + (c.done ? `<td class="cd">Unlocked${CROWN}</td>` : '<td>Not unlocked</td>') + '</tr>';
   const board = (b) => `<h3>${esc(b.name)}${b.done ? CROWN : ''}</h3><table class="tt bt"><tr><th>Cell</th><th>Reward</th><th>Cost</th><th>Status</th></tr>`
     + b.cells.map(cell).join('') + `<tr><td colspan="2">Board complete${b.finish ? `: ${esc(b.finish)}` : ''}</td><td></td><td${b.done ? ' class="cd">Done' : '>—'}</td></tr></table>`;
-  return `<h2>Event Boards</h2>${coins}${boards.map(board).join('')}`
+  // the boards table of every catalog detail page first (detail-cards.js boardTable, user 26-11): card, name, nodes unlocked, Event
+  // Coins still needed; then each board's cells
+  const sum = (list) => list.reduce((t, c) => t + (Number(c.cost) || 0), 0);
+  const table = cards.boardTable(boards.map((b) => ({ id: b.id, name: esc(b.name), img: ctx.eventBoardCard ? ctx.eventBoardCard(b.id) : null, served: true,
+    nodes: b.cells.length, unlocked: b.cells.filter((c) => c.done).length, coinsLeft: sum(b.cells.filter((c) => !c.done)), coinsTotal: sum(b.cells) })),
+  { currency: 'Event Coins', cls: 'ebt' });
+  return `<h2>Event Boards</h2>${coins}${table}${boards.map(board).join('')}`
     + '<p class="n">A board opens in the Events tab while one of the events of its set is in your week or kept.</p>';
 }
 const daysText = (days) => days.map(niceDay).join(', ');
@@ -649,13 +655,16 @@ function avatarBoardsSection(e, ctx, onEventPage = false) {
     if (!ownedOf(ctx, b)) return `<td>${b.type === 1 ? 'Served' : 'Served, for sale'}</td>`;
     return `<td class="cd">${b.type === 1 ? 'Handed out to you' : 'Bought'}${CROWN}</td>`;
   };
-  // its card (Task 5c): the picture of a served board with a card, else the neutral box
-  const card = (b) => `<td class="bc">${b.served && hasCard(ctx, b.sphereBoardId)
-    ? `<img width="64" height="64" src="${boardImg(ctx, b.sphereBoardId)}" loading="lazy" alt="" onerror="kxNb(this)">` : NB}</td>`;
-  const rows = boards.map((b) => `<tr>${card(b)}<td>${esc(b.name)}</td><td>${b.window ? esc(`${niceDay(b.window[0])} – ${niceDay(b.window[1])}`) : '—'}</td><td>${esc(boardPrice(b))}</td>${status(b)}</tr>`).join('');
+  // the boards table of every catalog detail page (detail-cards.js boardTable, user 26-11): its card (Task 5c: the picture of a
+  // served board with a card, else the neutral box), name, dates, price, status, nodes unlocked and Avatar Coins still needed
+  const rows = boards.map((b) => {
+    const pr = b.served && ctx.boardNodes ? ctx.boardNodes(b.sphereBoardId) : null;
+    return { id: b.sphereBoardId, name: esc(b.name), img: b.served && hasCard(ctx, b.sphereBoardId) ? boardImg(ctx, b.sphereBoardId) : null, served: true,
+      ...(pr || {}), extra: [b.window ? esc(`${niceDay(b.window[0])} – ${niceDay(b.window[1])}`) : '—', esc(boardPrice(b)), status(b)] };
+  });
   const codes = [...new Set((e.avatarBoards || []).flatMap((w) => w.labels || []))];
   const notes = codes.length ? `<ul class="pl">${codes.map((c) => `<li>${esc(BOARD_LABEL_TEXT[c] || c)}</li>`).join('')}</ul>` : '';
-  return `<script>${BOARD_NC_JS}</script><h2>Avatar Boards</h2><table class="tt bt ab kn2 kc3 kg4"><tr><th></th><th>Board</th><th>Dates</th><th>Price</th><th>Status</th></tr>${rows}</table>${notes}`
+  return `<script>${BOARD_NC_JS}</script><h2>Avatar Boards</h2>${cards.boardTable(rows, { currency: 'Avatar Coins', extraHeads: ['Dates', 'Price', 'Status'], cls: 'bt ab kc3 kg4' })}${notes}`
     + '<p class="n">A board on sale is bought once with Jewels and stays yours; its nodes are opened with Avatar Coins. In the original game these boards were sold '
     + `only in their dates: on this server a past entry can be kept in the ${onEventPage ? `<a href="${esc(boardLink)}">Avatar Board Catalog ›</a>` : 'Avatar Board Catalog'}, `
     + 'and its boards are listed in Avatar Boards again at their original price (an addition of this server, not original). Keeping it never changes your kept event.</p>';

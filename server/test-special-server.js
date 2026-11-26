@@ -202,7 +202,7 @@ check(server.route('/web/special/detail/7012?from=catalog') === 'specialweb', 'r
 const det = raw(t.respondSpecialWeb, '/web/special/detail/7012?from=catalog');
 const detHtml = det.body.toString('utf8'), en7012 = t.specialIndex().entries.find((x) => x.evStageId === 7012);
 check(det.code === 200 && det.headers['Content-Type'].startsWith('text/html') && detHtml.includes(en7012.name.replace(/&/g, '&amp;')) && detHtml.includes('class="back"'), `dettagli 7012: ${det.code}`);
-check(/<h3>Objectives<\/h3>/.test(detHtml) && detHtml.includes('Defeat the target enemy within 1 turn') && detHtml.includes('Avatar Coin x5'), 'dettagli 7012: obiettivi dal master');
+check(/Objectives<\/h4><table class="tt qtt ob">/.test(detHtml) && detHtml.includes('Defeat the target enemy within 1 turn') && detHtml.includes('Avatar Coin x5'), 'dettagli 7012: obiettivi dal master');
 check(!raw(t.respondSpecialWeb, '/web/special/detail/7012').body.toString('utf8').includes('class="back"'), 'dettagli senza from=catalog: niente BACK');
 check(raw(t.respondSpecialWeb, '/web/special/detail/99999').code === 404 && raw(t.respondSpecialWeb, '/web/special/detail/7000').code === 404
   && raw(t.respondSpecialWeb, '/web/special/detail/abc').code === 404, 'dettagli: id sconosciuto 404');

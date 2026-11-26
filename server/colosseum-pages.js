@@ -258,18 +258,12 @@ function detailPage(rows, id, det, ctx = {}) {
     ['Tiers', `<b>${row.tiers}</b> tier${row.tiers === 1 ? '' : 's'} · ${aps} per round`], ['Your progress', progress],
     ['Coliseum Coins', row.coins ? `<span class="cc">${num(row.coins)}</span> to spend on the boards` : MU('None yet')]]
     .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
-  // Coliseum Boards
-  const boardRows = det.boards.map((b) => {
-    const name = b.name || (ctx.boardName && ctx.boardName(b.id)) || `Board ${b.id}`;
-    const sub = b.bonusTier ? `<small class="bns">Unlocks at Tier ${b.bonusTier}</small>` : '';
-    if (!b.served) return `<tr><td class="bc">${NB}</td><td><span class="tn">${esc(name)}</span>${sub}</td><td>—</td><td>${MU('Not served yet')}</td></tr>`;
-    const done = b.nodes > 0 && b.unlocked >= b.nodes;
-    return `<tr${done ? ' class="got"' : ''}><td class="bc">${cardTag(ctx, b.id, 64)}</td><td><span class="tn">${esc(name)}</span>${sub}</td>`
-      + `<td class="nw"><b class="${b.unlocked ? 'v' : 'mu'}">${b.unlocked}</b> / ${b.nodes}</td>`
-      + `<td>${done ? OK('Completed') : `<span class="cc">${num(b.coinsLeft)} Coliseum Coins</span><small>of ${num(b.coinsTotal)}</small>`}</td></tr>`;
-  }).join('');
+  // Coliseum Boards: the boards table shared with the other catalog detail pages (detail-cards.js boardTable)
+  const boardRows = det.boards.map((b) => ({ id: b.id, name: esc(b.name || (ctx.boardName && ctx.boardName(b.id)) || `Board ${b.id}`),
+    sub: b.bonusTier ? `<small class="bns">Unlocks at Tier ${b.bonusTier}</small>` : '', img: b.served && hasCard(ctx, b.id) ? boardImg(ctx, b.id) : null,
+    served: b.served, nodes: b.nodes, unlocked: b.unlocked, coinsLeft: b.coinsLeft, coinsTotal: b.coinsTotal }));
   const boards = det.boards.length
-    ? `<table class="tt cb"><tr><th></th><th>Board</th><th>Nodes unlocked</th><th>Coins still needed</th></tr>${boardRows}</table>`
+    ? cards.boardTable(boardRows, { currency: 'Coliseum Coins', cls: 'cb' })
       + '<p class="n">The nodes of a board are bought with the Coliseum Coins of this season, in the Coliseum Boards of the Coliseum while the season plays. A Tier Bonus board appears when you reach its tier.</p>'
     : `<p class="n">${MU('No Coliseum Board this season.')}</p>`;
   // Tiers

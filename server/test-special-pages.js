@@ -126,6 +126,17 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(d.includes('Every day') && d.includes('Period 1') && d.includes('Period 2') && d.includes('Jan 1, 2016'), 'details: days and periods with dates');
   check(d.includes('class="s s-can"') && d.includes('data-pin="/web/special/pin/7102"') && d.includes('khuxPin') && d.includes('Replaces: N-kb'), 'details: pill and pin button');
   check(d.includes('class="pk pkd" data-id="7102"'), 'details: the shared compact keep button (phone-css.js DETAIL_KEEP)');
+  // quest blocks (detail-cards.js questBlock, user 26-11): stat chips, Objectives and Drops tables with lined-up first columns; Drops
+  // with amount and rate, NOT ORIGINAL in its heading and the reconstructed note as a plain sentence
+  const dq = pages.detailPage(ix2, 7102, ctxD);
+  check(dq.includes('<div class="qb"><h3 class="qh">Quest Two</h3><div class="qs"><span>AP<b><span class="v">12</span></b></span>') && d.includes('<table class="tt qtt ob">'), 'details: quest block, stat chips, objectives');
+  check(dq.includes('Drops<span class="ng">NOT ORIGINAL</span></h4><p class="n">The original drop data is lost. These drops and their rates are reconstructed.</p><table class="tt qtt dt">')
+    && dq.includes('<span class="tn">Huey Ver. A</span>') && !dq.includes('reconstructed: the original'), 'details: Drops table with the badge');
+  const dr = pages.detailPage(ix2, 7102, { ...ctxD, names: { ...dn, dropRows: (rid) => (rid === 1 ? [{ type: 3, name: 'Huey', num: 1, odds: 2500 }, { type: 5, name: 'Mythril Shard', num: 2, odds: 1000 }] : []) } });
+  check(dr.includes('/web/special/icon/medal.png" alt=""><span class="tn">Huey</span></td><td><span class="v">x1</span></td><td><span class="rd">25%</span></td>')
+    && dr.includes('/web/special/icon/material.png') && dr.includes('<span class="rd">10%</span>'), 'details: drops with icon, amount and rate');
+  check(pages.buildNames((n) => ({ reward: [{ rewardId: 5, type: [3, 5], id: [9, 8], num: [1, 3], odds: [500, 9500] }], medal: [{ medalId: 9, name: 'M' }], material: [{ materialId: 8, name: 'S' }] }[n] || [])).dropRows(5)
+    .map((x) => `${x.name}/${x.num}/${x.odds}`).join(',') === 'M/1/500,S/3/9500', 'buildNames dropRows');
   check(/<div class="cs" id="sec-versions?"><div class="csh"><img class="ic"/.test(d) && /<div class="cs" id="sec-periods?">/.test(d) && d.includes('<details class="vq cs"'), 'details: section cards (detail-cards.js)');
   check(d.includes('Quest Two') && /AP[\s\S]{0,80}12/.test(d) && d.includes('80') && d.includes('King Pretender') && d.includes('Agrabah'), 'details: quest name, AP, level, target, world');
   check(d.includes('Defeat Shadow x 3') && d.includes('Cid Ver. B x1') && d.includes('Munny x100'), 'details: objectives with rewards');
@@ -223,7 +234,8 @@ check(!none.includes('Replaces:'), 'no Replaces without a pin');
   check(qp.indexOf('2016–2017 · VIP') > qp.indexOf('2018–2020 · Free') && /id="v1"[\s\S]*data-pin="\/web\/special\/pin\/7301"/.test(qp), 'Power: the VIP version (older, second) with its own Keep');
   check(/<details class="vq cs" open><summary>Quests · 2018–2020 · Free<\/summary>/.test(qp) && /<details class="vq cs"><summary>Quests · 2016–2017 · VIP<\/summary>/.test(qp), 'quests per version, newest open');
   check(qp.includes('class="back" href="/web/special/catalog#q7302"'), 'BACK to the row');
-  check(pages.detailPage(ix, 7351, c4).includes('Week of Jun 12, 2017'), 'campaign details: its week');
+  check(pages.detailPage(ix, 7351, c4).includes('Week of Jun 12, 2017'), 'campaign details: its week');
+
   // REWARDS on rows
   const nm = { drop: (rid) => (rid === 1 ? ['Huey', 'Mythril'] : []), objective: () => [],
     dropTypes: (rid) => (rid === 1 ? [3, 5] : []), objectiveTypes: (sid) => (sid === 78140 ? [2, 20, 20] : []) };

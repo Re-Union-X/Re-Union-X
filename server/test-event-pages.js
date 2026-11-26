@@ -248,10 +248,11 @@ const tests = {
     const c = ctx({ eventBoard: (id) => boards[id] || null, eventCoins: () => 1234 });
     const d = pages.detailPage(ix, 29900, c);
     const sec = d.slice(d.indexOf('<h2>Event Boards</h2>'));
+    assert.ok(sec.includes('<table class="tt bdt ebt">') && sec.includes('<th>Event Coins still needed</th>'), 'the boards table of every detail page (boardTable)');
     assert.ok(sec.length < d.length, 'an Event Boards section');
     assert.ok(sec.includes('Board #1: Fixture') && sec.includes('Board #2: Fixture'), 'both boards, in set order');
     assert.ok(sec.indexOf('Board #1') < sec.indexOf('Board #2'));
-    const b1 = sec.slice(sec.indexOf('Board #1'), sec.indexOf('Board #2'));
+    const b1 = sec.slice(sec.indexOf('<h3>Board #1'), sec.indexOf('<h3>Board #2')); // the cells of each board, under the boards table
     assert.ok(b1.includes('Fixture Medal x2') && b1.includes('Jewels x500') && b1.includes('900') && b1.includes('1,000'), 'rewards and costs');
     assert.strictEqual((b1.match(/class="cd"/g) || []).length, 2, 'two unlocked cells carry the done mark (1 and 3)');
     assert.ok(!/Not restored yet/.test(sec), 'no pass-through cell any more');
@@ -572,7 +573,9 @@ const tests = {
     assert.ok(d.includes('<h2>Avatar Boards</h2>') && d.includes('Red Coat') && d.includes('3,000 Jewels'));
     assert.ok(d.includes('class="pk pkd" data-id="29920"'), 'Avatar Board detail: the shared compact keep button (phone-css.js DETAIL_KEEP)');
     for (const k of ['entry', 'avatar-boards']) assert.ok(d.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
-    assert.ok(d.includes('<table class="tt bt ab kn2 kc3 kg4">'), 'board names bold, dates cyan, prices gold');
+    assert.ok(d.includes('<table class="tt bdt bt ab kc3 kg4">') && d.includes('<th>Nodes unlocked</th><th>Avatar Coins still needed</th>'), 'the boards table of every detail page (boardTable): names bold, dates cyan, prices gold');
+    const dn = pages.boardDetailPage(ix, 29920, ctx({ boardNodes: () => ({ nodes: 19, unlocked: 19, coinsLeft: 0, coinsTotal: 900 }) }));
+    assert.ok(dn.includes('<b class="v">19</b> / 19') && dn.includes('<span class="yes">Completed'), 'nodes unlocked, a completed board');
     assert.ok(/Blue Coat.{0,200}price/i.test(d), 'priceUnknown: never sold at a guessed price');
     assert.ok(/Lost Coat.{0,300}reward/i.test(d) && !d.includes('cell 2: medal'), 'a held board: its reason in plain words, not the builder note');
     assert.ok(!d.includes('<h2>Quests</h2>'), 'no quest table for a board-only entry');
@@ -900,11 +903,11 @@ const tests = {
     const ix = BOARD_INDEX();
     ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
     for (const page of [pages.boardDetailPage(ix, 29920, ctx()), pages.detailPage(ix, 29900, ctx())]) {
-      const head = /<table class="tt bt ab(?: kn2 kc3 kg4)?"><tr>((?:<th>[^<]*<\/th>)+)<\/tr>/.exec(page);
+      const head = /<table class="tt bdt bt ab kc3 kg4"><tr>((?:<th>[^<]*<\/th>)+)<\/tr>/.exec(page);
       assert.ok(head, 'the Avatar Boards table has its own class');
       const cols = [...head[1].matchAll(/<th>([^<]*)<\/th>/g)].map((m) => m[1]);
       const n = (name) => cols.indexOf(name) + 1;
-      assert.deepStrictEqual(cols, ['', 'Board', 'Dates', 'Price', 'Status']);
+      assert.deepStrictEqual(cols, ['', 'Board', 'Dates', 'Price', 'Status', 'Nodes unlocked', 'Avatar Coins still needed']);
       const css = page.slice(0, page.indexOf('</style>'));
       for (const c of ['Board', 'Dates']) assert.ok(css.includes(`.tt.ab td:nth-child(${n(c)}){white-space:normal}`) || (c === 'Board' && css.includes(`.tt.bt td:nth-child(${n(c)}){white-space:normal}`)), `${c} wraps`);
       assert.ok(css.includes(`.tt.ab td:nth-child(${n('Price')}){white-space:nowrap}`), 'Price on one line');
@@ -933,12 +936,12 @@ const tests = {
   board_page_cards() {
     const ix = BOARD_INDEX();
     const d = pages.boardDetailPage(ix, 29920, ctx({ boardImgVersion: 3 }));
-    assert.ok(/<tr><td class="bc"><img [^>]*src="\/web\/avatar\/img\/v3\/5000001\.png"[^>]*loading="lazy"[^>]*><\/td><td>Red Coat/.test(d), 'Red Coat with its card');
-    assert.ok(/<tr><td class="bc"><span class="nb"><\/span><\/td><td>Blue Coat/.test(d), 'a held board: the neutral box');
+    assert.ok(/<tr><td class="bc"><img [^>]*src="\/web\/avatar\/img\/v3\/5000001\.png"[^>]*loading="lazy"[^>]*><\/td><td><span class="tn">Red Coat/.test(d), 'Red Coat with its card');
+    assert.ok(/<tr><td class="bc"><span class="nb"><\/span><\/td><td><span class="tn">Blue Coat/.test(d), 'a held board: the neutral box');
     assert.ok(/<th><\/th><th>Board<\/th>/.test(d));
     assert.ok(!/No card in the original/.test(d) && !d.includes('/web/event/img/'), 'a BOARD entry has no event card');
     const plain = pages.boardDetailPage(ix, 29921, ctx({ boardCard: () => false }));
-    assert.ok(/<td class="bc"><span class="nb"><\/span><\/td><td>Gem Board/.test(plain), 'the plain card: no picture');
+    assert.ok(/<td class="bc"><span class="nb"><\/span><\/td><td><span class="tn">Gem Board/.test(plain), 'the plain card: no picture');
     // an event that also sold boards keeps its event card on top, with the «No card» fallback
     ix.entries[0].boards = [{ key: 'E-0/outfit', group: 'outfit', type: 2, window: ['2019-03-01', '2019-03-07'], donorId: 9012, name: 'Event Coat', sphereBoardId: 5000012, price: 1000, served: true, why: null }];
     const ev = pages.boardDetailPage(ix, 29900, ctx());

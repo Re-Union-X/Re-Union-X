@@ -71,6 +71,55 @@ const CARD_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06
   // levels, dates), kg<i> gold (values, coins, Jewels); a cell td.r (not served / not built) stays muted
   + [1, 2, 3, 4, 5, 6].map((i) => `.csb table.kn${i} td:nth-child(${i}){color:#fff;font-weight:bold}.csb table.kc${i} td:nth-child(${i}){color:#00d4ed;font-weight:bold}`
     + `.csb table.kg${i} td:nth-child(${i}){color:#ffcd4a;font-weight:bold}`).join('')
-  + '.csb .tt td.r{color:#8fa9ba!important;font-weight:normal!important}.csb table td.cd{color:#6fd47f!important}';
+  + '.csb .tt td.r{color:#8fa9ba!important;font-weight:normal!important}.csb table td.cd{color:#6fd47f!important}'
+  + '.cc{color:#ffcd4a;font-weight:bold}'
+  // the boards table (boardTable): card 64 px, numbers on one line, the small lines under a cell
+  + 'table.bdt th{color:#fff;font-size:15px;font-weight:bold}table.bdt td{font-size:15px}table.bdt{table-layout:auto}table.bdt td.bc{width:64px;padding-right:0}table.bdt td.bc img,table.bdt td.bc .nb{display:block;width:64px;height:64px;border-radius:6px}'
+  + '.nb{display:inline-block;box-sizing:border-box;border:1px solid #2f6f93;border-radius:6px;background:#06283e}'
+  + 'table.bdt td.nw{white-space:nowrap}table.bdt small{display:block;color:#b9cfdc;font-size:13px;font-weight:normal}table.bdt small.bns{color:#ffcd4a}'
+  // a quest block of the Special details (questBlock): name band, stat chips, objectives and drops tables whose first column has
+  // the same width, so their columns line up
+  + '.qb{border:1px solid #1d5878;border-radius:8px;background:#05223a;margin:10px 0;overflow:hidden}.qb>h3.qh{margin:0;padding:6px 12px;background:#0a3a5a;color:#fff;font-size:16px}'
+  + '.qs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 2px}.qs span{background:#0a4466;border:1px solid #2f6f93;border-radius:12px;padding:1px 10px;font-size:14px;color:#d9e6ee}.qs span b{margin-left:4px}'
+  + '.qb>.qt{padding:4px 10px 8px}.qb h4{margin:8px 0 4px;color:#ffcd4a;font-size:15px;display:flex;align-items:center;gap:6px}.qb h4 .ic{width:1.2em;height:1.2em}'
+  + '.qb table.qtt{table-layout:fixed;width:100%;margin:2px 0 6px}.qb table.qtt td:first-child,.qb table.qtt th:first-child{width:62%}.qb table.qtt.dt td:nth-child(2),.qb table.qtt.dt th:nth-child(2){width:14%}'
+  + '.qb td .ic{width:1.3em;height:1.3em;margin:0 6px 0 0;vertical-align:-4px}.qb p.n{margin:2px 0 6px}';
 
-module.exports = { section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc };
+// The boards of a detail page, as the Coliseum Boards of the Coliseum season page (user 26-11: «the same table in every catalog»):
+// card | Board | (extra columns) | Nodes unlocked | <currency> still needed. rows: [{id, name, sub (html, a small line under the
+// name), img (the card URL, null: the neutral box), served, why (not served: the reason), nodes, unlocked, coinsLeft, coinsTotal,
+// extra: [html per extra column]}]; o: {currency (e.g. 'Coliseum Coins'), extraHeads: [header], cls (more table classes)}.
+// A completed board: green with the crown; nothing unlocked: muted; a board not served: muted with its reason.
+const NB = '<span class="nb"></span>';
+const NB_JS = "<script>function kxNb(im){var s=document.createElement('span');s.className='nb';im.parentNode.replaceChild(s,im);}</script>";
+const num = (n) => Number(n || 0).toLocaleString('en-US');
+function boardTable(rows, o = {}) {
+  const cur = o.currency || 'Coins', heads = o.extraHeads || [];
+  const body = rows.map((b) => {
+    const card = b.img ? `<img width="64" height="64" src="${b.img}" loading="lazy" alt="" onerror="kxNb(this)">` : NB;
+    // an extra cell is html, or a whole cell when it starts with <td
+    const name = `<span class="tn">${b.name}</span>${b.sub || ''}`, extra = (b.extra || []).map((x) => (String(x).startsWith('<td') ? x : `<td>${x}</td>`)).join('');
+    if (!b.served) return `<tr><td class="bc">${card}</td><td>${name}</td>${extra}<td>—</td><td class="r">Not served yet${b.why ? `<small>${b.why}</small>` : ''}</td></tr>`;
+    // no node data (no progress lookup): dashes
+    if (b.nodes == null) return `<tr><td class="bc">${card}</td><td>${name}</td>${extra}<td>—</td><td>—</td></tr>`;
+    const done = b.nodes > 0 && b.unlocked >= b.nodes;
+    return `<tr${done ? ' class="got"' : ''}><td class="bc">${card}</td><td>${name}</td>${extra}`
+      + `<td class="nw"><b class="${b.unlocked ? 'v' : 'mu'}">${b.unlocked}</b> / ${b.nodes}</td>`
+      + `<td>${done ? yes('Completed') : `<span class="cc">${num(b.coinsLeft)} ${esc(cur)}</span><small>of ${num(b.coinsTotal)}</small>`}</td></tr>`;
+  }).join('');
+  return `${NB_JS}<table class="tt bdt${o.cls ? ` ${o.cls}` : ''}"><tr><th></th><th>Board</th>${heads.map((h) => `<th>${h}</th>`).join('')}<th>Nodes unlocked</th>`
+    + `<th>${esc(cur)} still needed</th></tr>${body}</table>`;
+}
+// a quest block (Special details): name, stat chips [[label, html]], then the parts [[icon, title, html, badge]] (objectives, drops)
+const questBlock = (name, stats, parts) => `<div class="qb"><h3 class="qh">${name}</h3>`
+  + (stats.length ? `<div class="qs">${stats.map(([k, v]) => `<span>${k}<b>${v}</b></span>`).join('')}</div>` : '')
+  + `<div class="qt">${parts.map(([ic, t, h, badge]) => `<h4>${icon(ic)}${t}${badge || ''}</h4>${h}`).join('')}</div></div>`;
+
+// The Keep / Remove button of the catalogs (special-pages.js .pk: gold, red to remove, the pin icon) for the pages that do not load
+// the catalog CSS (the Banner Catalog, gacha.js, user 26-11: «the same button as the other catalogs»)
+const KEEP_LABEL_ICON = icon('pin');
+const KEEP_BTN_CSS = '.pk{display:inline-block;margin-top:6px;border:2px solid #ffe08a;border-radius:10px;color:#fff;font:bold 14px sans-serif;padding:3px 14px;'
+  + 'background:linear-gradient(#e0a020,#a8700a);cursor:pointer;text-decoration:none;line-height:1.5}.pk[data-on="0"]{border-color:#ffb0b0;background:linear-gradient(#ff5a5a,#d81e2e 55%,#9c1020)}'
+  + '.pk .ic{display:inline-block;width:1.3em;height:1.3em;margin:0 6px 0 0;vertical-align:-4px;max-width:none}';
+
+module.exports = { KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };

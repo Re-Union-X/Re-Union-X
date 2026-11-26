@@ -79,7 +79,7 @@ const tests = {
     const det = pages.detailPage(ix, 8300, c);
     assert(det.includes('<td>Super-Hard Weekend Raid (Japan)</td>') && det.includes('<b>Japan only</b>') && det.includes('Japanese super-hard board'), 'details');
     // its board has no census name (only the served board's own): no «No Raid Boards this week» above the listed board (bench 05-11)
-    assert(!det.includes('No Raid Boards this week') && det.includes('<ul class="pl"><li>'), 'board listed without the empty line');
+    assert(!det.includes('No Raid Boards this week') && det.includes('<table class="tt bdt rbt">'), 'board listed without the empty line');
     assert(det.includes('gains a level at every win'), 'the usual level step');
     // user decision 06-11: a JP raid with nothing known of its board has none, and its page says why; a reconstructed one says so
     ix.entries.push(tier('JP-RAID-3', 8301, '2015-11-13', '2015-11-19', 'single', 'Trident Tail', { family: 'event', jp: true, region: 'JP', reconstructed: ['jp', 'jpNoBoard'], boards: [], sphereBoardIds: [] }),
@@ -297,6 +297,10 @@ const tests = {
   detail_page() {
     const d = pages.detailPage(index(), 8100, ctx());
     // section cards (detail-cards.js, user 26-11: the Coliseum season page style) and the colour roles
+    // the Raid Boards as the Coliseum Boards table (detail-cards.js boardTable): card, name, rewards, nodes, Raid Coins still needed
+    const db = pages.detailPage(index(), 8100, ctx({ boardNodes: (id) => ({ nodes: 10, unlocked: 4, coinsLeft: 600, coinsTotal: 1000 }), boardCardUrl: (id) => `/web/raid/board-img/v7/${id}.png` }));
+    assert(db.includes('<th>Nodes unlocked</th><th>Raid Coins still needed</th>') && db.includes('<b class="v">4</b> / 10') && db.includes('<span class="cc">600 Raid Coins</span>')
+      && /src="\/web\/raid\/board-img\/v7\/\d+\.png"/.test(db), 'Raid Boards table');
     for (const k of ['week', 'tiers', 'raid-boards']) assert(d.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
     assert(d.includes('<h2>Tiers</h2>') && d.includes('<table class="tt kn1 kn2 kc3 kg4">') && /<td><span class="rd">[^<]+<\/span><\/td>/.test(d), 'colour roles: tier columns, dates cyan');
     assert(/<h1>Trickmaster · Blue Trident Tail<\/h1>/.test(d));

@@ -172,6 +172,8 @@ function typesOf(en) {
 // Reward names for the search box and the details page. rows(name) returns the master table (server.js masterRows); the
 // result has drop(rewardId) -> names of a drop table, objective(stageId) -> names of the stage's objective rewards and
 // stage(stageId) -> { objectives: [{ text, reward }] } (objective texts as the client writes them, reward «Name xN»).
+// the icon of a drop by its reward type (special-pages.js icons): medals, materials, the rest
+const DROP_ICON = { 3: 'medal', 5: 'material', 2: 'jewel', 20: 'avatar', 33: 'avatar' };
 const ITEM_NAMES = { 2: 'Jewels', 4: 'Munny', 11: 'Lux', 14: 'Avatar Coin', 26: 'Skip Ticket', 28: 'Skip Ticket+', 41: 'Draw Ticket' };
 const TABLES = { 3: ['medal', 'medalId'], 5: ['material', 'materialId'], 20: ['avatarParts', 'avatarPartsId'], 33: ['petParts', 'petPartsId'] };
 // objective ids (submissionIdType): 1 enemy, 5 Keyblade, 6 skill
@@ -197,6 +199,11 @@ function buildNames(rows) {
     drop: (rid) => {
       const r = table(['reward', 'rewardId']).get(rid);
       return r ? r.type.map((t, i) => name(t, r.id[i])).filter(Boolean) : [];
+    },
+    // the drops of a reward row with their amount and odds (per 10,000), for the Drops table of the details page
+    dropRows: (rid) => {
+      const r = table(['reward', 'rewardId']).get(rid);
+      return r ? r.type.map((t, i) => ({ type: t, name: name(t, r.id[i]), num: (r.num || [])[i] || 0, odds: (r.odds || [])[i] ?? null })).filter((d) => d.name) : [];
     },
     // reward types (REWARDS filter): of a drop row and of a stage's objective rewards (0 = none left out)
     dropTypes: (rid) => (table(['reward', 'rewardId']).get(rid)?.type || []).filter(Boolean),
@@ -703,15 +710,21 @@ function detailPage(index, evStageId, ctx = {}) {
     const stages = en.stages && en.stages.length ? en.stages : (en.stageIds || []).map((stageId) => ({ stageId, dropRewardIds: en.dropRewardIds }));
     return stages.map((s, i) => {
       const info = names.stage(s.stageId), ap = (en.useAp || [])[i];
-      const kv = [['AP', ap ?? ''], ['Level', s.wikiLv ?? ''], ['Target', s.target || ''], ['Where', [s.world, s.room].filter(Boolean).join(' · ')]]
-        // colour roles (detail-cards.js): AP gold, level cyan
-        .filter(([, v]) => v !== '').map(([k, v]) => `<tr><th>${k}</th><td>${k === 'AP' ? cards.val(esc(v)) : k === 'Level' ? cards.cyan(esc(v)) : esc(v)}</td></tr>`).join('');
-      const obj = info && info.objectives.length ? `<h3>Objectives</h3><table class="ob"><tr><th>Objective</th><th>Reward</th></tr>${info.objectives
-        .map((o) => `<tr><td>${esc(o.text)}</td><td class="r">${esc(o.reward || '—')}</td></tr>`).join('')}</table>` : '';
-      const drops = [...new Set((s.dropRewardIds || []).flatMap((rid) => names.drop(rid)))];
-      const dropHtml = drops.length ? `<h3>Drops</h3><p class="dr">${drops.map(esc).join(', ')}</p>`
-        + '<p class="n">Drops and their rates are reconstructed: the original data is lost.</p>' : '';
-      return `<h2>${esc(s.quest || en.name)}</h2><table class="kv">${kv}</table>${obj}${dropHtml}`;
+      // a quest block (detail-cards.js questBlock, user 26-11: the quest tables lined up): its stats as chips (AP gold, level cyan),
+      // then Objectives and Drops, two tables whose first columns have the same width
+      const stats = [['AP', ap != null && ap !== '' ? cards.val(esc(ap)) : ''], ['Level', s.wikiLv != null && s.wikiLv !== '' ? cards.cyan(esc(s.wikiLv)) : ''], ['Target', esc(s.target || '')],
+        ['Where', esc([s.world, s.room].filter(Boolean).join(' · '))]].filter(([, v]) => v !== '');
+      const obj = info && info.objectives.length ? ['done', 'Objectives', `<table class="tt qtt ob"><tr><th>Objective</th><th>Reward</th></tr>${info.objectives
+        .map((o) => `<tr><td>${esc(o.text)}</td><td class="dr">${esc(o.reward || '—')}</td></tr>`).join('')}</table>`] : null;
+      // Drops (user 26-11: «a proper section»): one row per item (icon of its kind, name, amount, rate), the reconstructed data
+      // declared by the NOT ORIGINAL badge of its heading and one plain sentence
+      const seen = new Set(), rows = (s.dropRewardIds || []).flatMap((rid) => (names.dropRows ? names.dropRows(rid) : names.drop(rid).map((name) => ({ name }))))
+        .filter((d) => d.name && !seen.has(`${d.name}|${d.num}|${d.odds}`) && seen.add(`${d.name}|${d.num}|${d.odds}`));
+      const rate = (o) => (o == null ? '—' : `${(o / 100).toLocaleString('en-US', { maximumFractionDigits: 2 })}%`);
+      const drops = rows.length ? ['medal', 'Drops', '<p class="n">The original drop data is lost. These drops and their rates are reconstructed.</p>'
+        + `<table class="tt qtt dt"><tr><th>Drop</th><th>Amount</th><th>Rate</th></tr>${rows.map((d) => `<tr><td>${icon(DROP_ICON[d.type] || 'medal')}${cards.tn(esc(d.name))}</td>`
+          + `<td>${d.num ? cards.val(`x${d.num}`) : '—'}</td><td>${cards.cyan(rate(d.odds))}</td></tr>`).join('')}</table>`, cards.NG] : null;
+      return cards.questBlock(esc(s.quest || en.name), stats, [obj, drops].filter(Boolean));
     }).join('');
   };
   const verLabel = (v) => {

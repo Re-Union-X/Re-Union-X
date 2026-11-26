@@ -669,7 +669,7 @@ function laterWhy(banner, w, ctx) {
 // di Details e Catalog: l'elemento porta data-pin (URL del POST) e data-on (1 = fissa, 0 = toglie); khuxPin manda il
 // POST, mostra nel riquadro `box` la conferma ben visibile (scorrendo fino a lei) e chiama onOk(fissato).
 const PIN_JS = 'var KHUX_PIN={1:["Pinned!","Leave and re-enter the Shop to see it.","pinmsg"],0:["Removed.","Leave and re-enter the Shop.","pinmsg off"]};'
-  + 'function khuxSet(el,id,pinned){var p=el.getAttribute("data-k")==="pet"?"pet":"";el.setAttribute("data-pin",pinned?"/web/gacha/unpin"+p:"/web/gacha/pin"+p+"/"+id);el.setAttribute("data-on",pinned?"0":"1");el.textContent=pinned?"Remove from the Shop":"\uD83D\uDCCC Keep in the Shop";}'
+  + 'function khuxSet(el,id,pinned){var p=el.getAttribute("data-k")==="pet"?"pet":"";el.setAttribute("data-pin",pinned?"/web/gacha/unpin"+p:"/web/gacha/pin"+p+"/"+id);el.setAttribute("data-on",pinned?"0":"1");el.innerHTML=pinned?"Remove from the Shop":"<img class=\\"ic\\" src=\\"/web/special/icon/pin.png\\" alt=\\"\\">Keep in the Shop";}'
   + 'function khuxSay(box,cls,head,sub){box.className=cls;box.innerHTML="";var b=document.createElement("div"),s=document.createElement("small");b.textContent=head;s.textContent=sub;box.appendChild(b);box.appendChild(s);box.style.display="block";if(box.scrollIntoView)box.scrollIntoView(false);}'
   + 'function khuxPin(el,box,onOk){var on=el.getAttribute("data-on")==="1",m=KHUX_PIN[on?1:0],x=new XMLHttpRequest();x.open("POST",el.getAttribute("data-pin"));'
   + 'x.onload=function(){if(x.status===200){khuxSay(box,m[2],m[0],m[1]);if(onOk)onOk(on);}else khuxSay(box,"pinmsg err","Could not change the Shop","This banner cannot be kept.");};'
@@ -680,8 +680,8 @@ function pinButton(banner, ctx) {
   const pinned = ctx.pinnedRowId === banner.rowId;
   const url = pinned ? '/web/gacha/unpin' : `/web/gacha/pin/${banner.drawMedalTypeId}`;
   const repl = !pinned && ctx.pinnedRowId && ctx.pinnedName ? `<div class="n">Replaces: ${esc(ctx.pinnedName)}</div>` : '';
-  return `<div class="pin">${repl}<a class="btn${DETAIL_KEEP}" id="pinbtn" href="#" data-pin="${url}" data-on="${pinned ? 0 : 1}" `
-    + `onclick="return khuxPin(this,document.getElementById('pinmsg'),function(){document.getElementById('pinbtn').style.display='none';})">${pinned ? 'Remove from the Shop' : '📌 Keep in the Shop'}</a><div id="pinmsg" class="pinmsg"></div></div>`
+  return `<div class="pin">${repl}<a class="pk${DETAIL_KEEP}" id="pinbtn" href="#" data-pin="${url}" data-on="${pinned ? 0 : 1}" `
+    + `onclick="return khuxPin(this,document.getElementById('pinmsg'),function(){document.getElementById('pinbtn').style.display='none';})">${pinned ? 'Remove from the Shop' : `${cards.KEEP_LABEL_ICON}Keep in the Shop`}</a><div id="pinmsg" class="pinmsg"></div></div>`
     + `<script>${PIN_JS}</script>`;
 }
 // VIP Draw (I-134): il pass a pagamento dell'originale qui si guadagna con le missioni settimanali (vip-benefit.js)
@@ -724,7 +724,7 @@ function detailPage(banner, ex, medalNames, ctx) {
     + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek, ctx)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}${pinButton(banner, ctx)}`
     // the sections as cards (detail-cards.js, user 26-11; a heading inside the notice box stays where it is)
     + cards.cardSections(`<h2>Campaign Period</h2><p>Original banner: ${cards.cyan(dates(banner))}.</p>${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}`)
-    + `${cards.cardSections(`${ctx?.noticeSection || ''}${rates}`)}${back}<style>${cards.CARD_CSS}</style>`, back ? 'hb' : '');
+    + `${cards.cardSections(`${ctx?.noticeSection || ''}${rates}`)}${back}<style>${cards.CARD_CSS}${cards.KEEP_BTN_CSS}</style>`, back ? 'hb' : '');
 }
 
 function oddsPage(entries) {
@@ -802,7 +802,8 @@ const CATALOG_CSS = 'img.ic{display:inline-block;width:1.3em;height:1.3em;max-wi
   + '.sum{background:#06283e;border-radius:6px;padding:6px 10px;margin:0 0 6px;font-size:15px;line-height:1.7}.sum .n1{color:#ffa500;font-weight:bold}'
   + '.tag{display:inline-block;background:#0d5f86;border:1px solid #39a7cf;border-radius:14px;padding:0 4px 0 10px;margin:3px 4px 0 0;font-size:14px;line-height:1.6}'
   + '.tag a{display:inline-block;background:#043654;border-radius:10px;width:20px;text-align:center;margin-left:5px;color:#fff;text-decoration:none}.clear{font-size:14px;margin-left:3px;color:#5fe0f0;font-weight:bold}'
-  + '.cat .b{display:flex;gap:12px;align-items:center;padding-top:8px;padding-bottom:8px;border-bottom:1px solid #2f5d78}.cat .b.hide{display:none}'
+  // a side bar on every row (the Raid / Event Catalog rows: neutral, green now, gold kept), so pictures and buttons line up (user 26-11)
+  + '.cat .b{border-left:5px solid #5d8aa6;padding-left:10px}.cat .b{display:flex;gap:12px;align-items:center;padding-top:8px;padding-bottom:8px;border-bottom:1px solid #2f5d78}.cat .b.hide{display:none}'
   + '.cat .im{flex:0 0 46%;max-width:300px}.cat .im img{margin:0;border-radius:4px}.cat .info{flex:1;min-width:0;line-height:1.4}'
   + '.cat .nm{color:#fff;font-weight:bold;text-decoration:none}.cat .n,.cat .pay{font-size:14px}.pay{color:#ffcd4a}.cat .s{font-size:13px;margin:3px 0 0}'
   + '.dim{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(1,12,20,.68);z-index:5}'
@@ -813,8 +814,8 @@ const CATALOG_CSS = 'img.ic{display:inline-block;width:1.3em;height:1.3em;max-wi
   + '.sheet h4{margin:10px 0 4px;color:#00d4ed;font-size:13px;letter-spacing:1px}'
   + '.search{display:flex;align-items:center;background:#fff;border-radius:18px;padding:2px 12px;color:#7a8a96}'
   + '.search input{flex:1;min-width:0;border:0;outline:0;font:16px sans-serif;color:#222;background:transparent;padding:4px 6px}'
-  + '.pk{margin-top:5px;border:2px solid #ffe08a;border-radius:10px;color:#fff;font:bold 13px sans-serif;padding:3px 12px;background:linear-gradient(#e0a020,#a8700a);cursor:pointer}'
-  + '.pk[data-on="0"]{border-color:#ffb0b0;background:linear-gradient(#ff5a5a,#d81e2e 55%,#9c1020)}' // «Remove from the Shop» rosso (utente 26-10)
+  // the Keep / Remove button of the other catalogs (detail-cards.js KEEP_BTN_CSS, user 26-11; «Remove from the Shop» red, user 26-10)
+  + cards.KEEP_BTN_CSS
   + '.cat .pinmsg{font-size:16px;padding:6px 8px;margin:6px 0 0}.cat .pinmsg small{font-size:13px}'
   + '.hint{color:#9fb7c6;font-size:13px;margin:3px 0 0 4px}.opts{display:flex;flex-wrap:wrap;gap:6px}'
   + '.o{border:1px solid #5d8aa6;border-radius:16px;padding:3px 12px;font:14px sans-serif;color:#d9e6ee;background:#083048;cursor:pointer}'
@@ -927,7 +928,7 @@ function catalogPage(banners, ctx) {
   const rows = sorted.map((b) => {
     const st = stateOf(b, ctx), y = gameYearOf(b.start), pay = payGroupOf(b), href = `/web/gacha/detail/${b.drawMedalTypeId}?from=catalog`;
     perYear[y]++;
-    const pk = pinnable(b, ctx) ? (() => { const on = st.key !== 'pinned'; return `<div class="pkw"><button type="button" class="pk" data-id="${b.drawMedalTypeId}" data-pin="${on ? `/web/gacha/pin/${b.drawMedalTypeId}` : '/web/gacha/unpin'}" data-on="${on ? 1 : 0}">${on ? '📌 Keep in the Shop' : 'Remove from the Shop'}</button><div class="pinmsg"></div></div>`; })() : '';
+    const pk = pinnable(b, ctx) ? (() => { const on = st.key !== 'pinned'; return `<div class="pkw"><button type="button" class="pk" data-id="${b.drawMedalTypeId}" data-pin="${on ? `/web/gacha/pin/${b.drawMedalTypeId}` : '/web/gacha/unpin'}" data-on="${on ? 1 : 0}">${on ? `${cards.KEEP_LABEL_ICON}Keep in the Shop` : 'Remove from the Shop'}</button><div class="pinmsg"></div></div>`; })() : '';
     return `<div class="b ${st.key}" id="c${b.drawMedalTypeId}" data-year="${y}" data-pay="${pay}" data-vip="${isVip(b) ? 1 : 0}" data-free="${isFreeDaily(b) ? 1 : 0}" data-state="${st.key}" data-kind="medal">`
       + `<a class="im" href="${href}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt=""></a>`
       + `<div class="info"><a class="nm" href="${href}">${esc(b.name)}</a><div class="n">${esc(niceRange(b))}</div>`

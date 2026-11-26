@@ -485,10 +485,14 @@ function detailPage(index, evStageId, ctx = {}) {
   const noBoard = row.entries.some((e) => (e.reconstructed || []).includes('jpNoBoard'))
     ? '<p class="n">No Raid Boards: the Japanese board of this raid is not known, so none is served.</p>' : '<p class="n">No Raid Boards this week.</p>';
   const boards = (names.length ? `<p>${names.map(esc).join(', ')}</p>` : ids.length ? '' : noBoard)
-    + (ids.length ? `<ul class="pl">${ids.map((id) => {
+    // the boards table of every catalog detail page (detail-cards.js boardTable, user 26-11): card, name, rewards, nodes unlocked,
+    // Raid Coins still needed
+    + (ids.length ? cards.boardTable(ids.map((id) => {
       const items = [...new Set(ctx.boardItems ? ctx.boardItems(id) : [])], name = ctx.boardName ? ctx.boardName(id) : '';
-      return `<li>${name ? `<b>${esc(name)}</b>: ` : ''}<span class="dr">${items.map(esc).join(', ') || '—'}</span></li>`;
-    }).join('')}</ul>` : '');
+      const pr = ctx.boardNodes ? ctx.boardNodes(id) : null;
+      return { id, name: esc(name || `Board ${id}`), img: ctx.boardCardUrl ? ctx.boardCardUrl(id) : null, served: !ctx.boardNodes || !!pr, ...(pr || {}),
+        why: pr ? '' : 'Not in this version of the game data.', extra: [`<span class="dr">${items.map(esc).join(', ') || '—'}</span>`] };
+    }), { currency: 'Raid Coins', extraHeads: ['Rewards'], cls: 'rbt' }) : '');
   // the labels of raids.json in the player's words (index.reasons holds the builder's notes: file names, config keys)
   const codes = [...new Set(row.entries.flatMap((e) => e.reconstructed || []))];
   const others = rows.filter((r) => r !== row && r.bosses.some((b) => row.bosses.includes(b))).sort((a, b) => (a.start < b.start ? 1 : a.start > b.start ? -1 : 0));
