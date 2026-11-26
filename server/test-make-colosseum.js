@@ -821,7 +821,10 @@ test('stage enemies: 1.1.3 row, then the ReLux row (old shape), then the variant
   const stageEnemies = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [20150701 + i, [20001]]));
   stageEnemies[20150701] = [20031, 20050, 20060, 29999];
   const src = { ...fixture(), masterEnemyIds: undefined, masterEnemies, reluxEnemies: [relux60], stageEnemies };
-  const out = mc.seasonRows(src, S800);
+  // the fixture's master row 50 stands for an original base: approved for this test only; without it the build stops
+  assert.throws(() => mc.seasonRows(src, S800), /20050.*no original base/);
+  mc.MASTER_BASE_APPROVED.push(50);
+  const out = (() => { try { return mc.seasonRows(src, S800); } finally { mc.MASTER_BASE_APPROVED.pop(); } })();
   assert.deepStrictEqual(out.enemy.map((r) => r.enemyId), [20050, 20060, 29999]);
   assert.deepStrictEqual(out.colosseumEnemies.map((e) => [e.enemyId, e.source]), [[20050, 'rule'], [20060, 'relux'], [29999, '113']]);
   for (const e of out.colosseumEnemies) assert.ok(SOURCES.includes(e.source) && e.label, `${e.enemyId} source / label`);
@@ -835,10 +838,13 @@ test('stage enemies: 1.1.3 row, then the ReLux row (old shape), then the variant
   // ids of the master are never written again
   assert.ok(!out.enemy.some((r) => masterEnemies.some((m) => m.enemyId === r.enemyId)));
   // no source at all (no 1.1.3 row, no base row for the rule, no ReLux row): stops, never a substitute
+  mc.MASTER_BASE_APPROVED.push(50);
+  try {
   assert.throws(() => mc.seasonRows({ ...src, stageEnemies: { ...stageEnemies, 20150702: [20070] } }, S800),
     /20070.*20150702.*decided per enemy as for the raids.*docs\/notes\/coliseum\.md/);
   // a missing non-variant id stops too (original Coliseum variant ids only)
   assert.throws(() => mc.seasonRows({ ...src, stageEnemies: { ...stageEnemies, 20150702: [161020017] } }, S800), /161020017/);
+  } finally { mc.MASTER_BASE_APPROVED.pop(); }
   assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] });
 });
 
@@ -895,7 +901,8 @@ test('patch: colosseumEnemies report, rows appended once, master rows kept', () 
     fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify([{ enemyId: 20001 }, { enemyId: 20031 }, base50]));
     const stageEnemies = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [20150701 + i, [20001, 20050]]));
     const src = fixture(); delete src.masterEnemyIds;
-    const out = mc.patch(dir, { src, seasons: S800, stageEnemies });
+    mc.MASTER_BASE_APPROVED.push(50);
+    const out = (() => { try { return mc.patch(dir, { src, seasons: S800, stageEnemies }); } finally { mc.MASTER_BASE_APPROVED.pop(); } })();
     assert.deepStrictEqual(out.colosseumEnemies.map((e) => [e.enemyId, e.source]), [[20050, 'rule'], [29999, '113']]);
     const ids = JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => r.enemyId);
     assert.deepStrictEqual(ids, [20001, 20031, 50, 20050, 29999]);
@@ -1554,6 +1561,8 @@ test('real_part3_enemies (every enemy id of the 24 seasons, the named cases)', (
     if (rep.has(20184)) assert.deepStrictEqual([src2017(20184), rep.get(20184).base], ['rule', 184]);
     else assert.ok(before.has(20184), '20184 in the master');
     const clone = out.colosseumEnemies.filter((e) => e.baseSource === 'master').map((e) => e.enemyId);
+    assert.deepStrictEqual(clone, [], 'no rule row on a master (possible clone) base');
+    assert.deepStrictEqual(mc.MASTER_BASE_APPROVED, [], 'no approved master base');
     const by = (k) => out.colosseumEnemies.filter((e) => e.source === k).map((e) => e.enemyId);
     results.push(`info real_part3_enemies: ${new Set(served.flatMap((s) => stageEnemies[s])).size} ids over ${served.length} stages; new rows ${out.enemy.length}: `
       + `${SOURCES3.map((k) => `${k} ${JSON.stringify(by(k))}`).join('; ')}; rule rows on a master (clone) base: ${JSON.stringify(clone)}`);

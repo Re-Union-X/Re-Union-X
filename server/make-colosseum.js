@@ -594,6 +594,8 @@ function seasonRows(src, seasons = SEASONS) {
 const RULE_HP300 = 3, RULE_HP999 = 40 / 11;
 // the variant row of `id` from its base row (id - 20000) by the variant rule, null when the base has no LV 300 and LV 999 knots or
 // a knot between them (the rule is proven on knots 1/35/100/300/999 only)
+// base ids whose rows of OUR master (not 1.1.3 / raw ReLux) the user approved as the base of a variant rule row; empty on purpose
+const MASTER_BASE_APPROVED = [];
 function ruleRow(id, base) {
   const n = base.validGrowth || 0, keep = [];
   for (let i = 0; i < n; i++) if (base.baseLv[i] <= 999) keep.push(i);
@@ -703,6 +705,7 @@ function enemyRows(src, out) {
     const rows = new Map(out.enemy.map((r) => [r.enemyId, r])); // the rows of this run, by id
     // the row of a base: our master's, else one this run derived (resolved on demand, also when no stage needs the base itself)
     const derived = new Map(); // id -> {row, source, extra} or null
+    // a variant-rule row needs an ORIGINAL base (1.1.3 or an old-shape raw row); our master's row may be one of our own clones: stop
     const resolve = (id) => {
       if (derived.has(id)) return derived.get(id);
       derived.set(id, null); // a loop has no source
@@ -717,8 +720,10 @@ function enemyRows(src, out) {
         if (b) res = { row: { ...enemySchemaRow(b), enemyId: id }, source: 'monthCopy', extra: { base: mb, ...refused, ...named } };
       } else if (variantId(id)) {
         const bid = id - 20000, b113 = row113.get(bid), brx = relux.get(bid), bm = master.get(bid);
-        const [b, baseSource] = b113 ? [b113, '113'] : brx && reluxShape(brx) === 'old' ? [enemySchemaRow(brx), 'relux'] : bm ? [bm, 'master'] : [null, null];
+        const [b, baseSource] = b113 ? [b113, '113'] : brx && reluxShape(brx) === 'old' ? [enemySchemaRow(brx), 'relux'] : bm && MASTER_BASE_APPROVED.includes(bid) ? [bm, 'master'] : [null, null];
         const rule = b && ruleRow(id, b);
+        if (!b && bm && ruleRow(id, bm)) throw new Error(`colosseum: variant rule row ${id} has no original base (the base ${bid} exists only as a row of our master, possibly one of our own clones); `
+          + 'approve it by adding the base id to MASTER_BASE_APPROVED (user decision) or find an original row');
         if (rule) res = { row: rule, source: 'rule', extra: { base: bid, baseSource, ...refused, ...named } };
       }
       derived.set(id, res);
@@ -877,5 +882,5 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
+module.exports = { MASTER_BASE_APPROVED, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
   PART3_ENEMY_IDS, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS, ERA17 };
