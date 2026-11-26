@@ -125,8 +125,9 @@ if ($LASTEXITCODE) { throw 'make_stock_medal fallito' }
 # mostrava miniature di altre missioni o il «?», I-064), dalle anteprime di Roboloid in cache
 python recon\tools\make_quest_thumbs.py server\master_data\stage.json "$D\catalog\files\img\adventure\stage" "$D\external\roboloid\cache\map" "$sg\files" --report "$sg\quest_thumbs\report.json"
 if ($LASTEXITCODE) { throw 'make_quest_thumbs fallito' }
-# Generated Coliseum stages of WW 2016-08 .. 2016-11 (no original set; khuxwiki lineups, ids 2116MMNN, Coliseum Part 2
-# Task 2) into $sg\colosseum_gen (+ report.json); a wiki name with no Coliseum variant id stops the build
+# Generated Coliseum stages of WW 2016-08 .. 2016-11 and 2017-06 .. 2017-12 (no original set; khuxwiki lineups, ids
+# 2116MMNN / 2117MMNN, Coliseum Part 2 / Part 3 Task 2; the default --months is every generated month) into
+# $sg\colosseum_gen (+ report.json, dropped buffs per stage); a wiki name with no Coliseum variant id stops the build
 python -I recon\tools\gen_colosseum_stages.py --templates "$jpData\stage" --out "$sg\colosseum_gen"
 if ($LASTEXITCODE) { throw 'gen_colosseum_stages failed' }
 # Coliseum Catalog cards (server images, git-ignored): the catalogue banner 6000.png and one card per season of SEASONS

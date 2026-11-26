@@ -1,18 +1,23 @@
-"""Generated Coliseum round stages of the WW seasons with no original stage set (Coliseum Part 2, Task 2).
+"""Generated Coliseum round stages of the WW seasons with no original stage set (Coliseum Part 2 Task 2, Part 3 Task 2).
 
     python -I recon/tools/gen_colosseum_stages.py [--wiki F] [--cl-sets F] [--sets F] [--gap F] [--enemy113 F]
                                                   [--templates D] [--out D] [--months 2016-08,2016-09,...]
 
-WW 2016-08 .. 2016-11 have no original stage set on any disk (docs/notes/coliseum.md «Gap research»; the 1.1.3 rows point to
-JP sets WW did not play). Their rounds are rebuilt from the khuxwiki lineups (--wiki: month -> round -> waves
-[{enemies: [[name, count]], buffs: [...]}]; one wiki row = one wave, proven exact on 180 rounds) as the stage ids of
-server/make-colosseum.js GEN_STAGE_IDS(month) = 2116MMNN (NN = round 01..10): cl_stg<id>.bin + cl_stg<id>_00.bin, room
-OC_0001_00_00, one part, one team per wave, every enemy level = round number (1..10; the client adds the tier levels).
+WW 2016-08 .. 2016-11 and 2017-06 .. 2017-12 have no original stage set on any disk (docs/notes/coliseum.md «Gap research»;
+the 1.1.3 / ReLux rows point to JP sets WW did not play or that are absent from JP 4.3.1). Their rounds are rebuilt from the
+khuxwiki lineups (--wiki: month -> round -> waves [{enemies: [[name, count]], buffs: [...]}]; one wiki row = one wave, proven
+exact on 180 rounds; 10/10 rounds in every 2017 month) as the stage ids of server/make-colosseum.js GEN_STAGE_IDS(month) =
+21YYMMNN (YY = 16 / 17, NN = round 01..10; the 2017 ids never those of 2016-08 .. 11): cl_stg<id>.bin + cl_stg<id>_00.bin,
+room OC_0001_00_00, one part, one team per wave, every enemy level = round number (1..10; the client adds the tier levels).
+The default --months is every generated month (MONTHS); the 2016 files do not depend on the 2017 months.
 
 Enemy ids: original Coliseum variant ids only (20000 + base, 21xxx / 22xxx), never a substitute model. A wiki name resolves by,
 in order (rule name in the report):
+  named    NAMED (name -> id): the Coliseum variant ids of names no source below can resolve, by ruling (Coliseum Part 3:
+           Ringmaster 2017-06 R10 = 20097, Enraged Elk 2017-09 R10 = 20184, rule rows from the bases 97 / 184; PART3_AUDIT §3);
   wwMonth  the variant id with that 1.1.3 name used by the stage set of the nearest original WW month (--sets: WW month ->
-           JP 4.3.1 set with match >= SET_MATCH; --cl-sets: the parsed JP 4.3.1 cl_stg files); the most used id of that month;
+           JP 4.3.1 set with match >= SET_MATCH, plus SET_OVERRIDES; --cl-sets: the parsed JP 4.3.1 cl_stg files); the most
+           used id of that month;
   row113   the only 1.1.3 Coliseum variant row (--enemy113) with that name;
   gap      the only Coliseum variant id of --gap (gap_enemy_ids.json, the 2026-11-05 research) with that name.
 A name resolved by none stops the run (exit 1, month / round / wave / name printed, nothing written) unless it is listed in
@@ -46,19 +51,25 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 D = os.path.dirname(os.path.dirname(REPO))
 SRC = os.path.join(D, 'private', 'events', 'sources', 'coliseum')
-MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11']
+MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12']
 ROOM = 'OC_0001_00_00'
 SET_MATCH = 0.7     # WW month -> JP set match of ww_to_jp_stage_sets.json taken as the original set (the served ones: 0.7 .. 1.0)
 EXTRA_DX = 120      # x step of the extra positions of a wave longer than its template team
 # wiki names with no known Coliseum variant id, allowed to be left out of their wave (name -> why). Empty: every name resolves.
 UNRESOLVED = {}
+# names no rule below resolves, by ruling (Coliseum Part 3, PART3_AUDIT §3: no Coliseum variant id in any source; the rows of
+# these ids are the variant rule rows of the bases 97 / 184, server/make-colosseum.js); consulted before every other rule
+NAMED = {'Ringmaster': 20097, 'Enraged Elk': 20184}
+# WW month -> JP 4.3.1 set proven by other evidence where the wiki-row match is below SET_MATCH: 2017-05 = JP 20161001..10
+# (match 0.48; footage + JP wiki, coliseum COLISEUM.md 1g / PART3_AUDIT §3; ReLux row 2100 agrees)
+SET_OVERRIDES = {'2017-05': '2016-10'}
 
 
 def gen_stage_ids(month):
-    """= server/make-colosseum.js GEN_STAGE_IDS: 2116MMNN, NN = round 1..10"""
+    """= server/make-colosseum.js GEN_STAGE_IDS: 21YYMMNN, NN = round 1..10"""
     if month not in MONTHS:
         raise ValueError('%s has no generated stage set' % month)
-    return [21160000 + int(month[5:7]) * 100 + i + 1 for i in range(10)]
+    return [21000000 + int(month[2:4]) * 10000 + int(month[5:7]) * 100 + i + 1 for i in range(10)]
 
 
 def is_variant(i):
@@ -96,6 +107,9 @@ class Resolver:
     def resolve(self, name, month):
         """-> (enemyId, rule, detail) or None"""
         k = norm(name)
+        named = {norm(n): i for n, i in NAMED.items()}
+        if k in named:
+            return named[k], 'named', 'ruling (PART3_AUDIT §3)'
         near = sorted((abs(month_index(ww) - month_index(month)), month_index(ww), ww, jp, ids)
                       for ww, jp, ids in self.months if ww != month)
         for _, _, ww, jp, ids in near:
@@ -271,7 +285,9 @@ def cl_sets_of(cl):
 
 
 def ww2jp_of(sets):
-    return {ww: v['best'][0][1] for ww, v in sets.items() if v.get('best') and v['best'][0][0] >= SET_MATCH}
+    out = {ww: v['best'][0][1] for ww, v in sets.items() if v.get('best') and v['best'][0][0] >= SET_MATCH}
+    out.update(SET_OVERRIDES)
+    return out
 
 
 def main(argv=None):
