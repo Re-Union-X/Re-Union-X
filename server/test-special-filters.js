@@ -1,8 +1,9 @@
-// Filter matrix of the Special catalogue (round 16): every period tab, TYPE, REWARDS and SHOW chip, a few FIND queries
-// and combinations, in the default year and in All years, run by the page script itself in headless Edge. For each case
-// what is really DISPLAYED (computed style) must match the filters, every matching row must be displayed (campaigns in
-// the selected year, which must have some when any campaign matches), summary / tab counts / «Show N results» must agree,
-// month labels and year chips without rows hidden, and the empty-state message exactly when nothing is displayed.
+// Filter matrix of the Special catalogue (round 16): every game-year tab, TYPE, REWARDS and SHOW chip, a few FIND queries
+// and combinations, run by the page script itself in headless Edge. For each case what is really DISPLAYED (computed
+// style) must match the filters, every matching card must be displayed, summary / tab counts / «Show N results» must
+// agree, and the empty-state message must show exactly when nothing is displayed. Since 24-11 (9fde7c52) the catalogue
+// is one grid by date (one card per version or campaign, in the one game year it started): no VIP Campaigns section,
+// year chips or month labels any more.
 // Fixture page and, when present, the real local index. Skipped without Edge (KHUX_EDGE overrides its path).
 //   node server/test-special-filters.js
 'use strict';
@@ -11,7 +12,91 @@ const pages = require('./special-pages'), special = require('./special');
 const EDGE = process.env.KHUX_EDGE || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const errors = [];
 if (!fs.existsSync(EDGE)) { console.log('test-special-filters: skipped (headless Edge not found)'); process.exit(0); }
-const PROBE = "// Filter matrix probe (round 16): loaded into the catalogue page in headless Edge. Applies every chip of every filter\n// group through the page's own controls, in the default year and in All years, plus combinations and searches, and\n// checks what is really DISPLAYED (computed style) against an independent reading of the rows' data attributes.\nwindow.addEventListener('load', function () { try {\n  var $ = function (id) { return document.getElementById(id); };\n  var A = function (el, a) { return el.getAttribute(a); };\n  var SETS = { now: ['now', 'kept'], unl: ['can', 'replaced', 'other'] };\n  function words(t) { return String(t).toLowerCase().split(/[^a-z0-9À-ɏ]+/).filter(Boolean); }\n  function prefix(q, name) { var ws = words(name); return words(q).every(function (w) { return ws.some(function (x) { return x.indexOf(w) === 0; }); }); }\n  function shown(el) { while (el && el.nodeType === 1) { if (getComputedStyle(el).display === 'none') return false; el = el.parentNode; } return true; }\n  var rows = [].slice.call(document.querySelectorAll('.row'));\n  function info(r) {\n    return { el: r, camp: / cr( |$)/.test(r.className), ps: A(r, 'data-periods').split(' '), t: A(r, 'data-type').split(' '), ss: A(r, 'data-show').split(' '),\n      rw: (A(r, 'data-reward') || '').split(' '), dn: A(r, 'data-done'), ns: (A(r, 'data-search') || '').split(' | '), y: A(r, 'data-y') };\n  }\n  var R = rows.map(info);\n  function matches(r, f, anyPeriod) {\n    if (!anyPeriod && f.p !== 'all' && r.ps.indexOf(f.p) < 0) return false;\n    if (f.type !== 'all' && r.t.indexOf(f.type) < 0) return false;\n    if (f.show !== 'all' && !r.ss.some(function (s) { return (SETS[f.show] || [f.show]).indexOf(s) >= 0; })) return false;\n    if (f.reward !== 'all' && r.rw.indexOf(f.reward) < 0) return false;\n    if (f.prog !== 'all' && (r.dn === '1') !== (f.prog === 'done')) return false;\n    if (f.q && !r.ns.some(function (n) { return prefix(f.q, n); })) return false;\n    return true;\n  }\n  function chip(g, v) { return document.querySelector('.opts[data-g=\"' + g + '\"] [data-v=\"' + v + '\"]'); }\n  function apply(f, year) {\n    $('fbtn').click(); $('freset').click();\n    chip('type', f.type).click(); chip('show', f.show).click(); chip('reward', f.reward).click(); chip('prog', f.prog).click();\n    $('fq').value = f.q; $('fq').oninput();\n    $('fok').click();\n    document.querySelector('.tab[data-p=\"' + f.p + '\"]').click();\n    if (year === 'all') { var a = document.querySelector('.yc[data-yr=\"all\"]'); if (a) a.click(); }\n  }\n  var results = [], pass = 0, fail = 0;\n  function check(name, f, year) {\n    // default year state: back to the page's default before applying\n    var dflt = A($('camps'), 'data-defy'); var d = document.querySelector('.yc[data-yr=\"' + dflt + '\"]'); if (d) d.click();\n    apply(f, year);\n    var err = [], selYear = (document.querySelector('.yc.on') || { getAttribute: function () { return 'all'; } }).getAttribute('data-yr');\n    var visQ = 0, visC = 0, campMatchAny = 0, campMatchSel = 0;\n    R.forEach(function (r) {\n      var m = matches(r, f), vis = shown(r.el), inYear = !r.camp || selYear === 'all' || r.y === selYear;\n      if (r.camp && m) { campMatchAny++; if (inYear) campMatchSel++; }\n      if (vis && !(m && inYear)) err.push('visible but not matching: ' + A(r.el, 'data-name'));\n      if (!vis && m && inYear) err.push('matching but hidden: ' + A(r.el, 'data-name'));\n      if (vis) { if (r.camp) visC++; else visQ++; }\n    });\n    if (campMatchAny && !campMatchSel) err.push('campaigns match (' + campMatchAny + ') but the selected year ' + selYear + ' shows none');\n    var sum = $('sum').textContent, ms = /^(\\d+) quests? · (\\d+) campaigns?/.exec(sum);\n    if (!ms || +ms[1] !== visQ || +ms[2] !== visC) err.push('summary «' + sum.slice(0, 40) + '» vs visible ' + visQ + '/' + visC);\n    // tab counts: matching items of that period (period aside), All = every matching item\n    [].forEach.call(document.querySelectorAll('.tab'), function (t) {\n      var p = A(t, 'data-p'), want = R.filter(function (r) { var g = {}; for (var k in f) g[k] = f[k]; g.p = p; return matches(r, g); }).length;\n      if (+$('tc' + p).textContent !== want) err.push('tab ' + p + ' says ' + $('tc' + p).textContent + ', expected ' + want);\n    });\n    // the sheet's «Show N results» for the same draft\n    $('fbtn').click(); var fok = $('fok').textContent, nres = R.filter(function (r) { return matches(r, f); }).length; $('fx').click();\n    if (fok !== 'Show ' + nres + ' result' + (nres === 1 ? '' : 's')) err.push('button «' + fok + '» vs ' + nres);\n    // month labels and year chips\n    [].forEach.call(document.querySelectorAll('.ml'), function (ml) {\n      var any = false, e = ml.nextSibling; while (e && !(e.className && / ?ml( |$)/.test(e.className))) { if (e.nodeType === 1 && shown(e)) any = true; e = e.nextSibling; }\n      if (shown(ml) !== any) err.push('month label ' + A(ml, 'data-m') + (any ? ' hidden over visible rows' : ' shown without rows'));\n    });\n    [].forEach.call(document.querySelectorAll('.yc'), function (yc) {\n      var y = A(yc, 'data-yr'), n = R.filter(function (r) { return r.camp && (y === 'all' || r.y === y) && matches(r, f); }).length;\n      if (+yc.querySelector('.yn').textContent !== n) err.push('year chip ' + y + ' says ' + yc.querySelector('.yn').textContent + ', expected ' + n);\n      if (y !== 'all' && !n && shown(yc)) err.push('year chip ' + y + ' shown without campaigns');\n    });\n    var none = shown($('none')) && $('none').textContent;\n    if (!visQ && !visC && !none) err.push('no empty-state message');\n    if ((visQ || visC) && none) err.push('empty-state message with visible rows');\n    if (none && f.prog !== 'all' && none.indexOf(f.prog === 'done' ? 'No completed quests' : 'No incomplete quests') !== 0) err.push('empty-state message without the progress: ' + none);\n    if (f.prog !== 'all' && $('sum').textContent.indexOf(f.prog === 'done' ? 'Completed' : 'Incomplete') < 0) err.push('summary without the progress tag');\n    if (err.length) fail++; else pass++;\n    results.push({ name: name + ' [' + year + ']', ok: !err.length, err: err.slice(0, 4), n: err.length });\n  }\n  var base = { p: 'all', type: 'all', show: 'all', reward: 'all', prog: 'all', q: '' };\n  function w(o) { var f = {}; for (var k in base) f[k] = base[k]; for (var j in o) f[j] = o[j]; return f; }\n  var cases = [['no filters', w({})]];\n  [].forEach.call(document.querySelectorAll('.tab'), function (t) { if (A(t, 'data-p') !== 'all') cases.push(['tab ' + A(t, 'data-p'), w({ p: A(t, 'data-p') })]); });\n  ['type', 'reward', 'show', 'prog'].forEach(function (g) { [].forEach.call(document.querySelectorAll('.opts[data-g=\"' + g + '\"] .o'), function (o) { var v = A(o, 'data-v'); if (v !== 'all') { var x = {}; x[g] = v; cases.push([g + ' ' + v, w(x)]); } }); });\n  ['key', 'key art', 'cid', 'mickey', 'zzzz'].forEach(function (q) { cases.push(['find «' + q + '»', w({ q: q })]); });\n  cases.push(['show can + type vip', w({ show: 'can', type: 'vip' })]);\n  cases.push(['reward medal + tab 2', w({ reward: 'medal', p: '2' })]);\n  cases.push(['show now + tab 4', w({ show: 'now', p: '4' })]);\n  cases.push(['type camp + show unl', w({ type: 'camp', show: 'unl' })]);\n  cases.push(['find «key art» + show unl', w({ q: 'key art', show: 'unl' })]);\n  cases.push(['prog done + show now', w({ prog: 'done', show: 'now' })]);\n  cases.push(['prog todo + type camp + tab 2', w({ prog: 'todo', type: 'camp', p: '2' })]);\n  cases.push(['prog done + find «key»', w({ prog: 'done', q: 'key' })]);\n  cases.push(['prog done + find «zzzz»', w({ prog: 'done', q: 'zzzz' })]);\n  cases.push(['prog todo + show removed', w({ prog: 'todo', show: 'removed' })]);\n  cases.forEach(function (c) { ['default', 'all'].forEach(function (y) { try { check(c[0], c[1], y); } catch (e) { fail++; results.push({ name: c[0] + ' [' + y + ']', ok: false, err: ['exception: ' + e.message], n: 1 }); } }); });\n  var pre = document.createElement('pre'); pre.id = 'probe'; pre.textContent = JSON.stringify({ pass: pass, fail: fail, failed: results.filter(function (r) { return !r.ok; }) }); document.body.appendChild(pre);\n} catch (e) { var pe = document.createElement('pre'); pe.id = 'probe'; pe.textContent = JSON.stringify({ pass: 0, fail: 1, failed: [{ name: 'probe', err: [String(e && e.stack || e)], n: 1 }] }); document.body.appendChild(pe); } });\n";
+// Filter matrix probe (round 16; one grid by date since 24-11, commit 9fde7c52): loaded into the catalogue page in headless
+// Edge. Applies every chip of every filter group through the page's own controls, plus combinations and searches, and
+// checks what is really DISPLAYED (computed style) against an independent reading of the cards' data attributes.
+function probe() { try {
+  var $ = function (id) { return document.getElementById(id); };
+  var A = function (el, a) { return el.getAttribute(a); };
+  var SETS = { now: ['now', 'kept'], unl: ['can', 'replaced', 'other'] };
+  function words(t) { return String(t).toLowerCase().split(/[^a-z0-9À-ɏ]+/).filter(Boolean); }
+  function prefix(q, name) { var ws = words(name); return words(q).every(function (w) { return ws.some(function (x) { return x.indexOf(w) === 0; }); }); }
+  function shown(el) { while (el && el.nodeType === 1) { if (getComputedStyle(el).display === 'none') return false; el = el.parentNode; } return true; }
+  var rows = [].slice.call(document.querySelectorAll('.row'));
+  function info(r) {
+    return { el: r, camp: / cr( |$)/.test(r.className), ps: A(r, 'data-periods').split(' '), t: A(r, 'data-type').split(' '), ss: A(r, 'data-show').split(' '),
+      rw: (A(r, 'data-reward') || '').split(' '), dn: A(r, 'data-done'), ns: (A(r, 'data-search') || '').split(' | ') };
+  }
+  var R = rows.map(info);
+  function matches(r, f, anyPeriod) {
+    if (!anyPeriod && f.p !== 'all' && r.ps.indexOf(f.p) < 0) return false;
+    if (f.type !== 'all' && r.t.indexOf(f.type) < 0) return false;
+    if (f.show !== 'all' && !r.ss.some(function (s) { return (SETS[f.show] || [f.show]).indexOf(s) >= 0; })) return false;
+    if (f.reward !== 'all' && r.rw.indexOf(f.reward) < 0) return false;
+    if (f.prog !== 'all' && (r.dn === '1') !== (f.prog === 'done')) return false;
+    if (f.q && !r.ns.some(function (n) { return prefix(f.q, n); })) return false;
+    return true;
+  }
+  function chip(g, v) { return document.querySelector('.opts[data-g="' + g + '"] [data-v="' + v + '"]'); }
+  function apply(f) {
+    $('fbtn').click(); $('freset').click();
+    chip('type', f.type).click(); chip('show', f.show).click(); chip('reward', f.reward).click(); chip('prog', f.prog).click();
+    $('fq').value = f.q; $('fq').oninput();
+    $('fok').click();
+    var t = document.querySelector('.tab[data-p="' + f.p + '"]'); if (!t) throw new Error('no tab ' + f.p); t.click();
+  }
+  var results = [], pass = 0, fail = 0;
+  function check(name, f) {
+    apply(f);
+    var err = [], visQ = 0, visC = 0;
+    R.forEach(function (r) {
+      var m = matches(r, f), vis = shown(r.el);
+      if (vis && !m) err.push('visible but not matching: ' + A(r.el, 'data-name'));
+      if (!vis && m) err.push('matching but hidden: ' + A(r.el, 'data-name'));
+      if (vis) { if (r.camp) visC++; else visQ++; }
+    });
+    var sum = $('sum').textContent, ms = /^(\d+) quests? · (\d+) campaigns?/.exec(sum);
+    if (!ms || +ms[1] !== visQ || +ms[2] !== visC) err.push('summary «' + sum.slice(0, 40) + '» vs visible ' + visQ + '/' + visC);
+    // tab counts: matching cards of that game year (period aside), All = every matching card
+    [].forEach.call(document.querySelectorAll('.tab'), function (t) {
+      var p = A(t, 'data-p'), want = R.filter(function (r) { var g = {}; for (var k in f) g[k] = f[k]; g.p = p; return matches(r, g); }).length;
+      if (+$('tc' + p).textContent !== want) err.push('tab ' + p + ' says ' + $('tc' + p).textContent + ', expected ' + want);
+    });
+    // the sheet's «Show N results» for the same draft
+    $('fbtn').click(); var fok = $('fok').textContent, nres = R.filter(function (r) { return matches(r, f); }).length; $('fx').click();
+    if (fok !== 'Show ' + nres + ' result' + (nres === 1 ? '' : 's')) err.push('button «' + fok + '» vs ' + nres);
+    var none = shown($('none')) && $('none').textContent;
+    if (!visQ && !visC && !none) err.push('no empty-state message');
+    if ((visQ || visC) && none) err.push('empty-state message with visible rows');
+    if (none && f.prog !== 'all' && none.indexOf(f.prog === 'done' ? 'No completed quests' : 'No incomplete quests') !== 0) err.push('empty-state message without the progress: ' + none);
+    if (f.prog !== 'all' && $('sum').textContent.indexOf(f.prog === 'done' ? 'Completed' : 'Incomplete') < 0) err.push('summary without the progress tag');
+    if (err.length) fail++; else pass++;
+    results.push({ name: name, ok: !err.length, err: err.slice(0, 4), n: err.length });
+  }
+  // one grid by date: every card belongs to the one game year it started in
+  var multi = R.filter(function (r) { return r.ps.length !== 1 || r.ps[0] === ''; });
+  if (multi.length) { fail++; results.push({ name: 'one game year per card', ok: false, err: multi.slice(0, 4).map(function (r) { return A(r.el, 'data-name') + ': ' + r.ps.join(' '); }), n: multi.length }); }
+  var base = { p: 'all', type: 'all', show: 'all', reward: 'all', prog: 'all', q: '' };
+  function w(o) { var f = {}; for (var k in base) f[k] = base[k]; for (var j in o) f[j] = o[j]; return f; }
+  var cases = [['no filters', w({})]], tabs = [];
+  [].forEach.call(document.querySelectorAll('.tab'), function (t) { if (A(t, 'data-p') !== 'all') { tabs.push(A(t, 'data-p')); cases.push(['tab ' + A(t, 'data-p'), w({ p: A(t, 'data-p') })]); } });
+  ['type', 'reward', 'show', 'prog'].forEach(function (g) { [].forEach.call(document.querySelectorAll('.opts[data-g="' + g + '"] .o'), function (o) { var v = A(o, 'data-v'); if (v !== 'all') { var x = {}; x[g] = v; cases.push([g + ' ' + v, w(x)]); } }); });
+  ['key', 'key art', 'cid', 'mickey', 'zzzz'].forEach(function (q) { cases.push(['find «' + q + '»', w({ q: q })]); });
+  var t0 = tabs[0], tl = tabs[tabs.length - 1];
+  cases.push(['show can + type vip', w({ show: 'can', type: 'vip' })]);
+  cases.push(['reward medal + tab ' + t0, w({ reward: 'medal', p: t0 })]);
+  cases.push(['show now + tab ' + tl, w({ show: 'now', p: tl })]);
+  cases.push(['type camp + show unl', w({ type: 'camp', show: 'unl' })]);
+  cases.push(['find «key art» + show unl', w({ q: 'key art', show: 'unl' })]);
+  cases.push(['prog done + show now', w({ prog: 'done', show: 'now' })]);
+  cases.push(['prog todo + type camp + tab ' + t0, w({ prog: 'todo', type: 'camp', p: t0 })]);
+  cases.push(['prog done + find «key»', w({ prog: 'done', q: 'key' })]);
+  cases.push(['prog done + find «zzzz»', w({ prog: 'done', q: 'zzzz' })]);
+  cases.push(['prog todo + show removed', w({ prog: 'todo', show: 'removed' })]);
+  cases.forEach(function (c) { try { check(c[0], c[1]); } catch (e) { fail++; results.push({ name: c[0], ok: false, err: ['exception: ' + e.message], n: 1 }); } });
+  var pre = document.createElement('pre'); pre.id = 'probe'; pre.textContent = JSON.stringify({ pass: pass, fail: fail, failed: results.filter(function (r) { return !r.ok; }) }); document.body.appendChild(pre);
+} catch (e) { var pe = document.createElement('pre'); pe.id = 'probe'; pe.textContent = JSON.stringify({ pass: 0, fail: 1, failed: [{ name: 'probe', err: [String(e && e.stack || e)], n: 1 }] }); document.body.appendChild(pe); } }
+const PROBE = `window.addEventListener('load', ${probe.toString()});`;
 function run(index, ctx, label) {
   const file = path.join(os.tmpdir(), `khux-filters-${process.pid}-${label.replace(/\W+/g, '_')}.html`);
   fs.writeFileSync(file, pages.catalogPage(index, ctx).replace('</body>', `<script>${PROBE}</script></body>`));
@@ -47,10 +132,13 @@ const fx = { catalog: { evStageId: 7000 }, entries: [
 ] };
 const names = { drop: (rid) => (rid === 1 ? ['Huey', 'Mythril'] : []), objective: () => [], dropTypes: (rid) => (rid === 1 ? [3, 5] : []), objectiveTypes: () => [] };
 {
-  // the set is one quest row (not a campaign row) with its 3 versions; this week's version makes it «now»
+  // one card per version (24-11): the set's permanent version is its own card; its week versions of one game year
+  // (2019-06-03 and 2019-12-30) are one quest card (not a campaign card), and this week's version makes that card «now»
   const h = pages.catalogPage(fx, { period: 4, pinnedKey: 'kept', periods: PERIODS, names, shopFrom: '2020-01-02', shopTo: '2020-01-08', weekday: 'Tue', vip: true });
-  const r = (h.split('<div class="row').find((x) => x.includes('id="q7821"')) || '');
-  if (!(r.startsWith(' ') && !r.startsWith(' cr') && r.includes('data-eid="7821 7822 7823"') && r.includes('data-nv="3"') && /data-show="[^"]*now/.test(r) && !/data-type="[^"]*camp/.test(r))) errors.push(`fixture: week versions row ${r.slice(0, 220)}`);
+  const card = (id) => (h.split('<div class="row').find((x) => x.includes(`id="q${id}"`)) || '');
+  const b = card(7821), r = card(7822);
+  if (!(b.startsWith(' ') && !b.startsWith(' cr') && b.includes('data-eid="7821"') && !/data-show="[^"]*now/.test(b))) errors.push(`fixture: set base card ${b.slice(0, 220)}`);
+  if (!(r.startsWith(' ') && !r.startsWith(' cr') && r.includes('data-eid="7822 7823"') && /data-show="[^"]*now/.test(r) && !/data-type="[^"]*camp/.test(r) && r.includes('2 weeks · '))) errors.push(`fixture: week versions card ${r.slice(0, 220)}`);
 }
 // PROGRESS (user 03-11): Tue, Old Key, the year-end campaign and one week of the VIP set done
 const fxDone = new Set([78010, 78030, 78110, 78220]);
