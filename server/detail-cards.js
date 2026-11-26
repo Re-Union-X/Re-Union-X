@@ -93,10 +93,10 @@ const CARD_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06
   + '.qs .st small{background:#0a4466;color:#9fb7c6;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;display:flex;align-items:center}'
   + '.qs .st b{background:#06283e;padding:1px 10px;display:flex;align-items:center}'
   // Target / Where (user 26-11: «make that section nicer»): a small card in the style of the stat chips, one row each: the icon and
-  // the gold label (user 26-11) on the darker side, the value bold, a thin line between the rows
+  // the gold label (user 26-11) on the darker side (the icon 1px up: centred on the capitals, not on the line box), the value bold, a thin line between the rows
   + '.ql{display:grid;grid-template-columns:auto 1fr;margin:8px 10px 2px;width:max-content;max-width:calc(100% - 20px);border:1px solid #2f6f93;border-radius:10px;overflow:hidden}'
   + '.ql>small{display:flex;align-items:center;gap:6px;background:#0a4466;color:#ffcd4a;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px 5px 9px}'
-  + '.ql>small .ic{width:15px;height:15px;margin:0;flex:none}.ql>b{display:flex;align-items:center;background:#06283e;color:#fff;font-size:14px;padding:5px 14px}'
+  + '.ql>small .ic{width:14px;height:14px;margin:0;flex:none;position:relative;top:-1px}.ql>b{display:flex;align-items:center;background:#06283e;color:#fff;font-size:14px;padding:5px 14px}'
   + '.ql>i{grid-column:1/3;height:1px;background:#1d5878}'
   + '.qb>.qt{padding:4px 10px 8px}.qb h4{margin:8px 0 4px;color:#ffcd4a;font-size:15px;display:flex;align-items:center;gap:6px}.qb h4 .ic{width:1.2em;height:1.2em}'
   + '.qb table.qtt{table-layout:fixed;width:100%;margin:2px 0 6px}.qb table.qtt td:first-child,.qb table.qtt th:first-child{width:62%}.qb table.qtt.dt td:nth-child(2),.qb table.qtt.dt th:nth-child(2){width:14%}'
