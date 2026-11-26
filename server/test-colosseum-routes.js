@@ -253,8 +253,11 @@ const tests = {
     assert.deepStrictEqual(keys(e), ['ret', 'colosseumRankingOwn']);
     const r0 = e.colosseumRankingOwn;
     for (const k of ['rankingDatas', 'rankingStatus', 'rankingTermStart', 'rankingTermEnd']) assert.ok(k in r0, k);
-    assert.deepStrictEqual(r0.rankingDatas[0].userColosseum, { userRank: 1, userStageCount: 0, userStageTotalCount: 0 });
-    assert.ok('arrivalTime' in r0.rankingDatas[0]);
+    // not ranked yet: «You did not participate» (status 4, no row: a rank-0 row drew the third-place crown); no Top 10 row
+    assert.strictEqual(r0.rankingStatus, 4);
+    assert.deepStrictEqual(r0.rankingDatas, []);
+    assert.deepStrictEqual((w.sent = null, w.c.ranking({}, '/ranking/colosseum'), w.sent).colosseumRanking.rankingDatas, []);
+    assert.strictEqual(w.c.shownRankNow(), 0, 'Quests tile «PVE ---»');
     assert.strictEqual(w.presents.length, 0, 'nothing reached');
     w.now += 60000;
     w.start(1, 1); w.clear(1, 1);
@@ -266,6 +269,7 @@ const tests = {
     const top = (w.sent = null, w.c.ranking({}, '/ranking/colosseum'), w.sent).colosseumRanking;
     assert.deepStrictEqual(top.rankingDatas.map((x) => [x.rank, x.userColosseum.userStageTotalCount, x.arrivalTime]), [[1001, 1, fmt(NOW + 60000)]]);
     assert.strictEqual(top.lastRank, 1001);
+    assert.strictEqual(w.c.shownRankNow(), 1001, 'Quests tile «PVE 1001st»');
     assert.strictEqual(w.presents.length, 1, 'once');
     own();
     assert.strictEqual(w.presents.length, 1, 'once');

@@ -5847,7 +5847,8 @@ function respondStageAchievements(res) {
       strengthNumerator: cap(strength.numerator), strengthDenominator: cap(strength.denominator),
       eventNumerator: cap(event.numerator), eventDenominator: cap(event.denominator),
       multiNumerator: ACHIEVEMENT_EMPTY.numerator, multiDenominator: ACHIEVEMENT_EMPTY.denominator,
-      colosseumRank: 0,
+      // the Quests tile «PVE <rank>» (0 = «---»): the live Coliseum season's shown rank, as in the 124 response
+      colosseumRank: (() => { try { return colosseum().shownRankNow(); } catch (e) { return 0; } })(),
       pvpRanking: { rankingStatus: 0, userPvpRanking: { rank: 0, class: 0, point: 0 } },
     },
   });

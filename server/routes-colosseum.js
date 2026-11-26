@@ -306,10 +306,22 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     if (settle(s, st).length) savePlayer();
     const r = rankedOfSeason(s), rank = shownRank(s, st);
     const arrival = st.bestAt ? serverTimeAt(Date.parse(st.bestAt)) : now;
+    // not ranked yet (no round cleared this season): a row with rank 0 drew the third-place crown (the client asks for
+    // Colosseum_Rank_Num0.png, which does not exist, and keeps the layout's default picture). As the original: the own tab
+    // answers rankingStatus 4 («You did not participate in the ranking.»), the Top 10 lists no row of ours
+    if (rank <= 0 && !p.endsWith('/border')) {
+      return send(res, 200, { ret: ret(), [key]: { ...base, rankingStatus: p.endsWith('/own') ? 4 : 2, rankingDatas: [] } });
+    }
     const rows = p.endsWith('/border') && r
       ? [...r.thresholds].reverse().map((x) => element(now, x.startRank, userColosseum(s, x.score), now))
       : [element(now, rank, userColosseum(s, st.last), arrival)];
     send(res, 200, { ret: ret(), [key]: { ...base, rankingDatas: rows, lastRank: rank } });
+  }
+  // the rank of the live season shown on the Quests tile («PVE <rank>», GET /stage/achievements stageAchievement.colosseumRank;
+  // 0 = «---»): the same value as the 124 colosseumRank
+  function shownRankNow() {
+    const s = liveSeason();
+    return s ? shownRank(s, stateOf(s)) : 0;
   }
 
   // ---- Coliseum Catalog (Task 6) ----
@@ -385,7 +397,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
       complete: stages.every((x) => [1, 2, 3].every((m) => (x.clearMissionIds || []).includes(m))) ? 1 : 0 }];
   }
 
-  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, tierReached, addCoins, closeDate, weekCloseDate, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
+  return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, tierReached, addCoins, closeDate, weekCloseDate, shownRankNow, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
     catalogRows, catalogEvents,
     seasons: () => SEASONS.map((x) => season(x.colosseumStageId)).filter(Boolean) };
 }
