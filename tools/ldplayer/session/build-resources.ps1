@@ -142,6 +142,21 @@ if (Test-Path server\game_data\colosseum_board_art.tsv) {
     --b16 "$refWork\bundle2016\files" --loc "$D\raid_loc" --out server\game_data\colosseum_board_img --all --strict
   if ($LASTEXITCODE) { throw 'make_avatar_card_web (Coliseum Board web cards) failed' }
 }
+# Game Catalog banner (user 26-11, server image, git-ignored): server\game_data\catalog_img\5000.png, the one catalogue banner of the
+# Events tab (make-game-catalog.js); without it the banner shows an empty frame
+python -I recon\tools\make_special_banners.py --section game
+if ($LASTEXITCODE) { throw 'make_special_banners --section game failed' }
+# Raid and Event Board web cards (26-11, server images, git-ignored): the board card pictures of the lists written by make-raid.js /
+# make-events.js (server\game_data\raid_board_art.tsv, event_board_art.tsv; the same sources as the game cards imported below) made
+# small for the boards tables of the Raid / Event Catalog detail pages into server\game_data\raid_board_img and event_board_img
+# + cards.json; a card with no source stops the build (--strict), and so does a list missing after the master regen.
+foreach ($kind in 'raid', 'event') {
+  $tsv = "server\game_data\${kind}_board_art.tsv"
+  if (-not (Test-Path $tsv)) { throw "$tsv missing: regenerate the master (make-game-tables.js) before the resources" }
+  python -I recon\tools\make_avatar_card_web.py --tsv $tsv --jp "$jpData" `
+    --b16 "$refWork\bundle2016\files" --loc "$D\raid_loc" --out "server\game_data\${kind}_board_img" --all --strict
+  if ($LASTEXITCODE) { throw "make_avatar_card_web ($kind Board web cards) failed" }
+}
 # Coliseum round stages cl_stg<stageId>.bin + _00.bin of the served seasons (master colosseumStage rows), WW 2016 copy
 # first, then JP 4.3.1 (Coliseum Part 1 Task 4), then the generated ones; a stage that fails its checks stops the build.
 # Report $sg\colosseum_stages.json
