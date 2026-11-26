@@ -273,9 +273,16 @@ h1,h2,h3,.ttl,.tab,.tabs,.tag,.btn,.big,.brand{font-family:var(--font)}
 .ded-gold .ded-links a{color:#ffdf9a;background:rgba(255,207,107,.08);border-color:rgba(255,207,107,.5)}
 .ded-gold .ded-links a:hover,.ded-gold .ded-links a:focus-visible{background:rgba(255,207,107,.22);color:#fff}
 /* Credits: the Re-Union X Project team note (as the in-game Credits), between the dedication and the helpers */
-.project-team{text-align:center;margin:0 auto 16px;max-width:620px}
+.project-team{position:relative;margin:0 0 16px;padding:20px 26px 18px;text-align:center;border-radius:14px;
+  background:radial-gradient(ellipse at top,rgba(95,224,240,.18),transparent 62%),linear-gradient(160deg,#0f3d63,#0a2a48);
+  border:1px solid rgba(95,224,240,.6);box-shadow:0 0 0 1px rgba(10,47,85,.8),0 0 22px rgba(95,224,240,.14)}
+.pt-emblem{display:block;margin:0 auto 8px;width:56px;height:56px;filter:drop-shadow(0 0 12px rgba(95,224,240,.45))}
 .project-team .ded-kicker{color:var(--cyan)}
-.project-team p{margin:8px 0 0;font-size:15.5px;line-height:1.6;color:var(--text)}
+.project-team p{max-width:640px;margin:0 auto 14px;font-size:15.5px;line-height:1.6;color:var(--text)}
+.pt-tags{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.pt-tags li{font:700 12px/1 var(--font);letter-spacing:.4px;color:var(--cyan);padding:6px 12px;border-radius:999px;
+  background:rgba(95,224,240,.08);border:1px solid rgba(95,224,240,.5)}
+@media (max-width:640px){.project-team{padding:18px 14px 14px}.project-team p{font-size:15px}}
 /* Credits: the helpers, cards in the style of the dedication (cyan, smaller) */
 .helpers{margin:4px 0 6px}
 .hp-top{text-align:center;margin:6px 0 12px}
