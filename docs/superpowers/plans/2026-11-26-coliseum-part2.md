@@ -179,8 +179,13 @@ BOARD_IMAGES.md, `khuxwiki_rounds_ww.json`, `ww_to_jp_stage_sets.json`, `gap_ene
   brackets of 2016-08 .. 2016-11 equal the notices; every threshold ≥ 1 and ≤ the season's total rounds before the endless
   tier; the Catalog shows 13 rows in month order with the right state for a story clock in 2016-12 (now = 2016-12,
   can keep = 2016-04 .. 2016-11, later = 2017-01 .. 2017-04).
+- [ ] **Step 1b: Failing tests for the Catalog filters (I-328, user 26-11):** the page carries the FILTER sheet of
+  `catalog-pages.js` (as raid-pages.js / event-pages.js) with options «Coliseum Boards: completed / not completed»
+  (every node of the season's boards unlocked), «Tier rewards: all taken / not» (the season's last rewarded tier
+  cleared) and the state («Kept / Can keep / Later»); each option hides the right rows on a fixture with one season of
+  each kind; the phone CSS (phone-css.js `#rows>.row` cards) applies unchanged.
 - [ ] **Step 2: Run** → FAIL. **Step 3: Implement.** **Step 4: Run** → PASS.
-- [ ] **Step 5: Commit** «Coliseum Part 2: ranking thresholds and Catalog rows».
+- [ ] **Step 5: Commit** «Coliseum Part 2: ranking thresholds, Catalog rows and filters».
 
 ### Task 6: Notice, docs, regen, resources and bench walk
 
@@ -197,5 +202,5 @@ BOARD_IMAGES.md, `khuxwiki_rounds_ww.json`, `ww_to_jp_stage_sets.json`, `gap_ene
   (`update-resources.ps1`, tap Download, relogin twice if the first one crashes).
 - [ ] **Step 3: Bench walk** (story clock in each era: 2016-08 generated set, 2016-11 extra tier, 2017-03 JP set): round
   list and levels, a generated stage loads and plays (Review Focus 5), one-turn window across a tier, a board purchase
-  with its card, Catalog keep of a Part 2 season, a threshold Present.
+  with its card, Catalog keep of a Part 2 season, the Catalog filters and the phone layout (70 %, card grid, as the Raid / Event Catalogs), a threshold Present.
 - [ ] **Step 4:** commit + push; no tester package (one package at the end of the Coliseum plan).
