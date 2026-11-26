@@ -729,7 +729,7 @@ def event_catalog_banner(coin=None, title=EVENT_CATALOG_TITLE, sub=EVENT_CATALOG
         warn('Event Coin left out of the Event Catalog banner: %s not found (local JP data)' % (coin or '/'.join(EVENT_COIN)))
     sp = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     ds = ImageDraw.Draw(sp)
-    for x, y, r in ((128, 22, 4), (20, 112, 3), (140, 112, 3), (560, 60, 4), (604, 112, 3), (470, 124, 2), (380, 16, 2)):
+    for x, y, r in ((128, 22, 4), (20, 112, 3), (560, 60, 4), (604, 112, 3), (470, 124, 2), (380, 16, 2)):
         ds.polygon([(x, y - r * 3), (x + r, y), (x, y + r * 3), (x - r, y)], fill=(255, 255, 255, 230))
         ds.polygon([(x - r * 3, y), (x, y - r), (x + r * 3, y), (x, y + r)], fill=(255, 255, 255, 230))
     im = Image.alpha_composite(im, sp)
