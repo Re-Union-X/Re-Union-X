@@ -94,8 +94,8 @@ run('hub_kept_section', () => {
   assert.ok(html.includes('<h2>Kept now</h2><span class="kcount">2</span>'), 'its title and count');
   assert.ok(html.includes('<div class="kr" id="k-raid"><a class="ki" href="/web/raid/raid/8100?from=catalog"><img src="/web/raid/img/v1/8100.png" alt=""></a>'
     + '<div class="kt"><a class="kn" href="/web/raid/raid/8100?from=catalog">Darkside · Tier 3</a><span class="kc">Raid Catalog</span></div>'
-    + '<a href="#" class="pk" data-on="0" data-pin="/web/raid/unkeep" data-where="Events" onclick="return kxRm(this)">Remove<span class="kw"> from Events</span></a></div>'), 'a raid row');
-  assert.ok(html.includes('>Quest &lt;1&gt;</a><span class="kc">Special Catalog</span>') && html.includes('data-pin="/web/special/unpin"') && html.includes('Remove<span class="kw"> from Special</span>'), 'a Special row, escaped');
+    + '<a href="#" class="pk" data-on="0" data-pin="/web/raid/unkeep" data-where="Events" onclick="return kxRm(this)">Remove from Events</a></div>'), 'a raid row');
+  assert.ok(html.includes('>Quest &lt;1&gt;</a><span class="kc">Special Catalog</span>') && html.includes('data-pin="/web/special/unpin"') && html.includes('Remove from Special'), 'a Special row, escaped');
   assert.ok(html.includes('function kxRm(el)') && html.includes('location.reload()') && html.includes('<div id="pinmsg" class="pinmsg"></div>'), 'Remove posts, says so, reloads the hub');
   const empty = pages.hubPage(CARDS, []);
   assert.ok(empty.includes(`<p class="mu">${pages.KEPT_NONE}</p>`) && pages.KEPT_NONE === 'Nothing kept: pick a past item in a catalog to keep it' && !empty.includes('class="kcount"'), 'empty state');

@@ -38,7 +38,7 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   + '.kr .kc{color:#00d4ed;font-size:13px}.kr .pk{flex:0 0 auto;margin:0;padding:2px 12px;font-size:13px;width:auto;min-height:0;display:inline-block}'
   + '#sec-kept .mu{margin:4px 2px;font-size:14px}'
   + `@media ${PHONE_MQ}{.kr{gap:8px;padding:3px 0}.kr .ki{flex-basis:110px}.kr .ki img{width:110px;height:24px}.kr .kn{font-size:13px}.kr .kc{font-size:11px}`
-  + '.kr .kw{display:none}.kr .pk{font-size:12px!important;padding:2px 10px!important;min-height:26px;width:auto!important;display:inline-flex!important;align-items:center}}'
+  + '.kr .pk{font-size:12px!important;padding:2px 10px!important;min-height:26px;width:auto!important;display:inline-flex!important;align-items:center}}'
   // the kept items in two columns (large screens and phones: the phone page is 70 % zoomed, about 900 CSS px wide)
   + '.kl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}.kl>.kr:nth-child(2){border-top:0}'
   // large screens (user 26-11: «the hub must not need scrolling» on the 1280x720 WebView): the five catalogues side by side as cards,
@@ -71,7 +71,7 @@ const KEPT_NONE = 'Nothing kept: pick a past item in a catalog to keep it';
 function keptSection(kept = []) {
   const rows = kept.map((k) => `<div class="kr" id="k-${esc(k.kind)}"><a class="ki" href="${esc(k.href)}"><img src="${esc(k.img)}" alt=""></a>`
     + `<div class="kt"><a class="kn" href="${esc(k.href)}">${esc(k.name)}</a><span class="kc">${esc(k.catalog)}</span></div>`
-    + `<a href="#" class="pk" data-on="0" data-pin="${esc(k.remove)}" data-where="${esc(k.where)}" onclick="return kxRm(this)">Remove<span class="kw"> from ${esc(k.where)}</span></a></div>`).join('');
+    + `<a href="#" class="pk" data-on="0" data-pin="${esc(k.remove)}" data-where="${esc(k.where)}" onclick="return kxRm(this)">Remove from ${esc(k.where)}</a></div>`).join('');
   return detailCards.section('kept', 'pin', 'Kept now', rows ? `<div class="kl">${rows}</div>` : `<p class="mu">${KEPT_NONE}</p>`, kept.length ? `<span class="kcount">${kept.length}</span>` : '');
 }
 // Remove: the catalogue's own request (POST to its unkeep / unpin URL, the same message box as the catalogue's button), then the hub
