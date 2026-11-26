@@ -819,6 +819,13 @@
    "group": "OPEN",
    "hash": "91f4a92b348aae18",
    "name": "I-327 · KHDR START (Dark Road) on the title screen: «Unable to locate necessary files. Files will…"
+  },
+  "I-328": {
+   "thread": "1575442363940208773",
+   "msg": "1575442363940208773",
+   "group": "OPEN",
+   "hash": "c53c91a379282add",
+   "name": "I-328 · Coliseum Catalog filters"
   }
  }
 }
