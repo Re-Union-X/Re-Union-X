@@ -45,10 +45,10 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   + '.kr .pk{font-size:12px;padding:2px 10px;min-height:26px}}'
   // one kept item per line, its Remove button on the right edge (user 26-11, phones and large screens)
   + '.kl{display:grid;grid-template-columns:1fr}'
-  // large screens (user 26-11: «the hub must not need scrolling» on the 1280x720 WebView): the five catalogues side by side as cards,
+  // large screens (user 26-11): the catalogues as cards, three per row (user 26-11: «groups of three», more catalogues to come),
   // like the phone grid, and the kept items in two columns; the phone layout keeps its own grid (phone-css.js, 3 columns)
   + `@media not all and ${PHONE_MQ}{`
-  + '#rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:stretch;margin-top:8px}'
+  + '#rows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch;margin-top:8px}'
   + '#rows>.row{display:flex;flex-direction:column;align-items:stretch;gap:0;margin:0;padding:8px 8px 10px;background:#06283e;border:0;border-left:4px solid #2f5d78;border-radius:8px}'
   + '#rows>.row.pinned{border-left-color:#b8860b}#rows>.row .im{width:100%;max-width:none;flex:0 0 auto;line-height:0}#rows>.row .im img{width:100%;height:auto}'
   + '#rows>.row .info{display:flex;flex-direction:column;flex:1 1 auto;margin:6px 0 0;line-height:1.35}#rows>.row .nm{font-size:16px;margin:0 0 2px}'

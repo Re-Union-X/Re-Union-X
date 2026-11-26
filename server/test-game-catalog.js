@@ -118,7 +118,7 @@ run('catalog_head_helper', () => {
 // large screens (user 26-11: no scrolling at 1280x720): the five catalogues as a grid of cards, the kept items one per line (Remove on the right)
 run('hub_large_grid', () => {
   const html = pages.hubPage(CARDS, [{ kind: 'raid', catalog: 'Raid Catalog', name: 'R', img: '/i.png', href: '/h', remove: '/web/raid/unkeep', where: 'Events' }]);
-  assert.ok(html.includes('@media not all and (max-height:480px) and (max-width:900px){#rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))'), 'card grid off the phone');
+  assert.ok(html.includes('@media not all and (max-height:480px) and (max-width:900px){#rows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))'), 'card grid off the phone');
   assert.ok(html.includes('#rows>.row{display:flex;flex-direction:column') && html.includes('#rows>.row .go{display:none}'), 'cards, not rows');
   assert.ok(html.includes('<div class="kl"><div class="kr" id="k-raid">') && html.includes('.kl{display:grid;grid-template-columns:1fr}') && html.includes('.kr .pk{flex:0 0 auto;margin:0 0 0 auto;'), 'kept items one per line, Remove on the right');
 });
