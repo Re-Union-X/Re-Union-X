@@ -88,8 +88,7 @@ test('SEASONS and SEASON_BOARDS', () => {
     ['2018-01', 2900, 'relux', false], ['2018-02', 3000, 'relux', false], ['2018-03', 3100, 'relux', false]]);
   assert.strictEqual(mc.SEASONS.length, 24);
   assert.deepStrictEqual(mc.SEASON_BOARDS[800], [2200001]);
-  // the Part 3 boards come with Coliseum Part 3 Task 4
-  for (const s of mc.SEASONS.filter((x) => x.colosseumStageId <= 2000)) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
+  for (const s of mc.SEASONS) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
   for (const [t, [, lo, hi]] of Object.entries(mc.RANGES)) assert.ok(lo <= hi, t);
 });
 
@@ -107,13 +106,35 @@ const WIKI_BOARDS = {
   2000: [2210063, 2210064, 2210065, 2210066], // Ninja, Kunoichi, Tier 10 Bonus, Tier 11 Bonus (2017-04)
 };
 const TIER11 = [2210058, 2210062, 2210066];
+// Coliseum Part 3 Task 4: the ReLux boards of 2017-05 .. 2018-03 (private PART3_AUDIT.md §5, by id order and per-month counts):
+// 2017-05 .. 11 avatar M / F + Tier 10 / 11 Bonus, 2017-12 .. 2018-03 one both-gender board + Tier 10 / 11 Bonus
+const P3_BOARDS = {
+  2100: [2210067, 2210068, 2210069, 2210070], // KH Dale M / F (2017-05)
+  2200: [2210071, 2210072, 2210073, 2210074], // Hydrangea Prep, Hydrangea Formal
+  2300: [2210075, 2210076, 2210077, 2210078], // Mango Sweetie M / F
+  2400: [2210079, 2210080, 2210081, 2210082], // Buzz Cut M / F
+  2500: [2210083, 2210084, 2210085, 2210086], // Illusionist M / F
+  2600: [2210087, 2210088, 2210089, 2210090], // Trick or Treat II M / F
+  2700: [2210091, 2210092, 2210093, 2210094], // Natural, Long Side Tails
+  2800: [2210095, 2210096, 2210097], // Blue Reinstar (Spirit parts)
+  2900: [2210098, 2210099, 2210100], // Puppy Ears (Shag) & (Bob) (Puppy Medium / Puppy Bob: JP only, not served)
+  3000: [2210101, 2210102, 2210103], // Heart-Shaped Balloon
+  3100: [2210104, 2210105, 2210106], // Mushroom Cut & Kitty Ears (2018-03)
+};
 test('each new season lists exactly its wiki boards; every bonus board has its tier', () => {
   for (const [id, ids] of Object.entries(WIKI_BOARDS)) assert.deepStrictEqual(mc.SEASON_BOARDS[id], ids, `boards of ${id}`);
   const all = Object.values(mc.SEASON_BOARDS).flat();
   assert.strictEqual(new Set(all).size, all.length, 'a board in one season only');
   const bonus = {};
   for (const ids of Object.values(WIKI_BOARDS)) for (const b of ids.slice(2)) bonus[b] = TIER11.includes(b) ? 11 : 10;
+  // Part 3: the last two boards of every month are the Tier 10 / Tier 11 Bonus
+  for (const ids of Object.values(P3_BOARDS)) { bonus[ids[ids.length - 2]] = 10; bonus[ids[ids.length - 1]] = 11; }
   assert.deepStrictEqual(mc.BONUS_TIER, { 2200023: 10, 2210031: 10, 2210035: 10, ...bonus });
+});
+
+test('part3 seasons list exactly their ReLux boards', () => {
+  for (const [id, ids] of Object.entries(P3_BOARDS)) assert.deepStrictEqual(mc.SEASON_BOARDS[id], ids, `boards of ${id}`);
+  assert.deepStrictEqual(Object.values(P3_BOARDS).flat(), Array.from({ length: 40 }, (_, i) => 2210067 + i), 'the contiguous ids 2210067 .. 2210106');
 });
 
 test('GEN_STAGE_IDS: 2116MMNN / 2117MMNN, never a JP id, the two years disjoint', () => {
@@ -343,11 +364,19 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
 });
 
 test('board card pictures: 6★ Cid from the 2016 bundle, every other served board from --loc', () => {
-  const served = Object.values(mc.SEASON_BOARDS).flat();
-  const rows = mc.artLines(served).split('\n').filter((l) => l && !l.startsWith('#'));
-  assert.strictEqual(rows.length, served.length, 'one line per served board');
-  assert.strictEqual(served.length, 9 + 30);
+  const all = Object.values(mc.SEASON_BOARDS).flat();
+  assert.strictEqual(all.length, 9 + 30 + 40);
+  // a board whose card waits for the user's review (PENDING_ART: no card of its own yet) gets no line: the client keeps its
+  // default card slot, the Catalog its placeholder; every other board one line, in the order of the boards
+  for (const id of mc.PENDING_ART) assert.ok(all.includes(id) && id >= 2210067 && !(id in mc.BOARD_ART), `${id} pending: a Part 3 board without BOARD_ART`);
+  const served = all.filter((id) => !mc.PENDING_ART.has(id));
+  const rows = mc.artLines(all).split('\n').filter((l) => l && !l.startsWith('#'));
+  assert.strictEqual(rows.length, served.length, 'one line per served board with a card');
   assert.deepStrictEqual(rows.map((l) => l.split('\t')[0]), served.map((id) => `img/sphere_incentive/${id}.png`), 'in the order of the boards');
+  // Part 3 (cards prepared ahead, private board_art_all.json): every board of 2210067 .. 2210106 has a BOARD_ART value or is pending
+  for (let id = 2210067; id <= 2210106; id++) assert.ok(id in mc.BOARD_ART !== mc.PENDING_ART.has(id), `${id}: BOARD_ART or PENDING_ART, one of them`);
+  assert.deepStrictEqual([2210067, 2210068, 2210079, 2210080].map((id) => mc.BOARD_ART[id]), ['jp:2200017.png', 'jp:2200018.png', 'jp:2200095.png', 'jp:2200096.png'],
+    'KH Dale (user 26-11) and Buzz Cut: the JP twins');
   assert.strictEqual(rows[0], 'img/sphere_incentive/2200001.png\tb16');
   assert.strictEqual(rows[1], 'img/sphere_incentive/2200002.png\tloc\t=img/sphere_incentive_coli/2200002.png');
   // every value: b16 | loc | jp:<file>; a jp line copies that JP 4.3.1 file (import_originals.py source jp, highest revision)
@@ -927,6 +956,13 @@ const p3 = () => {
   for (const s of [p3Season(2100, 20161001, SK2100), p3Season(2200, 20161101, SK2100), p3Season(2700, 20170401, SK2700)]) {
     f.relux.colosseumStage.push(s.colosseumStage); f.relux.colosseum.push(...s.colosseum);
   }
+  // the boards of those three months (Task 4): avatar M / F + Tier 10 / 11 Bonus
+  for (const sid of [2100, 2200, 2700]) {
+    for (const [k, id] of mc.SEASON_BOARDS[sid].entries()) {
+      const b = reluxBoard(id, k < 2 ? 'Avatar' : `Tier ${8 + k} Bonus`, k < 2 ? k + 1 : 0, [1100, 1100, 3090, 3390][k]);
+      f.relux.sphere.push(b.sphere); f.relux.sphereArray.push(b.sphereArray); f.relux.sphereMasu.push(b.sphereMasu);
+    }
+  }
   return f;
 };
 const S2100 = { month: '2017-05', colosseumStageId: 2100, source: 'relux' };
@@ -1059,6 +1095,34 @@ test('real_part3 (2017-05 .. 2018-03 from the ReLux extract, every head..term ti
     assert.deepStrictEqual(cs(id).stageId, gen ? mc.GEN_STAGE_IDS(mc.SEASONS.find((x) => x.colosseumStageId === id).month) : s.stageId, `${id} stage set`);
   });
   assert.deepStrictEqual([2100, 2900, 3000, 3100].map((id) => cs(id).stageId[0]), [20161001, 20170601, 20170701, 20170801], 'the JP sets');
+  // Task 4: the boards of each month = its ReLux rows, renumbered; avatar M / F 19 nodes / 1100 coins to 2017-11, one both-gender
+  // board 19 / 3500 from 2017-12, Tier 10 Bonus 3090, Tier 11 Bonus 3390; START at row 4 column 0, the top-left 2 x 2 empty
+  const donor = new Map(relux.sphere.map((r) => [r.sphereBoardId, r]));
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  for (const sid of P3) {
+    const ids = mc.SEASON_BOARDS[sid];
+    assert.strictEqual(ids.length, sid <= 2700 ? 4 : 3, `${sid} board count`);
+    assert.deepStrictEqual(out.sphere.filter((r) => ids.includes(r.sphereBoardId)).map((r) => r.sphereBoardId), ids, `${sid} boards served`);
+    for (const id of ids) {
+      const s = out.sphere.find((r) => r.sphereBoardId === id), m = out.sphereMasu.find((r) => r.masuId === id), a = out.sphereArray.find((r) => r.arryId === id);
+      const nodes = m.spherePoint.slice(0, 22).filter((p) => p > 0).length, coins = sum(m.spherePoint.slice(0, 22)), bonus = mc.BONUS_TIER[id];
+      assert.deepStrictEqual([s.boardName, s.kindId], [donor.get(id).boardName, donor.get(id).kindId], `${id} from its ReLux row`);
+      if (bonus) assert.strictEqual(s.boardName, `Tier ${bonus} Bonus`, `${id} bonus name`);
+      else assert.ok(sid <= 2700 ? [1, 2].includes(s.kindId) : s.kindId === 0, `${id}: M / F to 2017-11, both genders from 2017-12`);
+      assert.deepStrictEqual([nodes, coins], [19, bonus === 11 ? 3390 : bonus === 10 ? 3090 : sid <= 2700 ? 1100 : 3500], `${id} nodes / coins`);
+      assert.strictEqual(a.spCol4[0], 1000, `${id} START`);
+      assert.deepStrictEqual([a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]], [0, 0, 0, 0], `${id} corner`);
+      assert.deepStrictEqual([s.arryId, s.masuId, m.sphereBoardId, s.type], [id, id, id, 3], `${id} renumbered`);
+    }
+  }
+  // Puppy Medium / Puppy Bob (2018-01) were JP only (private PUPPY_BOARDS.md): no such board
+  assert.ok(!out.sphere.some((r) => /Puppy (Medium|Bob)$/.test(r.boardName)), 'no Puppy Medium / Puppy Bob board');
+  // 2017-12 Blue Reinstar: Spirit-part cells (type 33), each part in our petParts master
+  const parts = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'petParts.json'), 'utf8')).map((r) => r.petPartsId));
+  const blue = out.sphereMasu.find((r) => r.masuId === 2210095);
+  const spirit = blue.rewardSelect.map((t, i) => (t === 33 ? blue.rewardId[i] : 0)).filter(Boolean);
+  assert.deepStrictEqual(spirit, [304014, 303014, 308014, 306014, 309014], 'the five Blue Reinstar parts');
+  for (const id of spirit) assert.ok(parts.has(id), `Spirit part ${id} in petParts`);
   assert.deepStrictEqual(tiersOf(2400).map((r) => r.excellentUnlockCount), [36, 32, 32, 28, 28, 28, 28, 24, 24, 24, 18, 16, 9, 4, 3, 3, 3, 3, 3, 3, 3, 3], '2017-08: the ReLux skips');
   assert.strictEqual(tiersOf(2700)[0].excellentUnlockCount, 53, '2017-11 Tier 1 skip 53');
   // every tier medal of the served rows (Part 2 and 3) in our medal master, by name: Moogle 3/5/6★, Cid 6★, Magic Mirror

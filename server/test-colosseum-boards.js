@@ -318,6 +318,19 @@ function wiring() {
     delete p.colosseum.kept;
     assert.deepStrictEqual(ids(quiet(() => t.userSphereAll({ setSent: true })).userSphereDatas), DEC.slice(0, 2), 'the story season, its Tier 10 Bonus later');
   });
+  // Coliseum Part 3: the 2017-12 Blue Reinstar board pays Spirit parts (cells of type 33), also on a save without the pet system
+  // (pet off here: KHUX_PET unset; no player.pet): the part is recorded and shows once the pet is on. The board row from the served
+  // master, else from the ReLux board extract (private; skipped without both)
+  let blue = t.masterRows('sphereMasu').find((r) => r.masuId === 2210095);
+  if (!blue) { const rx = require('./make-colosseum').readRelux(process.env.KHUX_COLOSSEUM_RELUX || require('./make-colosseum').DEFAULT_RELUX); blue = rx && rx.sphereMasu.find((r) => r.sphereBoardId === 2210095); }
+  if (!blue) console.log('spirit parts paid: skipped (no 2210095 board on disk)');
+  else run('spirit parts paid', () => {
+    delete p.pet;
+    const i = blue.rewardSelect.indexOf(33), part = blue.rewardId[i];
+    assert.ok(i >= 0 && part, 'a Spirit-part cell');
+    quiet(() => t.grantSphereReward(blue, i));
+    assert.ok(p.pet && p.pet.parts && p.pet.parts[part], `Spirit part ${part} recorded`);
+  });
   fs.rmSync(dir, { recursive: true, force: true });
 }
 try { wiring(); } catch (e) { failed++; console.error(`FAIL wiring: ${e.stack}`); }

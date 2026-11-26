@@ -226,12 +226,29 @@ const SEASON_BOARDS = {
   1800: [2210055, 2210056, 2210057, 2210058], // Cowboy Goth, Cowgirl Goth, Tier 10 Bonus, Tier 11 Bonus
   1900: [2210059, 2210060, 2210061, 2210062], // Royal Knight M / F, Tier 10 Bonus, Tier 11 Bonus
   2000: [2210063, 2210064, 2210065, 2210066], // Ninja, Kunoichi, Tier 10 Bonus, Tier 11 Bonus (2017-04)
+  // Part 3 Task 4: the ReLux boards 2210067 .. 2210106 (month by id order and per-month counts, private PART3_AUDIT.md §5):
+  // avatar M / F (19 nodes, 1100) + Tier 10 Bonus (3090) + Tier 11 Bonus (3390) to 2017-11; from 2017-12 one both-gender board
+  // (kindId 0, 19 nodes, 3500) + the two Bonus boards. 2018-01: the khuxwiki «Puppy Medium» / «Puppy Bob» boards were JP only
+  // (no ReLux row, khuxwiki marks them JP: private PUPPY_BOARDS.md), not served.
+  2100: [2210067, 2210068, 2210069, 2210070], // KH Dale M / F, Tier 10 Bonus, Tier 11 Bonus (2017-05)
+  2200: [2210071, 2210072, 2210073, 2210074], // Hydrangea Prep (M), Hydrangea Formal (F), Tier 10 / 11 Bonus
+  2300: [2210075, 2210076, 2210077, 2210078], // Mango Sweetie M / F, Tier 10 / 11 Bonus
+  2400: [2210079, 2210080, 2210081, 2210082], // Buzz Cut M / F, Tier 10 / 11 Bonus
+  2500: [2210083, 2210084, 2210085, 2210086], // Illusionist M / F, Tier 10 / 11 Bonus
+  2600: [2210087, 2210088, 2210089, 2210090], // Trick or Treat II M / F, Tier 10 / 11 Bonus
+  2700: [2210091, 2210092, 2210093, 2210094], // Natural (M), Long Side Tails (F), Tier 10 / 11 Bonus
+  2800: [2210095, 2210096, 2210097], // Blue Reinstar (Spirit parts, cells of type 33), Tier 10 / 11 Bonus
+  2900: [2210098, 2210099, 2210100], // Puppy Ears (Shag) & (Bob), Tier 10 / 11 Bonus
+  3000: [2210101, 2210102, 2210103], // Heart-Shaped Balloon, Tier 10 / 11 Bonus
+  3100: [2210104, 2210105, 2210106], // Mushroom Cut & Kitty Ears, Tier 10 / 11 Bonus (2018-03)
 };
 // the «Tier N Bonus» boards (boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum Board!»;
 // routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
 const BONUS_TIER = {
   2200023: 10, 2210031: 10, 2210035: 10, 2210039: 10, 2210042: 10, 2210045: 10, 2210048: 10, 2210051: 10, 2210054: 10,
   2210057: 10, 2210058: 11, 2210061: 10, 2210062: 11, 2210065: 10, 2210066: 11,
+  // Part 3: the last two boards of every month 2017-05 .. 2018-03
+  ...Object.fromEntries([2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100].flatMap((sid) => SEASON_BOARDS[sid].slice(-2).map((id, i) => [id, 10 + i]))),
 };
 const CORNER_FREE = (a) => [a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]].every((v) => !v);
 // Board card pictures img/sphere_incentive/<sphereBoardId>.png (client Select_Base layer, docs/notes/coliseum.md «Board card
@@ -245,7 +262,16 @@ const CORNER_FREE = (a) => [a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]].
 // JP twins are Summer Mickey / Minnie and Mushroom Hunt M / F. Vampire M / F (JP 2200045 / 2200046: no bat wings on the JP
 // cards), Ninja and Kunoichi (JP 2200025 / 2200026: other pictures) and every board without a JP candidate: loc (the wiki
 // preview at native size, placed as the screenshot shows it). A board missing here is loc.
-const BOARD_ART = { 2200001: 'b16', 2210037: 'jp:2200037.png', 2210038: 'jp:2200038.png', 2210040: 'jp:2200041.png', 2210041: 'jp:2200042.png' };
+// Part 3 Task 4: the cards prepared ahead with the same method (private board_art_all.json): JP twins KH Dale M / F (accepted by the
+// user 26-11), Buzz Cut, Trick or Treat II, Natural / Long Side Tails, Blue Reinstar; every other Part 3 board loc. PENDING_ART =
+// boards whose card waits for the user's review (no fitting picture yet): no line in the art list, so the client keeps the default
+// card slot and the Catalog its placeholder; give the board a BOARD_ART value and drop it from PENDING_ART once approved.
+const BOARD_ART = { 2200001: 'b16', 2210037: 'jp:2200037.png', 2210038: 'jp:2200038.png', 2210040: 'jp:2200041.png', 2210041: 'jp:2200042.png',
+  2210067: 'jp:2200017.png', 2210068: 'jp:2200018.png', 2210079: 'jp:2200095.png', 2210080: 'jp:2200096.png', 2210087: 'jp:2200105.png',
+  2210088: 'jp:2200106.png', 2210091: 'jp:2200110.png', 2210092: 'jp:2200111.png', 2210095: 'jp:2200115.png',
+  ...Object.fromEntries([2210069, 2210070, 2210071, 2210072, 2210073, 2210074, 2210077, 2210078, 2210081, 2210082, 2210085, 2210086, 2210089,
+    2210090, 2210093, 2210094, 2210096, 2210097, 2210098, 2210099, 2210100, 2210101, 2210102, 2210103, 2210104, 2210105, 2210106].map((id) => [id, 'loc'])) };
+const PENDING_ART = new Set([2210075, 2210076, 2210083, 2210084]); // Mango Sweetie M / F, Illusionist M / F (user review)
 function artLines(boardIds) {
   const head = ['# Coliseum Board card pictures, written by server/make-colosseum.js (BOARD_ART).',
     '# Columns as in originals.tsv. b16 = the worldwide 2016 file of the same id; jp = the JP 4.3.1 card of the same picture (another id);'
@@ -256,7 +282,7 @@ function artLines(boardIds) {
     if (art.startsWith('jp:')) return `img/sphere_incentive/${id}.png\tjp\timg/sphere_incentive/${art.slice(3)}`;
     return `img/sphere_incentive/${id}.png\tloc\t=img/sphere_incentive_coli/${id}.png`;
   };
-  return [...head, ...boardIds.map(line)].join('\n') + '\n';
+  return [...head, ...boardIds.filter((id) => !PENDING_ART.has(id)).map(line)].join('\n') + '\n';
 }
 // Coliseum Catalog banner (Task 6; user 25-11: the first catalog banner of the Events tab): evStage CATALOG_EV, eventType 0,
 // Details -> CATALOG_URL (colosseum-pages.js), a tap opens the Training Grounds quest CATALOG_STAGE of make-special (the stage of
@@ -736,5 +762,5 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
+module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
   STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS };

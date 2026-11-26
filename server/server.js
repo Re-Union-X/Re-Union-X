@@ -2744,8 +2744,9 @@ function grantItem(type, id, num, ctx = {}) {
   // 7 titolo (userTitles), 20 parte dell'avatar (accessorio, userAvatarParts)
   else if (type === 7 && id) { player.titles = [...new Set([...(player.titles || []), id])]; }
   else if (type === 20 && id) { player.avatarParts = [...new Set([...(player.avatarParts || []), id])]; }
-  // 33 parte dello Spirit (itemId = petPartsId; immagine img/petParts/pi%d)
-  else if (type === 33 && id) { if (!PET_ENABLED || !pet().grantPart(id)) console.log(`  [inventario] parte dello Spirit ${id} gia' posseduta o assente`); }
+  // 33 parte dello Spirit (itemId = petPartsId; immagine img/petParts/pi%d). Recorded in player.pet also with the pet system off
+  // (a Coliseum / avatar board cell, Coliseum Part 3): never lost, shown once the pet is on
+  else if (type === 33 && id) { if (!pet().grantPart(id)) console.log(`  [inventario] parte dello Spirit ${id} gia' posseduta o assente`); }
   else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
 }
 
