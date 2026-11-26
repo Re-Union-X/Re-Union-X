@@ -313,9 +313,9 @@ const tests = {
     assert.ok(!d.includes('Your Event Coins'), 'no owned coins in the detail page');
     // the Event Coins owned on the catalogue header, next to Filters (catalog-pages.js walletChip)
     const cat = pages.catalogPage(ix, ctx({ wallet: { ic: 'camp', label: 'Event Coins', value: 1234 } }));
-    assert.ok(cat.includes('<h1><img class="ic" src="/web/special/icon/camp.png" alt=""><span>Event Catalog</span><span class="ng">NOT ORIGINAL</span></h1><span class="wal"><img class="ic" src="/web/special/icon/camp.png" alt=""><small>Event Coins</small><b>1,234</b></span><button type="button" class="fbtn"'), 'Event Coins on the header');
+    assert.ok(cat.includes('<h1><img class="ic" src="/web/special/icon/camp.png" alt=""><span>Event Catalog</span><span class="ng">NOT ORIGINAL</span></h1><span class="wal"><small><img class="ic" src="/web/special/icon/camp.png" alt="">Event Coins</small><b>1,234</b></span><button type="button" class="fbtn"'), 'Event Coins on the header');
     const av = pages.boardCatalogPage(ix, ctx({ wallet: { ic: 'avatar', label: 'Avatar Coins', value: 50 } }));
-    assert.ok(/<span>Avatar Board Catalog<\/span><span class="ng">NOT ORIGINAL<\/span><\/h1><span class="wal">[^]*?<small>Avatar Coins<\/small><b>50<\/b><\/span>/.test(av), 'Avatar Coins on the Avatar Board Catalog header');
+    assert.ok(/<span>Avatar Board Catalog<\/span><span class="ng">NOT ORIGINAL<\/span><\/h1><span class="wal"><small>(<img[^>]*>)?Avatar Coins<\/small><b>50<\/b><\/span>/.test(av), 'Avatar Coins on the Avatar Board Catalog header');
     assert.ok(/never expire/i.test(line) && /one balance/i.test(line), line);
     assert.ok(line.includes('2 events'), 'the set is shared by its events');
     // texts: paid now, and the two reasons a set is not handed out

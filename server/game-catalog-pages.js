@@ -26,7 +26,7 @@ const BAR_CSS = (() => {
 const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{color:#9fd4ff;font-size:14px;margin:2px 0}'
   + '.pg{color:#ffcd4a;font-size:14px;margin:2px 0}.pg.no{color:#b9cfdc}.lk{color:#ffcd4a;font-size:13px;margin:2px 0}'
   // the coin chip of a card: the header chip (catalog-pages.js walletChip) without its push to the right
-  + '.row .wal{margin:4px 0 0;align-self:flex-start;font-size:13px}.row .cw{margin-top:auto}'
+  + '.row .wal{margin:4px 0 0;align-self:flex-start;max-width:100%}.row .wal small{font-size:12px;min-width:0;padding:2px 7px 2px 4px;gap:4px}.row .wal .ic{width:1.5em;height:1.5em}.row .wal b{font-size:15px;padding:1px 9px}.row .cw{margin-top:auto}'
   + '.row{cursor:pointer}'
   // phone card grid (phone-css.js): the short catalogue names on one line, the counts as small as the other lines
   + `@media ${PHONE_MQ}{#rows>.row.row .nm{height:auto}#rows>.row .ct{font-size:12px}}`

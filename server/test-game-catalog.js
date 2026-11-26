@@ -68,7 +68,7 @@ run('hub_page_cards', () => {
     assert.ok(row.includes(`<a class="nm" href="/web/${k}/catalog">${k} Catalog</a>`) && row.includes(`<div class="d">All of ${k}.</div>`), `${k}: name and line`);
     assert.ok(row.includes(`<div class="ct">${i + 1} things</div>`), `${k}: count`);
     assert.ok(k === 'raid' ? row.includes('Kept: Darkside · Tier 3</div>') : row.includes(`<div class="pg no">No ${k} kept</div>`), `${k}: kept line`);
-    assert.strictEqual(row.includes(`<small>${k} Coins</small><b>${(1200 + i).toLocaleString('en-US')}</b>`), k !== 'special', `${k}: coin chip`);
+    assert.strictEqual(row.includes(`${k} Coins</small><b>${(1200 + i).toLocaleString('en-US')}</b>`), k !== 'special', `${k}: coin chip`);
   }
   assert.ok(html.includes('<div class="lk"><img class="ic" src="/web/special/icon/lock.png" alt="">The Coliseum opens at Story Quest 130</div>'), 'note line');
   assert.ok(html.includes('class="row pinned" id="c-raid"'), 'a kept item colours its card');
@@ -80,7 +80,7 @@ run('hub_page_cards', () => {
 run('wallet_chip_coin_icon', () => {
   const { walletChip } = require('./catalog-pages');
   assert.strictEqual(walletChip({ img: '/web/coin/v7/raid.png', label: 'Raid Coins', value: 5 }),
-    '<span class="wal"><img class="ic" src="/web/coin/v7/raid.png" alt=""><small>Raid Coins</small><b>5</b></span>');
+    '<span class="wal"><small><img class="ic" src="/web/coin/v7/raid.png" alt="">Raid Coins</small><b>5</b></span>');
   assert.strictEqual(walletChip({ img: null, label: 'Raid Coins', value: 5 }), '<span class="wal"><small>Raid Coins</small><b>5</b></span>', 'no substitute icon');
   assert.ok(walletChip({ ic: 'raid', label: 'R', value: 1 }).includes('/web/special/icon/raid.png'), 'an icon key still works');
 });
@@ -201,10 +201,10 @@ function wiring() {
     assert.ok(html.includes('<h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1>') && html.includes('<style data-phone>'));
     const keys = [...html.matchAll(/id="c-([a-z]+)"/g)].map((m) => m[1]);
     assert.deepStrictEqual(keys, ['colosseum', 'raid', 'event', ...(avatarId ? ['avatar'] : []), 'special']);
-    assert.ok(/id="c-colosseum"[^]*?<div class="ct">\d+ seasons<\/div><div class="pg"><img[^>]*>Kept: Coliseum · April 2016<\/div>[^]*?<small>Coliseum Coins · April 2016<\/small>/.test(html), 'Coliseum card: seasons, kept season, its coins');
-    assert.ok(/id="c-raid"[^]*?<div class="ct">[\d,]+ raids[^<]*<\/div><div class="pg no">No raid kept<\/div>[^]*?<small>Raid Coins<\/small>/.test(html), 'Raid card');
-    assert.ok(/id="c-event"[^]*?<div class="ct">[\d,]+ events<\/div>[^]*?<small>Event Coins<\/small>/.test(html), 'Event card');
-    if (avatarId) assert.ok(/id="c-avatar"[^]*?<div class="ct">[\d,]+ entries · [\d,]+ boards<\/div>[^]*?<small>Avatar Coins<\/small>/.test(html), 'Avatar Board card');
+    assert.ok(/id="c-colosseum"[^]*?<div class="ct">\d+ seasons<\/div><div class="pg"><img[^>]*>Kept: Coliseum · April 2016<\/div>[^]*?<small>(<img[^>]*>)?Coliseum Coins · Apr 2016<\/small>/.test(html), 'Coliseum card: seasons, kept season, its coins');
+    assert.ok(/id="c-raid"[^]*?<div class="ct">[\d,]+ raids[^<]*<\/div><div class="pg no">No raid kept<\/div>[^]*?<small>(<img[^>]*>)?Raid Coins<\/small>/.test(html), 'Raid card');
+    assert.ok(/id="c-event"[^]*?<div class="ct">[\d,]+ events<\/div>[^]*?<small>(<img[^>]*>)?Event Coins<\/small>/.test(html), 'Event card');
+    if (avatarId) assert.ok(/id="c-avatar"[^]*?<div class="ct">[\d,]+ entries · [\d,]+ boards<\/div>[^]*?<small>(<img[^>]*>)?Avatar Coins<\/small>/.test(html), 'Avatar Board card');
     assert.ok(/id="c-special"[^]*?<div class="ct">[\d,]+ quests · [\d,]+ campaigns<\/div><div class="pg no">No quest kept<\/div><\/div>/.test(html), 'Special card (no coins)');
     assert.ok(html.includes(`src="/web/special/img/v`) && html.includes(`/${special}.png"`), 'the Special Catalog banner picture');
     // the Special count is the catalogue's own summary line
@@ -235,10 +235,10 @@ function wiring() {
     const html = web(t.respondGameCatalogWeb, '/web/catalog').body.toString('utf8');
     for (const k of ['coliseum', 'raid', 'event']) assert.ok(html.includes(`<span class="wal"`) && html.includes(`<img class="ic" src="/web/coin/v7/${k}.png" alt="">`), `${k}: the game's coin icon on the hub`);
     if (avatarId) assert.ok(/id="c-avatar"[^]*?<span class="wal"><small>Avatar Coins<\/small>/.test(html), 'Avatar Coins without its icon file: no icon, no substitute');
-    assert.ok(!/class="wal"[^>]*><img class="ic" src="\/web\/special\/icon/.test(html), 'no drawn / substitute icon in a coin chip');
+    assert.ok(!/class="wal"[^>]*><small><img class="ic" src="\/web\/special\/icon/.test(html), 'no drawn / substitute icon in a coin chip');
     const raidPage = web(t.respondRaidWeb, '/web/raid/catalog').body.toString('utf8');
-    assert.ok(raidPage.includes('<span class="wal"><img class="ic" src="/web/coin/v7/raid.png" alt=""><small>Raid Coins</small>'), 'the Raid Catalog header chip');
-    assert.ok(web(t.respondEventWeb, '/web/event/catalog').body.toString('utf8').includes('<img class="ic" src="/web/coin/v7/event.png" alt=""><small>Event Coins</small>'), 'the Event Catalog header chip');
+    assert.ok(raidPage.includes('<span class="wal"><small><img class="ic" src="/web/coin/v7/raid.png" alt="">Raid Coins</small>'), 'the Raid Catalog header chip');
+    assert.ok(web(t.respondEventWeb, '/web/event/catalog').body.toString('utf8').includes('<small><img class="ic" src="/web/coin/v7/event.png" alt="">Event Coins</small>'), 'the Event Catalog header chip');
     const icon = web(t.respondCoinIcon, '/web/coin/v7/raid.png');
     assert.deepStrictEqual([icon.code, icon.type, icon.body.toString()], [200, 'image/png', 'png raid']);
     for (const u of ['/web/coin/v7/avatar.png', '/web/coin/v7/icons.png', '/web/coin/v7/..%2Fraid.png', '/web/coin/raid.png']) assert.strictEqual(web(t.respondCoinIcon, u).code, 404, u);

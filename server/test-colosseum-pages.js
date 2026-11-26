@@ -382,7 +382,7 @@ const tests = {
   // the Coliseum Coins of the season the Coliseum plays, with its month, on the header (user 26-11); none on the detail page
   wallet_header() {
     const html = pages.catalogPage(ROWS, { ...CTX, wallet: { ic: 'tleg', label: 'Coliseum Coins · March 2017', value: 401 } });
-    assert.ok(html.includes('<h1><img class="ic" src="/web/special/icon/tleg.png" alt=""><span>Coliseum Catalog</span><span class="ng">NOT ORIGINAL</span></h1><span class="wal"><img class="ic" src="/web/special/icon/tleg.png" alt=""><small>Coliseum Coins · March 2017</small><b>401</b></span><button type="button" class="fbtn"'));
+    assert.ok(html.includes('<h1><img class="ic" src="/web/special/icon/tleg.png" alt=""><span>Coliseum Catalog</span><span class="ng">NOT ORIGINAL</span></h1><span class="wal"><small><img class="ic" src="/web/special/icon/tleg.png" alt="">Coliseum Coins · March 2017</small><b>401</b></span><button type="button" class="fbtn"'));
     const det = { boards: [], tiers: [], best: 0, ranked: [], maps: 'worldwide' };
     const d = pages.detailPage([row(900, '2016-05', 'can', { coins: 4321 })], 900, det, CTX);
     assert.ok(!d.includes('4,321') && !d.includes('<th>Coliseum Coins</th>'), 'no coin balance on the detail page');

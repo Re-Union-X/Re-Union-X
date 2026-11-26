@@ -63,11 +63,15 @@ const FILTER_BUTTON = '<button type="button" class="fbtn" id="fbtn">⚙ Filters<
 // The coins the player owns, in the catalogue header next to Filters (user 26-11: no balance in the detail sections): w = {img (the
 // URL of the game's own coin icon, server.js coinWallet: /web/coin/v<N>/<key>.png) or ic (an icon key of special-pages.js), label,
 // value (number), title (tooltip)}; no icon without either; '' without w. Pushes Filters to the right; on phones as compact as the button.
+// Two parts (user 26-11, the AP / LEVEL stat chips of the Special details, detail-cards.js .qs .st): the coin icon and its name on the
+// darker label side, the amount in gold on its own side; the same chip in every catalogue header and on the Game Catalog hub cards.
 const walletIcon = (w) => (w.img ? `<img class="ic" src="${esc(w.img)}" alt="">` : w.ic ? icon(w.ic) : '');
-const walletChip = (w) => (w && Number.isFinite(Number(w.value)) ? `<span class="wal"${w.title ? ` title="${esc(w.title)}"` : ''}>${walletIcon(w)}<small>${esc(w.label)}</small>`
+const walletChip = (w) => (w && Number.isFinite(Number(w.value)) ? `<span class="wal"${w.title ? ` title="${esc(w.title)}"` : ''}><small>${walletIcon(w)}${esc(w.label)}</small>`
   + `<b>${Number(w.value).toLocaleString('en-US')}</b></span>` : '');
-const WALLET_CSS = '.wal{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid #2f6f93;border-radius:18px;background:#06283e;padding:3px 12px 3px 6px;white-space:nowrap;font-size:14px;color:#d9e6ee}'
-  + '.wal .ic{width:1.6em;height:1.6em}.wal b{color:#ffcd4a;font-size:16px}.hdr .wal+.fbtn{margin-left:0}'
+const WALLET_CSS = '.wal{margin-left:auto;display:inline-flex;align-items:stretch;border:1px solid #2f6f93;border-radius:12px;overflow:hidden;white-space:nowrap;line-height:1.3}'
+  + '.wal small{background:#0a4466;color:#d9e6ee;font-size:13px;padding:3px 10px 3px 5px;display:flex;align-items:center;gap:6px}'
+  + '.wal .ic{width:1.6em;height:1.6em;margin:0;display:block;max-width:none}'
+  + '.wal b{background:#06283e;color:#ffcd4a;font-size:16px;font-weight:bold;padding:2px 12px;display:flex;align-items:center;justify-content:center;min-width:1.6em}.hdr .wal+.fbtn{margin-left:0}'
   + '@media (max-width:700px) and (min-height:481px){.wal{-webkit-flex:1 1 100%;flex:1 1 100%;justify-content:center;min-height:40px;box-sizing:border-box}}';
 const optLabel = ([, l, k]) => (k ? icon(k) : '') + esc(l);
 const filterOpts = (list, cls = () => '', sa = () => '') => list.map((o, i) => `<button type="button" class="o${cls(o[0])}${i ? '' : ' on'}" data-v="${o[0]}"${sa(o[0])}>${optLabel(o)}</button>`).join('');

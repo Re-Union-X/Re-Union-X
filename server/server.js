@@ -5511,7 +5511,8 @@ function colosseumWallet() {
     const s = colosseum().liveSeason();
     if (!s) return null;
     const [y, m] = s.month.split('-').map(Number);
-    const month = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
+    // short month (user 26-11: «Coliseum Coins · Dec 2017»), so the two-part chip fits the hub cards
+    const month = `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${y}`;
     return coinWallet('coliseum', `Coliseum Coins · ${month}`, colosseum().coinsOf(), s.kept ? 'The kept season' : 'The season of your Story');
   } catch (e) { return null; }
 }
