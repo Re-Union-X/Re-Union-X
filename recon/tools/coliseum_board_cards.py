@@ -43,7 +43,8 @@ both-gender board) are tried in turn; a preview that does not fit the screenshot
 picture, or one larger than the canvas) gives no card (art 'none'); a board with a JP candidate but no usable wiki preview
 to prove it (class C) gets no card either (art 'classC:<file>', the JP card fitted to the screenshot for review), drawn on
 --classc-sheet when given. A preview fitted at a scale off by more than SCALE_TOL (the whole card resampled by the wiki
-editor, e.g. 288 px) keeps its native size, centred on its fitted place (never resampled).
+editor, e.g. 288 px) keeps its native size, centred on its fitted place (never resampled); when it is the whole card
+(the gold card Board_0003 with its frame baked in) only its picture is kept (strip_card, user 26-11: no double frame).
 """
 import argparse
 import json
@@ -244,6 +245,43 @@ def place(pic, u, v):
     return out, (x, y)
 
 
+def strip_card(pic, board, lo=16, hi=60, band=10, speck=40, gate=30):
+    """the picture of a preview that is the whole card (the client gold card Board_0003 with the picture, shrunk by the wiki
+    editor, e.g. to 288 px) without the preview's own gold background and frame, at the preview's native size (user 26-11:
+    no double frame inside the gold, no upscaling). The gold card is shrunk to the preview size and compared pixel by pixel:
+    alpha = 0 below `lo` (mean RGB sum difference), 1 above `hi`, linear between (soft edges, the colour unmixed from the
+    gold behind it); the frame band (`band` px from the card edge, rounded corners included) is cleared, specks smaller
+    than `speck` px dropped, holes inside the picture (gold medal parts like the card) filled with the preview pixels.
+    None when the preview is not a whole card (median difference in its frame band above `gate`; 14-18 for the 2018
+    previews, 100 and more for a picture on transparency)."""
+    from scipy import ndimage
+    Bi = np.asarray(board.convert('RGBA').resize(pic.size, Image.LANCZOS), dtype=np.float32)
+    P = np.asarray(pic.convert('RGBA'), dtype=np.float32)
+    d = np.abs(P[..., :3] - Bi[..., :3]).sum(-1)
+    dist = ndimage.distance_transform_edt(np.pad(Bi[..., 3] >= 250, 1))[1:-1, 1:-1]
+    ring = (dist >= 1) & (dist < band)
+    if not ring.any() or np.median(d[ring]) > gate:
+        return None
+    a = np.clip((d - lo) / (hi - lo), 0, 1)
+    a[dist < band] = 0
+    lab, n = ndimage.label(a > 0)
+    if n:
+        sz = ndimage.sum(np.ones_like(a), lab, range(1, n + 1))
+        a[np.isin(lab, np.nonzero(sz < speck)[0] + 1)] = 0
+    a[ndimage.binary_fill_holes(a >= 1)] = 1
+    F = P[..., :3].copy()
+    m = (a > 0) & (a < 1)
+    F[m] = (P[..., :3][m] - (1 - a[m])[:, None] * Bi[..., :3][m]) / a[m][:, None]
+    F[a == 0] = 0
+    return Image.fromarray(np.dstack([np.clip(np.round(F), 0, 255), np.round(a * 255)]).astype(np.uint8), 'RGBA')
+
+
+def board_card(jp):
+    """the client gold card Board_0003 (JP 4.3.1 img/sphere_board), None when missing"""
+    p = os.path.join(jp, 'img', 'sphere_board', 'Board_0003.png')
+    return rgba(p) if os.path.exists(p) else None
+
+
 def layout_file(wiki, stem):
     for name in ('Coliseum_Board_-_%s_KHUX.png' % stem, 'Coliseum_Board_-_%s.png' % stem):
         p = os.path.join(wiki, 'layout', name)
@@ -331,6 +369,12 @@ def card(bid, wiki, jp, cal):
             if not res['preview']['scaleOk']:
                 # a resampled preview (the whole card at another size): its native pixels centred on the fitted place
                 u, v = u + pic.width * (pv['scale'] - 1) / 2, v + pic.height * (pv['scale'] - 1) / 2
+                gold = board_card(jp)
+                cut = strip_card(pic, gold) if gold is not None else None
+                if cut is not None:
+                    # the whole card shrunk: only its picture, without the preview's own gold background and frame
+                    pic = cut
+                    res['preview']['stripped'] = True
             img, pos = place(pic, u, v)
             res.update(source='loc', art='loc', diff=pv['diff'], image=img, pos=list(pos))
         elif found:

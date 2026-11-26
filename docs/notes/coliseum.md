@@ -359,6 +359,12 @@ only), imported by `build-resources.ps1` like the raid / event board cards.
   cards: the 26-11 Part 1 cards (y = 12, bottom edge) are 6-7 px lower than the screenshots show (one canvas origin per
   screenshot size taken from the 6★ Cid screenshot, whose card is 6 px higher than in the other 1280 x 544 ones). Kept as
   approved (user 26-11, after a side-by-side); `--ids part1` rebuilds them into a scratch folder and reports both places.
+- Later seasons, user review 26-11: the 2018 khuxwiki previews (288 x 287) are the whole card shrunk, so the card showed a
+  second gold frame inside the gold («horrible, it must be removed»). `strip_card` subtracts the client gold card Board_0003
+  shrunk to the preview size and keeps only the picture (the preview's gold background and frame band made transparent, soft
+  edges unmixed from the gold), native pixels, at (9, 9); a preview whose frame band does not match the gold card is left
+  alone. Boards whose only worldwide sources are smaller than the card picture (116 px outfit icons, 144 px previews, ~141 px
+  screenshot cards) get no card rather than an upscaled one.
 
 ## Open points of 25-11 closed (26 November 2026, resources 187 / master revision 395)
 

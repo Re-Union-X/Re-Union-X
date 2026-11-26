@@ -84,7 +84,14 @@ with tempfile.TemporaryDirectory() as tmp:
     other = b_card.copy()
     ImageDraw.Draw(other).rectangle((90, 40, 200, 150), fill=(200, 170, 120, 255))  # a detail missing (gold-like colours)
     other.save(os.path.join(jp, 'img', 'sphere_incentive', '2200046.00000002.png'))  # a revision name
-    Image.new('RGBA', (S, S), GOLD + (255,)).save(os.path.join(jp, 'img', 'sphere_board', 'Board_0003.png'))
+    # the client gold card: rounded corners, a light frame line, a vertical gold gradient
+    gold_card = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(gold_card)
+    gd.rounded_rectangle((0, 0, S - 1, S - 1), radius=18, fill=(215, 178, 102, 255))
+    gd.rounded_rectangle((3, 3, S - 4, S - 4), radius=15, fill=(255, 255, 247, 255))
+    for yy in range(6, S - 6):
+        gd.line((6, yy, S - 7, yy), fill=(236, 197 - yy // 20, 110 - yy // 10, 255))
+    gold_card.save(os.path.join(jp, 'img', 'sphere_board', 'Board_0003.png'))
 
     cbc.BOARDS = {2200001: ('Ref', '', 'Ref', None), 2210037: ('Board A', 'M', 'A', '2200037.png'),
                   2210044: ('Board B', 'F', 'B', '2200046.png'), 2210191: ('Hand', '', 'A', None)}
@@ -168,8 +175,10 @@ with tempfile.TemporaryDirectory() as tmp:
     e_pic = picture(200, 290, 7)
     screenshot(canvas_with(picture(200, 290, 8), (50, 8)), 0.6, (40, 30)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_E_KHUX.png'))
     e_pic.save(os.path.join(wiki, 'preview', 'Preview_-_E.png'))
-    # F: the preview is the whole card resampled to 288 px (scale 1.0625): native pixels centred on the fitted place
-    f_card = canvas_with(picture(306, 306, 9), (0, 0))
+    # F: the preview is the whole card (client gold card AND picture) resampled to 288 px (scale 1.0625): the gold card and
+    # its frame are cut away, the picture keeps its native pixels, centred on the fitted place
+    f_card = gold_card.copy()
+    f_card.alpha_composite(canvas_with(picture(200, 200, 9), (50, 50)))
     screenshot(f_card, 0.7, (50, 30), (800, 400)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_F_KHUX.png'))
     f_pic = f_card.resize((288, 288), Image.LANCZOS)
     f_pic.save(os.path.join(wiki, 'preview', 'Preview_-_F.png'))
@@ -202,7 +211,16 @@ with tempfile.TemporaryDirectory() as tmp:
     check(r3[2210101]['art'] == 'loc' and r3[2210101]['pos'] == [9, 9] and abs(r3[2210101]['preview']['scale'] - 306 / 288) < 0.02,
           'F: resampled preview centred %r' % ((r3[2210101]['pos'], r3[2210101]['preview']['scale']),))
     f_out = np.asarray(Image.open(os.path.join(loc3, 'img', 'sphere_incentive_coli', '2210101.png')))
-    check(np.array_equal(f_out[9:297, 9:297], np.asarray(f_pic)), 'F: native pixels, no resampling')
+    fp = np.asarray(f_pic)
+    inner = (slice(9 + 60, 9 + 220), slice(9 + 60, 9 + 220))  # inside the picture (50..250 of 306 = 47..235 of 288)
+    pin = (slice(60, 220), slice(60, 220))
+    check(np.array_equal(f_out[inner][..., :3], fp[pin][..., :3]) and f_out[inner][..., 3].min() == 255, 'F: native picture pixels, opaque')
+    check(f_out[9 + 3, 9 + 140, 3] == 0 and f_out[9 + 140, 9 + 284, 3] == 0, 'F: the preview frame cut away')
+    check(f_out[9 + 20, 9 + 20, 3] == 0 and f_out[9 + 270, 9 + 140, 3] == 0, 'F: the preview gold background cut away')
+    check(f_out[..., 3][:9].max() == 0 and f_out[..., 3][297:].max() == 0, 'F: nothing outside the native 288 px')
+    st = cbc.strip_card(f_pic, gold_card)
+    check(st.size == f_pic.size, 'strip_card keeps the native size')
+    check(cbc.strip_card(picture(288, 288, 12), gold_card) is None, 'strip_card: a picture without the gold card is left alone')
     g = cbc.card(2210095, wiki, jp, cal)
     check(g['art'] == 'classC:2200115.png' and g['diff'] < 8, 'G: preview larger than the canvas, class C %r' % ((g['art'], g['diff']),))
     check(os.path.exists(sh3) and os.path.exists(shc), 'main and class C sheets')
