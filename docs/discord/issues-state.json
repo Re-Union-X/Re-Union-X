@@ -96,7 +96,7 @@
    "thread": "1569614694765961252",
    "msg": "1569614694765961252",
    "group": "OPEN",
-   "hash": "4cab9f7fbe362813",
+   "hash": "974204f5972c750a",
    "name": "I-059 · Colosseum not playable"
   },
   "I-102": {
@@ -823,8 +823,8 @@
   "I-328": {
    "thread": "1575442363940208773",
    "msg": "1575442363940208773",
-   "group": "OPEN",
-   "hash": "c53c91a379282add",
+   "group": "CLOSED",
+   "hash": "d368e27608c5d6f2",
    "name": "I-328 · Coliseum Catalog filters"
   }
  }
