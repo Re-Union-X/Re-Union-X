@@ -713,7 +713,7 @@ function detailPage(index, evStageId, ctx = {}) {
       // a quest block (detail-cards.js questBlock, user 26-11: the quest tables lined up): its stats as chips (AP gold, level cyan),
       // then Objectives and Drops, two tables whose first columns have the same width
       const stats = [['AP', ap != null && ap !== '' ? cards.val(esc(ap)) : ''], ['Level', s.wikiLv != null && s.wikiLv !== '' ? cards.cyan(esc(s.wikiLv)) : ''], ['Target', esc(s.target || ''), 'tleg'],
-        ['Where', esc([s.world, s.room].filter(Boolean).join(' · ')), 'camp']].filter(([, v]) => v !== '');
+        ['Where', esc([s.world, s.room].filter(Boolean).join(' · ')), cards.LOCATION_ICON]].filter(([, v]) => v !== '');
       const obj = info && info.objectives.length ? ['done', 'Objectives', `<table class="tt qtt ob"><tr><th>Objective</th><th>Reward</th></tr>${info.objectives
         .map((o) => `<tr><td>${esc(o.text)}</td><td class="dr">${esc(o.reward || '—')}</td></tr>`).join('')}</table>`] : null;
       // Drops (user 26-11: «a proper section»): one row per item (icon of its kind, name, amount, rate), the reconstructed data

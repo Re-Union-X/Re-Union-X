@@ -640,6 +640,8 @@ const STATE_WHY = {
 // settimana mostrata, poi la risposta per questo banner in evidenza (HTML, testi gia' sicuri)
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const niceDay = (iso) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}, ${iso.slice(0, 4)}`;
+// the notice that explains the Story calendar (routes-info-album.js RULES_NOTICE, «Your Story is your calendar»; #<slug of its title>)
+const SHOP_NOTICE_LINK = '/web/notices#differences-from-the-original-game';
 // «Mar 9 – 15, 2017», «Mar 9 – Apr 5, 2017», «Dec 29, 2016 – Jan 4, 2017»
 function spanDays(from, to) {
   if (from === to) return niceDay(from);
@@ -668,13 +670,16 @@ function laterWhy(banner, w, ctx) {
   }
   // the box in short sentences, as the «Your Story is your calendar» part of the notices (routes-info-album.js RULES_NOTICE, user
   // 26-11: the period's weeks start on its first day, the switch is every real Monday)
-  const story = w.qFrom ? `Your Story is at Quests ${w.qFrom}-${w.qTo}` : 'Your Story is in this period';
+  // why a Story range gives dates (user 26-11): the Shop follows the Story, each range of Story Quests is a period of the original game;
+  // the notice that explains it in full is linked («Your Story is your calendar» in «Differences from the original game»)
+  const at = w.qFrom ? `You are at Story Quests ${w.qFrom}-${w.qTo}` : 'Your Story is in this period';
   const weeks = `${w.n} week${w.n === 1 ? '' : 's'}`;
   return '<b>How the Shop works</b>'
-    + `<p>${story}: the Shop shows the banners of <b>${spanDays(w.day, w.periodEnd)}</b> (<b>${weeks}</b> of the original calendar).</p>`
-    + (w.n > 1 ? `<p>It shows one of those weeks at a time: now <b>${spanDays(w.from, w.to)}</b>.</p>`
-      + `<p>Every Monday (08:00 UTC) it moves on to the next one; after the ${ordinalWeek(w.n)} it starts again from the first.</p>`
+    + '<p>On this server the Shop follows your Story, not today\'s date: each range of Story Quests matches a period of the original game.</p>'
+    + `<p>${at} → the original period <b>${spanDays(w.day, w.periodEnd)}</b> (${weeks}), so the Shop offers the banners of those weeks.</p>`
+    + (w.n > 1 ? `<p>It shows one week at a time (now <b>${spanDays(w.from, w.to)}</b>) and moves to the next every Monday (08:00 UTC); after the last week it starts again.</p>`
       : '<p>The Shop shows that week until your Story reaches the next period.</p>')
+    + `<p class="n">Details: <a href="${SHOP_NOTICE_LINK}">«Differences from the original game» notice ›</a></p>`
     + `<p class="v">${verdict}</p>`;
 }
 // Codice condiviso (ES5, XMLHttpRequest: WebView di Android 9) dei pulsanti «Keep in the Shop» / «Remove from the Shop»

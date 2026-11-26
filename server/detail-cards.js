@@ -15,6 +15,9 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const icon = (k) => `<img class="ic" src="/web/special/icon/${k}.png" alt="">`;
 const CROWN = '<img class="ic cw" src="/web/special/icon/done.png" alt="Completed" title="Completed">';
 const NG = '<span class="ng">NOT ORIGINAL</span>';
+// a map pin (user 26-11: «Where» needs a location icon; the icon set of the pages has none), drawn inline at the size of an icon
+const LOCATION_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff7a5c" stroke="#fff" stroke-width="1.2" '
+  + 'd="M12 2.5a6.8 6.8 0 0 0-6.8 6.8c0 4.9 6.8 12.2 6.8 12.2s6.8-7.3 6.8-12.2A6.8 6.8 0 0 0 12 2.5z"/><circle cx="12" cy="9.3" r="2.6" fill="#fff"/></svg>';
 
 const val = (t) => `<span class="v">${t}</span>`;
 const cyan = (t) => `<span class="rd">${t}</span>`;
@@ -123,7 +126,7 @@ function boardTable(rows, o = {}) {
 const questBlock = (name, stats, parts) => `<div class="qb"><h3 class="qh">${name}</h3>`
   // [label, html] a chip; [label, html, icon] a line of its own with that icon
   + (stats.some((x) => !x[2]) ? `<div class="qs">${stats.filter((x) => !x[2]).map(([k, v]) => `<span class="st"><small>${k}</small><b>${v}</b></span>`).join('')}</div>` : '')
-  + (stats.some((x) => x[2]) ? `<div class="ql">${stats.filter((x) => x[2]).map(([k, v, ic]) => `<div>${icon(ic)}<small>${k}</small><span>${v}</span></div>`).join('')}</div>` : '')
+  + (stats.some((x) => x[2]) ? `<div class="ql">${stats.filter((x) => x[2]).map(([k, v, ic]) => `<div>${String(ic).startsWith('<') ? ic : icon(ic)}<small>${k}</small><span>${v}</span></div>`).join('')}</div>` : '')
   + `<div class="qt">${parts.map(([ic, t, h, badge]) => `<h4>${icon(ic)}${t}${badge || ''}</h4>${h}`).join('')}</div></div>`;
 
 // The Keep / Remove button of the catalogs (special-pages.js .pk: gold, red to remove, the pin icon) for the pages that do not load
@@ -133,4 +136,4 @@ const KEEP_BTN_CSS = '.pk{display:inline-block;margin-top:6px;border:2px solid #
   + 'background:linear-gradient(#e0a020,#a8700a);cursor:pointer;text-decoration:none;line-height:1.5}.pk[data-on="0"]{border-color:#ffb0b0;background:linear-gradient(#ff5a5a,#d81e2e 55%,#9c1020)}'
   + '.pk .ic{display:inline-block;width:1.3em;height:1.3em;margin:0 6px 0 0;vertical-align:-4px;max-width:none}';
 
-module.exports = { CHEV, KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };
+module.exports = { LOCATION_ICON, CHEV, KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };
