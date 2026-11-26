@@ -141,4 +141,19 @@ const KEEP_BTN_CSS = '.pk{display:inline-block;margin-top:6px;border:2px solid #
   + 'background:linear-gradient(#e0a020,#a8700a);cursor:pointer;text-decoration:none;line-height:1.5}.pk[data-on="0"]{border-color:#ffb0b0;background:linear-gradient(#ff5a5a,#d81e2e 55%,#9c1020)}'
   + '.pk .ic{display:inline-block;width:1.3em;height:1.3em;margin:0 6px 0 0;vertical-align:-4px;max-width:none}';
 
-module.exports = { LOCATION_ICON, CHEV, KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };
+// The header of a catalogue list page and of the Game Catalog hub (user 26-11: «nicer titles and intros», the section-card style of
+// the detail pages): the title in gold with its icon and the NOT ORIGINAL badge (in place of the «… is an addition of this server»
+// sentence), the side (coin chip, Filters) on the right, then the intro as a card of short lines whose key words use the colour roles:
+// val (gold) what you can do, cyan counts and time. lines: html strings (already escaped). HEAD_CSS: for the pages that do not load
+// catalog-pages.js PAGE_HEAD (the Special Catalog, the Banner Catalog); phone 640x320 compact.
+const HEAD_MQ = '(max-height:480px) and (max-width:900px)'; // phone-css.js PHONE_MQ (not required here: this module stays self-contained)
+const catalogHead = ({ title, ic, lines = [], side = '', badge = true }) => `<div class="hdr chd"><h1>${ic ? icon(ic) : ''}<span>${esc(title)}</span>${badge ? NG : ''}</h1>${side}</div>`
+  + (lines.length ? `<div class="intro">${lines.map((l) => `<p>${l}</p>`).join('')}</div>` : '');
+const HEAD_CSS = '.hdr.chd{flex-wrap:nowrap}.chd h1{display:inline-flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;color:#ffcd4a;letter-spacing:.03em;margin:6px 0 4px;white-space:nowrap}'
+  + '@media (max-width:700px) and (min-height:481px){.hdr.chd{flex-wrap:wrap}.chd h1{flex:1 1 100%;white-space:normal;flex-wrap:wrap}}'
+  + '.chd h1>.ic{width:1.45em;height:1.45em;display:inline-block;margin:0;max-width:none}.chd h1 .ng{display:inline-block;background:#e0521a;border:1px solid #ffc27a;color:#fff;border-radius:10px;padding:0 8px;font-size:11px;font-weight:bold;letter-spacing:.6px;line-height:1.7}'
+  + '.intro{border:1px solid #2f6f93;border-left:4px solid #ffcd4a;border-radius:8px;background:#06283e;padding:5px 12px;margin:4px 0 10px;font-size:15px;line-height:1.5;color:#d9e6ee}'
+  + '.intro p{margin:1px 0}.intro .v{color:#ffcd4a;font-weight:bold}.intro .rd{color:#00d4ed;font-weight:bold}'
+  + `@media ${HEAD_MQ}{.chd h1{font-size:19px;margin:2px 0;gap:6px}.intro{font-size:12px;line-height:1.4;padding:3px 10px;margin:2px 0 6px}}`;
+
+module.exports = { catalogHead, HEAD_CSS, LOCATION_ICON, CHEV, KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };

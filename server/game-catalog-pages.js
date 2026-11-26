@@ -76,11 +76,11 @@ const ROW_JS = "document.getElementById('rows').addEventListener('click',functio
 
 function hubPage(cards = [], kept = []) {
   const list = KEYS.map((k) => cards.find((c) => c.key === k)).filter(Boolean);
+  const { catalogHead, val, cyan } = detailCards;
   return parts.PAGE_HEAD('Game Catalog', HUB_CSS) + '<body>'
-    + '<div class="hdr"><h1>Game Catalog</h1></div>'
-    + '<p class="n">Every catalogue of this server in one place: pick one to see everything of the original game it holds. '
-    + 'From each catalogue you can keep one past item, and it then appears in its own tab every week. The Banner Catalog is in the Shop. '
-    + 'The Game Catalog is an addition of this server.</p>'
+    + catalogHead({ title: 'Game Catalog', ic: 'done', lines: [
+      `Every catalog of this server in ${cyan('one place')}: ${val('pick one')} to see everything of the original game it holds.`,
+      `${val('Keep one past item')} in each catalog: it comes back in its own tab ${cyan('every week')}. The Banner Catalog is in the ${val('Shop')}.`] })
     + keptSection(kept)
     + `<div id="rows">${list.map(cardRow).join('') || '<p class="n">No catalogue is served yet.</p>'}</div>`
     + `<div id="pinmsg" class="pinmsg"></div><script>${ROW_JS}${KEPT_JS}</script></body></html>`;

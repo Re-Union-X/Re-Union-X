@@ -387,7 +387,9 @@ const MODES = {
     eventBoards: true,
     hint: 'Matches the start of words in event and quest names and in the rewards of the quests and Event Boards (e.g. Halloween, Marluxia, Dewey).',
     count: (e) => { const served = servedOf(e).length, all = (e.quests || []).length; return served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`; },
-    intro: () => '<p class="n">Every event of the game, by date. Tap an event for its quests. A past event can be kept in the Events tab, one at a time. The Event Catalog is an addition of this server.</p>',
+    icon: 'camp',
+    intro: () => [`Every event of the game, ${cards.cyan('by date')}: tap an event for its ${cards.val('quests, boards and rewards')}.`,
+      `${cards.val('Keep a past event')} in the Events tab, ${cards.cyan('one at a time')}.`],
     end: () => '' },
   board: { base: BOARD_BASE, title: 'Avatar Board Catalog', noun: 'entry', entries: boardEntriesOf, status: boardStatusOf, pills: BOARD_PILLS, keepJs: BOARD_KEEP_JS,
     href: boardDetailHref, button: boardKeepButton, typeOf: boardTypeOf, typeOpts: BOARD_TYPE_OPTS, showOpts: BOARD_SHOW_OPTS, placeholder: 'Board, character or outfit name',
@@ -395,9 +397,10 @@ const MODES = {
     progOpts: BOARD_PROG_OPTS, showHint: BOARD_SHOW_HINT, progHint: BOARD_PROG_HINT, search: boardSearchOf, cards: rowCards, marks: boardMarks,
     css: NO_CARD_CSS + BOARD_ROW_CSS, ncJs: BOARD_NC_JS,
     count: boardCount,
-    intro: () => '<p class="n">Every limited avatar board of the game, by the dates it was on sale or handed out. Tap an entry for its boards and prices. '
-      + 'Boards of the week are in Avatar Boards, as in the original game. A past entry can be kept, one at a time: its boards are listed in Avatar Boards again at their '
-      + 'original price. The keep of past boards and this catalogue are an addition of this server, not original. Keeping an entry never changes your kept event.</p>',
+    icon: 'avatar',
+    intro: () => [`Every limited avatar board of the game, ${cards.cyan('by the dates')} it was on sale or handed out: tap an entry for its ${cards.val('boards and prices')}.`,
+      `Boards of the week are in Avatar Boards, as in the original game.`,
+      `${cards.val('Keep a past entry')}, ${cards.cyan('one at a time')}: its boards are listed in Avatar Boards again at their original price. Your kept event never changes.`],
     end: (index) => heldSection(index) },
 };
 const plural2 = (n, w) => `${n} ${w === 'entry' ? (n === 1 ? 'entry' : 'entries') : `${w}${n === 1 ? '' : 's'}`}`;
@@ -460,8 +463,7 @@ function catalogOf(index, ctx, m) {
   const backTo = { special: '/web/special/catalog', event: `${BASE}/catalog` }[ctx.from];
   const back = m === MODES.board && backTo ? backBar(backTo) : '';
   return PAGE_HEAD(m.title, CSS + m.css) + `<body${back ? ' class="hb"' : ''}><script>${m.ncJs}</script>`
-    + `<div class="hdr"><h1>${m.title}</h1>${parts.walletChip(ctx.wallet)}${packed.length ? FILTER_BUTTON : ''}</div>`
-    + m.intro()
+    + cards.catalogHead({ title: m.title, ic: m.icon, side: `${parts.walletChip(ctx.wallet)}${packed.length ? FILTER_BUTTON : ''}`, lines: m.intro() })
     + tabsHtml
     + `<div class="sum" id="sum"><span class="n1">${plural2(n0, m.noun)}</span>${def === 'all' ? '' : ` in <b>${esc(GAME_YEARS[Number(def)].name)}</b>`} · no filters</div>`
     + '<div id="none" class="none" style="display:none"></div>'

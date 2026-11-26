@@ -258,7 +258,8 @@ check(/data-v="jewel">[^<]*<img class="ic"[^>]*jewel\.png" alt="">Jewels</.test(
 check(cp.includes('A &lt;b&gt;bold&lt;/b&gt;') && !cp.includes('<b>bold'), 'catalogo: escape del nome');
 check(cp.includes('In the Shop now') && cp.includes('VIP variant, not reproduced'), 'catalogo: stati');
 check(cp.includes(`/web/gacha/detail/${cb[0].drawMedalTypeId}`), 'catalogo: link ai dettagli');
-check(cp.includes('3 original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'catalogo: intestazione');
+check(cp.includes('<span class="rd">3 original banners</span>: tap one for its') && cp.includes('Banners unlock as you <span class="v">progress through the Story</span>; in the original game they followed the calendar.')
+  && cp.includes('<span>Banner Catalog</span><span class="ng">NOT ORIGINAL</span></h1><button type="button" class="fbtn" id="fbtn">'), 'catalogo: intestazione');
 check(cp.includes('(end date reconstructed)') && (cp.match(/end date reconstructed/g) || []).length === 1, 'catalogo: data fine ricostruita solo dove serve');
 
 const exA = { pool: { 5: [1], 4: [2, 3] }, featuredIds: [1], listIds: [1], listNames: [['Alpha', 2, { 5: [1] }]], featuredNames: [['Alpha', 1, { 5: [1] }]], weighted: [] };

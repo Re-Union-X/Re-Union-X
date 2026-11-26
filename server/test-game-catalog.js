@@ -55,8 +55,11 @@ const CARDS = pages.KEYS.map((key, i) => ({ key, title: `${key} Catalog`, href: 
   wallet: key === 'special' ? null : { ic: 'raid', label: `${key} Coins`, value: 1200 + i }, note: key === 'colosseum' ? 'The Coliseum opens at Story Quest 130' : null }));
 run('hub_page_cards', () => {
   const html = pages.hubPage([...CARDS].reverse());
-  assert.ok(html.includes('<title>Game Catalog</title>') && html.includes('<h1>Game Catalog</h1>'), 'title and header');
-  assert.ok(/<p class="n">Every catalogue of this server[^<]*Banner Catalog is in the Shop[^<]*addition of this server\.<\/p>/.test(html), 'short explanation');
+  assert.ok(html.includes('<title>Game Catalog</title>') && html.includes('<h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1>'), 'title and header');
+  // the header of the catalogue pages (detail-cards.js catalogHead, user 26-11): gold title with its icon, NOT ORIGINAL badge, intro lines
+  assert.ok(html.includes('<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1></div>'), 'header');
+  assert.ok(/<div class="intro"><p>Every catalog of this server in <span class="rd">one place<\/span>: <span class="v">pick one<\/span>[^<]*<\/p><p><span class="v">Keep one past item<\/span>[^]*?Banner Catalog is in the <span class="v">Shop<\/span>\.<\/p><\/div>/.test(html), 'short intro lines with colour roles');
+  assert.ok(!/addition of this server/.test(html), 'the badge in place of the sentence');
   assert.deepStrictEqual([...html.matchAll(/<div class="row[^"]*" id="c-([a-z]+)" data-href="([^"]+)">/g)].map((m) => [m[1], m[2]]),
     pages.KEYS.map((k) => [k, `/web/${k}/catalog`]), 'one card per catalogue, in the fixed order, the row opens the catalogue');
   for (const [i, k] of pages.KEYS.entries()) {
@@ -96,6 +99,17 @@ run('hub_kept_section', () => {
   assert.ok(html.includes('function kxRm(el)') && html.includes('location.reload()') && html.includes('<div id="pinmsg" class="pinmsg"></div>'), 'Remove posts, says so, reloads the hub');
   const empty = pages.hubPage(CARDS, []);
   assert.ok(empty.includes(`<p class="mu">${pages.KEPT_NONE}</p>`) && pages.KEPT_NONE === 'Nothing kept: pick a past item in a catalog to keep it' && !empty.includes('class="kcount"'), 'empty state');
+});
+// the shared header of the catalogue pages (detail-cards.js catalogHead, user 26-11): icon + gold title + NOT ORIGINAL badge, the side
+// (coins, Filters) on the right, the intro as short lines with the colour roles; every catalogue list page uses it
+run('catalog_head_helper', () => {
+  const dc = require('./detail-cards');
+  const h = dc.catalogHead({ title: 'X & Y', ic: 'raid', side: '<b>S</b>', lines: [`a ${dc.val('keep')} b ${dc.cyan('3 weeks')}`, 'c'] });
+  assert.strictEqual(h, '<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/raid.png" alt=""><span>X &amp; Y</span><span class="ng">NOT ORIGINAL</span></h1><b>S</b></div>'
+    + '<div class="intro"><p>a <span class="v">keep</span> b <span class="rd">3 weeks</span></p><p>c</p></div>');
+  assert.ok(!dc.catalogHead({ title: 'T', badge: false }).includes('NOT ORIGINAL') && !dc.catalogHead({ title: 'T' }).includes('class="intro"'));
+  assert.ok(/\.chd h1\{/.test(dc.HEAD_CSS) && /\.intro\{/.test(dc.HEAD_CSS) && dc.HEAD_CSS.includes('(max-height:480px) and (max-width:900px)'), 'its CSS, compact on phones');
+  assert.ok(require('./catalog-pages').PAGE_HEAD('T', '').includes(dc.HEAD_CSS), 'loaded by the catalogue pages');
 });
 run('hub_page_phone', () => {
   const html = require('./phone-css').withPhone(pages.hubPage(CARDS));
@@ -177,7 +191,7 @@ function wiring() {
     const o = web(t.respondGameCatalogWeb, '/web/catalog');
     assert.strictEqual(o.code, 200);
     const html = o.body.toString('utf8');
-    assert.ok(html.includes('<h1>Game Catalog</h1>') && html.includes('<style data-phone>'));
+    assert.ok(html.includes('<h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1>') && html.includes('<style data-phone>'));
     const keys = [...html.matchAll(/id="c-([a-z]+)"/g)].map((m) => m[1]);
     assert.deepStrictEqual(keys, ['colosseum', 'raid', 'event', ...(avatarId ? ['avatar'] : []), 'special']);
     assert.ok(/id="c-colosseum"[^]*?<div class="ct">\d+ seasons<\/div><div class="pg"><img[^>]*>Kept: Coliseum · April 2016<\/div>[^]*?<small>Coliseum Coins · April 2016<\/small>/.test(html), 'Coliseum card: seasons, kept season, its coins');

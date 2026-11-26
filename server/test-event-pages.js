@@ -313,9 +313,9 @@ const tests = {
     assert.ok(!d.includes('Your Event Coins'), 'no owned coins in the detail page');
     // the Event Coins owned on the catalogue header, next to Filters (catalog-pages.js walletChip)
     const cat = pages.catalogPage(ix, ctx({ wallet: { ic: 'camp', label: 'Event Coins', value: 1234 } }));
-    assert.ok(cat.includes('<h1>Event Catalog</h1><span class="wal"><img class="ic" src="/web/special/icon/camp.png" alt=""><small>Event Coins</small><b>1,234</b></span><button type="button" class="fbtn"'), 'Event Coins on the header');
+    assert.ok(cat.includes('<h1><img class="ic" src="/web/special/icon/camp.png" alt=""><span>Event Catalog</span><span class="ng">NOT ORIGINAL</span></h1><span class="wal"><img class="ic" src="/web/special/icon/camp.png" alt=""><small>Event Coins</small><b>1,234</b></span><button type="button" class="fbtn"'), 'Event Coins on the header');
     const av = pages.boardCatalogPage(ix, ctx({ wallet: { ic: 'avatar', label: 'Avatar Coins', value: 50 } }));
-    assert.ok(/<h1>Avatar Board Catalog<\/h1><span class="wal">[^]*?<small>Avatar Coins<\/small><b>50<\/b><\/span>/.test(av), 'Avatar Coins on the Avatar Board Catalog header');
+    assert.ok(/<span>Avatar Board Catalog<\/span><span class="ng">NOT ORIGINAL<\/span><\/h1><span class="wal">[^]*?<small>Avatar Coins<\/small><b>50<\/b><\/span>/.test(av), 'Avatar Coins on the Avatar Board Catalog header');
     assert.ok(/never expire/i.test(line) && /one balance/i.test(line), line);
     assert.ok(line.includes('2 events'), 'the set is shared by its events');
     // texts: paid now, and the two reasons a set is not handed out
@@ -388,7 +388,7 @@ const tests = {
     ix.entries[1].type = 'GEM';
     ix.entries[2].type = 'QUIZ';
     const raw = pages.catalogPage(ix, ctx()), html = pages.expandCatalog(raw);
-    assert.ok(raw.includes('<div class="hdr"><h1>Event Catalog</h1><button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button></div>'));
+    assert.ok(raw.includes('<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/camp.png" alt=""><span>Event Catalog</span><span class="ng">NOT ORIGINAL</span></h1><button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button></div>'));
     const sheet = html.slice(html.indexOf('<div class="sheet" id="sheet"'), html.indexOf('<div id="pinmsg"'));
     assert.deepStrictEqual([...sheet.matchAll(/<h4>([^<]+)<\/h4>/g)].map((m) => m[1]), ['FIND', 'SHOW', 'PROGRESS', 'EVENT BOARDS', 'TYPE']);
     assert.ok(sheet.includes('placeholder="Event, quest or reward name"') && /<div class="hint">Matches the start of words/.test(sheet));
@@ -743,8 +743,8 @@ const tests = {
     const raw = pages.boardCatalogPage(ix, ctx({ current: new Set(['B-1']) }));
     assert.ok(/Leave and re-enter Avatar Boards/.test(raw) && !/re-enter Events/.test(raw), 'the post-keep message names Avatar Boards');
     assert.ok(raw.includes('Keep in Avatar Boards') && !raw.includes('Keep in Events'));
-    assert.ok(/<h1>Avatar Board Catalog<\/h1>/.test(raw));
-    assert.ok(/addition of this server/.test(raw), 'the keep of past boards is declared');
+    assert.ok(/<h1><img class="ic" src="\/web\/special\/icon\/avatar\.png" alt=""><span>Avatar Board Catalog<\/span><span class="ng">NOT ORIGINAL<\/span><\/h1>/.test(raw));
+    assert.ok(raw.includes('<span class="ng">NOT ORIGINAL</span></h1>') && /Keep a past entry/.test(raw), 'the keep of past boards is declared (badge, user 26-11)');
     const text = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '');
     assert.ok(!/restored/i.test(text(pages.expandCatalog(raw))) && !/restored/i.test(raw), 'no «restored»');
     for (const id of [29920, 29929]) assert.ok(!/restored/i.test(pages.boardDetailPage(ix, id, ctx())));

@@ -297,7 +297,7 @@ const tests = {
   // the Raid Coins owned on the catalogue header, next to Filters (user 26-11; catalog-pages.js walletChip), never on the detail page
   wallet_header() {
     const html = catalog(index(), ctx({ wallet: { ic: 'raid', label: 'Raid Coins', value: 3456 } }));
-    assert(html.includes('<h1>Raid Catalog</h1><span class="wal"><img class="ic" src="/web/special/icon/raid.png" alt=""><small>Raid Coins</small><b>3,456</b></span><button type="button" class="fbtn"'), 'Raid Coins chip');
+    assert(html.includes('<h1><img class="ic" src="/web/special/icon/raid.png" alt=""><span>Raid Catalog</span><span class="ng">NOT ORIGINAL</span></h1><span class="wal"><img class="ic" src="/web/special/icon/raid.png" alt=""><small>Raid Coins</small><b>3,456</b></span><button type="button" class="fbtn"'), 'Raid Coins chip');
     assert(html.includes('.wal{margin-left:auto;'), 'its style');
     assert(!pages.detailPage(index(), 8100, ctx({ wallet: { ic: 'raid', label: 'Raid Coins', value: 3456 } })).includes('3,456'), 'no balance on the detail page');
     assert(!catalog(index(), ctx()).includes('class="wal"'), 'no wallet: no chip');

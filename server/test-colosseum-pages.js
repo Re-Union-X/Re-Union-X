@@ -87,7 +87,7 @@ const tests = {
     const html = pages.catalogPage(ROWS, CTX);
     assert.ok(html.startsWith('<!doctype html>'));
     assert.ok(html.includes('<title>Coliseum Catalog</title>'));
-    assert.ok(html.includes('<h1>Coliseum Catalog</h1>'));
+    assert.ok(html.includes('<h1><img class="ic" src="/web/special/icon/tleg.png" alt=""><span>Coliseum Catalog</span><span class="ng">NOT ORIGINAL</span></h1>'));
     assert.deepStrictEqual([...html.matchAll(/<div class="row [^"]*" id="q(\d+)"/g)].map((m) => Number(m[1])), [800, 900, 1000, 1100], 'one row per season, oldest first');
     assert.ok(html.includes('<img width="320" height="70" src="/web/colosseum/img/v3/800.png" alt="">'), 'the season card');
     assert.ok(rowHtml(html, 900).includes('Coliseum · May 2016'), 'season name');
@@ -167,7 +167,7 @@ const tests = {
   // BOARDS (every node of the season's boards unlocked) and TIER REWARDS (the last rewarded tier cleared), each hiding the right rows
   filters_sheet() {
     const html = pages.catalogPage(FILTER_ROWS, CTX);
-    assert.ok(html.includes('<div class="hdr"><h1>Coliseum Catalog</h1><button type="button" class="fbtn" id="fbtn">'), 'the ⚙ Filters button in the header');
+    assert.ok(html.includes('<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/tleg.png" alt=""><span>Coliseum Catalog</span><span class="ng">NOT ORIGINAL</span></h1><button type="button" class="fbtn" id="fbtn">'), 'the ⚙ Filters button in the header');
     assert.ok(html.includes('id="sheet"') && html.includes('<h4>FIND</h4>') && html.includes('id="fok"') && html.includes('Show 4 results'), 'the shared sheet');
     for (const [g, title, vals] of [['show', 'SHOW', ['all', 'now', 'can', 'kept', 'later']], ['bd', 'COLISEUM BOARDS', ['all', 'done', 'todo']], ['tr', 'TIER REWARDS', ['all', 'done', 'todo']]]) {
       const i = html.indexOf(`<h4>${title}</h4><div class="opts" data-g="${g}">`);
@@ -382,7 +382,7 @@ const tests = {
   // the Coliseum Coins of the season the Coliseum plays, with its month, on the header (user 26-11); none on the detail page
   wallet_header() {
     const html = pages.catalogPage(ROWS, { ...CTX, wallet: { ic: 'tleg', label: 'Coliseum Coins · March 2017', value: 401 } });
-    assert.ok(html.includes('<h1>Coliseum Catalog</h1><span class="wal"><img class="ic" src="/web/special/icon/tleg.png" alt=""><small>Coliseum Coins · March 2017</small><b>401</b></span><button type="button" class="fbtn"'));
+    assert.ok(html.includes('<h1><img class="ic" src="/web/special/icon/tleg.png" alt=""><span>Coliseum Catalog</span><span class="ng">NOT ORIGINAL</span></h1><span class="wal"><img class="ic" src="/web/special/icon/tleg.png" alt=""><small>Coliseum Coins · March 2017</small><b>401</b></span><button type="button" class="fbtn"'));
     const det = { boards: [], tiers: [], best: 0, ranked: [], maps: 'worldwide' };
     const d = pages.detailPage([row(900, '2016-05', 'can', { coins: 4321 })], 900, det, CTX);
     assert.ok(!d.includes('4,321') && !d.includes('<th>Coliseum Coins</th>'), 'no coin balance on the detail page');

@@ -435,8 +435,9 @@ const PAGE_NARROW_CSS = '@media (max-width:700px) and (min-height:481px){body{pa
   + 'table{width:100%;font-size:15px;table-layout:auto}th,td{padding:4px 4px;overflow-wrap:break-word}th{overflow-wrap:normal}'
   + '.ml{columns:2;column-gap:14px}.why{padding:6px 10px}.top a{display:inline-block;padding:8px 0}'
   + '.pinmsg{font-size:19px}.back{padding:9px 26px 10px}}';
-// side: HTML accanto al titolo, a destra (pulsante «⚙ Filters» del Catalog)
-function page(title, body, cls = '', side = '') {
+// side: HTML accanto al titolo, a destra (pulsante «⚙ Filters» del Catalog); head: the whole header in place of the title (the Banner
+// Catalog, detail-cards.js catalogHead, user 26-11)
+function page(title, body, cls = '', side = '', head = '') {
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<style>body{margin:0;background:#043654;color:#fff;font:17px/1.8 sans-serif;letter-spacing:.4px;padding:6px 18px 40px}'
     + 'h1{font-size:22px;margin:8px 0 4px;color:#fff}h2{color:#00d4ed;font-size:18px;margin:20px 0 6px}h2:before{content:"\\25A0  "}'
@@ -464,7 +465,7 @@ function page(title, body, cls = '', side = '') {
     + '.pinmsg{display:none;border:3px solid #5cd94a;background:#0d4a2a;border-radius:10px;padding:10px 14px;margin:10px 0;text-align:center;font:bold 22px/1.3 sans-serif;color:#fff;box-shadow:0 0 12px rgba(92,217,74,.5)}'
     + '.pinmsg small{display:block;font:15px/1.4 sans-serif;color:#e6f5ea;margin-top:5px}.pinmsg.off{border-color:#ffa500;background:#5a3a08;box-shadow:0 0 12px rgba(255,165,0,.5)}.pinmsg.err{border-color:#ff4a74;background:#5a1224;box-shadow:none}'
     + '.top{text-align:right;font-size:15px}.box{border:2px solid #ffcd4a;padding:6px 10px;margin:8px 0}' + PAGE_NARROW_CSS + '</style></head><body' + (cls ? ` class="${cls}"` : '') + '>'
-    + `${side ? `<div class="hdr"><h1>${esc(title)}</h1>${side}</div>` : `<h1>${esc(title)}</h1>`}${body}</body></html>`;
+    + (head ? `<style>${cards.HEAD_CSS}</style>${head}` : side ? `<div class="hdr"><h1>${esc(title)}</h1>${side}</div>` : `<h1>${esc(title)}</h1>`) + `${body}</body></html>`;
 }
 
 // Ultima quest della storia restaurata (spec 4.4): oltre, i banner restano bloccati «in attesa dell'aggiornamento».
@@ -957,8 +958,10 @@ function catalogPage(banners, ctx) {
   const js = CATALOG_JS.replace('__YEARS__', JSON.stringify(GAME_YEARS.map(({ phrase, dates: d }) => ({ phrase, dates: d }))))
     .replace('__PAY__', JSON.stringify(Object.fromEntries(PAY_OPTS.slice(1)))).replace('__SHOW__', JSON.stringify(Object.fromEntries(SHOW_OPTS.slice(1))))
     .replace('__KIND__', JSON.stringify(Object.fromEntries(KIND_OPTS.slice(1))));
+  const head = cards.catalogHead({ title: 'Banner Catalog', ic: 'jewel', side: '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>', lines: [
+    `${cards.cyan(`${n} original banners`)}: tap one for its ${cards.val('Medals and draw rates')}.`,
+    `Banners unlock as you ${cards.val('progress through the Story')}; in the original game they followed the calendar. ${cards.val('Keep one past banner')} in the Shop.`] });
   return page('Banner Catalog', `<style>${CATALOG_CSS}</style>`
-    + `<p class="n">${n} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
     // entry point of the Medal Gallery (I-242, medal-gallery.js): the Banner Catalog is the server's Medal page the player can
     // reach without a client change (Shop > Banner Catalog > Details); BACK of the gallery comes back here
     + `<style>${medalGallery().ENTRY_CSS}</style>${medalGallery().entryHtml()}`
@@ -975,7 +978,7 @@ function catalogPage(banners, ctx) {
     + `<h4>PAID WITH</h4><div class="opts" data-g="pay">${opts(PAY_OPTS)}</div>`
     + `<div class="foot"><a href="#" class="reset" id="freset">Reset filters</a><button type="button" class="ok" id="fok">Show ${nb}</button></div></div>`
     // the whole row opens the banner page (user 26-11, as the Raid / Event Catalog rows): a tap anywhere but on a link or button
-    + `<script>${PIN_JS}</script><script>${js}</script><script>[].forEach.call(document.querySelectorAll('.cat .b'),function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el){if(t.tagName==='A'||t.tagName==='BUTTON'||t.tagName==='INPUT')return;t=t.parentNode;}var h=el.getAttribute('data-href');if(h)location.href=h;};});</script><style>.cat .b{cursor:pointer}</style>`, '', '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>');
+    + `<script>${PIN_JS}</script><script>${js}</script><script>[].forEach.call(document.querySelectorAll('.cat .b'),function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el){if(t.tagName==='A'||t.tagName==='BUTTON'||t.tagName==='INPUT')return;t=t.parentNode;}var h=el.getAttribute('data-href');if(h)location.href=h;};});</script><style>.cat .b{cursor:pointer}</style>`, '', '', head);
 }
 
 module.exports = { spanDays,

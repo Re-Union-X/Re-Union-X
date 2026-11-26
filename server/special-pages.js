@@ -10,7 +10,7 @@ const special = require('./special');
 // (the Shop has none). Display grouping only: special.PERIODS (Launch .. Last) still drives the unlocks and the entries' periods.
 const { gameYearOf, GAME_YEARS } = require('./gacha');
 const { DETAIL_KEEP } = require('./phone-css');
-const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
+const cards = require('./detail-cards'), DC = cards; // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
 const YEAR_SPAN = '2016–2021';
 // game years a span of days touches (inclusive)
 const yearsBetween = (from, to) => { const out = []; for (let y = gameYearOf(from); y <= gameYearOf(to); y++) out.push(y); return out; };
@@ -627,9 +627,10 @@ function catalogPage(index, ctx = {}) {
     .replace('__PILL__', JSON.stringify({ kept: pillJs('kept'), can: pillJs('can') }))
     .replace('__RANK__', () => RANK_JS).replace('__MATCH__', () => MATCH_JS);
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + `<title>Special Catalog</title><style>${CSS}${NARROW_CSS}</style></head><body>`
-    + '<div class="hdr"><h1>Special Catalog</h1><button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button></div>'
-    + '<p class="n">Every Special quest of the game. Tap a quest for its versions, days and rewards. Old quests can be kept in Special, one at a time.</p>'
+    + `<title>Special Catalog</title><style>${CSS}${DC.HEAD_CSS}${NARROW_CSS}</style></head><body>`
+    + DC.catalogHead({ title: 'Special Catalog', ic: 'mog', side: '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>', lines: [
+      `Every Special quest of the game: tap a quest for its ${DC.val('versions, days and rewards')}.`,
+      `${DC.val('Keep an old quest')} in Special, ${DC.cyan('one at a time')}.`] })
     + `<div class="tabs" id="tabs">${tab('all', 'All years', YEAR_SPAN, cards.length)}${GAME_YEARS.map((g, i) => (count(i) ? tab(i, g.name, g.sub, count(i)) : '')).join('')}</div><div class="tabline"></div>`
     + `<div class="sum" id="sum"><span class="n1">${plural(nQuest, 'quest')}</span> · ${plural(nCamp, 'campaign')} · all years, no filters</div>`
     + '<div id="none" class="none" style="display:none"></div>'

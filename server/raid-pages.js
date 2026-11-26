@@ -269,8 +269,9 @@ function catalogPage(index, ctx = {}) {
     .replace('__TYPE__', labels(TYPE_OPTS)).replace('__TIER__', labels(TIER_OPTS)).replace('__SHOW__', labels(SHOW_OPTS)).replace('__PROG__', labels(PROG_OPTS)).replace('__BD__', JSON.stringify(Object.fromEntries(BOARD_OPTS.slice(1).map((o) => [o[0], `Raid Boards: ${optLabel(o)}`])))).replace('__SHOWSET__', JSON.stringify(SHOW_SETS))
     .replace('__PILL__', JSON.stringify({ kept: PILLS.kept, can: PILLS.can })).replace('__MATCH__', () => MATCH_JS);
   return PAGE_HEAD('Raid Catalog', CSS + RULE_CSS + SEC_CSS) + '<body>'
-    + `<div class="hdr"><h1>Raid Catalog</h1>${parts.walletChip(ctx.wallet)}${FILTER_BUTTON}</div>`
-    + `<p class="n">Every raid week of the game, by date. Tap a raid for its bosses, tiers and Raid Boards.${bySec.jp.length ? ' Two sections: <b>Worldwide</b> and <b>Japan only</b>.' : ''} A past raid can be kept in the Events tab, one at a time. The Raid Catalog is an addition of this server.</p>`
+    + cards.catalogHead({ title: 'Raid Catalog', ic: 'raid', side: `${parts.walletChip(ctx.wallet)}${FILTER_BUTTON}`, lines: [
+      `Every raid week of the game, ${cards.cyan('by date')}: tap a raid for its ${cards.val('bosses, tiers and Raid Boards')}.${bySec.jp.length ? ` Two sections: ${cards.val('Worldwide')} and ${cards.val('Japan only')}.` : ''}`,
+      `${cards.val('Keep a past raid')} in the Events tab, ${cards.cyan('one at a time')}.`] })
     // no Japan-only raid served (raid_config.json jpRaids.served false, user 06-11): the section tabs and the intro stay in the DOM, hidden
     + `<div class="secs${bySec.jp.length ? '' : ' hide'}" id="secs">${SECTIONS.map(secTab).join('')}</div>${jpIntro}`
     + `<div class="tabs" id="tabs">${tab('all', 'All years', YEAR_SPAN, ww.length, ww.length, bySec.jp.length, ` id="span" data-ww="${YEAR_SPAN}" data-jp="${spanOf(bySec.jp)}"`)}`
