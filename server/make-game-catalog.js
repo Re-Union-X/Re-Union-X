@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const GAME_CATALOG_EV = 5000, GAME_CATALOG_STAGE = 970000, GAME_CATALOG_URL = '/web/catalog', GAME_CATALOG_IMG_VERSION = 1;
+const GAME_CATALOG_EV = 5000, GAME_CATALOG_STAGE = 970000, GAME_CATALOG_URL = '/web/catalog', GAME_CATALOG_IMG_VERSION = 2;
 const bannerPath = (version = GAME_CATALOG_IMG_VERSION) => `/web/catalog/img/v${version}/${GAME_CATALOG_EV}.png`;
 
 // the banner row, null without the Training Grounds stage in the master

@@ -51,7 +51,7 @@ import math
 import os
 import sys
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kept_banner_badge as kept  # noqa: E402
@@ -1303,53 +1303,140 @@ def build_colosseum(out_dir, seasons=None, pieces=None):
 
 
 # ---- Game Catalog (user 26-11): the ONE catalogue banner of the Events tab (server/make-game-catalog.js, evStage 5000) ----
-# Its Details opens the hub of the Coliseum, Raid, Event, Avatar Board and Special Catalogs, so the card shows the emblem of each one,
-# all original pieces of the game UI: the Coliseum Coin (img/incentive/IncentiveIcon_17.png), the Raid Coin (cocostudio/publish/
-# SpherePointIcon_Raid.png), the Event Coin (IncentiveIcon_15.png), the Avatar Coin (IncentiveIcon_30.png) and the Moogle medal of the
-# Special quests (Medal_L_90016), in an arc on a royal blue -> violet background with gold rays, then the family finish (gold title,
-# white subtitle, TRAINING sticker, square gold frame). Local game files only (never in the repo); a missing piece is left out with a
-# WARNING. Output: server/game_data/catalog_img/5000.png (git-ignored). After a change bump GAME_CATALOG_IMG_VERSION
-# (server/make-game-catalog.js), then the master revision.
+# Its Details opens the hub of the Coliseum, Raid, Event, Avatar Board and Special Catalogs. Art («Moogle and Chirithy», user 26-11): the
+# Daybreak Town square (img/light/BG/20067) in dusk violet with a warm glow, the Moogle of the login bonus (cocostudio/publish/
+# LoginBonus_Mog.png) and Chirithy (cocostudio/publish/Chirishi.png) standing at the bottom either side of a ring of light, and on the
+# ring the five catalogue coins of the game's incentive set (Coliseum IncentiveIcon_17, Raid _16, Event _15, Avatar Coin = type 14 of
+# the worldwide 2016 bundle / coin_icons, Special _29), each with a rim light in its catalogue's colour; then the family finish (gold
+# title, white subtitle, TRAINING sticker, square gold frame). Local game files only (never in the repo); a missing piece is left out
+# with a WARNING (without the background: the blue -> violet gradient). Output: server/game_data/catalog_img/5000.png (git-ignored).
+# After a change bump GAME_CATALOG_IMG_VERSION (server/make-game-catalog.js), then the master revision.
 GAME_CATALOG_EV = 5000
 GAME_CATALOG_TITLE, GAME_CATALOG_SUB = 'GAME CATALOG', 'Tap: Training Grounds · Details: all catalogs'
-GAME_TOP, GAME_BOT = (60, 70, 190), (34, 8, 80)          # royal blue -> deep violet (apart from the five catalogue cards)
-GAME_INK = (24, 10, 70)
-GAME_TITLE_RIGHT = 392       # the title ends here: the emblems keep the right part of the card
-# (piece key, centre x, centre y, size): two coins each side of the Moogle medal (in the middle and largest), clear of the sticker
-GAME_ARC = (('raid', 462, 64, 48), ('coliseum', 470, 112, 40), ('special', 534, 88, 80), ('event', 600, 72, 46), ('avatar', 604, 114, 38))
+GAME_TOP, GAME_BOT = (60, 70, 190), (34, 8, 80)          # fallback gradient when the square is not on disk
+GAME_INK = (24, 12, 70)
+GAME_TITLE_RIGHT = 392       # the title ends here: the Moogle and the ring keep the right part of the card
+GAME_COINS = {'coliseum': 'IncentiveIcon_17.png', 'raid': 'IncentiveIcon_16.png', 'event': 'IncentiveIcon_15.png', 'special': 'IncentiveIcon_29.png'}
+GAME_AVATAR_COIN = os.path.join(REPO, 'server', 'game_data', 'coin_icons', 'avatar.png')     # make_coin_icons.py: type 14
+GAME_HUE = {'coliseum': (90, 170, 255), 'raid': (255, 70, 70), 'event': (60, 230, 210), 'avatar': (255, 206, 80), 'special': (200, 110, 255)}
+GAME_RING = (530, 76, 40, 34)          # ring of light: centre x, y, radii; the coins sit on it, special at the top, clockwise
+GAME_COIN_ORDER = ('special', 'raid', 'event', 'coliseum', 'avatar')
+GAME_COIN_SIZE = 32
+GAME_BG = '20067'
+
+
+def _game_avatar_coin():
+    """the Avatar Coin (type 14): the coin_icons copy, else the worldwide 2016 bundle, else the JP data, None when none is there"""
+    cands = [GAME_AVATAR_COIN]
+    try:
+        import private_tools
+        rw = private_tools.local_path('ref_work')
+        if rw:
+            cands.append(os.path.join(rw, 'bundle2016', 'files', 'img', 'incentive', 'IncentiveIcon_14.png'))
+    except Exception:  # noqa: BLE001 - no private paths on this PC
+        pass
+    cands.append(jp_img('incentive', 'IncentiveIcon_14.png'))
+    return next((p for p in cands if p and os.path.exists(p)), None)
 
 
 def game_pieces():
-    """{'coliseum', 'raid', 'event', 'avatar', 'special'}: paths of the original emblems (None when not on disk)"""
-    raid = None
-    try:
-        import private_tools
-        raid = private_tools.local_path('jp_data', 'cocostudio', 'publish', 'SpherePointIcon_Raid.png')
-    except Exception:  # noqa: BLE001 - no local data: no Raid Coin
-        pass
-    return {'coliseum': jp_img('incentive', 'IncentiveIcon_17.png'), 'raid': raid, 'event': event_coin_path(),
-            'avatar': avatar_coin_path(), 'special': os.path.join(MEDALS, 'Medal_L_90016.png')}
+    """paths of the original pieces (None when not on disk): the five coins by catalogue, 'moogle', 'chirithy', 'bg' (the square)"""
+    def cocos(name):
+        try:
+            import private_tools
+            return private_tools.local_path('jp_data', 'cocostudio', 'publish', name)
+        except Exception:  # noqa: BLE001 - no local data
+            return None
+    out = {k: jp_img('incentive', f) for k, f in GAME_COINS.items()}
+    out.update(avatar=_game_avatar_coin(), moogle=cocos('LoginBonus_Mog.png'), chirithy=cocos('Chirishi.png'), bg=jp_img('light', 'BG', GAME_BG + '.png'))
+    return out
+
+
+def _game_piece(path, what, height=None, size=None):
+    """an original piece cropped to its visible pixels, scaled to a height (or to a size x size square); None (WARNING) when missing"""
+    if not path or not os.path.exists(path):
+        warn('%s left out of the Game Catalog banner: %s not found' % (what, path))
+        return None
+    im = game_image(path)
+    im = im.crop(im.getbbox())
+    if height:
+        return im.resize((round(im.width * height / im.height), height), Image.LANCZOS)
+    return im.resize((size, size), Image.LANCZOS)
+
+
+def _game_screen(im, layer):
+    """a light layer screened over im"""
+    lit = Image.composite(layer.convert('RGB'), Image.new('RGB', im.size, 0), layer.getchannel('A'))
+    return ImageChops.screen(im.convert('RGB'), lit).convert('RGBA')
+
+
+def _game_glow(im, box, colour, alpha, blur):
+    g = Image.new('RGBA', im.size, colour + (0,))
+    ImageDraw.Draw(g).ellipse(box, fill=colour + (alpha,))
+    return _game_screen(im, inner_clip(g.filter(ImageFilter.GaussianBlur(blur))))
+
+
+def _game_sparkle(im, pts, colour):
+    """four-point twinkles with a soft halo"""
+    L = Image.new('RGBA', (640 * S, 140 * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(L)
+    halo = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    hd = ImageDraw.Draw(halo)
+    for x, y, r in pts:
+        X, Y, R = x * S, y * S, r * S
+        d.polygon([(X, Y - R * 3.2), (X + R * .55, Y), (X, Y + R * 3.2), (X - R * .55, Y)], fill=colour + (255,))
+        d.polygon([(X - R * 3.2, Y), (X, Y - R * .55), (X + R * 3.2, Y), (X, Y + R * .55)], fill=colour + (255,))
+        hd.ellipse((x - r * 2, y - r * 2, x + r * 2, y + r * 2), fill=colour + (150,))
+    im = _game_screen(im, halo.filter(ImageFilter.GaussianBlur(3)))
+    return Image.alpha_composite(im, L.resize((640, 140), Image.LANCZOS))
+
+
+def _game_square(path):
+    """the Daybreak Town square covering the card (dusk violet), the blue -> violet gradient when it is not on disk"""
+    if not path or not os.path.exists(path):
+        warn('background left out of the Game Catalog banner: %s not found' % path)
+        return background(GAME_TOP, GAME_BOT, ray=(255, 226, 150), centre=(530, 74), n=20, ray_alpha=30)
+    im = game_image(path)
+    k = 820 / im.width
+    im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+    x, y = int((im.width - 640) * .40), int((im.height - 140) * .25)
+    rgb = ImageEnhance.Brightness(ImageEnhance.Color(im.crop((x, y, x + 640, y + 140)).convert('RGB')).enhance(1.05)).enhance(.85)
+    return Image.blend(rgb, ImageChops.multiply(rgb, Image.new('RGB', rgb.size, (120, 110, 220))), .35).convert('RGBA')
 
 
 def game_option(style='A', pieces=None):
-    """640x140 RGBA of the Game Catalog card (evStage 5000): the five catalogue emblems in an arc, a soft glow behind them, then
-    the family finish with the title kept left of the art"""
+    """640x140 RGBA of the Game Catalog card (evStage 5000): the square at dusk, the Moogle and Chirithy, the ring with the five
+    catalogue coins, then the family finish with the title kept left of the art"""
     if style != 'A':
         raise ValueError('game style %r' % style)
     _ART_BOXES.clear()
     pieces = pieces if pieces is not None else game_pieces()
-    im = background(GAME_TOP, GAME_BOT, ray=(255, 226, 150), centre=(530, 74), n=20, ray_alpha=30)
-    glow = Image.new('RGBA', im.size, (0, 0, 0, 0))
-    ImageDraw.Draw(glow).ellipse((430, -4, 640, 150), fill=(255, 226, 255, 120))
-    im = Image.alpha_composite(im, inner_clip(glow.filter(ImageFilter.GaussianBlur(20))))
-    for key, cx, cy, size in sorted(GAME_ARC, key=lambda a: a[3]):     # the small ones first, the medal on top
-        piece = art(pieces.get(key), 128, '%s emblem' % key)
-        if piece is None:
+    im = _game_glow(_game_square(pieces.get('bg')), (420, -20, 650, 170), (255, 214, 170), 140, 28)
+    mog = _game_piece(pieces.get('moogle'), 'Moogle', height=128)
+    chi = _game_piece(pieces.get('chirithy'), 'Chirithy', height=82)
+    cx0, cy0, rx, ry = GAME_RING
+    ring = Image.new('RGBA', (640 * S, 140 * S), (0, 0, 0, 0))
+    ImageDraw.Draw(ring).ellipse(((cx0 - rx) * S, (cy0 - ry) * S, (cx0 + rx) * S, (cy0 + ry) * S), outline=(255, 236, 180, 140), width=3 * S)
+    im = _game_glow(im, (cx0 - 46, cy0 - 40, cx0 + 46, cy0 + 40), (255, 236, 200), 150, 14)
+    im = _game_screen(im, ring.resize((640, 140), Image.LANCZOS).filter(ImageFilter.GaussianBlur(1.5)))
+    for i, key in enumerate(GAME_COIN_ORDER):
+        coin = _game_piece(pieces.get(key), '%s coin' % key, size=GAME_COIN_SIZE)
+        if coin is None:
             continue
-        k = size / max(piece.width, piece.height)
-        piece = piece.resize((max(1, int(piece.width * k)), max(1, int(piece.height * k))), Image.LANCZOS)
-        im = paste_shadowed(im, piece, (cx - piece.width / 2, cy - piece.height / 2), blur=3, alpha=120, colour=(10, 0, 40))
-    return family_finish(left_shade(im, (14, 6, 50), 160, 400), GAME_CATALOG_TITLE, GAME_CATALOG_SUB, GAME_INK, GAME_TITLE_RIGHT)
+        a = -math.pi / 2 + 2 * math.pi * i / 5
+        x, y = cx0 + math.cos(a) * rx, cy0 + math.sin(a) * ry
+        rim = Image.new('RGBA', im.size, (0, 0, 0, 0))                    # a rim light in the catalogue's colour behind the coin
+        rim.alpha_composite(coin, (int(x - coin.width / 2), int(y - coin.height / 2)))
+        edge = Image.new('RGBA', im.size, GAME_HUE[key] + (0,))
+        edge.putalpha(rim.getchannel('A').filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(4)).point(lambda v: v * 200 // 255))
+        im = paste_shadowed(_game_screen(im, edge), coin, (x - coin.width / 2, y - coin.height / 2), blur=2, alpha=110, colour=(0, 0, 20))
+    shadow = dict(blur=4, alpha=150, colour=(10, 0, 30))
+    if mog is not None:
+        im = paste_shadowed(im, mog, (458 - mog.width / 2, 140 - 128 / 2 - 2 - mog.height / 2), **shadow)
+    if chi is not None:
+        im = paste_shadowed(im, chi, (604 - chi.width / 2, 140 - 82 / 2 - 6 - chi.height / 2), **shadow)
+    im = _game_sparkle(im, [(530, 76, 2.4), (486, 30, 1.4), (580, 128, 1.2)], (255, 250, 220))
+    return family_finish(left_shade(im, (14, 8, 50), 175, 420), GAME_CATALOG_TITLE, GAME_CATALOG_SUB, GAME_INK, GAME_TITLE_RIGHT)
 
 
 def build_game(out_dir, pieces=None):
