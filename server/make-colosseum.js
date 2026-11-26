@@ -301,12 +301,13 @@ function seasonRows(src, seasons = SEASONS) {
 
 // HP of a Coliseum variant at LV 300 = 3 x its base, at LV 999 = 40/11 x its own LV 300 (the variant rule, see enemyRows)
 const RULE_HP300 = 3, RULE_HP999 = 40 / 11;
-// the variant row of `id` from its base row (id - 20000) by the variant rule, null when the base has no LV 300 and LV 999 knots
+// the variant row of `id` from its base row (id - 20000) by the variant rule, null when the base has no LV 300 and LV 999 knots or
+// a knot between them (the rule is proven on knots 1/35/100/300/999 only)
 function ruleRow(id, base) {
   const n = base.validGrowth || 0, keep = [];
   for (let i = 0; i < n; i++) if (base.baseLv[i] <= 999) keep.push(i);
   const lv = keep.map((i) => base.baseLv[i]);
-  if (!lv.includes(300) || !lv.includes(999)) return null;
+  if (!lv.includes(300) || !lv.includes(999) || lv.some((l) => l > 300 && l < 999)) return null;
   const pick = (f) => keep.map((i) => (Array.isArray(base[f]) ? base[f][i] : 0));
   const hp = pick('hp').map((v, k) => (lv[k] === 300 ? v * RULE_HP300 : v));
   hp[lv.indexOf(999)] = Math.round(hp[lv.indexOf(300)] * RULE_HP999);
@@ -321,9 +322,13 @@ function ruleRow(id, base) {
 // coliseum.md «Enemy variant rule»: same level knots up to LV 999, same ATK / DEF / EXP / lux / score, same HP below LV 300, HP x3
 // at LV 300, 40/11 x that at LV 999, no munny or raid points; the rest of the row as the base, though the originals also differ in
 // score / CP / skills, which no rule gives), else the ReLux row (src.reluxEnemies, 'relux'). Original Coliseum variant ids
-// (ENEMY_RANGE) only. No source at all stops the run: an estimate ('estimate', as for the raids) is a per-enemy decision, never
-// made here. Rows of our master are never written again. out.colosseumEnemies = [{enemyId, source, label, stages}], label
-// colosseumEnemy<source> (the notice labels colosseumEnemyRule / colosseumEnemyEstimate for the non-original values).
+// (ENEMY_RANGE) only. No source at all stops the build (the rule, docs/notes/coliseum.md «Enemy rows of the served stages»): the
+// stats of such an enemy are decided per enemy as for the raids and added as a source here; 'estimate' is a reserved label for
+// those rows, never a silent path. Rows of our master are never written again. out.colosseumEnemies = [{enemyId, source, label,
+// stages}], label colosseumEnemy<source> (the notice labels colosseumEnemyRule / colosseumEnemyEstimate for the non-original
+// values). out.enemyCheck = {checked, reason, unchecked: [stageId]}: checked false when the stage enemy lists are missing or do not
+// cover every served stage (a clean machine before its first resource build: make-game-tables runs before gen_colosseum_stages /
+// import_colosseum_stages, so a hard stop there would break the build; the stage import still refuses a missing enemy).
 const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', estimate: 'colosseumEnemyEstimate' };
 function enemyRows(src, out) {
   const masterRows = src.masterEnemies || [];
@@ -340,12 +345,15 @@ function enemyRows(src, out) {
     if (!variant(e.enemyId) || have.has(e.enemyId)) continue;
     add(e.enemyId, schemaRow('enemy', e, validMap(e, ENEMY_VALID)), '113', []);
   }
+  const served = out.colosseumStage.flatMap((cs) => cs.stageId.slice(0, cs.validStage));
+  out.enemyCheck = { checked: false, reason: 'no stage enemy lists', unchecked: served };
   if (src.stageEnemies) {
     const need = new Map(); // enemyId -> [stageId]
+    const unchecked = [];
     for (const cs of out.colosseumStage) {
       for (const sid of cs.stageId.slice(0, cs.validStage)) {
         const ids = src.stageEnemies[sid];
-        if (!ids || !ids.length) throw new Error(`colosseum: stage ${sid} (season ${cs.colosseumStageId}) has no enemy list (stage import report, generated report, JP stage parse)`);
+        if (!ids || !ids.length) { unchecked.push(sid); continue; }
         for (const id of ids) { if (!need.has(id)) need.set(id, []); if (!need.get(id).includes(sid)) need.get(id).push(sid); }
       }
     }
@@ -360,8 +368,10 @@ function enemyRows(src, out) {
       if (e113) add(id, schemaRow('enemy', e113, validMap(e113, ENEMY_VALID)), '113', stages);
       else if (rule) add(id, rule, 'rule', stages);
       else if (rx) add(id, schemaRow('enemy', rx, validMap(rx, ENEMY_VALID)), 'relux', stages);
-      else throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no base ${id - 20000} for the variant rule, no ReLux row): an estimate is needed`);
+      else throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no base ${id - 20000} for the variant rule, no ReLux row): `
+        + 'its stats are decided per enemy as for the raids (label colosseumEnemyEstimate), see docs/notes/coliseum.md «Enemy rows of the served stages»');
     }
+    out.enemyCheck = unchecked.length ? { checked: false, reason: `${unchecked.length} served stages without an enemy list`, unchecked } : { checked: true, reason: '', unchecked: [] };
   }
   out.enemy.sort(byKey('enemyId'));
   out.colosseumEnemies = out.enemy.map((r) => added.get(r.enemyId));
@@ -463,9 +473,13 @@ function patch(masterDir, opts = {}) {
   // KHUX_COLOSSEUM_RELUX_ENEMIES / DEFAULT_RELUX_ENEMIES); without the lists only the 1.1.3 variants are checked (the stage import
   // still refuses a stage with an enemy missing from the master). With opts.src (tests) the local files are never read.
   const stageEnemies = opts.stageEnemies || (opts.src ? null : readStageEnemies(stageEnemyFiles()));
-  if (!stageEnemies && !opts.src) console.warn(`colosseum: no stage enemy lists (${stageEnemyFiles().join(', ')}): the stage enemies are not checked`);
   const reluxEnemies = opts.reluxEnemies || (opts.src ? [] : readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMIES || DEFAULT_RELUX_ENEMIES) || []);
   const out = seasonRows({ ...src, relux, masterEnemyIds: master.enemy.map((r) => r.enemyId), masterEnemies: master.enemy, stageEnemies, reluxEnemies }, seasons);
+  // the flag of an unchecked run (out.enemyCheck); make-game-tables prints it as a banner. Not a stop: on a clean machine the
+  // stage files come after this run (build-resources.ps1), the stage import then refuses a missing enemy
+  if (!out.enemyCheck.checked && !opts.src) {
+    console.warn(`colosseum: WARNING stage enemies NOT checked: ${out.enemyCheck.reason} (${stageEnemyFiles().join(', ')}); run build-resources, then rebuild the master`);
+  }
   const stageIds = new Set(out.stage.map((r) => r.stageId));
   const clash = master.stage.find((r) => stageIds.has(r.stageId));
   if (clash) throw new Error(`colosseum: stageId ${clash.stageId} already in the master (id ${clash.id})`);

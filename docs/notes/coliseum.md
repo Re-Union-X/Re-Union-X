@@ -152,6 +152,15 @@ Web and data side; details and per-id tables in the private dossier.
   40/11 x own LV 300 (81 of 95), no munny or raid points (proven). Applied to the 202 missing ids: 3 derivable by
   the rule, 34 month-specific copies of a 1.1.3 row (probable), 15 weak (2019 ids), **150 unknown** (no original row
   for the model anywhere on disk; KHUX shows no enemy HP numbers, so only estimates as for raids).
+- **Enemy rows of the served stages** (Part 2, `server/make-colosseum.js` `enemyRows`; the rule since 26 November 2026).
+  Every enemy id of every served stage must be in the master. An id missing from it gets a row from the first source that
+  has it: the 1.1.3 row, else the variant rule above against its base row (id - 20000; only with knots 1/35/100/300/999,
+  no knot between LV 300 and 999), else the ReLux row. Original Coliseum variant ids (20000-29999) only. **An id with no
+  1.1.3 row, no variant-rule base and no ReLux row stops the build**: its stats are then decided per enemy, as for the
+  raids (deduced from comparable original rows), and added as a source labelled `colosseumEnemyEstimate`. `estimate` is a
+  reserved label: nothing is ever estimated silently. The check needs the stage enemy lists (stage import report,
+  generated report, JP 4.3.1 parse); without them (a clean machine before its first resource build) the run is flagged
+  as unchecked, not stopped, and `make-game-tables.js` prints a banner. In 2026-11, 93 ids over 130 stages: none missing.
 - **Tier rewards.** The 1.1.3 master does carry the tier medals (reward slots 1-2, Moogle and Cid medals) and matches
   the 2016-05 notice exactly (proven); 2016-12 .. 2018 from the wiki templates (probable). Reward type 32 appears only on
   the endless tier and on a trailing 0-round row of every season (an end / no-reward marker).

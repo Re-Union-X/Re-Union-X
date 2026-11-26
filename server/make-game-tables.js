@@ -1140,7 +1140,15 @@ require('./make-campaigns').patch(OUT);
 // Coliseum (Coliseum Part 1, make-colosseum.js): the seasons 2016-04 .. 2016-07 from the 1.1.3 master (KHUX_COLOSSEUM_SRC):
 // colosseumStage, colosseum, stage kind 3 (id 81001+), ranking 4009-4012 + rankingReward, Coliseum boards (sphere 2200001+).
 // KHUX_COLOSSEUM=0 turns it off
-require('./make-colosseum').patch(OUT, { artFile: path.join(__dirname, 'game_data', 'colosseum_board_art.tsv') });
+// The enemies of the served Coliseum stages are checked only when the stage enemy lists are on disk (make-colosseum enemyCheck);
+// an unchecked run is not a stop (the stage files are written later by build-resources.ps1) but is shown as a banner
+{
+  const coli = require('./make-colosseum').patch(OUT, { artFile: path.join(__dirname, 'game_data', 'colosseum_board_art.tsv') });
+  if (coli && !coli.enemyCheck.checked) {
+    console.warn(['', '#'.repeat(78), `# COLISEUM: stage enemies NOT checked (${coli.enemyCheck.reason}).`,
+      '# Run build-resources.ps1 (stage files + reports), then make-game-tables again.', '#'.repeat(78), ''].join('\n'));
+  }
+}
 // Limited, returning and level avatar boards (Events Part 7, avatar-boards.js): the 6 skills of the donated master (KHUX_DONOR_MASTER,
 // label skillFromDonor) into skill.json, then the rows of the private board records (KHUX_AVATAR_BOARDS; without it no board)
 // after the Raid and Event Boards: sphere 5000000+ (event_ids.json avatarBoards) and the level boards 2100119-2100126;

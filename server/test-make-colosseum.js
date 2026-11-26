@@ -541,12 +541,41 @@ test('stage enemies: 1.1.3 row, then the variant rule, then the ReLux row; a mis
   // ids of the master are never written again
   assert.ok(!out.enemy.some((r) => masterEnemies.some((m) => m.enemyId === r.enemyId)));
   // no source at all (no 1.1.3 row, no base row for the rule, no ReLux row): stops, never a substitute
-  assert.throws(() => mc.seasonRows({ ...src, stageEnemies: { ...stageEnemies, 20150702: [20070] } }, S800), /20070.*20150702/);
+  assert.throws(() => mc.seasonRows({ ...src, stageEnemies: { ...stageEnemies, 20150702: [20070] } }, S800),
+    /20070.*20150702.*decided per enemy as for the raids.*docs\/notes\/coliseum\.md/);
   // a missing non-variant id stops too (original Coliseum variant ids only)
   assert.throws(() => mc.seasonRows({ ...src, stageEnemies: { ...stageEnemies, 20150702: [161020017] } }, S800), /161020017/);
-  // a served stage without its enemy list stops (the stage sources must cover every served stage)
-  const short = { ...stageEnemies }; delete short[20150710];
-  assert.throws(() => mc.seasonRows({ ...src, stageEnemies: short }, S800), /20150710/);
+  assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] });
+});
+
+test('enemyCheck: unchecked when the stage enemy lists are missing or incomplete (a flag, not a stop)', () => {
+  const none = mc.seasonRows({ ...fixture() }, S800);
+  assert.strictEqual(none.enemyCheck.checked, false);
+  assert.match(none.enemyCheck.reason, /no stage enemy lists/);
+  assert.strictEqual(none.enemyCheck.unchecked.length, 10);
+  const lists = Object.fromEntries(Array.from({ length: 9 }, (_, i) => [20150701 + i, [20001]]));
+  const part = mc.seasonRows({ ...fixture(), stageEnemies: lists }, S800);
+  assert.deepStrictEqual(part.enemyCheck, { checked: false, reason: '1 served stages without an enemy list', unchecked: [20150710] });
+  // patch returns the flag (make-game-tables prints the banner)
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
+  try {
+    const src = fixture(); delete src.masterEnemyIds;
+    fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify([{ enemyId: 20001 }]));
+    assert.strictEqual(mc.patch(dir, { src, seasons: S800 }).enemyCheck.checked, false);
+    assert.strictEqual(mc.patch(dir, { src, seasons: S800, stageEnemies: { ...lists, 20150710: [20001] } }).enemyCheck.checked, true);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ruleRow: null without the LV 300 / LV 999 knots or with a knot between them', () => {
+  const b = (knots) => knotRow(50, 'Base Foe', knots, knots.map((l) => l * 10), knots.map((l) => l));
+  assert.ok(mc.ruleRow(20050, b([1, 35, 100, 300, 999])));
+  assert.strictEqual(mc.ruleRow(20050, b([1, 35, 100, 300])), null, 'no LV 999');
+  assert.strictEqual(mc.ruleRow(20050, b([1, 35, 100, 999])), null, 'no LV 300');
+  assert.strictEqual(mc.ruleRow(20050, b([1, 35, 100, 300, 500, 999])), null, 'a knot between LV 300 and LV 999');
+  // no rule row: the id falls through to the ReLux row
+  const src = { ...fixture(), masterEnemies: [{ enemyId: 20001 }, b([1, 35, 100, 300])], reluxEnemies: [knotRow(20050, 'ReLux Foe', [1, 999], [1, 2], [1, 2])],
+    stageEnemies: Object.fromEntries(Array.from({ length: 10 }, (_, i) => [20150701 + i, [20001, 20050]])) };
+  assert.strictEqual(mc.seasonRows(src, S800).colosseumEnemies.find((e) => e.enemyId === 20050).source, 'relux');
 });
 
 test('readStageEnemies: the import report, then the generated report, then the JP parse', () => {
@@ -589,6 +618,7 @@ test('real_part2_enemies (every enemy id of the served stages)', () => {
     fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
     const out = mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMIES || mc.DEFAULT_RELUX_ENEMIES) });
     assert.strictEqual(out.colosseumStage.length, 13);
+    assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] }, 'every served stage checked');
     const after = new Map(JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => [r.enemyId, r]));
     const before = new Set(masterRows.map((r) => r.enemyId));
     const served = out.colosseumStage.flatMap((r) => r.stageId.slice(0, r.validStage));
