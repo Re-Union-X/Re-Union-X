@@ -133,6 +133,14 @@ if ($LASTEXITCODE) { throw 'gen_colosseum_stages failed' }
 # (make-colosseum.js) into server\game_data\colosseum_img; a season without its card shows an empty frame in the Catalog
 python -I recon\tools\make_special_banners.py --section colosseum
 if ($LASTEXITCODE) { throw 'make_special_banners --section colosseum failed' }
+# Coliseum Catalog board cards (26-11, server images, git-ignored): the Coliseum Board card pictures of BOARD_ART (the list
+# server\game_data\colosseum_board_art.tsv written by make-colosseum.js, the same sources as the game cards imported below) made
+# small for the web pages into server\game_data\colosseum_board_img + cards.json; a card with no source stops the build (--strict)
+if (Test-Path server\game_data\colosseum_board_art.tsv) {
+  python -I recon\tools\make_avatar_card_web.py --tsv server\game_data\colosseum_board_art.tsv --jp "$jpData" `
+    --b16 "$refWork\bundle2016\files" --loc "$D\raid_loc" --out server\game_data\colosseum_board_img --all --strict
+  if ($LASTEXITCODE) { throw 'make_avatar_card_web (Coliseum Board web cards) failed' }
+}
 # Coliseum round stages cl_stg<stageId>.bin + _00.bin of the served seasons (master colosseumStage rows), WW 2016 copy
 # first, then JP 4.3.1 (Coliseum Part 1 Task 4), then the generated ones; a stage that fails its checks stops the build.
 # Report $sg\colosseum_stages.json

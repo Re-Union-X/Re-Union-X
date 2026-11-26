@@ -78,6 +78,31 @@ try:
     assert rep3['written'] == [2100119, 5000001, 5000163, 5000165, 5000999], rep3
     assert mac.card_id('img/sphere_incentive/5000001.png') == 5000001
     assert mac.card_id('img/sphere_incentive/*.png') is None and mac.card_id('img/wipe/wipe_2.png') is None
+
+    # --all (the Coliseum Board cards: every row of a board list, the avatar index is not read) and --strict (a card with no
+    # source stops the run: exit 2, the resources build fails loudly); the other cards are still written
+    out2 = os.path.join(tmp, 'out2')
+    args = ['--tsv', tsv, '--jp', jp, '--loc', loc, '--b16', b16, '--out', out2, '--index', index, '--all']
+    assert mac.main(args) == 0, 'missing cards only warn without --strict'
+    assert json.load(open(os.path.join(out2, 'cards.json'), encoding='utf8'))['ids'] == [2100119, 5000001, 5000163, 5000165, 5000999]
+    assert mac.main(args + ['--strict']) == 2, '--strict: a card without source fails'
+    assert os.path.isfile(os.path.join(out2, '5000163.png')), 'the found cards are written anyway'
+    ok_tsv = os.path.join(tmp, 'ok.tsv')
+    with open(ok_tsv, 'w', encoding='utf8') as f:
+        f.write('img/sphere_incentive/2200002.png\tloc\t=img/sphere_incentive_av/2500016.png\n')
+    assert mac.main(['--tsv', ok_tsv, '--loc', loc, '--jp', jp, '--b16', b16, '--out', out2, '--all', '--strict']) == 0
+    assert json.load(open(os.path.join(out2, 'cards.json'), encoding='utf8'))['ids'] == [2200002]
+
+    # a b16 card is the game's BTF texture, not a PNG (2200001 6★ Cid): decoded with btf.py, then resized
+    import btf
+    os.makedirs(os.path.join(b16, 'img', 'sphere_incentive'))
+    with open(os.path.join(b16, 'img', 'sphere_incentive', '2200001.png'), 'wb') as f:
+        f.write(btf.encode(Image.new('RGBA', (306, 306), (200, 100, 0, 255))))
+    with open(ok_tsv, 'w', encoding='utf8') as f:
+        f.write('img/sphere_incentive/2200001.png\tb16\n')
+    assert mac.main(['--tsv', ok_tsv, '--loc', loc, '--jp', jp, '--b16', b16, '--out', out2, '--all', '--strict']) == 0
+    with Image.open(os.path.join(out2, '2200001.png')) as im:
+        assert im.size == (160, 160) and im.convert('RGBA').getpixel((80, 80)) == (200, 100, 0, 255), 'BTF card decoded'
     print('test_make_avatar_card_web: OK')
 finally:
     shutil.rmtree(tmp, ignore_errors=True)

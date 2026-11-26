@@ -429,3 +429,30 @@ Resources 188, master revision 397, saves `colip2a` (August 2016), `colip2n` (No
 - Found: the season cards 1200-2000 were missing until `make_special_banners.py --section colosseum` ran (now a build step).
 - User decisions 26-11: the 30 Part 2 cards approved; the 8 Part 1 cards stay as they are (compared with the re-placed
   ones, not wanted).
+
+## Coliseum Catalog: board cards and season detail page (26 November 2026)
+
+- **Board cards on the rows** (user 26-11, as the Avatar Board Catalog): each season row shows the cards of its Coliseum
+  Boards in a strip of 44 px tiles under the progress line; a «Tier N Bonus» board carries its tier on the tile. The cards
+  are the pictures the game uses (`BOARD_ART` of `make-colosseum.js`, list `server/game_data/colosseum_board_art.tsv`),
+  made small for the web by `recon/tools/make_avatar_card_web.py --tsv server/game_data/colosseum_board_art.tsv --out
+  server/game_data/colosseum_board_img --all --strict` (same sources and resolution as `import_originals.py`: b16, the JP
+  4.3.1 file with its highest revision, the private `--loc` `img/sphere_incentive_coli/` pictures; at most 160 px, nothing
+  drawn). `--all` takes every row of the list (no avatar board index), `--strict` exits with 2 when a card has no source.
+  `build-resources.ps1` runs it next to the other Coliseum steps and stops on an error. Output git-ignored, with
+  `cards.json {version, size, ids}`; served at `/web/colosseum/board/v<version>/<sphereBoardId>.png` (numeric ids only,
+  else 404; cached, the version busts the WebView cache), read at request time (`KHUX_COLOSSEUM_BOARD_IMG` overrides the
+  folder). A board missing from `cards.json`, or a card that fails to load (`kxNb`): the neutral box.
+- **Season detail page** `/web/colosseum/season/<colosseumStageId>[?from=catalog]` (`colosseum-pages.js detailPage`, data
+  `routes-colosseum.js seasonDetail`): the «On this server» box with the row's status and Keep / Remove button; the season
+  (month, game year, tiers and AP, progress); **Coliseum Boards** (card, name, nodes unlocked / total, coins still needed =
+  `sphereMasu.spherePoint` of the locked nodes, bonus boards «Unlocks at Tier N»); **Tiers** (rounds, the endless last tier
+  as the game counts it, 999; AP; coins per round; Tier Reward coins and items; taken); **Score thresholds** (the original
+  brackets top first, the rounds needed of `rankedOf`, the prizes, reached = best round at or above the threshold); **Maps**
+  (worldwide 2016 / Japanese 4.3.1 sets / generated, `mapsOf` on `SEASONS`, the wording of the «Coliseum» notice, with a
+  link to `/web/notices#coliseum`). Unknown or unserved season: 404. BACK (from the catalogue) returns to
+  `/web/colosseum/catalog#q<id>`, which scrolls to the row; the catalogue keeps its year tab in the address (`#p<tab>`) so
+  the WebView back key returns to it (as the Raid Catalog's `#ww.2017`).
+- **Phone grid alignment** (user 26-11): a progress line of two lines («Cleared up to Tier 7, Round 1 · 401 Coliseum Coins»)
+  pushed the state pill of its card below the neighbours'. `phone-css.js` now gives `.pg` the fixed two-line height of the
+  dates of the other catalogs and the board strip a fixed 44 px height, so pills and buttons line up across a row.

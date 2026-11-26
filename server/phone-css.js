@@ -48,13 +48,16 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + `${inCards('.rp')}{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:0 0 auto}`
   + `${inCards('.pkw')},${inCards('.info>div:has(>.pk)')}{margin-top:auto;padding-top:6px}`
   + `${inCards('.pk')}{display:flex!important;align-items:center;justify-content:center;gap:6px;width:100%;box-sizing:border-box;text-align:center;white-space:normal;min-height:34px;margin:0;font-size:13px!important;line-height:1.3;padding:4px 8px!important}`
-  + `${inCards('.d')},${inCards('.rp')},${inCards('.n')}{font-size:12px}`
+  + `${inCards('.d')},${inCards('.rp')},${inCards('.n')},${inCards('.pg')}{font-size:12px}`
   // chips line up across a row (user 24-11): titles always two lines high (longer ones end in «…», the full name is on
   // the details page), dates of Event / Raid / Avatar Board cards two lines high, the same left border on every card
   // (:where = no specificity: the page's state colours .now / .pinned / .can ... still win)
   + `${inCards('.nm')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35;height:2.7em;flex:0 0 auto}`
   // dates: exactly two lines (clamped): with the phone's 110 % system font a two-line date was taller than a min-height
-  + `${inCards('.d')},${inCards('.n')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35;height:2.8em;flex:0 0 auto}`
+  // Coliseum Catalog: the progress line (.pg) as the dates (user 26-11: a two-line progress line pushed its state pill below the
+  // neighbours'), and its board card strip at a fixed height (colosseum-pages.js BOARD_CSS)
+  + `${inCards('.bcs')}{flex:0 0 auto;height:44px!important}${inCards('.bt')}{font-size:11px}`
+  + `${inCards('.d')},${inCards('.pg')},${inCards('.n')}{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35;height:2.8em;flex:0 0 auto}`
   + `${CARDS.join(',')}{border-left-style:solid!important;border-left-width:4px!important}`
   + `:where(${CARDS.join(',')}){border-left-color:#2f5d78}`
   // Banner Catalog: a card with no price line (.pay, 14 px, line-height 1.35: «Original details missing» banners) keeps its

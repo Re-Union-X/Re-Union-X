@@ -161,7 +161,7 @@ const tests = {
     assert.ok(html.includes('<style data-phone>'), 'the phone 70 % + grid layout');
     assert.ok(/<div id="rows">\s*<div class="row /.test(html), 'rows are direct children of #rows (phone grid #rows>.row)');
     assert.ok(html.includes('class="im"') && html.includes('class="info"') && html.includes('class="nm"'), 'the catalog row parts');
-    assert.ok(!html.includes('class="go"'), 'no details page: no «›»');
+    assert.ok(html.includes('class="go"'), 'a details page per season: «›» (hidden on phones)');
   },
   // Catalog filters (I-328, user 26-11): the FILTER sheet of catalog-pages.js as the Raid / Event Catalogs; SHOW (state), COLISEUM
   // BOARDS (every node of the season's boards unlocked) and TIER REWARDS (the last rewarded tier cleared), each hiding the right rows
@@ -252,6 +252,97 @@ const tests = {
     const html = withPhone(pages.catalogPage(SEASONS13, CTX));
     assert.ok(html.includes('<style data-phone>') && html.includes('.fbtn,.tab,.yc,.pk,.o,button{min-height:30px}'), 'phone tap floor of the tabs');
     assert.ok(/<div class="tabline"><\/div>(<div class="sum"|[\s\S]*?)<div id="rows">\s*<div class="row /.test(html), 'the tabs sit outside #rows: the card grid is unchanged');
+  },
+  // Board cards on the rows (26-11, as the Avatar Board Catalog): every board of the season, its web card at a versioned URL
+  // (lazy, kxNb placeholder on error), the neutral box when the card is not in cards.json, bonus boards with their tier
+  board_cards_on_rows() {
+    const ctx = { ...CTX, boardImgVersion: 77, boardCard: (id) => id !== 2200023, bonusTier: (id) => (id === 2200023 ? 10 : null) };
+    const html = pages.catalogPage(ROWS, ctx);
+    const may = rowHtml(html, 900);
+    assert.ok(may.includes('<div class="bcs">'), 'the card strip');
+    assert.ok(may.includes('<img width="44" height="44" src="/web/colosseum/board/v77/2200002.png" loading="lazy" alt="" onerror="kxNb(this)">'), 'versioned, lazy, placeholder on error');
+    assert.ok(!may.includes('/2200023.png') && may.includes('<span class="nb"></span>'), 'no card: the neutral box');
+    assert.ok(may.includes('<b class="bt">Tier 10</b>'), 'the bonus board marked with its tier');
+    assert.strictEqual((may.match(/class="bk"/g) || []).length, 2, 'one tile per board');
+    assert.ok(rowHtml(html, 800).includes('/web/colosseum/board/v77/2200001.png') && !rowHtml(html, 800).includes('class="bt"'));
+    assert.ok(rowHtml(html, 1000).includes('<div class="bcs"><span class="nob">No Coliseum Board</span></div>'), 'a season without boards keeps the strip height');
+    assert.ok(html.indexOf('function kxNb(') < html.indexOf('<div id="rows">'), 'kxNb defined before the rows (an image can fail while loading)');
+    // a row opens its detail page (the card, the name and «›»)
+    assert.ok(may.includes('<a class="im" href="/web/colosseum/season/900?from=catalog">') && may.includes('<a class="nm" href="/web/colosseum/season/900?from=catalog">')
+      && may.includes('<a class="go" href="/web/colosseum/season/900?from=catalog"'));
+    // without the card lookup (no cards.json): no picture at all
+    assert.ok(!pages.catalogPage(ROWS, CTX).includes('/web/colosseum/board/'), 'no cards.json: neutral boxes only');
+  },
+  // Phone 640x320 (user 26-11): the state pill and the button line up across a row of cards whatever the length of the progress
+  // line: .pg is two lines high (clamped) as the dates of the other catalogs, the board strip has a fixed height
+  phone_cards_aligned() {
+    const html = withPhone(pages.catalogPage(ROWS, CTX));
+    assert.ok(/#rows>\.row \.pg[,{][^}]*-webkit-line-clamp:2[^}]*height:2\.8em/.test(html), 'progress line: two lines, fixed height');
+    assert.ok(/#rows>\.row \.bcs\{[^}]*height:44px/.test(html) || /\.bcs\{[^}]*height:44px/.test(html), 'board strip: fixed height');
+  },
+  // the hash of the catalog: #p<tab> selects that year tab (written on every render, so the WebView back key returns to it)
+  hash_tab() {
+    const more = [...SEASONS13, row(2100, '2017-05', 'later', { base: 'later', boards: 'todo' })];
+    const html = pages.catalogPage(more, CTX);
+    const rows = [...html.matchAll(/<div class="row [^"]*"[^>]*>/g)].map((m) => { const a = Object.fromEntries([...m[0].matchAll(/([\w-]+)="([^"]*)"/g)].map((x) => [x[1], x[2]])); return { attrs: a, className: a.class, getAttribute: (k) => (k in a ? a[k] : null), q: {}, querySelector() { return null; } }; });
+    const ids = {}, el = (id) => (ids[id] ||= { id, innerHTML: '', textContent: '', style: {}, value: '', getAttribute: () => null });
+    let replaced = null;
+    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+    const win = {}, loc = { hash: '#p1', pathname: '/web/colosseum/catalog', search: '' };
+    require('vm').runInNewContext(scripts, { window: win, location: loc, history: { replaceState: (a, b, h) => { replaced = h; } },
+      document: { body: { className: '' }, getElementById: el, querySelectorAll: (sel) => (sel === '#rows .row' ? rows : []) } });
+    assert.deepStrictEqual(rows.filter((r) => !/ hide/.test(r.className)).map((r) => Number(r.attrs['data-eid'])), [2100], '#p1: Year 2');
+    assert.strictEqual(replaced, null, 'the address already holds the tab');
+    win.kxFilter({ p: '0' });
+    assert.strictEqual(replaced, '#p0', 'a tab change is written into the address');
+    loc.hash = '#p0';
+    win.kxFilter({});
+    assert.strictEqual(replaced, '/web/colosseum/catalog', 'All years: the tab leaves the address');
+  },
+  // Season detail page (26-11, as the Raid Catalog detail page)
+  detail_page() {
+    const rows = [row(800, '2016-04', 'kept', { base: 'can' }), row(900, '2016-05', 'can', { base: 'can', boardIds: [2200002, 2200023], coins: 123, userRank: 2, userStageCount: 5, userStageTotalCount: 25 })];
+    const det = { boards: [{ id: 2200002, name: '6★ Scrooge', served: true, nodes: 22, unlocked: 5, coinsLeft: 900, coinsTotal: 1000, bonusTier: null },
+      { id: 2200023, name: 'Tier 10 Bonus', served: true, nodes: 10, unlocked: 10, coinsLeft: 0, coinsTotal: 300, bonusTier: 10 }],
+    tiers: [{ tier: 1, rounds: 20, endless: false, ap: 3, roundCoins: 1, coins: 30, items: [{ type: 3, id: 90013, num: 1 }], taken: true },
+      { tier: 2, rounds: 15, endless: false, ap: 3, roundCoins: 2, coins: 40, items: [{ type: 3, id: 90015, num: 2 }], taken: false },
+      { tier: 3, rounds: 999, endless: true, ap: 5, roundCoins: 3, coins: 0, items: [], taken: false }],
+    best: 25, ranked: [{ startRank: 1, endRank: 100, rounds: 200, reached: false, rewards: [{ type: 3, id: 90125, num: 3, skillId: 1101 }] },
+      { startRank: 101, endRank: 1000, rounds: 20, reached: true, rewards: [{ type: 3, id: 90016, num: 1 }] }], maps: 'worldwide' };
+    const NAMES = { 90013: 'Goofy', 90015: 'Donald', 90125: 'Scrooge', 90016: 'Chip' };
+    const ctx = { ...CTX, boardImgVersion: 5, boardCard: (id) => id === 2200002, itemName: (type, id) => NAMES[id] || '', skillName: (id) => (id === 1101 ? 'Attack Boost' : ''), fromCatalog: true };
+    const html = pages.detailPage(rows, 900, det, ctx);
+    assert.ok(html.startsWith('<!doctype html>') && html.includes('<h1>Coliseum · May 2016</h1>'));
+    assert.ok(html.includes('src="/web/colosseum/img/v3/900.png"'), 'the season card');
+    // boards: card, name, nodes, coins still needed; bonus with its tier; a completed board
+    const boards = html.slice(html.indexOf('<h2>Coliseum Boards</h2>'), html.indexOf('<h2>Tiers</h2>'));
+    assert.ok(boards.includes('src="/web/colosseum/board/v5/2200002.png"') && boards.includes('<span class="nb"></span>'), 'card, or the box without one');
+    assert.ok(boards.includes('6★ Scrooge') && boards.includes('5 / 22') && boards.includes('900 Coliseum Coins'), boards);
+    assert.ok(boards.includes('Unlocks at Tier 10') && boards.includes('Completed'), 'bonus board, completed');
+    // tiers: rounds (the endless one as the game shows it), AP, rewards and the taken ones
+    const tiers = html.slice(html.indexOf('<h2>Tiers</h2>'), html.indexOf('<h2>Score thresholds</h2>'));
+    assert.ok(tiers.includes('30 Coliseum Coins') && tiers.includes('Goofy') && tiers.includes('Donald x2'), tiers);
+    assert.ok(/<tr class="got">[\s\S]*?Taken/.test(tiers) && tiers.includes('Not taken yet'));
+    assert.ok(tiers.includes('999') && tiers.includes('endless'), 'endless tier');
+    // thresholds: brackets top first, the rounds needed, prizes, reached ones marked
+    const sc = html.slice(html.indexOf('<h2>Score thresholds</h2>'), html.indexOf('<h2>Maps</h2>'));
+    assert.ok(sc.indexOf('1st – 100th') < sc.indexOf('101st – 1,000th'), 'top first');
+    assert.ok(sc.includes('200 rounds') && sc.includes('Scrooge x3 <span class="sk">(Attack Boost)</span>') && /<tr class="got">[\s\S]*?Reached/.test(sc) && sc.includes('Your best: 25 rounds'), sc);
+    // maps: the wording of the «Coliseum» notice and a link to it
+    const maps = html.slice(html.indexOf('<h2>Maps</h2>'));
+    assert.ok(maps.includes('original') && maps.includes('2016 worldwide game files') && maps.includes('href="/web/notices#coliseum"'));
+    assert.ok(pages.detailPage(rows, 900, { ...det, maps: 'japanese' }, ctx).includes('Japanese version'));
+    assert.ok(pages.detailPage(rows, 900, { ...det, maps: 'generated' }, ctx).includes('generated maps'));
+    // Keep / Remove: the same button as the row; BACK to the row of the catalog
+    assert.ok(html.includes('data-pin="/web/colosseum/keep/900"') && html.includes('Replaces: Coliseum · April 2016'));
+    assert.ok(pages.detailPage(rows, 800, det, ctx).includes('data-pin="/web/colosseum/unkeep"'));
+    assert.ok(html.includes('<a class="back" href="/web/colosseum/catalog#q900">BACK'), 'BACK bar');
+    assert.ok(!pages.detailPage(rows, 900, det, { ...ctx, fromCatalog: false }).includes('class="back"'));
+    assert.ok(html.includes('function kxKeep('), 'the keep script');
+    assert.strictEqual(pages.detailPage(rows, 31, det, ctx), null, 'unknown season');
+    // phone: the 70 % layout of the other detail pages
+    const ph = withPhone(html);
+    assert.ok(ph.includes('<style data-phone>') && ph.includes('html{zoom:.7}') && ph.includes('table{table-layout:auto!important}'));
   },
   empty() {
     const html = pages.catalogPage([], CTX);

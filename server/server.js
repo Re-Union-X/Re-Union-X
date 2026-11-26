@@ -44,6 +44,7 @@ const eventBoardRoutes = require('./routes-event-boards'); // Event Coins and Ev
 const colosseumBoardRoutes = require('./routes-colosseum-boards'); // Coliseum boards (type 3, Coliseum Part 1 Task 5)
 const raidPages = require('./raid-pages'); // Raid Catalog web pages (Task 9)
 const colosseumPages = require('./colosseum-pages'); // Coliseum Catalog web page (Coliseum Part 1 Task 6)
+const makeColosseum = require('./make-colosseum'); // BONUS_TIER of the Coliseum Catalog board cards
 const eventPages = require('./event-pages'); // Event Catalog web pages (Events Part 1, Task 5)
 const legalPages = require('./legal-pages');
 const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranking');
@@ -5297,20 +5298,53 @@ function colosseumCatalogEvents(realMs = realNow()) {
 }
 // Coliseum Catalog page (colosseum-pages.js, Coliseum Part 1 Task 6): the rows of routes-colosseum.js and the lookups of the page
 // (board names from the master; unlockQuestOf as the Raid Catalog, from the first day of the season's month)
-function colosseumPageCtx() {
-  const sphere = masterRows('sphere');
+// Coliseum Board web cards (26-11): game_data/colosseum_board_img written by recon/tools/make_avatar_card_web.py --tsv
+// game_data/colosseum_board_art.tsv --all --strict (build-resources.ps1, git-ignored): <sphereBoardId>.png at most 160 px and cards.json
+// {version, ids}, read at request time as the Avatar Board cards (avatarCards); no cards.json: no card, every board shows the neutral box
+const COLOSSEUM_BOARD_IMG = process.env.KHUX_COLOSSEUM_BOARD_IMG || path.join(__dirname, 'game_data', 'colosseum_board_img');
+let colosseumCardsMemo = { mtime: -1, version: 1, ids: new Set() };
+function colosseumBoardCards() {
+  const f = path.join(COLOSSEUM_BOARD_IMG, 'cards.json');
+  try {
+    const mtime = fs.statSync(f).mtimeMs;
+    if (mtime !== colosseumCardsMemo.mtime) {
+      const doc = JSON.parse(fs.readFileSync(f, 'utf8'));
+      colosseumCardsMemo = { mtime, version: Number(doc.version) || 1, ids: new Set((doc.ids || []).map(Number)) };
+    }
+  } catch { colosseumCardsMemo = { mtime: -1, version: 1, ids: new Set() }; }
+  return colosseumCardsMemo;
+}
+function colosseumPageCtx(extra = {}) {
+  const sphere = masterRows('sphere'), cards = colosseumBoardCards();
+  const skills = new Map(masterRows('skill').map((r) => [r.skillId, r.name]));
   return { unlocked: colosseum().catalogCtx().unlocked, imgVersion: routesColosseum.COLOSSEUM_IMG_VERSION,
+    boardImgVersion: cards.version, boardCard: (id) => cards.ids.has(Number(id)), bonusTier: (id) => makeColosseum.BONUS_TIER[id] || null,
+    itemName: (type, id) => boardRewardName(raidBoardIndex(), type, id) || '', skillName: (id) => skills.get(id) || '', ...extra,
     boardName: (id) => (sphere.find((r) => r.sphereBoardId === id) || {}).boardName || null,
     unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: `${row.month}-01` }, periods: [] }, special.PERIODS) };
 }
-// GET /web/colosseum/catalog (Details of the Coliseum Catalog banner) and /web/colosseum/img/v<N>/<id>.png (its cards, from
-// game_data/colosseum_img; none: 404)
+// GET /web/colosseum/catalog (Details of the Coliseum Catalog banner), /web/colosseum/season/<id>[?from=catalog] (a season's detail
+// page; BACK with from=catalog; unknown season: 404), /web/colosseum/img/v<N>/<id>.png (its cards, from game_data/colosseum_img; none:
+// 404) and /web/colosseum/board/v<N>/<sphereBoardId>.png (the Coliseum Board web cards of game_data/colosseum_board_img; numeric ids
+// only, none: 404)
 function respondColosseumWeb(res, url) {
   const p = url.split('?')[0];
   const notFound = () => { const b = Buffer.from('not found', 'utf8'); res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
-  if (/^\/web\/colosseum\/catalog$/i.test(p)) {
-    const b = Buffer.from(withPhone(colosseumPages.catalogPage(colosseum().catalogRows(), colosseumPageCtx())), 'utf8');
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length });
+  const page = (html) => { const b = Buffer.from(withPhone(html), 'utf8'); res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); return res.end(b); };
+  if (/^\/web\/colosseum\/catalog$/i.test(p)) return page(colosseumPages.catalogPage(colosseum().catalogRows(), colosseumPageCtx()));
+  const det = /^\/web\/colosseum\/season\/(\d{1,9})$/i.exec(p);
+  if (det) {
+    const id = Number(det[1]), from = new URLSearchParams(url.split('?')[1] || '').get('from');
+    const html = colosseumPages.detailPage(colosseum().catalogRows(), id, colosseum().seasonDetail(id), colosseumPageCtx({ fromCatalog: from === 'catalog' }));
+    return html ? page(html) : notFound();
+  }
+  const card = /^\/web\/colosseum\/board\/v\d+\/(\d{1,9})\.png$/i.exec(p);
+  if (card) {
+    const f = path.join(COLOSSEUM_BOARD_IMG, `${Number(card[1])}.png`);
+    if (!fs.existsSync(f)) return notFound();
+    const b = fs.readFileSync(f);
+    // cached as the Avatar Board cards (the URL carries the cards.json version)
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length, 'Cache-Control': 'public, max-age=3600' });
     return res.end(b);
   }
   const m = /^\/web\/colosseum\/img\/(?:v\d+\/)?(\d+)\.png$/i.exec(p);

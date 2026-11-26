@@ -1,7 +1,13 @@
 """Board cards of the Avatar Board Catalog web pages (Events Part 7 Task 5c, user 15-11).
 
     python -I recon/tools/make_avatar_card_web.py [--tsv F] [--jp D] [--loc D] [--b16 D] [--index F] [--out D] [--size N]
+        [--all] [--strict]
         -> server/game_data/avatar_img/<sphereBoardId>.png (git-ignored) and cards.json {version, ids, size}
+
+Coliseum Board cards (Coliseum Catalog, 26-11): --tsv server/game_data/colosseum_board_art.tsv (written by make-colosseum.js
+BOARD_ART, the list build-resources.ps1 imports into the game) --out server/game_data/colosseum_board_img --all --strict:
+--all takes every card row of the list (the avatar board index is not read), --strict exits with 2 when a card has no source
+on this PC (the found ones are still written), so the resources build stops.
 
 The Avatar Board Catalog (server/event-pages.js) shows the original board cards, the pictures the client shows in Avatar
 Boards: img/sphere_incentive/<sphereBoardId>.png, 306x306. Their sources are the rows of recon/tools/originals.tsv (section 56,
@@ -30,6 +36,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image  # noqa: E402
 import import_originals as io_orig  # noqa: E402
+import btf  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -86,20 +93,29 @@ def index_ids(index_file):
         return None
 
 
+def open_card(src):
+    """a card as an RGBA picture: a real PNG, or the game's BTF texture (the 2016 worldwide files: recon/tools/btf.py)"""
+    with open(src, 'rb') as f:
+        data = f.read()
+    if data[:4] == b'BTF'.rjust(4, bytes([0x89])):
+        return btf.decode(data)
+    with Image.open(io.BytesIO(data)) as im:
+        return im.convert('RGBA')
+
+
 def web_card(src, size=SIZE):
     """the PNG bytes of a card at most size px on its longer side (never enlarged)"""
-    with Image.open(src) as im:
-        im = im.convert('RGBA')
-        if max(im.size) > size:
-            im.thumbnail((size, size), Image.LANCZOS)
-        buf = io.BytesIO()
-        im.save(buf, 'PNG', optimize=True)
-        return buf.getvalue()
+    im = open_card(src)
+    if max(im.size) > size:
+        im.thumbnail((size, size), Image.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, 'PNG', optimize=True)
+    return buf.getvalue()
 
 
-def build(tsv, rts, out, index_file=INDEX, size=SIZE):
-    """writes the cards and cards.json; -> {written, missing, skipped, removed} (board ids, sorted)"""
-    wanted = index_ids(index_file)
+def build(tsv, rts, out, index_file=INDEX, size=SIZE, take_all=False):
+    """writes the cards and cards.json; -> {written, missing, skipped, removed} (board ids, sorted); take_all: every card row"""
+    wanted = None if take_all else index_ids(index_file)
     rows = card_rows(tsv)
     written, missing, skipped, data = [], [], [], {}
     for i in sorted(rows):
@@ -152,6 +168,8 @@ def main(argv=None):
     ap.add_argument('--index', default=INDEX)
     ap.add_argument('--out', default=OUT)
     ap.add_argument('--size', type=int, default=SIZE)
+    ap.add_argument('--all', action='store_true', help='every card row of --tsv (no avatar board index)')
+    ap.add_argument('--strict', action='store_true', help='exit 2 when a card has no source')
     a = ap.parse_args(argv)
     jp = a.jp or _local('jp_data')
     b16 = a.b16 or _local('ref_work', 'bundle2016', 'files')
@@ -159,12 +177,14 @@ def main(argv=None):
         print('WARNING: no JP 4.3.1 data folder (--jp, KHUX_JP_DATA): the jp cards are missing')
     if not os.path.isdir(a.loc or ''):
         print('WARNING: no loc folder %s (--loc): the loc cards are missing' % a.loc)
-    rep = build(a.tsv, roots(jp=jp, loc=a.loc, b16=b16), a.out, a.index, a.size)
-    print('avatar cards: %d written to %s (version %d), %d removed, %d not in the avatar board index'
+    rep = build(a.tsv, roots(jp=jp, loc=a.loc, b16=b16), a.out, a.index, a.size, a.all)
+    print('board cards: %d written to %s (version %d), %d removed, %d not in the avatar board index'
           % (len(rep['written']), a.out, rep['version'], len(rep['removed']), len(rep['skipped'])))
     if rep['missing']:
-        print('WARNING: %d cards with no source on this PC (neutral box on the page): %s'
-              % (len(rep['missing']), ', '.join(map(str, rep['missing']))))
+        print('%s: %d cards with no source on this PC (neutral box on the page): %s'
+              % ('ERROR' if a.strict else 'WARNING', len(rep['missing']), ', '.join(map(str, rep['missing']))))
+        if a.strict:
+            return 2
     return 0
 
 

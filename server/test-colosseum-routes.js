@@ -453,6 +453,38 @@ const tests = {
     w.player.colosseum.seasons[800].tierRewards = [2, 1];
     assert.strictEqual(card().tiersDone, true, 'tier 2 (last rewarded) taken');
   },
+  // Season detail page (26-11): the boards (nodes unlocked / total, coins still needed, bonus tier), the tiers (rounds, AP, coins,
+  // rewards, taken), the score thresholds (rounds needed, prizes, reached) and the maps of one season; null for an unknown id
+  season_detail() {
+    const w = world();
+    w.week = { storyQuest: 200, shopFrom: '2016-06-02', shopTo: '2016-06-08' };
+    w.tables.sphere = [{ sphereBoardId: 2200001, arryId: 2200001, masuId: 2200001, type: 3, boardName: '6★ Cid' }];
+    w.tables.sphereArray = [{ arryId: 2200001, spCol4: [1000, 1, 1002, 2, 0, 0, 0, 0, 0], spCol3: Array(9).fill(0), spCol2: [0, 0, 0, 0, 3, 0, 0, 0, 0], spCol1: Array(9).fill(0), spCol0: Array(9).fill(0) }];
+    w.tables.sphereMasu = [{ masuId: 2200001, spherePoint: [10, 20, 40, ...Array(20).fill(0)], rewardSelect: [3, 3, 3, ...Array(20).fill(0)], rewardId: Array(23).fill(90013), rewardValue: Array(23).fill(1) }];
+    const d0 = w.c.seasonDetail(800);
+    assert.deepStrictEqual(d0.boards, [{ id: 2200001, name: '6★ Cid', served: true, nodes: 3, unlocked: 0, coinsLeft: 70, coinsTotal: 70, bonusTier: null }], 'nothing unlocked');
+    // Tier 2 Round 1 cleared (fixture: Tier 1 = 3 rounds), Tier 1 reward taken, node 2 unlocked
+    w.player.colosseum = { seasons: { 800: { last: 4, open: 5, coins: 12, cleared: [4], tierRewards: [1], bestAt: null } } };
+    w.player.colosseumSphere = { 800: { 2200001: { id: 1, unlock: [2] } } };
+    const d = w.c.seasonDetail(800);
+    assert.deepStrictEqual(d.boards[0], { id: 2200001, name: '6★ Cid', served: true, nodes: 3, unlocked: 1, coinsLeft: 50, coinsTotal: 70, bonusTier: null });
+    assert.deepStrictEqual(d.tiers.map((t) => [t.tier, t.rounds, t.endless, t.ap, t.roundCoins, t.coins, t.items.map((x) => [x.type, x.id, x.num]), t.taken]), [
+      [1, 3, false, 3, 1, 30, [[3, 90013, 1]], true], [2, 2, false, 4, 3, 40, [[3, 90015, 2]], false], [3, 999, true, 5, 0, 0, [], false]]);
+    // thresholds top first: the open-to-everyone bracket (1 round) reached by 4 rounds, the top one at its interpolated round
+    const want = require('./make-colosseum').rankedOf(S800.tiers, w.tables.rankingReward.filter((r) => r.rankingRewardId <= 30101)).thresholds;
+    assert.strictEqual(d.best, 4);
+    assert.deepStrictEqual(d.ranked.map((b) => [b.startRank, b.endRank, b.rounds, b.reached, b.rewards.map((x) => [x.type, x.id, x.num, x.skillId])]), [
+      [1, 1000, want.find((t) => t.startRank === 1).score, false, [[3, 90125, 3, 1101]]], [1001, 5000000, 1, true, [[3, 90016, 1, 0]]]]);
+    assert.strictEqual(d.maps, 'worldwide', 'April 2016: the 2016 worldwide maps');
+    assert.strictEqual(w.c.seasonDetail(31), null, 'unknown season');
+    assert.deepStrictEqual(w.c.seasonDetail(1000).boards.map((b) => [b.id, b.served, b.bonusTier]), [[2210029, false, null], [2210030, false, null], [2210031, false, 10]],
+      'boards not in the master: listed, not served; a bonus board with its tier');
+    assert.strictEqual(w.c.seasonDetail(900).ranked.length, 1);
+    assert.deepStrictEqual(w.c.seasonDetail(1100).ranked, [], 'no ranking rows: no thresholds');
+    // maps of the other kinds (make-colosseum.js SEASONS: genStages = generated, relux without them = the JP 4.3.1 sets)
+    const kinds = Object.fromEntries(require('./make-colosseum').SEASONS.map((s) => [s.month, routesColosseum.mapsOf(s)]));
+    assert.deepStrictEqual([kinds['2016-07'], kinds['2016-08'], kinds['2016-11'], kinds['2016-12'], kinds['2017-04']], ['worldwide', 'generated', 'generated', 'japanese', 'japanese']);
+  },
   // Part 2 (Task 5): the 13 seasons 2016-04 .. 2017-04 in month order; a story clock in 2016-12: December now, April .. November can
   // be kept, January .. April 2017 later
   catalog_13_seasons() {
@@ -557,6 +589,8 @@ function wiring() {
   process.env.KHUX_SAVE = path.join(dir, 'save.json');
   process.env.KHUX_COLOSSEUM_IMG = path.join(dir, 'img'); // the Coliseum Catalog cards (game_data/colosseum_img)
   fs.mkdirSync(process.env.KHUX_COLOSSEUM_IMG);
+  process.env.KHUX_COLOSSEUM_BOARD_IMG = path.join(dir, 'board_img'); // the Coliseum Board web cards (game_data/colosseum_board_img)
+  fs.mkdirSync(process.env.KHUX_COLOSSEUM_BOARD_IMG);
   delete process.env.KHUX_REAL_NOW;
   delete process.env.KHUX_SERVER_TIME;
   const log = console.log, warn = console.warn;
@@ -661,6 +695,40 @@ function wiring() {
     assert.deepStrictEqual([p.colosseum.kept, t.colosseum().liveSeason().id], [null, 900]);
     assert.deepStrictEqual(post('/web/colosseum/keep/31'), { code: 404, body: { ok: false, why: 'unknown season' } });
     assert.strictEqual(post('/web/colosseum/other').code, 404);
+  });
+  // Board cards (26-11): game_data/colosseum_board_img (make_avatar_card_web.py --all --strict) at /web/colosseum/board/v<n>/<id>.png;
+  // the season detail page /web/colosseum/season/<id> with its Keep / Remove button and the BACK bar from the catalog
+  run('wiring_board_cards_and_detail', () => {
+    const web = (url) => { const o = { code: 0, body: null, type: '' }; quiet(() => t.respondColosseumWeb({ writeHead(c, h) { o.code = c; o.type = (h || {})['Content-Type']; }, end(x) { o.body = x; } }, url)); return o; };
+    const post = (url) => { const o = { code: 0, body: null }; quiet(() => t.respondColosseumPost({ writeHead(c) { o.code = c; }, end(x) { o.body = JSON.parse(x.toString('utf8')); } }, url)); return o; };
+    const dir2 = process.env.KHUX_COLOSSEUM_BOARD_IMG;
+    assert.strictEqual(web('/web/colosseum/catalog').body.toString('utf8').includes('/web/colosseum/board/v'), false, 'no cards.json: no card, the neutral boxes');
+    fs.writeFileSync(path.join(dir2, '2200001.png'), 'cid');
+    fs.writeFileSync(path.join(dir2, 'cards.json'), JSON.stringify({ version: 4242, size: 160, ids: [2200001] }));
+    const cat = web('/web/colosseum/catalog').body.toString('utf8');
+    assert.ok(cat.includes('src="/web/colosseum/board/v4242/2200001.png"'), 'versioned card URL on the April row');
+    assert.ok(!cat.includes('/web/colosseum/board/v4242/2200002.png'), 'a card not in cards.json: the neutral box');
+    assert.ok(cat.includes('href="/web/colosseum/season/800?from=catalog"'), 'a row opens its detail page');
+    const img = web('/web/colosseum/board/v4242/2200001.png');
+    assert.deepStrictEqual([img.code, img.type, img.body.toString()], [200, 'image/png', 'cid']);
+    assert.strictEqual(web('/web/colosseum/board/v1/2200002.png').code, 404, 'missing card');
+    assert.strictEqual(web('/web/colosseum/board/v1/..%2Fcards.json').code, 404, 'numeric ids only');
+    // the detail page (story week of May 2016: April can be kept)
+    p.colosseum = { seasons: (p.colosseum || {}).seasons };
+    const det = web('/web/colosseum/season/800?from=catalog');
+    assert.strictEqual(det.code, 200);
+    const h = det.body.toString('utf8');
+    for (const s of ['<h2>Coliseum Boards</h2>', '<h2>Tiers</h2>', '<h2>Score thresholds</h2>', '<h2>Maps</h2>']) assert.ok(h.includes(s), s);
+    assert.ok(h.includes('<style data-phone>'), 'phone layout');
+    assert.ok(h.includes('href="/web/colosseum/catalog#q800"'), 'BACK to the catalog row');
+    assert.ok(h.includes('6★ Cid') && h.includes('src="/web/colosseum/board/v4242/2200001.png"'), 'the board with its card');
+    assert.ok(h.includes('data-pin="/web/colosseum/keep/800"'), 'Keep button');
+    assert.ok(!web('/web/colosseum/season/800').body.toString('utf8').includes('catalog#q800'), 'no BACK bar outside the catalog');
+    assert.deepStrictEqual(post('/web/colosseum/keep/800'), { code: 200, body: { ok: true } });
+    assert.ok(web('/web/colosseum/season/800').body.toString('utf8').includes('data-pin="/web/colosseum/unkeep"'), 'Remove once kept');
+    assert.deepStrictEqual(post('/web/colosseum/unkeep'), { code: 200, body: { ok: true } });
+    assert.strictEqual(web('/web/colosseum/season/31').code, 404, 'unknown season');
+    assert.strictEqual(web('/web/colosseum/season/abc').code, 404);
   });
   run('wiring_events_tab_first', () => {
     // a master with the Coliseum rows has the catalog row too (make-colosseum.js catalogEvStage, full make-game-tables run)

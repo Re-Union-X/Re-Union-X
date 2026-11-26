@@ -29,7 +29,7 @@ const rules = require('./colosseum-rules');
 const ranked = require('./ranked-rewards');
 const calendar = require('./calendar-util');
 const core = require('./sphere-board-core');
-const { SEASONS, SEASON_BOARDS, CATALOG_EV, COLOSSEUM_IMG_VERSION, rankedOf } = require('./make-colosseum');
+const { SEASONS, SEASON_BOARDS, BONUS_TIER, CATALOG_EV, COLOSSEUM_IMG_VERSION, rankedOf } = require('./make-colosseum');
 const { bracketText } = require('./routes-hsc');
 const { deliverReward } = require('./raid-rewards');
 
@@ -42,6 +42,9 @@ const KEYS = { '/ranking/colosseum': 'colosseumRanking', '/ranking/colosseum/own
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const monthName = (m) => `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
 const avatarType = (t) => t === 19 || t === 20 || t === 23;
+// the maps of a season (make-colosseum.js SEASONS; the «Coliseum» notice, routes-info-album.js «Maps»): generated (genStages, 2016-08 ..
+// 2016-11), worldwide (the 1.1.3 seasons with the 2016 worldwide maps, 2016-04 .. 2016-07), japanese (the JP 4.3.1 sets, 2016-12 ..)
+const mapsOf = (s) => (s.genStages ? 'generated' : s.source === '113' ? 'worldwide' : 'japanese');
 
 // deps: player, savePlayer, masterRows, storyWeek () -> {storyQuest, shopFrom, shopTo}, shopFromAtWeek (realWeekIndex) -> shopFrom (no side
 // effect), realNow, serverTime, serverTimeAt, clock {weekIndex, weekEnd, weekStartOf}, userPointData, userDetailData,
@@ -368,6 +371,31 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     const c = catalogCtx();
     return SEASONS.map((x) => catalogCard(x.colosseumStageId, c)).filter(Boolean);
   }
+  // Season detail page (colosseum-pages.js detailPage, 26-11): null for a season not served, else
+  //   boards [{id, name, served (in the master as a type-3 board), nodes, unlocked, coinsLeft (coins still needed), coinsTotal, bonusTier}]
+  //   tiers [{tier, rounds, endless (the last tier), ap, roundCoins, coins (tier reward coins), items (the other tier rewards), taken}]
+  //   best (the furthest round cleared), ranked [{startRank, endRank, rounds (threshold), reached, rewards}] top first, maps (mapsOf)
+  function seasonDetail(id) {
+    const s = season(id);
+    if (!s) return null;
+    const st = rules.seasonState(player, s.id), box = (player.colosseumSphere || {})[s.id] || {};
+    const sphere = masterRows('sphere'), masus = masterRows('sphereMasu');
+    const boards = (SEASON_BOARDS[s.id] || []).map((bid) => {
+      const b = sphere.find((r) => r.sphereBoardId === bid && r.type === 3), bonusTier = BONUS_TIER[bid] || null;
+      if (!b) return { id: bid, name: null, served: false, nodes: 0, unlocked: 0, coinsLeft: 0, coinsTotal: 0, bonusTier };
+      const nodes = core.nodesOf(masterRows, b), masu = masus.find((m) => m.masuId === b.masuId);
+      const got = new Set(((box[bid] || {}).unlock || []).map(Number)), todo = nodes.filter((n) => !got.has(n));
+      return { id: bid, name: b.boardName || null, served: true, nodes: nodes.length, unlocked: nodes.length - todo.length,
+        coinsLeft: core.costOf(masu, todo), coinsTotal: core.costOf(masu, nodes), bonusTier };
+    });
+    const taken = st.tierRewards.map(Number), coins = (list) => list.filter((x) => x.type === COIN).reduce((a, x) => a + x.num, 0);
+    const tiers = s.tiers.map((t, i) => ({ tier: t.tier, rounds: t.rounds, endless: i === s.tiers.length - 1, ap: Number(t.ap) || 0, roundCoins: coins(t.roundReward),
+      coins: coins(t.tierReward), items: t.tierReward.filter((x) => x.type !== COIN), taken: taken.includes(t.tier) }));
+    const r = rankedOfSeason(s);
+    const ranked = r ? r.brackets.map((b, i) => ({ startRank: b.startRank, endRank: b.endRank, rounds: r.thresholds[i].score, reached: st.last > 0 && st.last >= r.thresholds[i].score,
+      rewards: b.rewards.map((x) => ({ type: x.type, id: x.id, num: x.num, skillId: x.skillId || 0 })) })).reverse() : [];
+    return { boards, tiers, best: st.last, ranked, maps: mapsOf(SEASONS.find((x) => x.colosseumStageId === s.id)) };
+  }
   // POST /web/colosseum/keep/<colosseumStageId> and /web/colosseum/unkeep: {code, body {ok, why?}}. Only a past season ('can') of an
   // open Coliseum can be kept (else why: locked, now, other, later); keeping one replaces the previous. Neither touches any
   // season's progress, coins or boards; a round started and not finished is dropped (it belonged to the other season).
@@ -413,11 +441,12 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   }
 
   return { list, rewardList, start, retire, clear, ranking, liveSeason, coinsOf, spendCoins, tierReached, addCoins, closeDate, weekCloseDate, shownRankNow, seasonBounds, keep, unkeep, catalogCtx, catalogCard,
-    catalogRows, catalogEvents,
+    catalogRows, catalogEvents, seasonDetail,
     seasons: () => SEASONS.map((x) => season(x.colosseumStageId)).filter(Boolean) };
 }
 
 module.exports = routesColosseum;
 module.exports.RANKING_KEYS = KEYS;
+module.exports.mapsOf = mapsOf;
 module.exports.UNLOCK_QUEST = UNLOCK_QUEST;
 module.exports.COLOSSEUM_IMG_VERSION = COLOSSEUM_IMG_VERSION;
