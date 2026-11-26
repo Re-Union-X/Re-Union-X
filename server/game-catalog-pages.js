@@ -26,7 +26,7 @@ const BAR_CSS = (() => {
 const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{color:#9fd4ff;font-size:14px;margin:2px 0}'
   + '.pg{color:#ffcd4a;font-size:14px;margin:2px 0}.pg.no{color:#b9cfdc}.lk{color:#ffcd4a;font-size:13px;margin:2px 0}'
   // the coin chip of a card: the header chip (catalog-pages.js walletChip) without its push to the right
-  + '.row .wal{margin:4px 0 0;align-self:flex-start;max-width:100%}.row .wal small{font-size:12px;min-width:0;padding:2px 7px 2px 4px;gap:4px}.row .wal .ic{width:1.5em;height:1.5em}.row .wal b{font-size:15px;padding:0 9px 2px}.row .cw{margin-top:auto}'
+  + '.row .wal{margin:4px 0 0;align-self:flex-start;max-width:100%}.row .wal small{font-size:12px;min-width:0;padding:2px 7px 2px 4px;gap:4px}.row .wal .ic{width:1.5em;height:1.5em}.row .wal b{font-size:15px;padding:1px 9px}.row .cw{margin-top:auto}'
   + '.row{cursor:pointer}'
   // a large amount (user 26-11: «if the Coliseum Coins grow, do they run out of the card?»): the chip never wider than its card, the
   // label goes on two lines (coins / season month) and the amount keeps its width
@@ -58,7 +58,7 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   // every description takes three lines, so the counts, the kept lines and the coin chips start at the same height
   + '#rows>.row .d{min-height:calc(3 * 1.35em)}'
   // the coin chip inside the card (user 26-11: «Coliseum Coins · Dec 2017» ran out of the 5-column card): a slightly smaller label
-  + '#rows>.row .wal{max-width:100%}#rows>.row .wal small{font-size:11px;padding:2px 6px 2px 4px;gap:3px;letter-spacing:0}#rows>.row .wal b{padding:0 8px 2px}'
+  + '#rows>.row .wal{max-width:100%}#rows>.row .wal small{font-size:11px;padding:2px 6px 2px 4px;gap:3px;letter-spacing:0}#rows>.row .wal b{padding:1px 8px}'
   + '.intro{margin-bottom:8px}#sec-kept{margin:8px 0}}';
 
 // a card's row: the banner on the left (as the catalogue rows), the name, the description, the facts, the coins; the whole row opens
