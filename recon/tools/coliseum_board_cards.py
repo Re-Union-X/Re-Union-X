@@ -2,6 +2,7 @@
 
     python -I recon/tools/coliseum_board_cards.py [--ids part2|part1|<id>,<id>...] [--wiki D] [--jp D] [--loc D]
         [--sheet F] [--report F] [--out D] [--overwrite]
+    python -I recon/tools/coliseum_board_cards.py --table F --months 2017-05..2021-06 [--classc-sheet F] [...]
 
 The client draws a Coliseum board card from img/sphere_incentive/<sphereBoardId>.png (306 x 306 with transparency) over the
 gold card Board_0003. No worldwide card file survives for the boards after 2200001, so each card is rebuilt from the khuxwiki
@@ -34,6 +35,13 @@ D:/Progetto_Restauro_KH_UX/raid_loc. --ids part1 rebuilds the Part 1 cards into 
 folder) and compares them with the approved files in --loc (never written): the method check, same picture and the two
 places (the 26-11 cards took one canvas origin per screenshot size from the 6★ Cid screenshot, whose card sits 6 px higher
 than in the other 1280 x 544 screenshots: they are 6-7 canvas px lower than the board screenshots show them).
+
+Later seasons: --table = a private JSON {id: {name, kind, month, layout, preview, jp: [JP files]}} (the board list of the
+private research; rows of BOARDS above are kept, only their month is taken) and --months A..B (or one month) = every
+board of those months except 2210191. Rules on top of the above: several JP candidates (per-gender pieces of a
+both-gender board) are tried in turn; a preview that does not fit the screenshot (difference above FIT_MAX: another or a
+resampled picture) gives no card (art 'none'); a board with a JP candidate but no wiki preview to prove it (class C) gets
+no card either (art 'classC:<file>', the JP card fitted to the screenshot for review), drawn on --classc-sheet when given.
 """
 import argparse
 import json
@@ -103,6 +111,34 @@ BOARDS = {
 }
 PART1 = [2200002, 2200023, 2210029, 2210030, 2210031, 2210033, 2210034, 2210035]
 PART2 = [i for i in BOARDS if 2210037 <= i <= 2210066]
+MONTHS = {}               # id -> 'YYYY-MM' (from --table)
+
+
+def load_table(path):
+    """adds the boards of a private table (see the docstring) to BOARDS / MONTHS; a row already in BOARDS is kept"""
+    with open(path, encoding='utf-8') as f:
+        rows = json.load(f)
+    for k, r in rows.items():
+        i = int(k)
+        MONTHS[i] = r['month']
+        if i not in BOARDS:
+            BOARDS[i] = (r['name'], r.get('kind', ''), (r['layout'], r['preview']), list(r.get('jp') or []) or None)
+
+
+def month_ids(spec):
+    """the ids of the months 'A..B' (or one month 'A'), in id order, without the protected cards"""
+    lo, _, hi = spec.partition('..')
+    hi = hi or lo
+    return sorted(i for i, m in MONTHS.items() if lo <= m <= hi and i not in NEVER)
+
+
+def stems(stem):
+    """(layout stem, preview stem): one name for both or a pair"""
+    return (stem, stem) if isinstance(stem, str) else tuple(stem)
+
+
+def cands(cand):
+    return [] if not cand else [cand] if isinstance(cand, str) else list(cand)
 
 
 def rgba(path):
@@ -254,29 +290,47 @@ def twin(pic, jp_card, u, v, reach=4):
 
 
 def card(bid, wiki, jp, cal):
-    """the card of one board: {id, name, kind, source ('jp' | 'loc'), art (BOARD_ART value), diff, preview: {...}, jp: {...},
-    image (PIL, loc only), pos, shot}"""
+    """the card of one board: {id, name, kind, month, source ('jp' | 'loc' | 'classC' | 'none'), art (BOARD_ART value), diff,
+    preview: {...} or None, jp: {...} (the kept or best candidate), jpAll, image (PIL), pos, shot}"""
     name, kind, stem, cand = BOARDS[bid]
-    shot_img = Image.open(layout_file(wiki, stem)).convert('RGB')
+    lstem, pstem = stems(stem)
+    shot_img = Image.open(layout_file(wiki, lstem)).convert('RGB')
     shot = np.asarray(shot_img, dtype=np.float32)
-    res = {'id': bid, 'name': name, 'kind': kind, 'wiki': stem, 'jp': None}
-    pic = rgba(preview_file(wiki, stem))
-    pv = fit(shot, pic, cal)
-    res['preview'] = {'file': 'Preview_-_%s.png' % stem, 'size': list(pic.size), **pv,
-                      'scaleOk': pv['scale'] is not None and abs(pv['scale'] - 1) <= SCALE_TOL, 'fitOk': pv['diff'] <= FIT_MAX}
-    if cand:
-        f = jp_file(jp, cand)
-        if f:
-            j = fit(shot, rgba(f), cal, full=True)
-            tw, at = twin(pic, rgba(f), pv['u'], pv['v']) if pv['u'] is not None else (float('inf'), None)
-            res['jp'] = {'file': cand, **j, 'twin': tw, 'twinAt': list(at) if at else None, 'match': j['diff'] <= FIT_MAX and tw <= TWIN_MAX}
-        else:
-            res['jp'] = {'file': cand, 'missing': True, 'match': False}
+    res = {'id': bid, 'name': name, 'kind': kind, 'month': MONTHS.get(bid, ''), 'wiki': lstem if lstem == pstem else [lstem, pstem],
+           'jp': None, 'jpAll': [], 'preview': None}
+    try:
+        pic = rgba(preview_file(wiki, pstem))
+    except FileNotFoundError:
+        pic = None
+    if pic is not None:
+        pv = fit(shot, pic, cal)
+        res['preview'] = {'file': 'Preview_-_%s.png' % pstem, 'size': list(pic.size), **pv,
+                          'scaleOk': pv['scale'] is not None and abs(pv['scale'] - 1) <= SCALE_TOL, 'fitOk': pv['diff'] <= FIT_MAX}
+    for c in cands(cand):
+        f = jp_file(jp, c)
+        if not f:
+            res['jpAll'].append({'file': c, 'missing': True, 'match': False})
+            continue
+        j = fit(shot, rgba(f), cal, full=True)
+        tw, at = twin(pic, rgba(f), pv['u'], pv['v']) if pic is not None and pv['u'] is not None else (float('inf'), None)
+        res['jpAll'].append({'file': c, **j, 'twin': tw, 'twinAt': list(at) if at else None, 'match': j['diff'] <= FIT_MAX and tw <= TWIN_MAX})
+    found = [j for j in res['jpAll'] if not j.get('missing')]
+    if found:
+        res['jp'] = next((j for j in found if j['match']), min(found, key=lambda j: (j['twin'], j['diff'])))
+    elif res['jpAll']:
+        res['jp'] = res['jpAll'][0]
     if res['jp'] and res['jp']['match']:
-        res.update(source='jp', art='jp:' + cand, diff=res['jp']['diff'], image=rgba(jp_file(jp, cand)), pos=None)
+        c = res['jp']['file']
+        res.update(source='jp', art='jp:' + c, diff=res['jp']['diff'], image=rgba(jp_file(jp, c)), pos=None)
+    elif pic is None and found:
+        j = min(found, key=lambda j: j['diff'])
+        res.update(source='classC', art='classC:' + j['file'], diff=j['diff'], image=rgba(jp_file(jp, j['file'])), pos=None)
+    elif pic is None:
+        res.update(source='none', art='none', diff=float('inf'), image=Image.new('RGBA', (SIZE, SIZE), (0, 0, 0, 0)), pos=None)
     else:
         img, pos = place(pic, pv['u'], pv['v'])
-        res.update(source='loc', art='loc', diff=pv['diff'], image=img, pos=list(pos))
+        ok = pv['diff'] <= FIT_MAX
+        res.update(source='loc' if ok else 'none', art='loc' if ok else 'none', diff=pv['diff'], image=img, pos=list(pos))
     cx, cy, k = canvas(shot, cal)
     res['shot'] = shot_img.crop((round(cx), round(cy), round(cx + SIZE * k), round(cy + SIZE * k))).resize((SIZE, SIZE), Image.LANCZOS)
     return res
@@ -313,8 +367,9 @@ def sheet(results, board_png, path):
         c = gold.copy()
         c.alpha_composite(r['image'])
         out.paste(c, (x + SIZE + 10, y + 50), c)
-        src = r['art'] if r['source'] == 'jp' else 'wiki preview %s at %s' % ('x'.join(map(str, r['preview']['size'])), tuple(r['pos']))
-        d.text((x, y), '%d  %s%s' % (r['id'], r['name'], ' (%s)' % r['kind'] if r['kind'] else ''), fill=(255, 255, 255))
+        src = r['art'] if r['source'] in ('jp', 'classC') or not r['pos'] else '%s: wiki preview %s at %s' % (
+            r['art'], 'x'.join(map(str, r['preview']['size'])), tuple(r['pos']))
+        d.text((x, y), '%d  %s%s  %s' % (r['id'], r['name'], ' (%s)' % r['kind'] if r['kind'] else '', r.get('month', '')), fill=(255, 255, 255))
         d.text((x, y + 14), 'source: %s   diff %.2f' % (src, r['diff']), fill=(255, 230, 140))
         extra = 'JP %s diff %.2f twin %.2f (%s)' % (r['jp']['file'], r['jp'].get('diff', float('nan')), r['jp'].get('twin', float('nan')),
                                                   'kept' if r['jp']['match'] else 'refused') if r['jp'] else ''
@@ -336,14 +391,17 @@ def compare(approved, rebuilt):
 
 
 def report_row(r, status):
-    keep = ('id', 'name', 'kind', 'wiki', 'source', 'art', 'diff', 'pos', 'jp', 'preview')
+    keep = ('id', 'name', 'kind', 'month', 'wiki', 'source', 'art', 'diff', 'pos', 'jp', 'jpAll', 'preview')
     return {**{k: r[k] for k in keep}, 'file': status}
 
 
 def main(argv):
     sys.stdout.reconfigure(encoding='utf-8')
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--ids', default='part2')
+    ap.add_argument('--ids', default=None, help='part2 (default), part1 or <id>,<id>...')
+    ap.add_argument('--table', default=None, help='private board table (JSON) of the later seasons')
+    ap.add_argument('--months', default=None, help='A..B or A: the boards of those months (needs --table)')
+    ap.add_argument('--classc-sheet', default=None, help='review sheet of the class C boards (JP card, no preview)')
     ap.add_argument('--wiki', default=WIKI)
     ap.add_argument('--jp', default=None)
     ap.add_argument('--loc', default=LOC)
@@ -355,7 +413,17 @@ def main(argv):
     if a.jp is None:
         import private_tools
         a.jp = private_tools.local_path('jp_data')
-    ids = PART2 if a.ids == 'part2' else PART1 if a.ids == 'part1' else [int(x) for x in a.ids.split(',') if x]
+    if a.months and a.ids:
+        raise SystemExit('--months and --ids exclude each other')
+    if a.table:
+        load_table(a.table)
+    if a.months:
+        ids = month_ids(a.months)
+        if not ids:
+            raise SystemExit('no board in %s (--table?)' % a.months)
+    else:
+        a.ids = a.ids or 'part2'
+        ids = PART2 if a.ids == 'part2' else PART1 if a.ids == 'part1' else [int(x) for x in a.ids.split(',') if x]
     for i in ids:
         if i not in BOARDS:
             raise SystemExit('unknown board %d' % i)
@@ -376,17 +444,26 @@ def main(argv):
             same, at = compare(rgba(os.path.join(a.loc, *CARD_DIR, '%d.png' % i)), r['image'])
             status = ('approved card: same picture at %s, rebuilt at %s' % (at, tuple(r['pos']))) if same else 'DIFFERS from the approved card'
             bad += not same
-        flags = [f for f, c in (('fit above %.2f' % FIT_MAX, r['diff'] > FIT_MAX), ('preview scale %.3f' % (r['preview']['scale'] or 0), r['source'] == 'loc' and not r['preview']['scaleOk'])) if c]
+        pv = r['preview'] or {}
+        flags = [f for f, c in (('fit above %.2f' % FIT_MAX, r['diff'] > FIT_MAX),
+                                ('preview scale %.3f' % (pv.get('scale') or 0), r['source'] == 'loc' and not pv.get('scaleOk')),
+                                ('no preview', not pv)) if c]
         jp = (' | JP %s %.2f twin %.2f %s' % (r['jp']['file'], r['jp'].get('diff', float('nan')), r['jp'].get('twin', float('nan')),
                                                'kept' if r['jp']['match'] else 'refused')) if r['jp'] else ''
         print('%d\t%s%s\t%s\tdiff %.2f\tpreview %.2f scale %.3f at %s%s\t%s%s' % (
-            i, r['name'], ' (%s)' % r['kind'] if r['kind'] else '', r['art'], r['diff'], r['preview']['diff'], r['preview']['scale'] or 0,
+            i, r['name'], ' (%s)' % r['kind'] if r['kind'] else '', r['art'], r['diff'], pv.get('diff', float('nan')), pv.get('scale') or 0,
             r['pos'], jp, status, ('\t' + ', '.join(flags)) if flags else ''))
         results.append(r)
         rows.append(report_row(r, status))
-    if a.sheet:
-        sheet(results, os.path.join(a.jp, 'img', 'sphere_board', 'Board_0003.png'), a.sheet)
+    gold = os.path.join(a.jp, 'img', 'sphere_board', 'Board_0003.png')
+    main_rows = [r for r in results if not (a.classc_sheet and r['source'] == 'classC')]
+    if a.sheet and main_rows:
+        sheet(main_rows, gold, a.sheet)
         print('sheet -> %s' % a.sheet)
+    class_c = [r for r in results if r['source'] == 'classC']
+    if a.classc_sheet and class_c:
+        sheet(class_c, gold, a.classc_sheet)
+        print('class C sheet -> %s' % a.classc_sheet)
     if a.report:
         with open(a.report, 'w', encoding='utf-8') as f:
             json.dump({'calibration': cal, 'fitMax': FIT_MAX, 'twinMax': TWIN_MAX, 'boards': rows}, f, ensure_ascii=False, indent=1)

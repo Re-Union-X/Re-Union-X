@@ -152,9 +152,51 @@ with tempfile.TemporaryDirectory() as tmp:
     except SystemExit:
         pass
 
+    # --table + --months: boards of later seasons from a private table (id -> name, kind, month, layout, preview, jp)
+    # C: layout and preview under other names, two JP candidates (per-gender pieces), the second one is the twin
+    c_pic = picture(180, 280, 5)
+    c_card = canvas_with(c_pic, (60, 10))
+    screenshot(c_card, 0.7, (50, 30), (800, 400)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_C_(Male)_KHUX.png'))
+    c_pic.save(os.path.join(wiki, 'preview', 'Preview_-_C.png'))
+    other.save(os.path.join(jp, 'img', 'sphere_incentive', '2200119.png'))
+    c_card.save(os.path.join(jp, 'img', 'sphere_incentive', '2200120.png'))
+    # D: JP candidate, no wiki preview (class C): never written, own sheet
+    d_card = canvas_with(picture(200, 290, 6), (50, 8))
+    screenshot(d_card, 0.6, (40, 30)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_D_KHUX.png'))
+    d_card.save(os.path.join(jp, 'img', 'sphere_incentive', '2200193.png'))
+    # E: a preview of another picture (fit above FIT_MAX): no card written
+    e_pic = picture(200, 290, 7)
+    screenshot(canvas_with(picture(200, 290, 8), (50, 8)), 0.6, (40, 30)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_E_KHUX.png'))
+    e_pic.save(os.path.join(wiki, 'preview', 'Preview_-_E.png'))
+    table = os.path.join(tmp, 'table.json')
+    json.dump({'2210098': {'name': 'Board C', 'kind': '', 'month': '2018-01', 'layout': 'C_(Male)', 'preview': 'C', 'jp': ['2200119.png', '2200120.png']},
+               '2210152': {'name': 'Board D', 'kind': '', 'month': '2019-05', 'layout': 'D', 'preview': 'D', 'jp': ['2200193.png']},
+               '2210161': {'name': 'Board E', 'kind': '', 'month': '2019-07', 'layout': 'E', 'preview': 'E', 'jp': []},
+               '2210191': {'name': 'Hand', 'kind': '', 'month': '2020-01', 'layout': 'A', 'preview': 'A', 'jp': []},
+               '2210037': {'name': 'not this', 'kind': '', 'month': '2016-08', 'layout': 'X', 'preview': 'X', 'jp': []}}, open(table, 'w'))
+    cbc.load_table(table)
+    check(cbc.BOARDS[2210037][0] == 'Board A' and cbc.MONTHS[2210037] == '2016-08', 'table: a repository row is kept, its month taken')
+    check(cbc.month_ids('2018-01..2020-01') == [2210098, 2210152, 2210161], 'month range %r' % cbc.month_ids('2018-01..2020-01'))
+    check(cbc.month_ids('2019-05') == [2210152], 'one month')
+    loc3, rep3, sh3, shc = (os.path.join(tmp, n) for n in ('loc3', 'rep3.json', 'sheet3.png', 'sheetc.png'))
+    cbc.main(['--table', table, '--months', '2018-01..2020-12', '--wiki', wiki, '--jp', jp, '--loc', loc3, '--report', rep3,
+              '--sheet', sh3, '--classc-sheet', shc])
+    r3 = {x['id']: x for x in json.load(open(rep3, encoding='utf-8'))['boards']}
+    check(sorted(r3) == [2210098, 2210152, 2210161], 'months report ids %r' % sorted(r3))
+    check(r3[2210098]['art'] == 'jp:2200120.png' and r3[2210098]['month'] == '2018-01', 'C: second JP candidate kept %r' % r3[2210098]['art'])
+    check(r3[2210152]['art'] == 'classC:2200193.png' and r3[2210152]['file'] == '' and r3[2210152]['diff'] < 8, 'D: class C %r' % ((r3[2210152]['art'], r3[2210152]['file'], r3[2210152]['diff']),))
+    check(r3[2210161]['art'] == 'none' and r3[2210161]['diff'] > cbc.FIT_MAX and r3[2210161]['file'] == '', 'E: low fit, no card %r' % ((r3[2210161]['art'], r3[2210161]['diff']),))
+    check(not os.path.exists(os.path.join(loc3, 'img', 'sphere_incentive_coli')) or not os.listdir(os.path.join(loc3, 'img', 'sphere_incentive_coli')), 'months: no file written')
+    check(os.path.exists(sh3) and os.path.exists(shc), 'main and class C sheets')
+    try:
+        cbc.main(['--months', '2018-01', '--ids', '2210098', '--wiki', wiki, '--jp', jp, '--loc', loc3])
+        check(False, '--months with --ids must stop')
+    except SystemExit:
+        pass
+
 if errors:
     print('ERRORS (%d)' % len(errors))
     for e in errors:
         print(' -', e)
     sys.exit(1)
-print('OK: card box, calibration, fit at native size, JP twin rule, protected files, sheet and report')
+print('OK: card box, calibration, fit at native size, JP twin rule, protected files, sheet and report, table and month range')
