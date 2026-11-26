@@ -1212,7 +1212,7 @@ const ERA_T = [[1, 1, 1, 245, 811, 999, 1147, 1624], [I, I, I, I, F, F, F, F]];
 const MONTH_T = {
   '2017-05': [[1, 1, 1, 95, 314, 417, 504, 810], [I, I, I, I, F, F, F, F]],
   '2017-06': [[1, 1, 1, 135, 446, 550, 631, 893], [I, I, I, I, I, I, F, I]],
-  '2017-07': [[1, 1, 1, 126, 417, 617, 798, 1527], [I, I, I, I, F, F, F, I]],
+  '2017-07': [[1, 1, 1, 126, 417, 617, 798, 1131], [I, I, I, I, F, F, F, I]],
   '2017-08': ERA_T,
   '2017-09': [[1, 1, 1, 238, 788, 971, 1115, 1578], [I, I, I, I, I, I, I, F]],
   '2017-10': [[1, 1, 1, 232, 770, 1014, 1216, 1921], [I, I, I, I, F, F, F, F]],
@@ -1252,7 +1252,21 @@ test('era17 per-month fit: each data month reproduces its own points within x / 
       const f = c.curve(rank), k = Math.max(round / f, f / round);
       assert.ok(k <= E.monthTolerance, `${m} rank ${rank}: recorded ${round}, month curve ${f.toFixed(0)} (x ${k.toFixed(2)}) ${src}`);
     }
+    // guard: outside its points' ranks the month curve follows the era slope from its value at the nearest point
+    const lo = Math.min(...ranks), hi = Math.max(...ranks);
+    for (const r of [10, 100, 1000, 2500, 10000]) {
+      if (r >= lo && r <= hi) continue;
+      const edge = r < lo ? lo : hi, want = c.curve(edge) * (r / edge) ** E.b;
+      assert.ok(Math.abs(c.curve(r) - want) < 1e-6 * want, `${m} rank ${r}: era slope from rank ${edge}`);
+    }
   }
+});
+
+test('era17 guard: 2017-07 rank 100 = the era slope from its rank-991 point (not its own steep fit extrapolated)', () => {
+  const E = mc.ERA17, c = E.months['2017-07'], want = 10 ** (c.a + c.b * Math.log10(991)) * (100 / 991) ** E.b;
+  assert.ok(Math.abs(want - 1127) < 10, `era slope from 991: ${want.toFixed(0)}`);
+  assert.strictEqual(c.round(100), Math.round(want));
+  assert.ok(c.round(100) < 1527 * 0.8, 'no longer the extrapolated own fit');
 });
 
 test('era17 fit: every recorded season-end point within the stated tolerance; the points = CUTOFFS_2017.md (when on disk)', () => {

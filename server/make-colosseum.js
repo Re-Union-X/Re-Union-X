@@ -96,10 +96,12 @@
 // same form, fitted on its points only: both a and b when they span at least one decade of rank, else the era slope b with its own
 // intercept (the mean of its points); the same tail (10,000 -> 1 round at 100,000). Every month point within x / ÷ 1.15 of its
 // month curve (ERA17.monthTolerance; worst a 2017-10 point, x 1.11). «fitted» = an edge
-// inside the ranks of the month's points, else «interpolated». Thresholds 100 / 1,000 / 2,500 / 10,000 / 50,000 (then 1, 1, 1):
+// inside the ranks of the month's points, else «interpolated». Guard (re-review 26-11): outside the rank span of the month's own
+// points its own fit is not extrapolated; the era slope goes on from the month curve's value at the nearest point's rank (only
+// 2017-07 rank 100 changes: 1,527 -> 1,131). Thresholds 100 / 1,000 / 2,500 / 10,000 / 50,000 (then 1, 1, 1):
 //   2017-05 own fit (ranks 99 .. 10,200; 6e01rg, 6f291y; a 3.3200 b -0.2059): 810 / 504 / 417 / 314 / 95
 //   2017-06 era slope, own intercept (ranks 459, 1,000; 6o1ra2):                893 / 631 / 550 / 446 / 135
-//   2017-07 own fit (ranks 991 .. 10,000; 6qhit7; a 3.7471 b -0.2817):         1,527 / 798 / 617 / 417 / 126
+//   2017-07 own fit (ranks 991 .. 10,000; 6qhit7; a 3.7471 b -0.2817):         1,131 / 798 / 617 / 417 / 126 (100: guard)
 //   2017-09 era slope, own intercept (rank 100; 73i23q):                         1,578 / 1,115 / 971 / 788 / 238
 //   2017-10 own fit (ranks 100 .. 10,000; 7aafnf; a 3.6808 b -0.1986):         1,921 / 1,216 / 1,014 / 770 / 232
 //   2017-11 own fit (ranks 100 .. 10,000; 7gtzkx; a 3.9387 b -0.1495):         4,363 / 3,092 / 2,696 / 2,192 / 661
@@ -383,8 +385,13 @@ function logFit(points, fixedB) {
 // label «fitted» for a rank inside [lo, hi] (the ranks of the points behind it), else «interpolated»
 // FIT_RANK = the last bracket edge of the fitted range (the era points reach 10,200); PLAYERS = ranked players a month
 const ERA17_FIT_RANK = 10000, ERA17_PLAYERS = 100000;
-function eraCurve(a, b, lo, hi) {
-  const curve = (rank) => 10 ** (a + b * Math.log10(rank)), top = Math.round(curve(ERA17_FIT_RANK));
+// guardB (a month curve: the era slope): outside [lo, hi] the month's own fit is not extrapolated; the curve goes on with the era
+// slope from the fitted value at the nearest edge (re-review 26-11: 2017-07's own slope -0.28 from ranks 991 .. 10,000 gave 1,527
+// at rank 100, the guard gives ~1,130); inside [lo, hi] the own fit is unchanged
+function eraCurve(a, b, lo, hi, guardB) {
+  const fit = (rank) => 10 ** (a + b * Math.log10(rank));
+  const curve = guardB === undefined ? fit : (rank) => (rank < lo ? fit(lo) * (rank / lo) ** guardB : rank > hi ? fit(hi) * (rank / hi) ** guardB : fit(rank));
+  const top = Math.round(curve(ERA17_FIT_RANK));
   const round = (rank) => (rank >= ERA17_PLAYERS ? 1 : rank <= ERA17_FIT_RANK ? Math.round(curve(rank))
     : Math.max(1, Math.round(top - (top - 1) * Math.log10(rank / ERA17_FIT_RANK) / Math.log10(ERA17_PLAYERS / ERA17_FIT_RANK))));
   return { a, b, curve, round, label: (rank) => (rank >= lo && rank <= hi ? 'fitted' : 'interpolated') };
@@ -400,7 +407,7 @@ const ERA17 = (() => {
     const pts = ERA17_POINTS.filter((p) => p[0] === m), ranks = pts.map((p) => p[1]);
     const both = Math.log10(Math.max(...ranks) / Math.min(...ranks)) >= ERA17_MONTH_SPAN;
     const f = logFit(pts, both ? undefined : b);
-    months[m] = { ...eraCurve(f.a, f.b, Math.min(...ranks), Math.max(...ranks)), method: both ? 'own fit' : 'era slope, own intercept', points: pts };
+    months[m] = { ...eraCurve(f.a, f.b, Math.min(...ranks), Math.max(...ranks), b), method: both ? 'own fit' : 'era slope, own intercept', points: pts };
   }
   const seasons = new Map(SEASONS.filter((s) => s.colosseumStageId >= 2100 && s.colosseumStageId <= 3100).map((s) => [s.colosseumStageId, s.month]));
   return { seasons, points: ERA17_POINTS, a, b, curve: era.curve, round: era.round, label: era.label, tolerance: 2.85, months, monthTolerance: 1.15,
