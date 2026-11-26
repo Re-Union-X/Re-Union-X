@@ -85,10 +85,16 @@ test('SEASONS and SEASON_BOARDS', () => {
     // Part 3 (2017-05 .. 2018-03): the ReLux rows; 2017-06 .. 2017-12 generated (no stage file of their JP sets on disk)
     ['2017-05', 2100, 'relux', false], ['2017-06', 2200, 'relux', true], ['2017-07', 2300, 'relux', true], ['2017-08', 2400, 'relux', true],
     ['2017-09', 2500, 'relux', true], ['2017-10', 2600, 'relux', true], ['2017-11', 2700, 'relux', true], ['2017-12', 2800, 'relux', true],
-    ['2018-01', 2900, 'relux', false], ['2018-02', 3000, 'relux', false], ['2018-03', 3100, 'relux', false]]);
-  assert.strictEqual(mc.SEASONS.length, 24);
+    ['2018-01', 2900, 'relux', false], ['2018-02', 3000, 'relux', false], ['2018-03', 3100, 'relux', false],
+    // Part 3b (2018-04 .. 2019-04): the ReLux rows, the JP sets of the rows, no generated set
+    ['2018-04', 3200, 'relux', false], ['2018-05', 3300, 'relux', false], ['2018-06', 3400, 'relux', false], ['2018-07', 3500, 'relux', false],
+    ['2018-08', 3600, 'relux', false], ['2018-09', 3700, 'relux', false], ['2018-10', 3800, 'relux', false], ['2018-11', 3900, 'relux', false],
+    ['2018-12', 4000, 'relux', false], ['2019-01', 4100, 'relux', false], ['2019-02', 4200, 'relux', false], ['2019-03', 4300, 'relux', false],
+    ['2019-04', 4400, 'relux', false]]);
+  assert.strictEqual(mc.SEASONS.length, 37);
   assert.deepStrictEqual(mc.SEASON_BOARDS[800], [2200001]);
-  for (const s of mc.SEASONS) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
+  // the boards of 2018-04 .. 2019-04 come with Part 3b Task 4
+  for (const s of mc.SEASONS.filter((x) => x.colosseumStageId <= 3100)) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
   for (const [t, [, lo, hi]] of Object.entries(mc.RANGES)) assert.ok(lo <= hi, t);
 });
 
@@ -405,6 +411,7 @@ test('board card pictures: 6★ Cid from the 2016 bundle, every other served boa
 // relux = the cleaned ReLux season extract (readRelux shape): arrays already cut to their valid counts, coins /100,
 // a trailing 0-round marker after term, and (from 2017-01) hidden 999-round tiers after the wiki-visible endless tier
 const R = require('./colosseum-rules');
+const pages = require('./colosseum-pages');
 const rtier = (sid, n, rounds, skip, cn, coin, extra = []) => ({ colosseumId: sid + n, colosseumStageId: sid, round: n, ap: n < 3 ? 3 : n < 5 ? 4 : 5,
   arrivalStageCount: rounds, rankId: '', excellentUnlockCount: skip, validStageReward: cn ? 1 : 0, stageRewardType: 17, stageRewardId: 0, stageRewardAssignType: 1,
   stageRewardSkillId: 0, stageRewardSkillLv: 1, stageRewardNum: cn, validReward: coin ? 1 + extra.length : 0,
@@ -1135,7 +1142,7 @@ const p3all = () => {
   }
   return f;
 };
-const P3_SEASONS = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100);
+const P3_SEASONS = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100 && s.colosseumStageId <= 3100);
 
 test('Part 3 ranking prizes: the audit table, featured skill by name, 2017-09 5★ skill, 2017-12 Spirit parts by bracket', () => {
   assert.deepStrictEqual(P3_SEASONS.map((s) => s.colosseumStageId), Object.keys(P3_PRIZES).map(Number));
@@ -1305,9 +1312,9 @@ test('real_part3 (2017-05 .. 2018-03 from the ReLux extract, every head..term ti
   if (!src || !relux) { results.push('skip real_part3: 1.1.3 master or ReLux extract not on disk'); return; }
   src.relux = relux;
   src.masterEnemyIds = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).map((r) => r.enemyId);
-  const P3 = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100).map((s) => s.colosseumStageId);
+  const P3 = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100 && s.colosseumStageId <= 3100).map((s) => s.colosseumStageId);
   assert.deepStrictEqual(P3, [2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100]);
-  const out = withRanking(P3, () => mc.seasonRows(src));
+  const out = withRanking(P3, () => mc.seasonRows(src, mc.SEASONS.filter((s) => s.colosseumStageId <= 3100)));
   assert.strictEqual(out.colosseumStage.length, 24);
   const cs = (id) => out.colosseumStage.find((r) => r.colosseumStageId === id);
   const tiersOf = (id) => out.colosseum.filter((r) => r.colosseumStageId === id);
@@ -1387,6 +1394,131 @@ test('real_part3 (2017-05 .. 2018-03 from the ReLux extract, every head..term ti
       assert.strictEqual(JSON.stringify(cs(id)), JSON.stringify(master.colosseumStage.find((r) => r.colosseumStageId === id)), `${id} season row byte-identical`);
     }
   } else results.push('skip real_part3 byte check: no served master with 800 .. 1600');
+});
+
+// Coliseum Part 3b Task 1: the lump-sum era 2018-04 .. 2019-04 (ReLux rows 3200 .. 4400): tiers, the lump sums, the mapped medals
+test('real_part3b (2018-04 .. 2019-04 from the ReLux extract: tiers, lump sums, Broom / Mickey B / Moon Gem)', () => {
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
+  const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
+  if (!src || !relux) { results.push('skip real_part3b: 1.1.3 master or ReLux extract not on disk (private sources)'); return; }
+  src.relux = relux;
+  src.masterEnemyIds = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).map((r) => r.enemyId);
+  const medalRows = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'medal.json'), 'utf8'));
+  const medals = new Map(medalRows.map((r) => [r.medalId, r]));
+  const P3B = [3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400];
+  assert.deepStrictEqual(mc.SEASONS.filter((s) => s.colosseumStageId > 3100).map((s) => s.colosseumStageId), P3B);
+  assert.strictEqual(mc.SEASONS.length, 37);
+  assert.deepStrictEqual(mc.RELUX_MEDAL, { 90135: 300948, 90136: 300913 });
+  const before = mc.SEASONS.filter((s) => s.colosseumStageId <= 3100);
+  const outOld = withRanking(before.map((s) => s.colosseumStageId), () => mc.seasonRows(src, before));
+  const out = withRanking(mc.SEASONS.map((s) => s.colosseumStageId), () => mc.seasonRows(src, mc.SEASONS));
+  assert.strictEqual(out.colosseumStage.length, 37);
+  const cs = (id) => out.colosseumStage.find((r) => r.colosseumStageId === id);
+  const tiersOf = (id) => out.colosseum.filter((r) => r.colosseumStageId === id);
+  const FIN = [20, 15, 15, 10, 10, 10, 10, 10, 10, 10, 50, 100, 300, 500, 500];
+  const COIN9000 = [50, 85, 125, 140, 200, 200, 200, 250, 250, 1000, 1500, 2000, 3000], COIN8100 = [50, 85, 125, 140, 200, 200, 200, 250, 250, 700, 1400, 1500, 3000];
+  const coinOf = (r) => { const i = r.rewardType.slice(0, r.validReward).indexOf(17); return i < 0 ? 0 : r.rewardNum[i]; };
+  assert.strictEqual(FIN.reduce((a, b) => a + b, 0), 1570);
+  P3B.forEach((id, i) => {
+    const t = tiersOf(id);
+    assert.strictEqual(t.length, id <= 3300 ? 22 : 23, `${id} tier count`);
+    assert.strictEqual(cs(id).rankingId, 4033 + i, `${id} rankingId`);
+    assert.ok(t.every((r) => r.arrivalStageCount > 0), `${id}: no 0-round tier`);
+    assert.strictEqual(cs(id).termColosseumId, t[t.length - 1].colosseumId, `${id} term = the last tier served`);
+    assert.deepStrictEqual(t.slice(0, 15).map((r) => r.arrivalStageCount), FIN, `${id} finite rounds (1,570)`);
+    assert.ok(t.slice(15).every((r) => r.arrivalStageCount === 999), `${id}: 999-round tiers after T15`);
+    assert.ok(t.every((r) => r.ap === 0), `${id} AP 0`);
+    assert.deepStrictEqual(t.slice(0, 13).map(coinOf), id === 3200 ? COIN9000 : COIN8100, `${id} tier coins`);
+    assert.strictEqual(t.slice(0, 13).map(coinOf).reduce((a, b) => a + b, 0), id === 3200 ? 9000 : 8100);
+    assert.deepStrictEqual([t[14].rewardType[0], t[14].rewardId[0], t[14].rewardNum[0], t[14].validReward], [5, 52, 1, 1], `${id} T15 = Moon Gem`);
+    if (id <= 3900) {
+      assert.deepStrictEqual(t.slice(0, 5).map((r) => [r.validStageReward, r.stageRewardNum]), [[1, 1], [1, 3], [1, 5], [1, 7], [1, 10]], `${id}: per-round coins 1 / 3 / 5 / 7 / 10`);
+      assert.ok(t.slice(4).every((r) => r.validStageReward === 1 && r.stageRewardNum === 10), `${id} 10 per round from Tier 5`);
+    } else {
+      for (const r of t) {
+        assert.strictEqual(r.validStageReward, 0, `${id} T${r.round}: no round coins (validStageReward 0)`);
+        assert.ok([r.stageRewardType, r.stageRewardId, r.stageRewardAssignType, r.stageRewardSkillId, r.stageRewardSkillLv, r.stageRewardNum].every((v) => v === 0), `${id} T${r.round}: stageReward* zeroed`);
+      }
+    }
+  });
+  assert.deepStrictEqual(tiersOf(3500).map((r) => r.excellentUnlockCount).slice(14, 18), [99, 99, 50, 10], '2018-07: T17 = 50 as ReLux');
+  // every type-3 reward is one of our medals: no ReLux-only 90135 / 90136 left; Broom / Mickey B by name
+  const have = medals.has(300948) && medals.has(300913);
+  const used = new Set();
+  for (const id of P3B) for (const r of tiersOf(id)) for (let i = 0; i < r.validReward; i++) if (r.rewardType[i] === 3) used.add(r.rewardId[i]);
+  assert.ok(!used.has(90135) && !used.has(90136), 'no ReLux-only medal id left');
+  assert.ok(used.has(300948) && used.has(300913), 'Magic Broom and Fantasia Mickey B paid');
+  const reluxT13 = relux.colosseum.find((r) => r.colosseumStageId === 3200 && r.round === 13);
+  assert.strictEqual(reluxT13.rewardId[1], 90135, 'the source row pays the ReLux id');
+  assert.deepStrictEqual([tiersOf(3200)[12].rewardId[1], tiersOf(3200)[13].rewardId[0], tiersOf(4000)[10].rewardId[1], tiersOf(4000)[12].rewardId[1], tiersOf(4000)[13].rewardId[0]],
+    [300948, 300948, 300948, 300913, 300913], 'Broom on 3200 T13 / T14 and 4000 T11, Mickey B on 4000 T13 / T14');
+  if (have) {
+    for (const id of used) assert.ok(medals.has(id), `medal ${id} in our medal master`);
+    assert.deepStrictEqual([medals.get(300948).name, medals.get(300913).name], ['Magic Broom', 'Fantasia Mickey B']);
+  } else results.push('skip real_part3b medal master check: 300948 / 300913 only exist in a master built with KHUX_MEDALS_ALL=1');
+  // the build stops on a ReLux medal id that is neither mapped nor in our medal master, and on a mapped one our master lacks
+  const ids = new Set(medalRows.map((r) => r.medalId)); ids.add(300948); ids.add(300913);
+  const only3200 = mc.SEASONS.filter((s) => s.colosseumStageId === 3200);
+  const bogus = { ...relux, colosseum: relux.colosseum.map((r) => (r.colosseumStageId === 3200 && r.round === 1 ? { ...r, rewardId: [r.rewardId[0], 99999999, ...r.rewardId.slice(2)] } : r)) };
+  assert.throws(() => withRanking([3200], () => mc.seasonRows({ ...src, relux: bogus, masterMedalIds: ids }, only3200)), /99999999.*not in our medal master/);
+  assert.ok(withRanking([3200], () => mc.seasonRows({ ...src, masterMedalIds: ids }, only3200)), 'with the mapped medals in the master it builds');
+  assert.throws(() => withRanking([3200], () => mc.seasonRows({ ...src, masterMedalIds: new Set([...ids].filter((m) => m !== 300948)) }, only3200)), /300948.*KHUX_MEDALS_ALL/);
+  // the Part 1-3 seasons: the same rows with or without the new seasons, and the same as the served master
+  for (const t of ['colosseumStage', 'colosseum']) {
+    assert.strictEqual(JSON.stringify(out[t].filter((r) => r.colosseumStageId <= 3100)), JSON.stringify(outOld[t]), `${t}: Part 1-3 rows unchanged`);
+  }
+  for (const t of ['stage', 'ranking', 'rankingReward', 'sphere', 'sphereArray', 'sphereMasu']) {
+    const now = new Set(out[t].map((r) => JSON.stringify(r)));
+    assert.ok(outOld[t].every((r) => now.has(JSON.stringify(r))), `${t}: Part 1-3 rows unchanged`);
+  }
+  let master = null;
+  try { master = { colosseum: JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'colosseum.json'), 'utf8')), colosseumStage: JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'colosseumStage.json'), 'utf8')) }; } catch { /* none */ }
+  const OLD = before.map((s) => s.colosseumStageId);
+  if (master && OLD.every((id) => master.colosseumStage.some((r) => r.colosseumStageId === id))) {
+    for (const id of OLD) {
+      assert.strictEqual(JSON.stringify(tiersOf(id)), JSON.stringify(master.colosseum.filter((r) => r.colosseumStageId === id)), `${id} tier rows byte-identical to the served master`);
+      assert.strictEqual(JSON.stringify(cs(id)), JSON.stringify(master.colosseumStage.find((r) => r.colosseumStageId === id)), `${id} season row byte-identical to the served master`);
+    }
+  } else results.push('skip real_part3b byte check: no served master with the 24 seasons');
+  // skip 99 lump sums, on the real rows of 2018-12: a one-turn clear of T1 R1 opens rounds 2 .. 100; clearing round 100 (the end of T8)
+  // pays the lump sums of T1 .. T8 (50 + 85 + 125 + 140 + 200 + 200 + 200 + 250 = 1,250) once and no round coin
+  const t4000 = R.tiersOf({ stage: cs(4000), tiers: tiersOf(4000) }), st = R.seasonState({}, 4000);
+  assert.strictEqual(R.clear(t4000, st, { tier: 1, round: 1, oneTurn: true }, 'T').coins, 0, 'T1 R1: no round coin on 4000');
+  assert.deepStrictEqual([st.last, st.open], [1, 100]);
+  assert.deepStrictEqual(R.tierRound(t4000, 100), { tier: 8, round: 10 });
+  const res = R.clear(t4000, st, { tier: 8, round: 10, oneTurn: false }, 'T');
+  assert.ok(res.ok); assert.strictEqual(res.cleared.length, 99);
+  assert.deepStrictEqual(res.tierRewards, [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.strictEqual(res.coins, 50 + 85 + 125 + 140 + 200 + 200 + 200 + 250, 'the T1-T8 lump sums, no round coin');
+  assert.strictEqual(res.coins, 1250);
+  assert.strictEqual(R.clear(t4000, st, { tier: 8, round: 10, oneTurn: false }, 'T').ok, false, 'paid once');
+  // no round coins 2018-12 .. 2019-04: a clear lists the round, the coins change only on a tier completion (T1 ends at round 20)
+  for (const id of [4000, 4100, 4400]) {
+    const tt = R.tiersOf({ stage: cs(id), tiers: tiersOf(id) }), s2 = R.seasonState({}, id);
+    for (let n = 1; n <= 20; n++) {
+      const r = R.tierRound(tt, n), c = R.clear(tt, s2, { tier: r.tier, round: r.round, oneTurn: false }, 'T');
+      assert.ok(c.ok && c.cleared.length === 1, `${id} round ${n}`);
+      assert.strictEqual(c.coins, n === 20 ? 50 : 0, `${id} round ${n}: coins only when T1 completes`);
+    }
+    assert.strictEqual(s2.coins, 50);
+  }
+  // 2018-11 still pays per round (1 coin in T1)
+  const t3900 = R.tiersOf({ stage: cs(3900), tiers: tiersOf(3900) });
+  assert.strictEqual(R.clear(t3900, R.seasonState({}, 3900), { tier: 1, round: 1, oneTurn: false }, 'T').coins, 1);
+  // tier rewards mapped: the detail page of 2018-12 names Magic Broom, Fantasia Mickey B and Moon Gem (names as server.js boardRewardName)
+  const materials = new Map(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'material.json'), 'utf8')).map((r) => [r.materialId, r]));
+  assert.strictEqual(materials.get(52).name, 'Moon Gem');
+  const nameOf = (type, id) => (type === 3 ? (medals.get(id) || {}).name : type === 5 ? (materials.get(id) || {}).name : '') || '';
+  const dTiers = t4000.map((t) => ({ tier: t.tier, rounds: t.rounds, endless: t.rounds >= 999, ap: 0, roundCoins: 0,
+    coins: t.tierReward.filter((x) => x.type === 17).reduce((a, x) => a + x.num, 0), items: t.tierReward.filter((x) => x.type !== 17), taken: false }));
+  const det = { boards: [], tiers: dTiers, best: 0, ranked: [], maps: 'japanese' };
+  const html = pages.detailPage([{ colosseumStageId: 4000, month: '2018-12', state: 'can', tiers: 23, apMin: 0, apMax: 0, boardIds: [], coins: 0, userRank: 1, userStageCount: 0, userStageTotalCount: 0, tierRewards: [] }], 4000, det,
+    { unlocked: true, imgVersion: 3, boardName: () => null, unlockQuestOf: () => null, itemName: nameOf });
+  assert.ok(html, 'the detail page of 4000 renders');
+  const tiersHtml = html.slice(html.indexOf('id="sec-tiers"'), html.indexOf('id="sec-ranked"'));
+  assert.ok(tiersHtml.includes('Moon Gem'), 'T15: Moon Gem');
+  if (have) assert.ok(tiersHtml.includes('Magic Broom') && tiersHtml.includes('Fantasia Mickey B'), 'Broom / Mickey B named');
+  else results.push('skip real_part3b detail names of the medals: 300948 / 300913 not in this medal master');
 });
 
 // ---- Coliseum Part 3 Task 3: month ids, the raw ReLux enemy table, month copies ----
@@ -1520,7 +1652,7 @@ test('real_part3_enemies (every enemy id of the 24 seasons, the named cases)', (
   const P3_ADDED = [...mc.PART3_ENEMY_IDS];
   const masterRows = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).filter((r) => !P3_ADDED.includes(r.enemyId));
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
-  const P3 = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100).map((s) => s.colosseumStageId);
+  const P3 = mc.SEASONS.filter((s) => s.colosseumStageId >= 2100 && s.colosseumStageId <= 3100).map((s) => s.colosseumStageId);
   try {
     fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
     const out = withRanking(P3, () => mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: raw }));

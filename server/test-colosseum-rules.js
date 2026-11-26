@@ -119,4 +119,31 @@ const sc = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [scalar] });
 assert.deepStrictEqual(sc[0].roundReward, [{ type: 17, id: 0, assignType: 1, skillId: 0, skillLv: 1, num: 7 }]);
 st = fresh();
 assert.strictEqual(R.clear(sc, st, { tier: 1, round: 1, oneTurn: false }, 'T11').coins, 7);
+
+// Coliseum Part 3b: the lump-sum era (2018-12 on: validStageReward 0, skip 99). Tier 1..8 = 20 / 15 / 15 / 10 x 5 rounds (round 100 ends T8)
+const lump = (round, count, skip, tierCoin) => ({ ...row(round, count, skip, 0, tierCoin), ap: 0, validStageReward: 0, stageRewardType: 0, stageRewardId: 0,
+  stageRewardAssignType: 0, stageRewardSkillId: 0, stageRewardSkillLv: 0, stageRewardNum: 0, validReward: 1, rewardType: [17, 0, 0, 0], rewardId: [0, 0, 0, 0], rewardNum: [tierCoin, 0, 0, 0] });
+const COUNTS = [20, 15, 15, 10, 10, 10, 10, 10, 10, 10], LUMPS = [50, 85, 125, 140, 200, 200, 200, 250, 250, 700];
+const L = R.tiersOf({ stage: { loopStageCount: 10 }, tiers: COUNTS.map((c, i) => lump(i + 1, c, 99, LUMPS[i])).concat([lump(11, 0, 3, 0)]) });
+// skip 99 lump sums: a one-turn clear of T1 R1 opens rounds 2 .. 100; clearing round 100 (the end of T8) pays 1,250 once, no round coin
+st = R.seasonState({}, 4000);
+res = R.clear(L, st, { tier: 1, round: 1, oneTurn: true }, 'T20');
+assert(res.ok); assert.strictEqual(res.coins, 0, 'no round coin');
+assert.strictEqual(st.last, 1); assert.strictEqual(st.open, 100);
+assert.deepStrictEqual(R.tierRound(L, 100), T(8, 10));
+res = R.clear(L, st, { tier: 8, round: 10, oneTurn: false }, 'T21');
+assert(res.ok); assert.strictEqual(res.cleared.length, 99);
+assert.deepStrictEqual(res.tierRewards, [1, 2, 3, 4, 5, 6, 7, 8]);
+assert.strictEqual(res.coins, 50 + 85 + 125 + 140 + 200 + 200 + 200 + 250); assert.strictEqual(res.coins, 1250);
+assert.strictEqual(st.coins, 1250);
+assert.strictEqual(R.clear(L, st, { tier: 8, round: 10, oneTurn: false }, 'T22').ok, false, 'paid once');
+// no round coins: every round of a season with validStageReward 0 clears with 0 coins; only the tier completion pays
+st = R.seasonState({}, 4001);
+for (let n = 1; n <= 19; n++) { const r = R.tierRound(L, n); assert.strictEqual(R.clear(L, st, { tier: r.tier, round: r.round, oneTurn: false }, 'T23').coins, 0, `round ${n}`); }
+assert.strictEqual(st.coins, 0);
+const last = R.clear(L, st, { tier: 1, round: 20, oneTurn: false }, 'T24');
+assert.deepStrictEqual([last.coins, last.tierRewards], [50, [1]]);
+// a stageReward slot left filled while validStageReward is 0 pays nothing
+const dirty = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [{ ...lump(1, 5, 1, 0), stageRewardType: 17, stageRewardNum: 9 }] });
+assert.deepStrictEqual(dirty[0].roundReward, []);
 console.log('colosseum-rules: ok');

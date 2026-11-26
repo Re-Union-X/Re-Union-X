@@ -109,6 +109,14 @@
 //   2017-08, 2018-01, 2018-02, 2018-03: no season-end point, the era curve above (1,624 / 1,147 / 999 / 811 / 245).
 // Note 2017-05: its 10,000 point (313) was taken two days before the end, a lower bound.
 //
+// Coliseum Part 3b (plan docs/superpowers/plans/2026-11-26-coliseum-part-2018.md, Task 1): the thirteen WW seasons 2018-04 .. 2019-04 =
+// ReLux rows 3200 .. 4400 (rankingId 4033 .. 4045), the lump-sum era: finite T1-T15 = 1,570 rounds, then 999-round tiers (22 tiers in
+// 2018-04 / 05, 23 from 2018-06); the 0-round end marker inside head..term (2018-08 .. 2019-04) is never served. Tier coins are the
+// rows' own lump sums (2018-04 9,000, then 8,100); per-round coins to 2018-11, none from 2018-12 (validStageReward 0, stageReward*
+// zeroed by tierRow). The ReLux medal ids of the tier rewards 90135 / 90136 are Magic Broom 300948 / Fantasia Mickey B 300913
+// (RELUX_MEDAL); with the medal master known (src.masterMedalIds) any other id missing from it stops the build. T15 = Moon Gem
+// (reward type 5, id 52). Until the ranking prizes exist (Task 5) the default SEASONS leave these seasons out with a warning.
+//
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
 'use strict';
@@ -153,7 +161,26 @@ const SEASONS = [
   { month: '2018-01', colosseumStageId: 2900, source: 'relux' },
   { month: '2018-02', colosseumStageId: 3000, source: 'relux' },
   { month: '2018-03', colosseumStageId: 3100, source: 'relux' },
+  // Coliseum Part 3b (ReLux rows 3200 .. 4400, rankingId 4033 .. 4045): the lump-sum era. Their stage sets are the JP 4.3.1 sets of
+  // the rows; a season is served only once its RELUX_RANKING entry exists (patch() leaves the others out with a warning)
+  { month: '2018-04', colosseumStageId: 3200, source: 'relux' },
+  { month: '2018-05', colosseumStageId: 3300, source: 'relux' },
+  { month: '2018-06', colosseumStageId: 3400, source: 'relux' },
+  { month: '2018-07', colosseumStageId: 3500, source: 'relux' },
+  { month: '2018-08', colosseumStageId: 3600, source: 'relux' },
+  { month: '2018-09', colosseumStageId: 3700, source: 'relux' },
+  { month: '2018-10', colosseumStageId: 3800, source: 'relux' },
+  { month: '2018-11', colosseumStageId: 3900, source: 'relux' },
+  { month: '2018-12', colosseumStageId: 4000, source: 'relux' },
+  { month: '2019-01', colosseumStageId: 4100, source: 'relux' },
+  { month: '2019-02', colosseumStageId: 4200, source: 'relux' },
+  { month: '2019-03', colosseumStageId: 4300, source: 'relux' },
+  { month: '2019-04', colosseumStageId: 4400, source: 'relux' },
 ];
+// ReLux medal ids of the tier rewards that are not ours -> ours (Part 3b, proven slot for slot RX = khuxwiki): 90135 = Magic Broom,
+// 90136 = Fantasia Mickey B. Every other ReLux medal id must be in our medal master (the build stops otherwise). Both medals exist
+// in the master only when it is built with KHUX_MEDALS_ALL=1 (the regen recipe).
+const RELUX_MEDAL = { 90135: 300948, 90136: 300913 };
 // generated stage sets (Task 2 writes cl_stg<id>.bin): 21YYMMNN, YY = 16 / 17 the year of the WW month, MM its month, NN = 01..10;
 // never a JP id, and the 2017 ids never those of the served 2016 sets (2017-08 .. 11 share their months with 2016-08 .. 11)
 const GEN_MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12'];
@@ -454,6 +481,23 @@ const STAGE_DEFAULTS = { hardmodeName: 'strDummy', hardmodeComparison: 1 };
 
 const byKey = (key) => (a, b) => a[key] - b[key];
 
+// a ReLux tier row with its type-3 reward ids mapped to ours (RELUX_MEDAL); with masterMedalIds (our medal master) an id that is
+// neither mapped nor in it stops the build
+function reluxMedals(t, masterMedalIds, month) {
+  if (!(t.validReward > 0)) return t;
+  const r = { ...t, rewardId: [...t.rewardId] };
+  for (let i = 0; i < t.validReward; i++) {
+    if (t.rewardType[i] !== 3) continue;
+    const id = t.rewardId[i];
+    if (RELUX_MEDAL[id]) r.rewardId[i] = RELUX_MEDAL[id];
+    else if (masterMedalIds && !masterMedalIds.has(id)) throw new Error(`colosseum: ${month}: tier ${t.colosseumId} pays medal ${id}, not in our medal master and not mapped (RELUX_MEDAL)`);
+  }
+  if (masterMedalIds) for (let i = 0; i < t.validReward; i++) {
+    if (r.rewardType[i] === 3 && !masterMedalIds.has(r.rewardId[i])) throw new Error(`colosseum: ${month}: tier ${t.colosseumId} pays medal ${r.rewardId[i]} (mapped), not in our medal master (build it with KHUX_MEDALS_ALL=1)`);
+  }
+  return r;
+}
+
 function tierRow(r) {
   const row = schemaRow('colosseum', r, validFor(REWARD4, r.validReward));
   if (!row.validStageReward) for (const f of STAGE_REWARD) row[f] = 0;
@@ -519,7 +563,9 @@ function seasonRows(src, seasons = SEASONS) {
     // first one too (each with its own rewards, as the source); the 1.1.3 seasons keep their rows up to the first endless tier
     // (= head..term on every 1.1.3 row served)
     const endless = all.findIndex((t) => t.arrivalStageCount >= ENDLESS);
-    const tiers = relux || endless < 0 ? all : all.slice(0, endless + 1);
+    // a 0-round row inside head..term is the end marker of the source (2018-08 .. 2019-04): never served (Part 3b)
+    const tiers = relux ? all.filter((t) => t.arrivalStageCount > 0) : endless < 0 ? all : all.slice(0, endless + 1);
+    if (!tiers.length) throw new Error(`colosseum: ${s.month}: no tier with rounds`);
     for (const t of tiers) {
       for (let i = 0; i < (t.validReward || 0); i++) {
         if (t.rewardType[i] === 17 && t.rewardNum[i] > COIN_MAX) throw new Error(`colosseum: ${s.month}: tier ${t.colosseumId} pays ${t.rewardNum[i]} coins (an x100 artefact?)`);
@@ -533,7 +579,7 @@ function seasonRows(src, seasons = SEASONS) {
       row.stageId = row.stageId.map((v, i) => (i < gen.length ? gen[i] : v));
     }
     out.colosseumStage.push(row);
-    const tierRows = tiers.map(tierRow);
+    const tierRows = tiers.map((t) => tierRow(relux ? reluxMedals(t, src.masterMedalIds, s.month) : t));
     out.colosseum.push(...tierRows);
     const stages = [];
     for (let i = 0; i < cs.validStage; i++) {
@@ -850,6 +896,14 @@ function patch(masterDir, opts = {}) {
       seasons = seasons.filter((s) => s.source !== 'relux');
     }
   }
+  // Part 3b until its Task 5: of the default SEASONS a relux season whose ranking prizes are not written yet (RELUX_RANKING, 2018-04 ..
+  // 2019-04) is left out whole with a warning, never served without its Rewards rows; an explicit opts.seasons list stops on it
+  // (seasonRows)
+  const notBuilt = opts.seasons ? [] : seasons.filter((s) => s.source === 'relux' && !RELUX_RANKING[s.colosseumStageId]);
+  if (notBuilt.length) {
+    console.warn(`colosseum: WARNING ${notBuilt.map((s) => s.month).join(', ')} not built yet (no ranking prizes in RELUX_RANKING): left out`);
+    seasons = seasons.filter((s) => !notBuilt.includes(s));
+  }
   // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the raw ReLux enemy table (opts.reluxEnemies,
   // else KHUX_COLOSSEUM_RELUX_ENEMY / DEFAULT_RELUX_ENEMY); without the lists only the 1.1.3 variants are checked (the stage import
   // still refuses a stage with an enemy missing from the master); without the table an id that needs it stops the run (enemyRows).
@@ -858,7 +912,8 @@ function patch(masterDir, opts = {}) {
   const reluxEnemyFile = process.env.KHUX_COLOSSEUM_RELUX_ENEMY || DEFAULT_RELUX_ENEMY;
   const reluxEnemies = opts.reluxEnemies || (opts.src ? [] : readReluxEnemies(reluxEnemyFile));
   if (!reluxEnemies) console.warn(`colosseum: the raw ReLux enemy table ${reluxEnemyFile} is not readable: the ids that need it stop the run`);
-  const out = seasonRows({ ...src, relux, masterEnemyIds: master.enemy.map((r) => r.enemyId), masterEnemies: master.enemy, stageEnemies, reluxEnemies }, seasons);
+  const medals = readMaster(path.join(masterDir, 'medal.json')).map((r) => r.medalId);
+  const out = seasonRows({ ...src, relux, masterMedalIds: medals.length ? new Set(medals) : null, masterEnemyIds: master.enemy.map((r) => r.enemyId), masterEnemies: master.enemy, stageEnemies, reluxEnemies }, seasons);
   // the flag of an unchecked run (out.enemyCheck); make-game-tables prints it as a banner. Not a stop: on a clean machine the
   // stage files come after this run (build-resources.ps1), the stage import then refuses a missing enemy
   if (!out.enemyCheck.checked && !opts.src) {
@@ -882,5 +937,5 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { MASTER_BASE_APPROVED, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
+module.exports = { MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
   PART3_ENEMY_IDS, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, RELUX_RANKING, rankItem, ENDLESS, ERA17 };

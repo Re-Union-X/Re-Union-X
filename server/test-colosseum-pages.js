@@ -302,6 +302,25 @@ const tests = {
     win.kxFilter({});
     assert.strictEqual(replaced, '/web/colosseum/catalog', 'All years: the tab leaves the address');
   },
+  // Coliseum Part 3b: the tier rewards of 2018-12 .. 2019-04 (Magic Broom / Fantasia Mickey B medals, Moon Gem material) named from the master
+  detail_tier_reward_names() {
+    const fs = require('fs'), path = require('path'), load = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', `${n}.json`), 'utf8'));
+    const medals = new Map(load('medal').map((r) => [r.medalId, r.name])), materials = new Map(load('material').map((r) => [r.materialId, r.name]));
+    assert.strictEqual(materials.get(52), 'Moon Gem');
+    const itemName = (type, id) => (type === 3 ? medals.get(id) : type === 5 ? materials.get(id) : '') || '';
+    const det = { boards: [], best: 0, ranked: [], maps: 'japanese', tiers: [
+      { tier: 13, rounds: 300, endless: false, ap: 0, roundCoins: 0, coins: 3000, items: [{ type: 3, id: 300913, num: 1 }], taken: false },
+      { tier: 14, rounds: 500, endless: false, ap: 0, roundCoins: 0, coins: 0, items: [{ type: 3, id: 300948, num: 3 }], taken: false },
+      { tier: 15, rounds: 500, endless: false, ap: 0, roundCoins: 0, coins: 0, items: [{ type: 5, id: 52, num: 1 }], taken: false }] };
+    const html = pages.detailPage([row(4000, '2018-12', 'can')], 4000, det, { ...CTX, itemName });
+    const tiers = html.slice(html.indexOf('id="sec-tiers"'), html.indexOf('id="sec-ranked"'));
+    assert.ok(tiers.includes('Moon Gem'), tiers);
+    if (medals.has(300948) && medals.has(300913)) assert.ok(tiers.includes('Fantasia Mickey B') && tiers.includes('Magic Broom <b class="v">x3</b>'), tiers);
+    else console.log('skip detail_tier_reward_names medals: 300948 / 300913 only exist in a master built with KHUX_MEDALS_ALL=1');
+    // without a name the page falls back to the generic label, never the id
+    const bare = pages.detailPage([row(4000, '2018-12', 'can')], 4000, det, { ...CTX, itemName: () => '' });
+    assert.ok(bare.includes('Medal') && !bare.includes('300948'));
+  },
   // Season detail page (26-11, as the Raid Catalog detail page)
   detail_page() {
     const rows = [row(800, '2016-04', 'kept', { base: 'can' }), row(900, '2016-05', 'can', { base: 'can', boardIds: [2200002, 2200023], coins: 123, userRank: 2, userStageCount: 5, userStageTotalCount: 25 })];
