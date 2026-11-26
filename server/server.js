@@ -5334,8 +5334,9 @@ const withHubBack = (html) => (gameCatalogOn() ? gameCatalogPages.withHubBack(ht
 const countOf = (n, w, ws = `${w}s`) => `${Number(n).toLocaleString('en-US')} ${n === 1 ? w : ws}`;
 // the cards of the hub page (game-catalog-pages.js): one per catalogue, its banner, description, counts, kept item and coins; a
 // catalogue whose data fails is left out (logged), never the whole page
-// the «Kept now» list of the hub (user 26-11): every item kept now, from the facts of the cards (keptId) plus the Shop's kept banner
-// (Banner Catalog: a quick Remove too), each with its card, detail page and its catalogue's own Remove request
+// the «Kept now» list of the hub (user 26-11): the items kept now in the five hub catalogues, from the facts of the cards (keptId),
+// each with its card, detail page and its catalogue's own Remove request; never the Shop's kept banner (user 26-11: the Banner
+// Catalog is not a hub catalogue)
 function gameCatalogKept(cards) {
   const by = Object.fromEntries(cards.map((c) => [c.key, c])), out = [];
   const add = (kind, fn) => { try { const k = fn(); if (k) out.push({ kind, ...k }); } catch (e) { console.log(`[catalog] kept ${kind}: ${e.message}`); } };
@@ -5350,11 +5351,6 @@ function gameCatalogKept(cards) {
     img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${c.keptId}.png`, href: `/web/avatar/board/${c.keptId}?from=catalog` }; });
   add('special', () => { const c = ev('special'); return c && { catalog: 'Special Catalog', name: c.kept, where: 'Special', remove: '/web/special/unpin',
     img: special.imgPath(c.keptId), href: `/web/special/quest/${c.keptId}?from=catalog` }; });
-  add('shop', () => {
-    const id = (player.gacha || {}).pinned, b = id && gachaCatalog().banners.find((x) => x.rowId === id);
-    return b && { catalog: 'Banner Catalog', name: b.name, where: 'the Shop', remove: '/web/gacha/unpin',
-      img: `/web/gacha/img/${b.drawMedalTypeId}.png`, href: `/web/gacha/detail/${b.drawMedalTypeId}?from=catalog` };
-  });
   return out;
 }
 function gameCatalogCards() {

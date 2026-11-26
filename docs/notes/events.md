@@ -1908,8 +1908,14 @@ its file shows no icon. Test: recon/tools/test_make_coin_icons.py, server/test-g
 ### «Kept now» on the hub (26 November 2026)
 
 Above the catalogue cards the hub lists everything kept now (server.js `gameCatalogKept`, game-catalog-pages.js `keptSection`, a
-section card of detail-cards.js): the kept Coliseum season, raid, event, avatar board entry, Special quest and the Shop's kept banner
-(Banner Catalog, for a quick Remove; the kept Spirit Blind Box deal is not listed). One compact line each: its card, name, catalogue,
+section card of detail-cards.js): the kept Coliseum season, raid, event, avatar board entry and Special quest, the five hub
+catalogues only (user 26-11: never the Shop's kept banner of the Banner Catalog, test-game-catalog.js). One compact line each: its card, name, catalogue,
 a link to its detail page and the catalogue's own Remove request (`/web/colosseum/unkeep`, `/web/raid/unkeep`, `/web/event/unkeep`,
-`/web/avatar/unkeep`, `/web/special/unpin`, `/web/gacha/unpin`; no confirmation, as the catalogue buttons), then the hub reloads.
+`/web/avatar/unkeep`, `/web/special/unpin`; no confirmation, as the catalogue buttons), then the hub reloads.
 Nothing kept: «Nothing kept: pick a past item in a catalog to keep it».
+
+### Hub layout on large screens (26 November 2026)
+
+Off the phone layout the hub shows the five catalogues side by side as cards (`#rows` grid, `repeat(auto-fit, minmax(200px, 1fr))`)
+and the kept items in two columns, so the whole hub fits a 1280x720 WebView without vertical scrolling (checked with six kept rows:
+page height 628 px in a 628 px viewport). The phone keeps its 3-column grid; there the Remove buttons read «Remove» only.

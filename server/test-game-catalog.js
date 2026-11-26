@@ -18,7 +18,7 @@ run('banner_row', () => {
   assert.strictEqual(makeGameCatalog.bannerRow([{ stageId: 1 }]), null, 'no row without the Training Grounds stage');
   const r = makeGameCatalog.bannerRow([{ stageId: 970000 }]);
   assert.deepStrictEqual([r.eventStageId, r.eventType, r.eventCategory, r.validStageId, r.stageId, r.detailUrl, r.bannerUrl],
-    [5000, 0, 2, 1, [970000], '/web/catalog', '/web/catalog/img/v1/5000.png']);
+    [5000, 0, 2, 1, [970000], '/web/catalog', makeGameCatalog.bannerPath()]);
   assert.strictEqual(r.endTime, '2030-12-31 23:59:59');
 });
 run('banner_patch', () => {
@@ -87,15 +87,15 @@ run('wallet_chip_coin_icon', () => {
 // «Kept now» (user 26-11): one compact line per kept item with its card, name, catalogue, detail link and the catalogue's own Remove
 run('hub_kept_section', () => {
   const kept = [{ kind: 'raid', catalog: 'Raid Catalog', name: 'Darkside · Tier 3', img: '/web/raid/img/v1/8100.png', href: '/web/raid/raid/8100?from=catalog',
-    remove: '/web/raid/unkeep', where: 'Events' }, { kind: 'shop', catalog: 'Banner Catalog', name: 'Deal <1>', img: '/web/gacha/img/7.png',
-    href: '/web/gacha/detail/7?from=catalog', remove: '/web/gacha/unpin', where: 'the Shop' }];
+    remove: '/web/raid/unkeep', where: 'Events' }, { kind: 'special', catalog: 'Special Catalog', name: 'Quest <1>', img: '/web/special/img/v9/7060.png',
+    href: '/web/special/quest/7060?from=catalog', remove: '/web/special/unpin', where: 'Special' }];
   const html = pages.hubPage(CARDS, kept);
   assert.ok(html.indexOf('id="sec-kept"') > 0 && html.indexOf('id="sec-kept"') < html.indexOf('<div id="rows">'), 'the section above the catalogues');
   assert.ok(html.includes('<h2>Kept now</h2><span class="kcount">2</span>'), 'its title and count');
   assert.ok(html.includes('<div class="kr" id="k-raid"><a class="ki" href="/web/raid/raid/8100?from=catalog"><img src="/web/raid/img/v1/8100.png" alt=""></a>'
     + '<div class="kt"><a class="kn" href="/web/raid/raid/8100?from=catalog">Darkside · Tier 3</a><span class="kc">Raid Catalog</span></div>'
-    + '<a href="#" class="pk" data-on="0" data-pin="/web/raid/unkeep" data-where="Events" onclick="return kxRm(this)">Remove from Events</a></div>'), 'a raid row');
-  assert.ok(html.includes('>Deal &lt;1&gt;</a><span class="kc">Banner Catalog</span>') && html.includes('data-pin="/web/gacha/unpin"') && html.includes('Remove from the Shop'), 'the Shop row, escaped');
+    + '<a href="#" class="pk" data-on="0" data-pin="/web/raid/unkeep" data-where="Events" onclick="return kxRm(this)">Remove<span class="kw"> from Events</span></a></div>'), 'a raid row');
+  assert.ok(html.includes('>Quest &lt;1&gt;</a><span class="kc">Special Catalog</span>') && html.includes('data-pin="/web/special/unpin"') && html.includes('Remove<span class="kw"> from Special</span>'), 'a Special row, escaped');
   assert.ok(html.includes('function kxRm(el)') && html.includes('location.reload()') && html.includes('<div id="pinmsg" class="pinmsg"></div>'), 'Remove posts, says so, reloads the hub');
   const empty = pages.hubPage(CARDS, []);
   assert.ok(empty.includes(`<p class="mu">${pages.KEPT_NONE}</p>`) && pages.KEPT_NONE === 'Nothing kept: pick a past item in a catalog to keep it' && !empty.includes('class="kcount"'), 'empty state');
@@ -110,6 +110,13 @@ run('catalog_head_helper', () => {
   assert.ok(!dc.catalogHead({ title: 'T', badge: false }).includes('NOT ORIGINAL') && !dc.catalogHead({ title: 'T' }).includes('class="intro"'));
   assert.ok(/\.chd h1\{/.test(dc.HEAD_CSS) && /\.intro\{/.test(dc.HEAD_CSS) && dc.HEAD_CSS.includes('(max-height:480px) and (max-width:900px)'), 'its CSS, compact on phones');
   assert.ok(require('./catalog-pages').PAGE_HEAD('T', '').includes(dc.HEAD_CSS), 'loaded by the catalogue pages');
+});
+// large screens (user 26-11: no scrolling at 1280x720): the five catalogues as a grid of cards, the kept items in two columns
+run('hub_large_grid', () => {
+  const html = pages.hubPage(CARDS, [{ kind: 'raid', catalog: 'Raid Catalog', name: 'R', img: '/i.png', href: '/h', remove: '/web/raid/unkeep', where: 'Events' }]);
+  assert.ok(html.includes('@media not all and (max-height:480px) and (max-width:900px){#rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))'), 'card grid off the phone');
+  assert.ok(html.includes('#rows>.row{display:flex;flex-direction:column') && html.includes('#rows>.row .go{display:none}'), 'cards, not rows');
+  assert.ok(html.includes('<div class="kl"><div class="kr" id="k-raid">') && html.includes('.kl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'), 'kept items in two columns');
 });
 run('hub_page_phone', () => {
   const html = require('./phone-css').withPhone(pages.hubPage(CARDS));
@@ -171,7 +178,7 @@ function wiring() {
     assert.strictEqual(t.gameCatalogOn(), true);
     const tab = call(t.respondStageEvent, { eventCategory: 2 }).events;
     assert.strictEqual(tab[0].eventStageId, 5000, 'the Game Catalog banner first');
-    assert.deepStrictEqual([tab[0].eventType, tab[0].stages.map((s) => s.stageId), tab[0].bannerUrl.endsWith('/web/catalog/img/v1/5000.png')], [0, [970000], true]);
+    assert.deepStrictEqual([tab[0].eventType, tab[0].stages.map((s) => s.stageId), tab[0].bannerUrl.endsWith(makeGameCatalog.bannerPath())], [0, [970000], true]);
     assert.deepStrictEqual(tab.filter((c) => c.eventType === 0).map((c) => c.eventStageId), [5000], 'the only catalogue banner of the Events tab');
     for (const id of [6000, 8000, 20000]) assert.ok(!tab.some((c) => c.eventStageId === id), `banner ${id} no longer listed`);
     assert.deepStrictEqual(t.eventsTabNow().map((c) => c.eventStageId), tab.map((c) => c.eventStageId), 'home banners / Progress see the same list');
@@ -258,14 +265,15 @@ function wiring() {
     const html = hub();
     const row = (kind) => (new RegExp(`<div class="kr" id="k-${kind}">[^]*?</div></div>`).exec(html) || [''])[0];
     assert.ok(row('colosseum').includes('href="/web/colosseum/season/800?from=catalog"') && row('colosseum').includes('Coliseum · April 2016')
-      && row('colosseum').includes('data-pin="/web/colosseum/unkeep"') && row('colosseum').includes('Remove from the Coliseum'), `Coliseum row ${row('colosseum')}`);
+      && row('colosseum').includes('data-pin="/web/colosseum/unkeep"') && row('colosseum').includes(' from the Coliseum</span>'), `Coliseum row ${row('colosseum')}`);
     if (raidId) assert.ok(row('raid').includes(`href="/web/raid/raid/${raidId}?from=catalog"`) && row('raid').includes(`/web/raid/img/v`) && row('raid').includes('data-pin="/web/raid/unkeep"'), 'raid row');
     if (evId) assert.ok(row('event').includes(`href="/web/event/event/${evId}?from=catalog"`) && row('event').includes('data-pin="/web/event/unkeep"'), 'event row');
     if (spId) assert.ok(row('special').includes(`href="/web/special/quest/${spId}?from=catalog"`) && row('special').includes('data-pin="/web/special/unpin"'), 'special row');
-    if (shopId) assert.ok(row('shop').includes(`href="/web/gacha/detail/${shopId}?from=catalog"`) && row('shop').includes('data-pin="/web/gacha/unpin"') && row('shop').includes('Banner Catalog'), 'shop row');
+    // a banner kept in the Shop (Banner Catalog) is never listed: only the five hub catalogues (user 26-11)
+    assert.ok(shopId && !html.includes('id="k-shop"') && !html.includes('/web/gacha/unpin') && !html.includes('Banner Catalog</span>'), `kept Shop banner ${shopId} not in the hub section`);
     assert.ok(raidId && evId && spId && shopId, `something kept in each: raid ${raidId} event ${evId} special ${spId} shop ${shopId}`);
     const n = [...html.matchAll(/<div class="kr" id="k-/g)].length;
-    assert.ok(html.includes(`<h2>Kept now</h2><span class="kcount">${n}</span>`) && n >= 5, `count ${n}`);
+    assert.ok(html.includes(`<h2>Kept now</h2><span class="kcount">${n}</span>`) && n >= 4, `count ${n}`);
     // Remove: the catalogue's own request, then the hub no longer lists it
     assert.strictEqual(post(t.respondColosseumPost, '/web/colosseum/unkeep'), 200);
     assert.strictEqual(post(t.respondRaidPost, '/web/raid/unkeep'), 200);
