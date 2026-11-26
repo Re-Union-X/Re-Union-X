@@ -340,3 +340,18 @@ only), imported by `build-resources.ps1` like the raid / event board cards.
   Chip and Dale: the screenshot rules (as for the event boards), so it takes the wiki picture.
 - The boards of later seasons (244, not served yet): private research `private\events\sources\coliseum\BOARD_IMAGES.md`;
   same method when their season is built (JP 4.3.1 card when it matches the board screenshot, else the wiki preview).
+
+## Open points of 25-11 closed (26 November 2026, resources 187 / master revision 395)
+
+- «ALL 1 TURN TRIUMPHS! N ROUNDS UNLOCKED»: N = the tier's master `excellentUnlockCount`, read by the client itself; the digits
+  were blank because the served English 2016 `ActMapColosseumAnim` lacks the `Round_NumL2_Eff01` bone the 4.3.1 code needs
+  (a missing hundreds pair skips the divisor step). `recon/tools/fix_colosseum_anim.py` adds it in build-resources.
+  Benched: Tier 1 one-turn clear draws «18 ROUNDS UNLOCKED» (`screenshots\r187e09.png`).
+- Kept season «Ends in 3688 days»: every colosseumStage row now ends with this week (a master cached before a keep kept 2030).
+  Benched: «Ends in 4 days». May 2016 «Goal: 10000000th» is the original lowest bracket: kept, explained in the notice.
+- Quests tile «PVE ---»: `/stage/achievements` `colosseumRank` = the live season's shown rank (benched «PVE 1st»). Ranking
+  header «---» is original (text 103900052). Not ranked yet: own tab `rankingStatus` 4 («You did not participate»), no Top 10
+  row (a rank-0 row drew the third-place crown: `Colosseum_Rank_Num0.png` does not exist).
+- High Score Challenge Present titles «<event>: <bracket>» with ASCII dashes.
+- Enemy levels re-checked on the bench (May 2016): Tier 1 Round 19 = LV 19, Tier 3 Round 1 = LV 36, Round 2 = LV 37: no reset
+  between tiers.
