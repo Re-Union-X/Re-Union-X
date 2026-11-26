@@ -246,6 +246,27 @@ const tests = {
     assert.deepStrictEqual(keys(b), ['ret', 'getRewardRankIds']);
     assert.deepStrictEqual(b.getRewardRankIds, [1, 2]);
   },
+  // Part 3 season (2017-12, colosseumStageId 2800): the thresholds come from the ERA17 curve of the season, not the 2016 one, and the lowest
+  // bracket (open at round 1) pays its Spirit part (type 33, Brows 401004) into the Presents at the first clear (final review M3)
+  part3_threshold_pays() {
+    const mc = require('./make-colosseum');
+    const S2800 = seasonRows(2800, 4030, 20150701);
+    const w = world();
+    w.week = { storyQuest: 800, shopFrom: '2017-12-07' };
+    w.tables.colosseumStage = [S2800.stage]; w.tables.colosseum = [...S2800.tiers];
+    w.tables.ranking = [{ rankingId: 4030, category: 4, startRank: 40100, endRank: 40101 }];
+    w.tables.rankingReward = [rewardRow(40100, 1, 100, [[3, 90125, 1]]), rewardRow(40101, 5001, 100000, [[33, 401004, 1]])];
+    const d = w.c.seasonDetail(2800);
+    assert.ok(d, 'the Part 3 season is served');
+    const era = mc.ERA17.of(2800);
+    assert.ok(era, 'an ERA17 curve for 2800');
+    assert.deepStrictEqual(d.ranked.map((b) => [b.startRank, b.endRank, b.rounds]), [[1, 100, era.round(100)], [5001, 100000, era.round(100000)]]);
+    assert.notStrictEqual(era.round(100), mc.rankedOf(S800.tiers, w.tables.rankingReward.filter((r) => r.rankingRewardId === 40100)).thresholds[0].score, 'not the 2016 curve');
+    assert.strictEqual(era.round(100000), 1, 'the lowest bracket opens at round 1');
+    w.now += 60000;
+    w.start(1, 1); w.clear(1, 1);
+    assert.deepStrictEqual(w.presents.map((x) => [x.type, x.id, x.num]), [[33, 401004, 1]], 'the lowest bracket paid at round 1');
+  },
   ranking_own_entry() {
     const w = world();
     const own = () => { w.sent = null; w.c.ranking({}, '/ranking/colosseum/own'); return w.sent; };
