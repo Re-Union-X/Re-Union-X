@@ -39,9 +39,11 @@ than in the other 1280 x 544 screenshots: they are 6-7 canvas px lower than the 
 Later seasons: --table = a private JSON {id: {name, kind, month, layout, preview, jp: [JP files]}} (the board list of the
 private research; rows of BOARDS above are kept, only their month is taken) and --months A..B (or one month) = every
 board of those months except 2210191. Rules on top of the above: several JP candidates (per-gender pieces of a
-both-gender board) are tried in turn; a preview that does not fit the screenshot (difference above FIT_MAX: another or a
-resampled picture) gives no card (art 'none'); a board with a JP candidate but no wiki preview to prove it (class C) gets
-no card either (art 'classC:<file>', the JP card fitted to the screenshot for review), drawn on --classc-sheet when given.
+both-gender board) are tried in turn; a preview that does not fit the screenshot (difference above FIT_MAX: another
+picture, or one larger than the canvas) gives no card (art 'none'); a board with a JP candidate but no usable wiki preview
+to prove it (class C) gets no card either (art 'classC:<file>', the JP card fitted to the screenshot for review), drawn on
+--classc-sheet when given. A preview fitted at a scale off by more than SCALE_TOL (the whole card resampled by the wiki
+editor, e.g. 288 px) keeps its native size, centred on its fitted place (never resampled).
 """
 import argparse
 import json
@@ -322,15 +324,22 @@ def card(bid, wiki, jp, cal):
     if res['jp'] and res['jp']['match']:
         c = res['jp']['file']
         res.update(source='jp', art='jp:' + c, diff=res['jp']['diff'], image=rgba(jp_file(jp, c)), pos=None)
-    elif pic is None and found:
-        j = min(found, key=lambda j: j['diff'])
-        res.update(source='classC', art='classC:' + j['file'], diff=j['diff'], image=rgba(jp_file(jp, j['file'])), pos=None)
-    elif pic is None:
-        res.update(source='none', art='none', diff=float('inf'), image=Image.new('RGBA', (SIZE, SIZE), (0, 0, 0, 0)), pos=None)
     else:
-        img, pos = place(pic, pv['u'], pv['v'])
-        ok = pv['diff'] <= FIT_MAX
-        res.update(source='loc' if ok else 'none', art='loc' if ok else 'none', diff=pv['diff'], image=img, pos=list(pos))
+        usable = pic is not None and pv['u'] is not None and pv['diff'] <= FIT_MAX and pic.width <= SIZE and pic.height <= SIZE
+        if usable:
+            u, v = pv['u'], pv['v']
+            if not res['preview']['scaleOk']:
+                # a resampled preview (the whole card at another size): its native pixels centred on the fitted place
+                u, v = u + pic.width * (pv['scale'] - 1) / 2, v + pic.height * (pv['scale'] - 1) / 2
+            img, pos = place(pic, u, v)
+            res.update(source='loc', art='loc', diff=pv['diff'], image=img, pos=list(pos))
+        elif found:
+            # class C: a JP candidate and no preview that proves or replaces it (none, another or a resampled picture)
+            j = min(found, key=lambda j: j['diff'])
+            res.update(source='classC', art='classC:' + j['file'], diff=j['diff'], image=rgba(jp_file(jp, j['file'])), pos=None)
+        else:
+            res.update(source='none', art='none', diff=pv['diff'] if pic is not None else float('inf'),
+                       image=Image.new('RGBA', (SIZE, SIZE), (0, 0, 0, 0)), pos=None)
     cx, cy, k = canvas(shot, cal)
     res['shot'] = shot_img.crop((round(cx), round(cy), round(cx + SIZE * k), round(cy + SIZE * k))).resize((SIZE, SIZE), Image.LANCZOS)
     return res

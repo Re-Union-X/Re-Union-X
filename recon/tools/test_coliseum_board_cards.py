@@ -168,25 +168,43 @@ with tempfile.TemporaryDirectory() as tmp:
     e_pic = picture(200, 290, 7)
     screenshot(canvas_with(picture(200, 290, 8), (50, 8)), 0.6, (40, 30)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_E_KHUX.png'))
     e_pic.save(os.path.join(wiki, 'preview', 'Preview_-_E.png'))
+    # F: the preview is the whole card resampled to 288 px (scale 1.0625): native pixels centred on the fitted place
+    f_card = canvas_with(picture(306, 306, 9), (0, 0))
+    screenshot(f_card, 0.7, (50, 30), (800, 400)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_F_KHUX.png'))
+    f_pic = f_card.resize((288, 288), Image.LANCZOS)
+    f_pic.save(os.path.join(wiki, 'preview', 'Preview_-_F.png'))
+    # G: a preview larger than the canvas (a full-body avatar), JP candidate: class C, no crash
+    g_card = canvas_with(picture(200, 290, 10), (50, 8))
+    screenshot(g_card, 0.6, (40, 30)).save(os.path.join(wiki, 'layout', 'Coliseum_Board_-_G_KHUX.png'))
+    picture(274, 397, 11).save(os.path.join(wiki, 'preview', 'Preview_-_G.png'))
+    g_card.save(os.path.join(jp, 'img', 'sphere_incentive', '2200115.png'))
     table = os.path.join(tmp, 'table.json')
     json.dump({'2210098': {'name': 'Board C', 'kind': '', 'month': '2018-01', 'layout': 'C_(Male)', 'preview': 'C', 'jp': ['2200119.png', '2200120.png']},
                '2210152': {'name': 'Board D', 'kind': '', 'month': '2019-05', 'layout': 'D', 'preview': 'D', 'jp': ['2200193.png']},
                '2210161': {'name': 'Board E', 'kind': '', 'month': '2019-07', 'layout': 'E', 'preview': 'E', 'jp': []},
+               '2210101': {'name': 'Board F', 'kind': '', 'month': '2018-02', 'layout': 'F', 'preview': 'F', 'jp': []},
+               '2210095': {'name': 'Board G', 'kind': '', 'month': '2017-12', 'layout': 'G', 'preview': 'G', 'jp': ['2200115.png']},
                '2210191': {'name': 'Hand', 'kind': '', 'month': '2020-01', 'layout': 'A', 'preview': 'A', 'jp': []},
                '2210037': {'name': 'not this', 'kind': '', 'month': '2016-08', 'layout': 'X', 'preview': 'X', 'jp': []}}, open(table, 'w'))
     cbc.load_table(table)
     check(cbc.BOARDS[2210037][0] == 'Board A' and cbc.MONTHS[2210037] == '2016-08', 'table: a repository row is kept, its month taken')
-    check(cbc.month_ids('2018-01..2020-01') == [2210098, 2210152, 2210161], 'month range %r' % cbc.month_ids('2018-01..2020-01'))
+    check(cbc.month_ids('2018-01..2020-01') == [2210098, 2210101, 2210152, 2210161], 'month range %r' % cbc.month_ids('2018-01..2020-01'))
     check(cbc.month_ids('2019-05') == [2210152], 'one month')
     loc3, rep3, sh3, shc = (os.path.join(tmp, n) for n in ('loc3', 'rep3.json', 'sheet3.png', 'sheetc.png'))
     cbc.main(['--table', table, '--months', '2018-01..2020-12', '--wiki', wiki, '--jp', jp, '--loc', loc3, '--report', rep3,
               '--sheet', sh3, '--classc-sheet', shc])
     r3 = {x['id']: x for x in json.load(open(rep3, encoding='utf-8'))['boards']}
-    check(sorted(r3) == [2210098, 2210152, 2210161], 'months report ids %r' % sorted(r3))
+    check(sorted(r3) == [2210098, 2210101, 2210152, 2210161], 'months report ids %r' % sorted(r3))
     check(r3[2210098]['art'] == 'jp:2200120.png' and r3[2210098]['month'] == '2018-01', 'C: second JP candidate kept %r' % r3[2210098]['art'])
     check(r3[2210152]['art'] == 'classC:2200193.png' and r3[2210152]['file'] == '' and r3[2210152]['diff'] < 8, 'D: class C %r' % ((r3[2210152]['art'], r3[2210152]['file'], r3[2210152]['diff']),))
     check(r3[2210161]['art'] == 'none' and r3[2210161]['diff'] > cbc.FIT_MAX and r3[2210161]['file'] == '', 'E: low fit, no card %r' % ((r3[2210161]['art'], r3[2210161]['diff']),))
-    check(not os.path.exists(os.path.join(loc3, 'img', 'sphere_incentive_coli')) or not os.listdir(os.path.join(loc3, 'img', 'sphere_incentive_coli')), 'months: no file written')
+    check(os.listdir(os.path.join(loc3, 'img', 'sphere_incentive_coli')) == ['2210101.png'], 'months: only the loc card written')
+    check(r3[2210101]['art'] == 'loc' and r3[2210101]['pos'] == [9, 9] and abs(r3[2210101]['preview']['scale'] - 306 / 288) < 0.02,
+          'F: resampled preview centred %r' % ((r3[2210101]['pos'], r3[2210101]['preview']['scale']),))
+    f_out = np.asarray(Image.open(os.path.join(loc3, 'img', 'sphere_incentive_coli', '2210101.png')))
+    check(np.array_equal(f_out[9:297, 9:297], np.asarray(f_pic)), 'F: native pixels, no resampling')
+    g = cbc.card(2210095, wiki, jp, cal)
+    check(g['art'] == 'classC:2200115.png' and g['diff'] < 8, 'G: preview larger than the canvas, class C %r' % ((g['art'], g['diff']),))
     check(os.path.exists(sh3) and os.path.exists(shc), 'main and class C sheets')
     try:
         cbc.main(['--months', '2018-01', '--ids', '2210098', '--wiki', wiki, '--jp', jp, '--loc', loc3])
