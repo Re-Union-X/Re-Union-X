@@ -78,6 +78,10 @@ function fakePage(html) {
   return { rows, el, win };
 }
 
+// the 13 seasons 2016-04 .. 2017-04 (Part 2): April - November 2016 can be kept, December now, 2017 later
+const MONTHS13 = ['2016-04', '2016-05', '2016-06', '2016-07', '2016-08', '2016-09', '2016-10', '2016-11', '2016-12', '2017-01', '2017-02', '2017-03', '2017-04'];
+const SEASONS13 = MONTHS13.map((m, i) => row(800 + i * 100, m, i < 8 ? 'can' : i === 8 ? 'now' : 'later', { base: i < 8 ? 'can' : i === 8 ? 'now' : 'later', boards: 'todo' }));
+
 const tests = {
   lists_every_season() {
     const html = pages.catalogPage(ROWS, CTX);
@@ -213,6 +217,36 @@ const tests = {
     assert.ok(/<div id="rows">\s*<div class="row /.test(html), 'rows stay direct children of #rows (phone cards #rows>.row)');
     assert.ok(html.includes('#rows>.row.hide') || html.includes('#rows>.row.hide,'), 'phone CSS hides filtered cards');
     assert.ok(html.includes('.fbtn{flex:0 0 auto!important'), 'the phone header keeps the Filters button on the title line');
+  },
+  // Year tabs (user 26-11, I-328): the game years of the other catalogs (gacha.js GAME_YEARS, April 7 to April 7), «All years» first,
+  // a tab only for a year with seasons; a season is under every game year its month touches (special-pages.js entryYears): April
+  // 2017 (1st-30th) is in the Launch year and in Year 2
+  year_tabs() {
+    const html = pages.catalogPage(SEASONS13, CTX);
+    const tabs = [...html.matchAll(/<button type="button" class="tab[^"]*" data-p="(\w+)"><b>([^<]+)<\/b><small>[^<]*<\/small><span class="c" id="tc\w+">(\d+)<\/span>/g)].map((m) => [m[1], m[2], Number(m[3])]);
+    assert.deepStrictEqual(tabs, [['all', 'All years', 13], ['0', 'Launch year', 13], ['1', 'Year 2', 1]]);
+    assert.ok(/<div class="tabs" id="tabs">[\s\S]*?<\/div><div class="tabline"><\/div>/.test(html), 'tabs + tab line as the other catalogs');
+    assert.ok(rowHtml(html, 2000).includes('data-p="0 1"') && rowHtml(html, 1500).includes('data-p="0"'));
+    const p = fakePage(html);
+    const shown = () => p.rows.filter((r) => !/ hide/.test(r.className)).map((r) => Number(r.attrs['data-eid']));
+    assert.strictEqual(shown().length, 13, 'All years');
+    p.win.kxFilter({ p: '1' });
+    assert.deepStrictEqual(shown(), [2000], 'Year 2: April 2017 only');
+    assert.ok(p.el('sum').innerHTML.includes('1 season') && p.el('sum').innerHTML.includes('in <b>Year 2</b>'), p.el('sum').innerHTML);
+    p.win.kxFilter({ p: '0' });
+    assert.strictEqual(shown().length, 13, 'Launch year: every season (April 2017 too)');
+    // tabs and filters together: tab counts follow the filters, the tab stays
+    p.win.kxFilter({ p: '1', show: 'later' });
+    assert.deepStrictEqual(shown(), [2000]);
+    assert.deepStrictEqual([p.el('tcall').textContent, p.el('tc0').textContent, p.el('tc1').textContent].map(String), ['4', '4', '1'], 'counts of the filtered seasons per tab');
+    p.win.kxFilter({ p: '1', show: 'can' });
+    assert.deepStrictEqual(shown(), []);
+    assert.ok(p.el('none').textContent.includes('No seasons match'));
+  },
+  year_tabs_phone() {
+    const html = withPhone(pages.catalogPage(SEASONS13, CTX));
+    assert.ok(html.includes('<style data-phone>') && html.includes('.fbtn,.tab,.yc,.pk,.o,button{min-height:30px}'), 'phone tap floor of the tabs');
+    assert.ok(/<div class="tabline"><\/div>(<div class="sum"|[\s\S]*?)<div id="rows">\s*<div class="row /.test(html), 'the tabs sit outside #rows: the card grid is unchanged');
   },
   empty() {
     const html = pages.catalogPage([], CTX);
