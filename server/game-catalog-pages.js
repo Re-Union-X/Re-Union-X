@@ -55,6 +55,8 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   + '.kl{grid-template-columns:1fr}.kl>.kr:nth-child(2){border-top:1px solid #1d5878}'
   + '.kr .pk{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:3px 16px;font-size:13px;line-height:1;border-width:1px;border-radius:14px;box-sizing:border-box}'
   + '#rows>.row .d{min-height:calc(3 * 1.35em)}'
+  // the coin chip inside the card (user 26-11: «Coliseum Coins · Dec 2017» ran out of the 5-column card): a slightly smaller label
+  + '#rows>.row .wal{max-width:100%}#rows>.row .wal small{font-size:11px;padding:2px 6px 2px 4px;gap:3px;letter-spacing:0}#rows>.row .wal b{padding:1px 8px}'
   + '.intro{margin-bottom:8px}#sec-kept{margin:8px 0}}';
 
 // a card's row: the banner on the left (as the catalogue rows), the name, the description, the facts, the coins; the whole row opens
