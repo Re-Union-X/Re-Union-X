@@ -13,7 +13,8 @@ for (const [name, html] of [['help', lp.helpPage()], ['credits', lp.creditsPage(
   check(html.includes('not affiliated with, endorsed or supported by SQUARE ENIX or Disney'), `${name}: no non-affiliation line`);
   check(!/<a\b|href=|https?:|www\./.test(text), `${name}: has a link or URL`);
   check(!/discord|github|reddit|youtube|twitter|@[a-z]|e-mail|email/.test(text), `${name}: names a project channel or an e-mail`);
-  check(!/\blogs?\b|play\.log|server\.log|report a bug|bug report/.test(text), `${name}: asks for logs or bug reports`);
+  // «bug reports» alone is allowed (I-321: Drybomber's credit, «dozens of detailed bug reports»); asking for them is not
+  check(!/\blogs?\b|play\.log|server\.log|report a bug|(send|submit|post|file|make|write)( us)?( a| your| the)? bug reports?/.test(text), `${name}: asks for logs or bug reports`);
   check(!/apk|obb|\bdns\b|protector|liapp|download (the )?(game|client)/.test(text), `${name}: talks about getting the client or the redirect`);
   check(!/<img|<script|url\(/.test(text), `${name}: has images, scripts or external styles`);
 }

@@ -139,8 +139,9 @@ Questo restauro si regge sul lavoro di chi ha conservato e documentato il gioco 
     ci ha dato un'istantanea tarda del master worldwide: calendario, righe delle quest e dei nemici degli eventi
     2018-2021 (Org XIII, The Keyblade War, eventi sfida) e il riferimento per stagioni e tabelloni del Coliseum,
     Union Cross, PvP, classifiche, tabelloni degli eventi e Booster.
-  - **Drybomber** — membro del ReLux Team: ha condiviso il foglio della community sul farming delle medaglie, che ha
-    confermato i drop e i forzieri originali della storia, e prova ogni nuova build.
+  - **Drybomber** — membro del ReLux Team e il nostro tester piu' prolifico: decine di segnalazioni di bug dettagliate
+    su ogni build. Ha fatto ricerche su eventi, Coliseum e Union Cross, ha archiviato gli avvisi ufficiali e ha fatto
+    incontrare i progetti Re-Union X e ReLux.
   - Il ReLux Team ci ha anche condiviso, con il suo permesso, il suo indice delle grafiche dei nemici: nomina il record
     originale di ogni texture dei nemici, cosi' animazioni, attacchi speciali ed effetti di colpo dei nemici sono ora
     ricostruiti esattamente come li disegnava il gioco.

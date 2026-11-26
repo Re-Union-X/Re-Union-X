@@ -272,6 +272,10 @@ h1,h2,h3,.ttl,.tab,.tabs,.tag,.btn,.big,.brand{font-family:var(--font)}
 .ded-gold .ded-name{font-size:28px;color:#ffcf6b}
 .ded-gold .ded-links a{color:#ffdf9a;background:rgba(255,207,107,.08);border-color:rgba(255,207,107,.5)}
 .ded-gold .ded-links a:hover,.ded-gold .ded-links a:focus-visible{background:rgba(255,207,107,.22);color:#fff}
+/* Credits: the Re-Union X Project team note (as the in-game Credits), between the dedication and the helpers */
+.project-team{text-align:center;margin:0 auto 16px;max-width:620px}
+.project-team .ded-kicker{color:var(--cyan)}
+.project-team p{margin:8px 0 0;font-size:15.5px;line-height:1.6;color:var(--text)}
 /* Credits: the helpers, cards in the style of the dedication (cyan, smaller) */
 .helpers{margin:4px 0 6px}
 .hp-top{text-align:center;margin:6px 0 12px}

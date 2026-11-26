@@ -105,13 +105,21 @@ const CREDITS_CSS = '<style>body{margin:0;background:#043654;color:#fff;font:17p
   + '.names span{border:1px solid #c79be0;background:#3b2152;color:#f1e2fb;border-radius:14px;padding:1px 12px;font-weight:bold;font-size:15px}'
   + '.heart{margin:18px 0 6px;padding:14px 16px;text-align:center;border:2px solid #ff8fa8;border-radius:14px;background:linear-gradient(#0d4a70,#06283e)}'
   + '.heart .h{color:#ff6f8f;font-size:30px;line-height:1}.heart .ttl{font-size:21px;font-weight:bold;font-style:italic;margin:4px 0}'
-  + '.heart .sign{color:#ffcf6b;font-style:italic;font-weight:bold;margin-top:8px}'
+  + '.heart .sign{color:#ffcf6b;font-style:italic;font-weight:bold;margin-top:8px}.heart i{color:#5fe0f0}'
+  // ReLux Team members, as the site's .members/.member cards (dashed cyan initial, name, role pill, text)
+  + '.members{margin-top:10px;padding-top:8px;border-top:2px dotted #4f7f96}.mttl{display:block;font-size:11px;font-weight:bold;letter-spacing:2px;color:#b9cfdc}'
+  + '.member{display:flex;align-items:flex-start;gap:10px;margin-top:8px;padding:10px 12px;border:1px solid #2f86c0;border-radius:12px;background:#06283e}'
+  + '.mav{flex:none;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0b4f8f;border:3px dashed #5fe0f0;font-weight:bold;font-size:17px}'
+  + '.mname{font-weight:bold;font-size:17px;margin-right:8px}.mrole{display:inline-block;font-size:12px;font-weight:bold;color:#5fe0f0;border:1px solid #3f9fb0;border-radius:12px;padding:0 10px}'
+  + '.member p{margin:4px 0 0;font-size:15px;color:#dcebf3}'
   + '.n{color:#b9cfdc;font-size:14px}</style>';
 
 function creditsPage() {
   const k = (s) => esc(s).replace(/\*([^*]+)\*/g, '<b class="g">$1</b>'); // *words* in gold
   const row = (tag, text, cls = '', extra = '') => `<div class="row ${cls}"><span class="pill ${cls === 't' ? 'p-purple' : 'p-blue'}">${esc(tag)}</span>`
     + `<p>${k(text)}</p>${extra}</div>`;
+  const member = (initial, name, role, text) => `<div class="member"><span class="mav">${esc(initial)}</span><div>`
+    + `<span class="mname">${esc(name)}</span><span class="mrole">${esc(role)}</span><p>${k(text)}</p></div></div>`;
   const body = '<h1>Credits</h1><p class="sub">Re-Union X</p>'
     + `<div class="intro"><span class="st">&#10022;</span>${k('This restoration stands on the work of people who *preserved* and *documented* the game long before us.')}</div>`
     + `<div class="ded"><span class="pill p-gold">SPECIAL THANKS</span><div class="nm">thethiny</div><p>${k('Without thethiny this project would most likely never have got off the ground. His tools *opened the game\'s data*, his server showed that *bringing it back was possible*, and his public work gave us the map we have followed since the very first day. *We are deeply, truly grateful.*')}</p></div>`
@@ -119,11 +127,15 @@ function creditsPage() {
     + '<h2>With the help of</h2>'
     + row('Roboloid & Ultimadei', 'The KHUχ database: *Medal data, multipliers and special attack conditions*.')
     + row('KHUX Wiki & KH Wiki', '*Quests, Medals, special attacks and events* used as references.')
-    + row('ReLux Team', 'Research on the game\'s *events, raids, Union Cross and campaigns*, the archive of the official notices, player-made calculators and the *index of the enemy graphics* that rebuilt the enemy animations exactly. Lead developer *LuxHollow*: a steady support to this project. *Drybomber* shared the community *Medal Farming sheet* that confirmed the original story drops.')
+    + row('ReLux Team', 'Research on the game\'s *events, raids, Union Cross and campaigns*, the *archive and index of the official notices*, player-made calculators and pointers to community references, guiding the restoration of the event modes, and their *index of the enemy graphics*, which rebuilt the enemy animations, special attacks and hit effects exactly as the game drew them.', '',
+      '<div class="members"><span class="mttl">TEAM MEMBERS</span>'
+      + member('L', 'LuxHollow', 'Lead developer', '*A steady support to this project.* The ReLux companion package gave us *a late worldwide master snapshot*: the schedule, quest and enemy rows of the 2018-2021 events (Org XIII, The Keyblade War, challenge events), and the reference for Coliseum seasons and boards, Union Cross, PvP, rankings, event boards and Boosters.')
+      + member('D', 'Drybomber', 'Team member', 'ReLux Team member and our *most prolific tester*: *dozens of detailed bug reports* on every build. Researched *events, Coliseum and Union Cross*, archived the official notices, and *brought the Re-Union X and ReLux projects together*.')
+      + '</div>')
     + row('SmellyOctopus', 'Thank you for teaching so many of us to *play free-to-play wisely*, and for keeping us company back then with *videos full of joy*. Those videos are now *a huge help* as references for the restoration.')
     + row('Testers', 'They played every new piece of the restoration before anyone else and *reported what broke*, so that everyone else would find it working. Thank you!', 't',
       `<div class="names">${TESTERS.map((n) => `<span>${esc(n)}</span>`).join('')}</div>`)
-    + `<div class="heart"><div class="h">&#9829;</div><span class="pill p-pink">FROM THE HEART</span><div class="ttl">To our community</div><p>${k('Thank you to *every player who never let this game go*: to everyone who kept videos, screenshots and guides, shared what they remembered or simply asked “is it coming back?”. You are the reason this restoration keeps going, and *this game lives on because of you*.')}</p><div class="sign">May your heart be your guiding key.</div></div>`
+    + `<div class="heart"><div class="h">&#9829;</div><span class="pill p-pink">FROM THE HEART</span><div class="ttl">To our community</div><p>${k('Thank you to *every player who never let this game go*: to everyone who kept videos, screenshots and guides, shared what they remembered or simply asked ')}<i>“is it coming back?”</i>${k('. You are the reason this restoration keeps going, and *this game lives on because of you*.')}</p><div class="sign">May your heart be your guiding key.</div></div>`
     + '<h2>The original game</h2>'
     + `<p>${esc('KINGDOM HEARTS Union χ[Cross] was developed and published by SQUARE ENIX. KINGDOM HEARTS and all its characters, images, music and texts belong to SQUARE ENIX and Disney.')}</p><p class="n">${esc(NOT_AFFILIATED)}</p>`;
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'

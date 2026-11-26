@@ -139,8 +139,9 @@ This restoration stands on the work of people who preserved and documented the g
     worldwide master snapshot: the schedule, quest and enemy rows of the 2018-2021 events (Org XIII, The Keyblade
     War, challenge events), and the reference for Coliseum seasons and boards, Union Cross, PvP, rankings, event
     boards and Boosters.
-  - **Drybomber** — ReLux Team member: shared the community Medal Farming sheet that confirmed the original story
-    drops and prize boxes, and tests every new build.
+  - **Drybomber** — ReLux Team member and our most prolific tester: dozens of detailed bug reports on every build.
+    Researched events, Coliseum and Union Cross, archived the official notices, and brought the Re-Union X and ReLux
+    projects together.
   - The ReLux Team also shared, with their permission, their index of the enemy graphics: it names the original record
     of every enemy texture, so the enemy animations, special attacks and hit effects are now rebuilt exactly as the
     game drew them.
