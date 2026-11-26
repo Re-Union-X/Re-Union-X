@@ -50,6 +50,11 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   + '#rows>.row .info{display:flex;flex-direction:column;flex:1 1 auto;margin:6px 0 0;line-height:1.35}#rows>.row .nm{font-size:16px;margin:0 0 2px}'
   + '#rows>.row .d,#rows>.row .ct,#rows>.row .pg,#rows>.row .lk{font-size:13px}#rows>.row .go{display:none}'
   + '.kr{padding:4px 0}.kr .ki{flex-basis:128px}.kr .ki img{width:128px;height:28px}.kr .kn{font-size:14px}.kr .kc{font-size:12px}'
+  // user 26-11: one kept item per line, its Remove button on the right edge (no empty half), a clean pill; the card texts lined up:
+  // every description takes three lines, so the counts, the kept lines and the coin chips start at the same height
+  + '.kl{grid-template-columns:1fr}.kl>.kr:nth-child(2){border-top:1px solid #1d5878}'
+  + '.kr .pk{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:3px 16px;font-size:13px;line-height:1;border-width:1px;border-radius:14px;box-sizing:border-box}'
+  + '#rows>.row .d{min-height:calc(3 * 1.35em)}'
   + '.intro{margin-bottom:8px}#sec-kept{margin:8px 0}}';
 
 // a card's row: the banner on the left (as the catalogue rows), the name, the description, the facts, the coins; the whole row opens
