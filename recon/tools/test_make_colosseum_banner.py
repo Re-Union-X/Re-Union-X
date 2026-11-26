@@ -44,8 +44,10 @@ try:
         pieces[k] = os.path.join(tmp, '%s.png' % k)
         im.save(pieces[k])
 
-    check(m.colosseum_seasons() == [('2016-04', 800), ('2016-05', 900), ('2016-06', 1000), ('2016-07', 1100)],
-          'the seasons of make-colosseum.js SEASONS %s' % (m.colosseum_seasons(),))
+    # SEASONS of make-colosseum.js: one per WW month from 2016-04 (800), ids +100 a month (24 seasons to 2018-03 since Part 3)
+    seasons = m.colosseum_seasons()
+    want = [('%d-%02d' % (2016 + (3 + i) // 12, (3 + i) % 12 + 1), 800 + 100 * i) for i in range(len(seasons))]
+    check(len(seasons) >= 24 and seasons == want, 'the seasons of make-colosseum.js SEASONS %s' % (seasons,))
     check(m.COLOSSEUM_CATALOG_EV == 6000, 'banner evStage 6000')
 
     cat = m.colosseum_option('A', pieces)
@@ -96,7 +98,7 @@ try:
     r = subprocess.run([sys.executable, '-I', os.path.join(m.HERE, 'make_special_banners.py'), '--section', 'colosseum', '--colosseum-img', cli],
                        capture_output=True, text=True, encoding='utf-8')
     check(r.returncode == 0, 'CLI exit %s: %s' % (r.returncode, r.stderr[-400:]))
-    check(os.path.isdir(cli) and sorted(os.listdir(cli)) == ['1000.png', '1100.png', '6000.png', '800.png', '900.png'],
+    check(os.path.isdir(cli) and sorted(os.listdir(cli)) == sorted(['6000.png'] + ['%d.png' % sid for _, sid in seasons]),
           'CLI files %s' % (sorted(os.listdir(cli)) if os.path.isdir(cli) else None,))
 finally:
     shutil.rmtree(tmp, ignore_errors=True)

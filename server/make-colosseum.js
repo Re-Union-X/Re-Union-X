@@ -42,9 +42,8 @@
 //   season extract (source 'relux', readRelux; KHUX_COLOSSEUM_RELUX, default DEFAULT_RELUX, outside the repo; without it only the
 //   1.1.3 seasons are written). The extract is already cleaned (arrays cut, tier coins /100, rankId «...» -> «»); a type-17
 //   tier reward above COIN_MAX (an x100 artefact left in) stops the run; closeDate is START / END as for every season.
-// - Tiers: head..term cut after the first endless (999-round) tier, term rewritten to match: the wiki shows no tier after it
-//   (2017-01 .. 2017-04 hold hidden 999-round tiers 12..14/21 in the extract, unverified, not served). 2016-11 .. 2017-04 =
-//   eleven tiers (the extra 10-round Tier 10, tier coins 900; Tier 11 endless), 2016-08 .. 2016-10 ten (1.1.3).
+// - Tiers (Part 2): head..term cut after the first endless (999-round) tier. Replaced in Part 3 (user 26-11), see below.
+//   2016-11 / 2016-12 = eleven tiers (the extra 10-round Tier 10, tier coins 900; Tier 11 999 rounds), 2016-08 .. 2016-10 ten (1.1.3).
 // - Stage sets: genStages seasons (2016-08 .. 2016-11: no original WW set; the 1.1.3 sets 20160101/0201/0301 and the extract's
 //   20160401 are JP sets WW did not play) serve GEN_STAGE_IDS(month) = 2116MMNN (generated files, Task 2); 2016-12 .. 2017-04
 //   serve the extract's JP 4.3.1 sets 20160501 .. 20160901. Stage rows: the 1.1.3 row of the original stage when it exists
@@ -62,6 +61,17 @@
 //   64 / 76 / 93 / 105 / 134 / 159 / 175 / 216); 2016-09 / 10 the same structure (110 rounds), so the same values; 2016-11 ..
 //   2017-04 the curve shifted to their 120 finite rounds (+10: 74 / 86 / 103 / 115 / 144 / 169 / 185 / 226), label «interpolated».
 //   The top brackets lie in the endless tier, as on the August 2016 footage (the Top 10 at Tier 10 147-184/999).
+//
+// Coliseum Part 3 (plan docs/superpowers/plans/2026-11-26-coliseum-part3.md, Task 1): the eleven WW seasons 2017-05 .. 2018-03 =
+// ReLux rows 2100 .. 3100 (rankingId 4022 .. 4032), and every tier row inside head..term for every relux season (user 26-11):
+// players reached the 999-round tiers after the first one (Top 1,000 in Tier 16 in 2017-11, private PART3_AUDIT.md §0), so
+// 2017-01 .. 2017-03 serve 15 tiers, 2017-04 21, 2017-05 .. 2018-03 22 (AP 0 on every tier, tier coins to Tier 12, from Tier 13
+// the medals 6★ Cid / 6★ Moogle / Magic Mirror only, ReLux medal ids = ours: checked by name); the trailing 0-round end-marker
+// row stays out; the 1.1.3 seasons 2016-04 .. 2016-10 are unchanged. The 999-round tiers keep arrivalStageCount 999 as served
+// (Part 2 ruling); a save past the old last tier keeps its tier / round (the starts of the tiers do not move) and goes on into
+// the next tier. Thresholds shift by the rounds before the FIRST 999-round tier (rankedOf), so 2016-11 .. 2017-04 keep theirs.
+// Stage sets: 2017-05 the JP set 20161001, 2017-06 .. 12 generated (GEN_STAGE_IDS 2117MMNN), 2018-01 .. 03 the JP sets of the rows.
+// A relux season without its RELUX_RANKING entry (2017-05 .. 2018-03 until Task 5) is left out by patch() with a warning.
 //
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
@@ -93,12 +103,26 @@ const SEASONS = [
   { month: '2017-02', colosseumStageId: 1800, source: 'relux' },
   { month: '2017-03', colosseumStageId: 1900, source: 'relux' },
   { month: '2017-04', colosseumStageId: 2000, source: 'relux' },
+  // Coliseum Part 3: 2017-05 = the JP 4.3.1 set 20161001; 2017-06 .. 2017-12 generated (their JP sets 20161101 .. 20170501 are not on
+  // disk); 2018-01 .. 2018-03 = the JP sets 20170601 / 0701 / 0801 of the ReLux rows
+  { month: '2017-05', colosseumStageId: 2100, source: 'relux' },
+  { month: '2017-06', colosseumStageId: 2200, source: 'relux', genStages: true },
+  { month: '2017-07', colosseumStageId: 2300, source: 'relux', genStages: true },
+  { month: '2017-08', colosseumStageId: 2400, source: 'relux', genStages: true },
+  { month: '2017-09', colosseumStageId: 2500, source: 'relux', genStages: true },
+  { month: '2017-10', colosseumStageId: 2600, source: 'relux', genStages: true },
+  { month: '2017-11', colosseumStageId: 2700, source: 'relux', genStages: true },
+  { month: '2017-12', colosseumStageId: 2800, source: 'relux', genStages: true },
+  { month: '2018-01', colosseumStageId: 2900, source: 'relux' },
+  { month: '2018-02', colosseumStageId: 3000, source: 'relux' },
+  { month: '2018-03', colosseumStageId: 3100, source: 'relux' },
 ];
-// generated stage sets (Task 2 writes cl_stg<id>.bin): 2116MMNN, MM = the WW month, NN = 01..10; never a JP id
-const GEN_MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11'];
+// generated stage sets (Task 2 writes cl_stg<id>.bin): 21YYMMNN, YY = 16 / 17 the year of the WW month, MM its month, NN = 01..10;
+// never a JP id, and the 2017 ids never those of the served 2016 sets (2017-08 .. 11 share their months with 2016-08 .. 11)
+const GEN_MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12'];
 function GEN_STAGE_IDS(month) {
   if (!GEN_MONTHS.includes(month)) throw new Error(`colosseum: ${month} has no generated stage set`);
-  return Array.from({ length: 10 }, (_, i) => 21160000 + Number(month.slice(5, 7)) * 100 + i + 1);
+  return Array.from({ length: 10 }, (_, i) => 21000000 + Number(month.slice(2, 4)) * 10000 + Number(month.slice(5, 7)) * 100 + i + 1);
 }
 const ENDLESS = 999; // rounds of the endless tier
 const COIN_MAX = 10000; // a type-17 tier reward above it is the ReLux x100 artefact
@@ -303,7 +327,7 @@ function bracketsOf(rewardRows) {
     rewards: Array.from({ length: r.validReward }, (_, i) => ({ type: r.type[i], id: r.id[i], num: r.num[i], skillType: r.skillType[i], skillId: r.skillId[i], skillLv: r.skillLv[i] })),
   }));
 }
-// thresholds of a season (finiteRounds = rounds before its endless last tier), one per bracket, lowest first
+// thresholds of a season (finiteRounds = rounds before its first endless tier), one per bracket, lowest first
 // a bracket reaching EVERYONE (2016-05: ranks to 5,000,000 and 10,000,000) was open to every ranked player: one round
 const EVERYONE = 1000000;
 const thresholdsOf = (brackets, finiteRounds) => brackets.map((b) => ({ startRank: b.startRank, endRank: b.endRank,
@@ -311,7 +335,9 @@ const thresholdsOf = (brackets, finiteRounds) => brackets.map((b) => ({ startRan
 // {brackets, thresholds} of a season from its tier rows and the rankingReward rows of its ranking (master or 1.1.3)
 function rankedOf(tierRows, rewardRows) {
   const tiers = [...tierRows].sort(byKey('round'));
-  const finite = tiers.slice(0, -1).reduce((n, t) => n + t.arrivalStageCount, 0);
+  // the rounds before the first endless (999-round) tier (Part 3: the later 999-round tiers served too do not move the curve)
+  const endless = tiers.findIndex((t) => t.arrivalStageCount >= ENDLESS);
+  const finite = tiers.slice(0, endless < 0 ? -1 : endless).reduce((n, t) => n + t.arrivalStageCount, 0);
   const brackets = bracketsOf(rewardRows);
   return { brackets, thresholds: thresholdsOf(brackets, finite) };
 }
@@ -346,9 +372,11 @@ function seasonRows(src, seasons = SEASONS) {
     const all = ((relux ? src.relux : src).colosseum || []).filter((t) => t.colosseumStageId === id && t.colosseumId >= cs.headColosseumId && t.colosseumId <= cs.termColosseumId)
       .sort(byKey('colosseumId'));
     if (all.length !== cs.termColosseumId - cs.headColosseumId + 1) throw new Error(`colosseum: ${s.month}: tier rows ${cs.headColosseumId}-${cs.termColosseumId} incomplete`);
-    // the wiki-visible tiers: up to the first endless one
+    // the tiers served (user 26-11, Coliseum Part 3): every row inside head..term of a relux season, the 999-round tiers after the
+    // first one too (each with its own rewards, as the source); the 1.1.3 seasons keep their rows up to the first endless tier
+    // (= head..term on every 1.1.3 row served)
     const endless = all.findIndex((t) => t.arrivalStageCount >= ENDLESS);
-    const tiers = endless < 0 ? all : all.slice(0, endless + 1);
+    const tiers = relux || endless < 0 ? all : all.slice(0, endless + 1);
     for (const t of tiers) {
       for (let i = 0; i < (t.validReward || 0); i++) {
         if (t.rewardType[i] === 17 && t.rewardNum[i] > COIN_MAX) throw new Error(`colosseum: ${s.month}: tier ${t.colosseumId} pays ${t.rewardNum[i]} coins (an x100 artefact?)`);
@@ -591,6 +619,13 @@ function patch(masterDir, opts = {}) {
       console.warn(`colosseum: the ReLux season extract ${file} (or coliseum_boards.json next to it) is not readable: ${seasons.filter((s) => s.source === 'relux').map((s) => s.month).join(', ')} left out`);
       seasons = seasons.filter((s) => s.source !== 'relux');
     }
+  }
+  // a relux season whose ranking prizes are not written yet (RELUX_RANKING; Coliseum Part 3 Task 5 for 2017-05 .. 2018-03) is left
+  // out whole with a warning, never served without its Rewards rows (seasonRows itself stops on it)
+  const notBuilt = seasons.filter((s) => s.source === 'relux' && !RELUX_RANKING[s.colosseumStageId]);
+  if (notBuilt.length) {
+    console.warn(`colosseum: WARNING ${notBuilt.map((s) => s.month).join(', ')} not built yet (no ranking prizes in RELUX_RANKING): left out`);
+    seasons = seasons.filter((s) => !notBuilt.includes(s));
   }
   // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the ReLux enemy rows (opts.reluxEnemies, else
   // KHUX_COLOSSEUM_RELUX_ENEMIES / DEFAULT_RELUX_ENEMIES); without the lists only the 1.1.3 variants are checked (the stage import
