@@ -301,7 +301,7 @@ const tests = {
     const db = pages.detailPage(index(), 8100, ctx({ boardNodes: (id) => ({ nodes: 10, unlocked: 4, coinsLeft: 600, coinsTotal: 1000 }), boardCardUrl: (id) => `/web/raid/board-img/v7/${id}.png` }));
     assert(db.includes('<th>Nodes unlocked</th><th>Raid Coins still needed</th>') && db.includes('<b class="v">4</b> / 10') && db.includes('<span class="cc">600 Raid Coins</span>')
       && /src="\/web\/raid\/board-img\/v7\/\d+\.png"/.test(db), 'Raid Boards table');
-    for (const k of ['week', 'tiers', 'raid-boards']) assert(d.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
+    for (const k of ['week', 'tiers', 'raid-boards']) assert(d.includes('<details class="cs" id="sec-%s" open><summary class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
     assert(d.includes('<h2>Tiers</h2>') && d.includes('<table class="tt kn1 kn2 kc3 kg4">') && /<td><span class="rd">[^<]+<\/span><\/td>/.test(d), 'colour roles: tier columns, dates cyan');
     assert(/<h1>Trickmaster · Blue Trident Tail<\/h1>/.test(d));
     assert(/src="\/web\/raid\/img\/v3\/8100\.png"/.test(d), 'banner');

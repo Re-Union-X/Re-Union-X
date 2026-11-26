@@ -345,7 +345,7 @@ const tests = {
     assert.strictEqual(pages.detailPage(rows, 31, det, ctx), null, 'unknown season');
     // v2 (user 26-11): section cards with a header band and an icon, colours for values (gold), rounds (cyan), taken / reached (green),
     // not yet (muted), tier and board names emphasized
-    for (const k of ['season', 'boards', 'tiers', 'ranked', 'maps']) assert.ok(new RegExp(`<div class="cs" id="sec-${k}"><div class="csh"><img class="ic"`).test(html), `section ${k}`);
+    for (const k of ['season', 'boards', 'tiers', 'ranked', 'maps']) assert.ok(new RegExp(`<details class="cs" id="sec-${k}" open><summary class="csh"><img class="ic"`).test(html), `section ${k}`);
     assert.ok(tiers.includes('<span class="yes">Taken') && tiers.includes('<span class="mu">Not taken yet</span>') && tiers.includes('<span class="tn">Tier 1</span>'));
     assert.ok(sc.includes('<span class="yes">Reached') && sc.includes('<span class="mu">Not reached</span>') && boards.includes('<span class="tn">6★ Scrooge</span>'));
     assert.ok(boards.includes('<span class="cc">900 Coliseum Coins</span>') && tiers.includes('<span class="cc">30 Coliseum Coins</span>'));

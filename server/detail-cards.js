@@ -29,8 +29,11 @@ const ICONS = [[/^(Week|Event|Entry|Season|Periods?|Campaign Period)$/, 'weekday
 const iconFor = (title) => (ICONS.find(([re]) => re.test(String(title).replace(/<[^>]*>/g, ''))) || [null, 'replaced'])[1];
 
 // title: html (already escaped); key: the id of the card (sec-<key>)
-const section = (key, ic, title, body, badge = '') => `<div class="cs"${key ? ` id="sec-${key}"` : ''}><div class="csh">${icon(ic)}<h2>${title}</h2>${badge}</div>`
-  + `<div class="csb">${body}</div></div>`;
+// a section card is a <details> open by default (user 26-11: «every category collapsible»): its header band is the <summary>, a tap
+// closes / opens it, the chevron turns (the Special quest lists work the same); the state is not kept, as those lists
+const CHEV = '<span class="chev">▸</span>';
+const section = (key, ic, title, body, badge = '') => `<details class="cs"${key ? ` id="sec-${key}"` : ''} open><summary class="csh">${icon(ic)}<h2>${title}</h2>${badge}${CHEV}</summary>`
+  + `<div class="csb">${body}</div></details>`;
 
 const slug = (t) => String(t).replace(/<[^>]*>/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 // the depth of open <div> / <details> / <table> blocks at the end of a piece of html
@@ -57,6 +60,9 @@ function cardSections(html, iconOf = iconFor, badgeOf = () => '') {
 
 // cards, header band, colour roles; the plain <h2> of the band loses the «■» of the detail pages (special-pages.js DETAIL_CSS)
 const CARD_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06283e;margin:16px 0 12px;overflow:hidden}'
+  // the header band is the tap target (the phone tap floor: 30 px), the default marker hidden, the chevron on the right turns when open
+  + 'details.cs>summary.csh{cursor:pointer;list-style:none;min-height:30px;outline:0}details.cs>summary.csh::-webkit-details-marker{display:none}'
+  + '.csh .chev{margin-left:auto;color:#00d4ed;font-size:18px;line-height:1;transition:transform .15s}details.cs[open]>summary .chev{transform:rotate(90deg)}details.cs:not([open])>summary.csh{border-bottom:0}'
   + '.cs>.csh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;padding:8px 14px 7px;background:#0a4466;background:linear-gradient(#0f5a85,#0a4466);border-bottom:2px solid #39a7cf}'
   + '.csh h2{margin:0;padding:0;border:0;background:none;color:#ffcd4a;font-size:18px;letter-spacing:.03em}.csh h2:before{content:""}.csh>.ic{width:1.35em;height:1.35em;display:inline-block;margin:0;max-width:none}.yes .ic,.cs td .ic{display:inline-block;width:1.2em;height:1.2em;margin:0 0 0 4px;vertical-align:-3px}'
   + '.csh .ng{margin-left:4px}.csb{padding:6px 10px 8px}.csb>table{margin:4px 0 6px}.csb>p.n{margin:6px 2px 2px}.csb>h3:first-child{margin-top:4px}'
@@ -64,9 +70,7 @@ const CARD_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06
   + '.tn{color:#fff;font-weight:bold}.csb td.cd{color:#6fd47f;font-weight:bold}.csb .tt tr.got td{background:#0d4a3a}'
   + '.ng{display:inline-block;background:#e0521a;border:1px solid #ffc27a;color:#fff;border-radius:10px;padding:0 8px;font-size:11px;font-weight:bold;letter-spacing:.6px;line-height:1.7;vertical-align:1px}'
   // the tap-to-open quest lists of the Special details: the same card, the summary as its band
-  + 'details.vq.cs{border-top:1px solid #2f6f93}details.vq.cs>summary{display:block;padding:8px 14px 7px;background:linear-gradient(#0f5a85,#0a4466);border-bottom:2px solid #39a7cf;color:#ffcd4a;font-weight:bold;font-size:17px}'
-  + 'details.vq.cs>summary::-webkit-details-marker{display:none}details.vq.cs>summary:before{content:"▸ ";color:#00d4ed}details.vq.cs[open]>summary:before{content:"▾ "}'
-  + 'details.vq.cs>.csb{padding:4px 10px 8px}details.vq.cs h2{font-size:17px;color:#fff;margin:12px 0 2px}'
+  + 'details.vq.cs>summary .cst{color:#ffcd4a;font-weight:bold;font-size:17px}details.vq.cs>.csb{padding:4px 10px 8px}'
   // column roles of a table (the markup of the cells stays as it is): kn<i> column i a name (bold white), kc<i> cyan (rounds,
   // levels, dates), kg<i> gold (values, coins, Jewels); a cell td.r (not served / not built) stays muted
   + [1, 2, 3, 4, 5, 6].map((i) => `.csb table.kn${i} td:nth-child(${i}){color:#fff;font-weight:bold}.csb table.kc${i} td:nth-child(${i}){color:#00d4ed;font-weight:bold}`
@@ -80,7 +84,12 @@ const CARD_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06
   // a quest block of the Special details (questBlock): name band, stat chips, objectives and drops tables whose first column has
   // the same width, so their columns line up
   + '.qb{border:1px solid #1d5878;border-radius:8px;background:#05223a;margin:10px 0;overflow:hidden}.qb>h3.qh{margin:0;padding:6px 12px;background:#0a3a5a;color:#fff;font-size:16px}'
-  + '.qs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 2px}.qs span{background:#0a4466;border:1px solid #2f6f93;border-radius:12px;padding:1px 10px;font-size:14px;color:#d9e6ee}.qs span b{margin-left:4px}'
+  // the stat chips (user 26-11: «label and value run together»): a muted uppercase label and the value in its colour role, apart;
+  // Target / Where on their own lines with an icon
+  + '.qs{display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px 2px}.qs .st{display:inline-flex;align-items:stretch;border:1px solid #2f6f93;border-radius:12px;overflow:hidden;font-size:14px}'
+  + '.qs .st small{background:#0a4466;color:#9fb7c6;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;display:flex;align-items:center}'
+  + '.qs .st b{background:#06283e;padding:1px 10px;display:flex;align-items:center}.ql{padding:4px 10px 0}.ql div{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:14px;color:#fff}'
+  + '.ql small{color:#9fb7c6;font-size:11px;letter-spacing:.08em;text-transform:uppercase;min-width:4.5em}.ql .ic{width:1.2em;height:1.2em}'
   + '.qb>.qt{padding:4px 10px 8px}.qb h4{margin:8px 0 4px;color:#ffcd4a;font-size:15px;display:flex;align-items:center;gap:6px}.qb h4 .ic{width:1.2em;height:1.2em}'
   + '.qb table.qtt{table-layout:fixed;width:100%;margin:2px 0 6px}.qb table.qtt td:first-child,.qb table.qtt th:first-child{width:62%}.qb table.qtt.dt td:nth-child(2),.qb table.qtt.dt th:nth-child(2){width:14%}'
   + '.qb td .ic{width:1.3em;height:1.3em;margin:0 6px 0 0;vertical-align:-4px}.qb p.n{margin:2px 0 6px}';
@@ -112,7 +121,9 @@ function boardTable(rows, o = {}) {
 }
 // a quest block (Special details): name, stat chips [[label, html]], then the parts [[icon, title, html, badge]] (objectives, drops)
 const questBlock = (name, stats, parts) => `<div class="qb"><h3 class="qh">${name}</h3>`
-  + (stats.length ? `<div class="qs">${stats.map(([k, v]) => `<span>${k}<b>${v}</b></span>`).join('')}</div>` : '')
+  // [label, html] a chip; [label, html, icon] a line of its own with that icon
+  + (stats.some((x) => !x[2]) ? `<div class="qs">${stats.filter((x) => !x[2]).map(([k, v]) => `<span class="st"><small>${k}</small><b>${v}</b></span>`).join('')}</div>` : '')
+  + (stats.some((x) => x[2]) ? `<div class="ql">${stats.filter((x) => x[2]).map(([k, v, ic]) => `<div>${icon(ic)}<small>${k}</small><span>${v}</span></div>`).join('')}</div>` : '')
   + `<div class="qt">${parts.map(([ic, t, h, badge]) => `<h4>${icon(ic)}${t}${badge || ''}</h4>${h}`).join('')}</div></div>`;
 
 // The Keep / Remove button of the catalogs (special-pages.js .pk: gold, red to remove, the pin icon) for the pages that do not load
@@ -122,4 +133,4 @@ const KEEP_BTN_CSS = '.pk{display:inline-block;margin-top:6px;border:2px solid #
   + 'background:linear-gradient(#e0a020,#a8700a);cursor:pointer;text-decoration:none;line-height:1.5}.pk[data-on="0"]{border-color:#ffb0b0;background:linear-gradient(#ff5a5a,#d81e2e 55%,#9c1020)}'
   + '.pk .ic{display:inline-block;width:1.3em;height:1.3em;margin:0 6px 0 0;vertical-align:-4px;max-width:none}';
 
-module.exports = { KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };
+module.exports = { CHEV, KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };

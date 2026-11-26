@@ -712,8 +712,8 @@ function detailPage(index, evStageId, ctx = {}) {
       const info = names.stage(s.stageId), ap = (en.useAp || [])[i];
       // a quest block (detail-cards.js questBlock, user 26-11: the quest tables lined up): its stats as chips (AP gold, level cyan),
       // then Objectives and Drops, two tables whose first columns have the same width
-      const stats = [['AP', ap != null && ap !== '' ? cards.val(esc(ap)) : ''], ['Level', s.wikiLv != null && s.wikiLv !== '' ? cards.cyan(esc(s.wikiLv)) : ''], ['Target', esc(s.target || '')],
-        ['Where', esc([s.world, s.room].filter(Boolean).join(' · '))]].filter(([, v]) => v !== '');
+      const stats = [['AP', ap != null && ap !== '' ? cards.val(esc(ap)) : ''], ['Level', s.wikiLv != null && s.wikiLv !== '' ? cards.cyan(esc(s.wikiLv)) : ''], ['Target', esc(s.target || ''), 'tleg'],
+        ['Where', esc([s.world, s.room].filter(Boolean).join(' · ')), 'camp']].filter(([, v]) => v !== '');
       const obj = info && info.objectives.length ? ['done', 'Objectives', `<table class="tt qtt ob"><tr><th>Objective</th><th>Reward</th></tr>${info.objectives
         .map((o) => `<tr><td>${esc(o.text)}</td><td class="dr">${esc(o.reward || '—')}</td></tr>`).join('')}</table>`] : null;
       // Drops (user 26-11: «a proper section»): one row per item (icon of its kind, name, amount, rate), the reconstructed data
@@ -748,7 +748,7 @@ function detailPage(index, evStageId, ctx = {}) {
   const periodList = periods.filter((p) => f.list.some((en) => en.periods.includes(p.n)))
     .map((p) => `<li><b>${esc(p.name)}</b> <span class="rd">${niceDay(p.from)} – ${niceDay(p.to)}</span></li>`).join('');
   // the quest lists stay tap-to-open, as cards (detail-cards.js CARD_CSS details.vq.cs)
-  const details = versions.map((v, vi) => `<details class="vq cs"${vi === 0 ? ' open' : ''}><summary>Quests · ${esc(verLabel(v))}</summary><div class="csb">`
+  const details = versions.map((v, vi) => `<details class="vq cs"${vi === 0 ? ' open' : ''}><summary class="csh">${icon('skill')}<span class="cst">Quests · ${esc(verLabel(v))}</span>${cards.CHEV}</summary><div class="csb">`
     + v.map((en) => `${v.length > 1 ? `<h3>${esc(en.name)}</h3>` : ''}${quests(en)}`).join('') + '</div></details>').join('');
   const back = ctx.fromCatalog ? `<div class="bar"><a class="back" href="/web/special/catalog#q${Number(evStageId)}">BACK<span></span></a></div>` : '';
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'

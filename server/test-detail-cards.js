@@ -7,15 +7,15 @@ const cards = require('./detail-cards');
 const html = '<p>intro</p><h2>Week</h2><table class="kv"><tr><td>x</td></tr></table><h2>Raid Boards</h2><div class="ns"><h2>Inner</h2></div><p>b</p><hr>'
   + '<h2>Draw rates</h2><details><summary>s</summary><h2>Quest</h2></details>';
 const out = cards.cardSections(html);
-assert.ok(out.startsWith('<p>intro</p><div class="cs" id="sec-week"><div class="csh"><img class="ic" src="/web/special/icon/weekday.png" alt=""><h2>Week</h2></div><div class="csb"><table'));
-assert.ok(out.includes('<div class="cs" id="sec-raid-boards"><div class="csh"><img class="ic" src="/web/special/icon/bdone.png" alt=""><h2>Raid Boards</h2></div><div class="csb"><div class="ns"><h2>Inner</h2></div><p>b</p></div></div>'),
+assert.ok(out.startsWith('<p>intro</p><details class="cs" id="sec-week" open><summary class="csh"><img class="ic" src="/web/special/icon/weekday.png" alt=""><h2>Week</h2><span class="chev">▸</span></summary><div class="csb"><table'));
+assert.ok(out.includes('<details class="cs" id="sec-raid-boards" open><summary class="csh"><img class="ic" src="/web/special/icon/bdone.png" alt=""><h2>Raid Boards</h2><span class="chev">▸</span></summary><div class="csb"><div class="ns"><h2>Inner</h2></div><p>b</p></div></details>'),
   'a nested <h2> stays inside its card; the closing <hr> is dropped');
-assert.ok(out.includes('<div class="cs" id="sec-draw-rates">') && out.includes('<details><summary>s</summary><h2>Quest</h2></details></div></div>'));
+assert.ok(out.includes('<details class="cs" id="sec-draw-rates" open>') && out.includes('<details><summary>s</summary><h2>Quest</h2></details></div></details>'));
 assert.strictEqual((out.match(/class="cs"/g) || []).length, 3);
 assert.strictEqual(cards.cardSections('<p>no sections</p>'), '<p>no sections</p>');
 // a badge in the header band, after the title (no colon after it)
 assert.ok(cards.cardSections('<h2>Score thresholds</h2><p>x</p>', undefined, (t) => (t === 'Score thresholds' ? cards.NG : ''))
-  .includes('<h2>Score thresholds</h2><span class="ng">NOT ORIGINAL</span></div>'));
+  .includes(`<h2>Score thresholds</h2><span class="ng">NOT ORIGINAL</span>${cards.CHEV}</summary>`));
 // colour roles
 assert.strictEqual(cards.yes('Taken'), `<span class="yes">Taken${cards.CROWN}</span>`);
 assert.strictEqual(cards.mu('Not yet'), '<span class="mu">Not yet</span>');
@@ -31,7 +31,12 @@ assert.ok(bt.includes('<td class="r">Not served yet<small>held</small></td>') &&
 assert.ok(bt.includes('function kxNb('), 'the placeholder script');
 // a quest block of the Special details
 const qb = cards.questBlock('Q', [['AP', '<span class="v">5</span>']], [['done', 'Objectives', '<table></table>'], ['medal', 'Drops', '<p>x</p>', cards.NG]]);
-assert.ok(qb.startsWith('<div class="qb"><h3 class="qh">Q</h3><div class="qs"><span>AP<b><span class="v">5</span></b></span></div><div class="qt"><h4>'));
+assert.ok(qb.startsWith('<div class="qb"><h3 class="qh">Q</h3><div class="qs"><span class="st"><small>AP</small><b><span class="v">5</span></b></span></div><div class="qt"><h4>'));
 assert.ok(qb.includes('Drops<span class="ng">NOT ORIGINAL</span></h4><p>x</p>'));
+// a stat with an icon is a line of its own (Target / Where of the Special details)
+assert.ok(cards.questBlock('Q', [['AP', '5'], ['Where', 'Agrabah', 'camp']], []).includes('<div class="ql"><div><img class="ic" src="/web/special/icon/camp.png" alt=""><small>Where</small><span>Agrabah</span></div></div>'));
+// every section card is collapsible: a <details> open by default whose header band is the <summary> with a turning chevron
+assert.ok(cards.section('k', 'medal', 'T', 'b', cards.NG) === '<details class="cs" id="sec-k" open><summary class="csh"><img class="ic" src="/web/special/icon/medal.png" alt=""><h2>T</h2>' + cards.NG + cards.CHEV + '</summary><div class="csb">b</div></details>');
+assert.ok(/details\.cs>summary\.csh\{[^}]*cursor:pointer[^}]*min-height:30px/.test(cards.CARD_CSS) && /details\.cs\[open\]>summary \.chev\{transform:rotate\(90deg\)\}/.test(cards.CARD_CSS), 'tap target and turning chevron');
 assert.ok(cards.KEEP_BTN_CSS.startsWith('.pk{display:inline-block;margin-top:6px;border:2px solid #ffe08a') && cards.KEEP_LABEL_ICON.includes('icon/pin.png'));
 console.log('test-detail-cards: ok');

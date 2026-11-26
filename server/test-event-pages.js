@@ -200,7 +200,7 @@ const tests = {
     // the Keep / Remove button of a detail page: the shared compact phone class (phone-css.js DETAIL_KEEP)
     assert.ok(box.includes('class="pk pkd" data-id="29900"'), 'Event detail: the shared compact keep button');
     // section cards and colour roles (detail-cards.js, user 26-11)
-    for (const k of ['event', 'quests']) assert.ok(html.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
+    for (const k of ['event', 'quests']) assert.ok(html.includes('<details class="cs" id="sec-%s" open><summary class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
     assert.ok(html.includes('<table class="tt kn1 kc2 kg3">') && /<td><span class="rd">[^<]+<\/span><\/td>/.test(html), 'colour roles: quest columns, dates cyan');
     assert.ok(/<details class="rb">/.test(box) && !/<details class="rb" open/.test(box), 'Rebuilt values closed');
     for (const l of ['dramaOff', 'eventCoins', 'donorKept']) assert.ok(box.includes(REASONS[l].replace(/'/g, '&#39;')) || box.includes(REASONS[l]), `reason of ${l}`);
@@ -572,7 +572,7 @@ const tests = {
     const d = pages.boardDetailPage(ix, 29920, ctx());
     assert.ok(d.includes('<h2>Avatar Boards</h2>') && d.includes('Red Coat') && d.includes('3,000 Jewels'));
     assert.ok(d.includes('class="pk pkd" data-id="29920"'), 'Avatar Board detail: the shared compact keep button (phone-css.js DETAIL_KEEP)');
-    for (const k of ['entry', 'avatar-boards']) assert.ok(d.includes('<div class="cs" id="sec-%s"><div class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
+    for (const k of ['entry', 'avatar-boards']) assert.ok(d.includes('<details class="cs" id="sec-%s" open><summary class="csh"><img class="ic"'.replace('%s', k)), `card ${k}`);
     assert.ok(d.includes('<table class="tt bdt bt ab kc3 kg4">') && d.includes('<th>Nodes unlocked</th><th>Avatar Coins still needed</th>'), 'the boards table of every detail page (boardTable): names bold, dates cyan, prices gold');
     const dn = pages.boardDetailPage(ix, 29920, ctx({ boardNodes: () => ({ nodes: 19, unlocked: 19, coinsLeft: 0, coinsTotal: 900 }) }));
     assert.ok(dn.includes('<b class="v">19</b> / 19') && dn.includes('<span class="yes">Completed'), 'nodes unlocked, a completed board');
