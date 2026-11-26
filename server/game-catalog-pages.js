@@ -28,9 +28,6 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   // the coin chip of a card: the header chip (catalog-pages.js walletChip) without its push to the right
   + '.row .wal{margin:4px 0 0;align-self:flex-start;max-width:100%}.row .wal small{font-size:12px;min-width:0;padding:2px 7px 2px 4px;gap:4px}.row .wal .ic{width:1.5em;height:1.5em}.row .wal b{font-size:15px;padding:1px 9px}.row .cw{margin-top:auto}'
   + '.row{cursor:pointer}'
-  // the coin chip takes the whole width of its card (user 26-11: «to make them uniform»): label on the left, amount on the right
-  + '#rows>.row .wal{display:flex;width:100%;box-sizing:border-box;align-self:stretch}#rows>.row .wal small{flex:1 1 auto}'
-  + '#rows>.row .wal b{flex:0 0 auto;min-width:3.2em;justify-content:center;box-sizing:border-box}'
   // phone card grid (phone-css.js): the short catalogue names on one line, the counts as small as the other lines
   + `@media ${PHONE_MQ}{#rows>.row.row .nm{height:auto}#rows>.row .ct{font-size:12px}}`
   // «Kept now» (user 26-11): a section card of the detail pages, one compact line per kept item (its card, name, catalogue, Remove)
