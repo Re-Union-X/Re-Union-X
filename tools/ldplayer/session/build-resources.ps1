@@ -369,6 +369,10 @@ python -I recon\tools\import_originals.py recon\tools\originals.tsv "$refWork\bu
   "$jpData" "$sg\files" `
   --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv" --i440 $i440 --jp501 "$D\tmp\jp501\x" --loc "$D\raid_loc" --report "$sg\originals.json" @origSkip
 if ($LASTEXITCODE) { throw 'import_originals fallito' }
+# Coliseum map armature: the hundreds-effect bone the 4.3.1 client needs to draw «ALL 1 TURN TRIUMPHS! N ROUNDS UNLOCKED»
+# (the English 2016 copy lacks it; recon/tools/fix_colosseum_anim.py)
+python -I recon\tools\fix_colosseum_anim.py "$sg\files"
+if ($LASTEXITCODE) { throw 'fix_colosseum_anim failed' }
 $raidSkipped = $fast -and (@(Get-Content "$sg\raid_models.stamp.new")[1] -eq 'skipped')
 # Raid Board card pictures, one per board id (list written by server/make-raid.js; the cards cut from screenshots are made
 # in --loc by recon/tools/raid_board_screens.py, docs/notes/bacheche.md «Raid Boards»)
