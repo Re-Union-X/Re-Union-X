@@ -187,9 +187,9 @@ function catalogPage(rows, ctx = {}) {
       ['TIER REWARDS', `<div class="opts" data-g="tr">${filterOpts(TIER_OPTS, cls('pr'))}</div>`]] }) : '';
   return PAGE_HEAD('Coliseum Catalog', CSS + FILTER_CSS) + '<body>'
     + cards.catalogHead({ title: 'Coliseum Catalog', ic: 'tleg', side: `${parts.walletChip(ctx.wallet)}${rows.length ? FILTER_BUTTON : ''}`, lines: [
-      `Every Coliseum season of this server, ${cards.cyan('one per month')} as in the original game: the Coliseum plays the season of your Story.`,
-      `${cards.val('Keep a past season')} here, ${cards.cyan('one at a time')}: the Coliseum plays it until you remove it.`,
-      `Each season keeps its own ${cards.val('progress, Coliseum Coins and Coliseum Boards')}.`] })
+      ['weekday', `Every Coliseum season of this server, ${cards.cyan('one per month')} as in the original game: the Coliseum plays the season of your Story.`],
+      ['pin', `${cards.val('Keep a past season')} here, ${cards.cyan('one at a time')}: the Coliseum plays it until you remove it.`],
+      ['bdone', `Each season keeps its own ${cards.val('progress, Coliseum Coins and Coliseum Boards')}.`]] })
     + locked
     + tabs
     + (rows.length ? `<div class="sum" id="sum"><span class="n1">${plural(rows.length, 'season')}</span> · no filters</div><div id="none" class="none" style="display:none"></div>` : '')

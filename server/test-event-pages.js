@@ -937,7 +937,8 @@ const tests = {
     }
     const raw = pages.boardCatalogPage(ix, ctx({ boardImgVersion: 159770767, boardOwned: (id) => id % 3 === 0, boardProgress: (id) => ['none', 'part', 'done'][id % 3] }));
     const kb = Buffer.byteLength(raw, 'utf8') / 1024;
-    assert.ok(kb < 120, `Avatar Board Catalog ${kb.toFixed(1)} KB packed (budget 120 KB)`);
+    // 125: +3 KB for the «How it works» section card CSS of the header (detail-cards.js HEAD_CSS, user 26-11)
+    assert.ok(kb < 125, `Avatar Board Catalog ${kb.toFixed(1)} KB packed (budget 125 KB)`);
   },
   // each board line of the Avatar Board page carries its card (a held board or a plain card: the neutral box)
   board_page_cards() {

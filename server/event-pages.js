@@ -388,8 +388,8 @@ const MODES = {
     hint: 'Matches the start of words in event and quest names and in the rewards of the quests and Event Boards (e.g. Halloween, Marluxia, Dewey).',
     count: (e) => { const served = servedOf(e).length, all = (e.quests || []).length; return served === all ? plural(all, 'quest') : `${served} of ${plural(all, 'quest')} served`; },
     icon: 'camp',
-    intro: () => [`Every event of the game, ${cards.cyan('by date')}: tap an event for its ${cards.val('quests, boards and rewards')}.`,
-      `${cards.val('Keep a past event')} in the Events tab, ${cards.cyan('one at a time')}.`],
+    intro: () => [['weekday', `Every event of the game, ${cards.cyan('by date')}: tap an event for its ${cards.val('quests, boards and rewards')}.`],
+      ['pin', `${cards.val('Keep a past event')} in the Events tab, ${cards.cyan('one at a time')}.`]],
     end: () => '' },
   board: { base: BOARD_BASE, title: 'Avatar Board Catalog', noun: 'entry', entries: boardEntriesOf, status: boardStatusOf, pills: BOARD_PILLS, keepJs: BOARD_KEEP_JS,
     href: boardDetailHref, button: boardKeepButton, typeOf: boardTypeOf, typeOpts: BOARD_TYPE_OPTS, showOpts: BOARD_SHOW_OPTS, placeholder: 'Board, character or outfit name',
@@ -398,9 +398,9 @@ const MODES = {
     css: NO_CARD_CSS + BOARD_ROW_CSS, ncJs: BOARD_NC_JS,
     count: boardCount,
     icon: 'avatar',
-    intro: () => [`Every limited avatar board of the game, ${cards.cyan('by the dates')} it was on sale or handed out: tap an entry for its ${cards.val('boards and prices')}.`,
-      `Boards of the week are in Avatar Boards, as in the original game.`,
-      `${cards.val('Keep a past entry')}, ${cards.cyan('one at a time')}: its boards are listed in Avatar Boards again at their original price. Your kept event never changes.`],
+    intro: () => [['weekday', `Every limited avatar board of the game, ${cards.cyan('by the dates')} it was on sale or handed out: tap an entry for its ${cards.val('boards and prices')}.`],
+      ['now', 'Boards of the week are in Avatar Boards, as in the original game.'],
+      ['pin', `${cards.val('Keep a past entry')}, ${cards.cyan('one at a time')}: its boards are listed in Avatar Boards again at their original price. Your kept event never changes.`]],
     end: (index) => heldSection(index) },
 };
 const plural2 = (n, w) => `${n} ${w === 'entry' ? (n === 1 ? 'entry' : 'entries') : `${w}${n === 1 ? '' : 's'}`}`;

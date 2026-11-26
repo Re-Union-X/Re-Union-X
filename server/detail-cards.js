@@ -147,13 +147,18 @@ const KEEP_BTN_CSS = '.pk{display:inline-block;margin-top:6px;border:2px solid #
 // val (gold) what you can do, cyan counts and time. lines: html strings (already escaped). HEAD_CSS: for the pages that do not load
 // catalog-pages.js PAGE_HEAD (the Special Catalog, the Banner Catalog); phone 640x320 compact.
 const HEAD_MQ = '(max-height:480px) and (max-width:900px)'; // phone-css.js PHONE_MQ (not required here: this module stays self-contained)
-const catalogHead = ({ title, ic, lines = [], side = '', badge = true }) => `<div class="hdr chd"><h1>${ic ? icon(ic) : ''}<span>${esc(title)}</span>${badge ? NG : ''}</h1>${side}</div>`
-  + (lines.length ? `<div class="intro">${lines.map((l) => `<p>${l}</p>`).join('')}</div>` : '');
+// the intro (user 26-11: «a descriptive section, nicer, as in the details»): a «How it works» section card (section(), open, tap to
+// close), one line per point with its icon (never the icon of the title); lines: [iconKey, html] or html; about: the header icon
+const catalogHead = ({ title, ic, lines = [], side = '', badge = true, about = 'mog' }) => `<div class="hdr chd"><h1>${ic ? icon(ic) : ''}<span>${esc(title)}</span>${badge ? NG : ''}</h1>${side}</div>`
+  + (lines.length ? section('about', about, 'How it works', lines.map((l) => (Array.isArray(l) ? `<div class="ab">${icon(l[0])}<span>${l[1]}</span></div>` : `<div class="ab"><span>${l}</span></div>`)).join('')) : '');
 const HEAD_CSS = '.hdr.chd{flex-wrap:nowrap}.chd h1{display:inline-flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;color:#ffcd4a;letter-spacing:.03em;margin:6px 0 4px;white-space:nowrap}'
   + '@media (max-width:700px) and (min-height:481px){.hdr.chd{flex-wrap:wrap}.chd h1{flex:1 1 100%;white-space:normal;flex-wrap:wrap}}'
   + '.chd h1>.ic{width:1.45em;height:1.45em;display:inline-block;margin:0;max-width:none}.chd h1 .ng{display:inline-block;background:#e0521a;border:1px solid #ffc27a;color:#fff;border-radius:10px;padding:0 8px;font-size:11px;font-weight:bold;letter-spacing:.6px;line-height:1.7}'
   + '.intro{border:1px solid #2f6f93;border-left:4px solid #ffcd4a;border-radius:8px;background:#06283e;padding:5px 12px;margin:4px 0 10px;font-size:15px;line-height:1.5;color:#d9e6ee}'
   + '.intro p{margin:1px 0}.intro .v{color:#ffcd4a;font-weight:bold}.intro .rd{color:#00d4ed;font-weight:bold}'
-  + `@media ${HEAD_MQ}{.chd h1{font-size:19px;margin:2px 0;gap:6px}.intro{font-size:12px;line-height:1.4;padding:3px 10px;margin:2px 0 6px}}`;
+  // the «How it works» card (catalogHead): the section card of the detail pages, a thin line between its points
+  + CARD_CSS + '#sec-about{margin:6px 0 8px}#sec-about .csb{padding:4px 12px 6px}.ab{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid #1d5878;color:#d9e6ee;font-size:14px;line-height:1.4}'
+  + '.ab:first-child{border-top:0}.ab>.ic{width:20px;height:20px;flex:none;margin:0;display:inline-block;max-width:none}.ab .v{color:#ffcd4a;font-weight:bold}.ab .rd{color:#00d4ed;font-weight:bold}'
+  + `@media ${HEAD_MQ}{.chd h1{font-size:19px;margin:2px 0;gap:6px}.intro{font-size:12px;line-height:1.4;padding:3px 10px;margin:2px 0 6px}.ab{font-size:12px;padding:3px 0;gap:8px}.ab>.ic{width:16px;height:16px}}`;
 
 module.exports = { catalogHead, HEAD_CSS, LOCATION_ICON, CHEV, KEEP_BTN_CSS, KEEP_LABEL_ICON, section, cardSections, CARD_CSS, NG, CROWN, val, cyan, yes, mu, tn, iconFor, esc, boardTable, questBlock, NB };

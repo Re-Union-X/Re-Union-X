@@ -959,8 +959,9 @@ function catalogPage(banners, ctx) {
     .replace('__PAY__', JSON.stringify(Object.fromEntries(PAY_OPTS.slice(1)))).replace('__SHOW__', JSON.stringify(Object.fromEntries(SHOW_OPTS.slice(1))))
     .replace('__KIND__', JSON.stringify(Object.fromEntries(KIND_OPTS.slice(1))));
   const head = cards.catalogHead({ title: 'Banner Catalog', ic: 'jewel', side: '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>', lines: [
-    `${cards.cyan(`${n} original banners`)}: tap one for its ${cards.val('Medals and draw rates')}.`,
-    `Banners unlock as you ${cards.val('progress through the Story')}; in the original game they followed the calendar. ${cards.val('Keep one past banner')} in the Shop.`] });
+    ['medal', `${cards.cyan(`${n} original banners`)}: tap one for its ${cards.val('Medals and draw rates')}.`],
+    ['weekday', `Banners unlock as you ${cards.val('progress through the Story')}; in the original game they followed the calendar.`],
+    ['pin', `${cards.val('Keep one past banner')} in the Shop.`]] });
   return page('Banner Catalog', `<style>${CATALOG_CSS}</style>`
     // entry point of the Medal Gallery (I-242, medal-gallery.js): the Banner Catalog is the server's Medal page the player can
     // reach without a client change (Shop > Banner Catalog > Details); BACK of the gallery comes back here

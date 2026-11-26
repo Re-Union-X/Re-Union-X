@@ -58,7 +58,9 @@ run('hub_page_cards', () => {
   assert.ok(html.includes('<title>Game Catalog</title>') && html.includes('<h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1>'), 'title and header');
   // the header of the catalogue pages (detail-cards.js catalogHead, user 26-11): gold title with its icon, NOT ORIGINAL badge, intro lines
   assert.ok(html.includes('<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1></div>'), 'header');
-  assert.ok(/<div class="intro"><p>Every catalog of this server in <span class="rd">one place<\/span>: <span class="v">pick one<\/span>[^<]*<\/p><p><span class="v">Keep one past item<\/span>[^]*?Banner Catalog is in the <span class="v">Shop<\/span>\.<\/p><\/div>/.test(html), 'short intro lines with colour roles');
+  assert.ok(/<details class="cs" id="sec-about" open><summary class="csh"><img class="ic" src="\/web\/special\/icon\/mog.png" alt=""><h2>How it works<\/h2>/.test(html)
+    && html.includes('<div class="ab"><img class="ic" src="/web/special/icon/medal.png" alt=""><span><span class="v">Every catalog</span> of this server in <span class="rd">one place</span>')
+    && html.includes('<span class="v">Keep one past item</span>') && html.includes('The <span class="v">Banner Catalog</span> is in the Shop.'), '«How it works» card, one line per point with its icon');
   assert.ok(!/addition of this server/.test(html), 'the badge in place of the sentence');
   assert.deepStrictEqual([...html.matchAll(/<div class="row[^"]*" id="c-([a-z]+)" data-href="([^"]+)">/g)].map((m) => [m[1], m[2]]),
     pages.KEYS.map((k) => [k, `/web/${k}/catalog`]), 'one card per catalogue, in the fixed order, the row opens the catalogue');
@@ -104,11 +106,13 @@ run('hub_kept_section', () => {
 // (coins, Filters) on the right, the intro as short lines with the colour roles; every catalogue list page uses it
 run('catalog_head_helper', () => {
   const dc = require('./detail-cards');
-  const h = dc.catalogHead({ title: 'X & Y', ic: 'raid', side: '<b>S</b>', lines: [`a ${dc.val('keep')} b ${dc.cyan('3 weeks')}`, 'c'] });
+  const h = dc.catalogHead({ title: 'X & Y', ic: 'raid', side: '<b>S</b>', lines: [['pin', `a ${dc.val('keep')} b ${dc.cyan('3 weeks')}`], 'c'] });
   assert.strictEqual(h, '<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/raid.png" alt=""><span>X &amp; Y</span><span class="ng">NOT ORIGINAL</span></h1><b>S</b></div>'
-    + '<div class="intro"><p>a <span class="v">keep</span> b <span class="rd">3 weeks</span></p><p>c</p></div>');
-  assert.ok(!dc.catalogHead({ title: 'T', badge: false }).includes('NOT ORIGINAL') && !dc.catalogHead({ title: 'T' }).includes('class="intro"'));
-  assert.ok(/\.chd h1\{/.test(dc.HEAD_CSS) && /\.intro\{/.test(dc.HEAD_CSS) && dc.HEAD_CSS.includes('(max-height:480px) and (max-width:900px)'), 'its CSS, compact on phones');
+    + dc.section('about', 'mog', 'How it works', '<div class="ab"><img class="ic" src="/web/special/icon/pin.png" alt=""><span>a <span class="v">keep</span> b <span class="rd">3 weeks</span></span></div>'
+    + '<div class="ab"><span>c</span></div>'));
+  assert.ok(dc.catalogHead({ title: 'T', ic: 'mog', lines: ['x'], about: 'later' }).includes('<img class="ic" src="/web/special/icon/later.png" alt=""><h2>How it works</h2>'), 'header icon of its own');
+  assert.ok(!dc.catalogHead({ title: 'T', badge: false }).includes('NOT ORIGINAL') && !dc.catalogHead({ title: 'T' }).includes('sec-about'));
+  assert.ok(/\.chd h1\{/.test(dc.HEAD_CSS) && /\.ab\{/.test(dc.HEAD_CSS) && dc.HEAD_CSS.includes('#sec-about') && dc.HEAD_CSS.includes('(max-height:480px) and (max-width:900px)'), 'its CSS, compact on phones');
   assert.ok(require('./catalog-pages').PAGE_HEAD('T', '').includes(dc.HEAD_CSS), 'loaded by the catalogue pages');
 });
 // large screens (user 26-11: no scrolling at 1280x720): the five catalogues as a grid of cards, the kept items one per line (Remove on the right)
@@ -201,7 +205,7 @@ function wiring() {
     assert.ok(html.includes('<h1><img class="ic" src="/web/special/icon/done.png" alt=""><span>Game Catalog</span><span class="ng">NOT ORIGINAL</span></h1>') && html.includes('<style data-phone>'));
     const keys = [...html.matchAll(/id="c-([a-z]+)"/g)].map((m) => m[1]);
     assert.deepStrictEqual(keys, ['colosseum', 'raid', 'event', ...(avatarId ? ['avatar'] : []), 'special']);
-    assert.ok(/id="c-colosseum"[^]*?<div class="ct">\d+ seasons<\/div><div class="pg"><img[^>]*>Kept: Coliseum · April 2016<\/div>[^]*?<small>(<img[^>]*>)?Coliseum Coins · Apr 2016<\/small>/.test(html), 'Coliseum card: seasons, kept season, its coins');
+    assert.ok(/id="c-colosseum"[^]*?<div class="ct">\d+ seasons<\/div><div class="pg"><img[^>]*>Kept: Coliseum · April 2016<\/div>[^]*?<small>(<img[^>]*>)?<span class="wt"><span class="wp">Coliseum Coins<\/span> · <span class="wp">Apr 2016<\/span><\/span><\/small>/.test(html), 'Coliseum card: seasons, kept season, its coins');
     assert.ok(/id="c-raid"[^]*?<div class="ct">[\d,]+ raids[^<]*<\/div><div class="pg no">No raid kept<\/div>[^]*?<small>(<img[^>]*>)?Raid Coins<\/small>/.test(html), 'Raid card');
     assert.ok(/id="c-event"[^]*?<div class="ct">[\d,]+ events<\/div>[^]*?<small>(<img[^>]*>)?Event Coins<\/small>/.test(html), 'Event card');
     if (avatarId) assert.ok(/id="c-avatar"[^]*?<div class="ct">[\d,]+ entries · [\d,]+ boards<\/div>[^]*?<small>(<img[^>]*>)?Avatar Coins<\/small>/.test(html), 'Avatar Board card');
@@ -270,7 +274,7 @@ function wiring() {
     if (evId) assert.ok(row('event').includes(`href="/web/event/event/${evId}?from=catalog"`) && row('event').includes('data-pin="/web/event/unkeep"'), 'event row');
     if (spId) assert.ok(row('special').includes(`href="/web/special/quest/${spId}?from=catalog"`) && row('special').includes('data-pin="/web/special/unpin"'), 'special row');
     // a banner kept in the Shop (Banner Catalog) is never listed: only the five hub catalogues (user 26-11)
-    assert.ok(shopId && !html.includes('id="k-shop"') && !html.includes('/web/gacha/unpin') && !html.includes('Banner Catalog</span>'), `kept Shop banner ${shopId} not in the hub section`);
+    assert.ok(shopId && !html.includes('id="k-shop"') && !html.includes('/web/gacha/unpin') && !/<span class="kc">Banner Catalog<\/span>/.test(html), `kept Shop banner ${shopId} not in the hub section`);
     assert.ok(raidId && evId && spId && shopId, `something kept in each: raid ${raidId} event ${evId} special ${spId} shop ${shopId}`);
     const n = [...html.matchAll(/<div class="kr" id="k-/g)].length;
     assert.ok(html.includes(`<h2>Kept now</h2><span class="kcount">${n}</span>`) && n >= 4, `count ${n}`);

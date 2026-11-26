@@ -28,6 +28,10 @@ const HUB_CSS = SPECIAL_CSS + '.d{color:#d9e6ee;font-size:14px;margin:2px 0}.ct{
   // the coin chip of a card: the header chip (catalog-pages.js walletChip) without its push to the right
   + '.row .wal{margin:4px 0 0;align-self:flex-start;max-width:100%}.row .wal small{font-size:12px;min-width:0;padding:2px 7px 2px 4px;gap:4px}.row .wal .ic{width:1.5em;height:1.5em}.row .wal b{font-size:15px;padding:1px 9px}.row .cw{margin-top:auto}'
   + '.row{cursor:pointer}'
+  // a large amount (user 26-11: «if the Coliseum Coins grow, do they run out of the card?»): the chip never wider than its card, the
+  // label goes on two lines (coins / season month) and the amount keeps its width
+  + '#rows>.row,#rows>.row .info{min-width:0}#rows>.row .wal{max-width:100%;box-sizing:border-box}#rows>.row .wal small{min-width:0;flex:0 1 auto}'
+  + '#rows>.row .wal .wt{white-space:normal;line-height:1.15}#rows>.row .wal b{flex:none}'
   // phone card grid (phone-css.js): the short catalogue names on one line, the counts as small as the other lines
   + `@media ${PHONE_MQ}{#rows>.row.row .nm{height:auto}#rows>.row .ct{font-size:12px}}`
   // «Kept now» (user 26-11): a section card of the detail pages, one compact line per kept item (its card, name, catalogue, Remove)
@@ -96,8 +100,9 @@ function hubPage(cards = [], kept = []) {
   const { catalogHead, val, cyan } = detailCards;
   return parts.PAGE_HEAD('Game Catalog', HUB_CSS) + '<body>'
     + catalogHead({ title: 'Game Catalog', ic: 'done', lines: [
-      `Every catalog of this server in ${cyan('one place')}: ${val('pick one')} to see everything of the original game it holds.`,
-      `${val('Keep one past item')} in each catalog: it comes back in its own tab ${cyan('every week')}. The Banner Catalog is in the ${val('Shop')}.`] })
+      ['medal', `${val('Every catalog')} of this server in ${cyan('one place')}: pick one to see everything of the original game it holds.`],
+      ['pin', `${val('Keep one past item')} in each catalog: it comes back in its own tab ${cyan('every week')}.`],
+      ['jewel', `The ${val('Banner Catalog')} is in the Shop.`]] })
     + keptSection(kept)
     + `<div id="rows">${list.map(cardRow).join('') || '<p class="n">No catalogue is served yet.</p>'}</div>`
     + `<div id="pinmsg" class="pinmsg"></div><script>${ROW_JS}${KEPT_JS}</script></body></html>`;

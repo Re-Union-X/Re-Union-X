@@ -629,8 +629,8 @@ function catalogPage(index, ctx = {}) {
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + `<title>Special Catalog</title><style>${CSS}${DC.HEAD_CSS}${NARROW_CSS}</style></head><body>`
     + DC.catalogHead({ title: 'Special Catalog', ic: 'mog', side: '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>', lines: [
-      `Every Special quest of the game: tap a quest for its ${DC.val('versions, days and rewards')}.`,
-      `${DC.val('Keep an old quest')} in Special, ${DC.cyan('one at a time')}.`] })
+      ['medal', `Every Special quest of the game: tap a quest for its ${DC.val('versions, days and rewards')}.`],
+      ['pin', `${DC.val('Keep an old quest')} in Special, ${DC.cyan('one at a time')}.`]], about: 'later' })
     + `<div class="tabs" id="tabs">${tab('all', 'All years', YEAR_SPAN, cards.length)}${GAME_YEARS.map((g, i) => (count(i) ? tab(i, g.name, g.sub, count(i)) : '')).join('')}</div><div class="tabline"></div>`
     + `<div class="sum" id="sum"><span class="n1">${plural(nQuest, 'quest')}</span> · ${plural(nCamp, 'campaign')} · all years, no filters</div>`
     + '<div id="none" class="none" style="display:none"></div>'
