@@ -106,8 +106,8 @@ function statusOf(row, ctx) {
   return { show: 'later', cls: 'off', pill: pill('off', 'later', text), button: null, why };
 }
 const keepButton = (id, on, extra = '', cls = '') => parts.keepButton('/web/raid', id, on, extra, cls);
-const { DETAIL_KEEP } = require('./phone-css');
-const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages
 const KEEP_JS = keepJs('/web/raid', 'raid');
 
 // ES5, no external script. Rows read once at start; a period tab, a year chip and the Filters sheet only toggle a class.

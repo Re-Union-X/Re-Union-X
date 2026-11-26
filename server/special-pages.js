@@ -9,8 +9,8 @@ const special = require('./special');
 // next; Launch year .. Final months; user 06-11): same names, same boundaries, a tab only for a year with rows, no «Now» mark
 // (the Shop has none). Display grouping only: special.PERIODS (Launch .. Last) still drives the unlocks and the entries' periods.
 const { gameYearOf, GAME_YEARS } = require('./gacha');
-const { DETAIL_KEEP } = require('./phone-css');
-const cards = require('./detail-cards'), DC = cards; // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const cards = require('./detail-cards'), DC = cards; // section cards and colour roles of the detail pages
 const YEAR_SPAN = '2016–2021';
 // game years a span of days touches (inclusive)
 const yearsBetween = (from, to) => { const out = []; for (let y = gameYearOf(from); y <= gameYearOf(to); y++) out.push(y); return out; };

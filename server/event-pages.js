@@ -32,8 +32,8 @@ const BOARD_BASE = '/web/avatar'; // the Avatar Board Catalog (Task 5b)
 const BOARD_WHERE = 'Avatar Boards'; // the screen its kept boards are listed in (keep button and messages)
 const keepButton = (id, on, extra = '', cls = '') => parts.keepButton(BASE, id, on, extra, cls);
 const boardKeepButton = (id, on, extra = '', cls = '') => parts.keepButton(BOARD_BASE, id, on, extra, cls, BOARD_WHERE);
-const { DETAIL_KEEP } = require('./phone-css');
-const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages
 const KEEP_JS = parts.keepJs(BASE, 'event');
 const BOARD_KEEP_JS = parts.keepJs(BOARD_BASE, 'entry', BOARD_WHERE);
 // the pills the page script writes after a keep / remove: [row class, html]; the Avatar Board Catalog has its own

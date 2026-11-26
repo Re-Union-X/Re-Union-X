@@ -13,8 +13,8 @@
 // player.drawTickets, mai due valute insieme nella lista (9.7).
 'use strict';
 const clock = require('./clock');
-const { DETAIL_KEEP } = require('./phone-css');
-const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages
 const gd = require('./gacha-data');
 const { seasonOf, windowText } = require('./gacha-seasons');
 const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;

@@ -14,8 +14,8 @@
 'use strict';
 const special = require('./special-pages');
 const parts = require('./catalog-pages');
-const { DETAIL_KEEP } = require('./phone-css');
-const cards = require('./detail-cards'); // section cards and colour roles of the detail pages // the compact Keep / Remove of the detail pages on phones
+const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
+const cards = require('./detail-cards'); // section cards and colour roles of the detail pages
 
 const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN, CROWN } = special;
 const { PAGE_HEAD, pill, keepJs, FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet, backBar, srvFrame, RULE_CSS, SRV_CSS, FOLD_CSS } = parts;
