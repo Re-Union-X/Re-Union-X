@@ -379,6 +379,14 @@ const tests = {
     may.onclick({ target: may });
     assert.strictEqual(loc.href, '/web/colosseum/season/900?from=catalog', 'the empty space of the row');
   },
+  // the Coliseum Coins of the season the Coliseum plays, with its month, on the header (user 26-11); none on the detail page
+  wallet_header() {
+    const html = pages.catalogPage(ROWS, { ...CTX, wallet: { ic: 'tleg', label: 'Coliseum Coins · March 2017', value: 401 } });
+    assert.ok(html.includes('<h1>Coliseum Catalog</h1><span class="wal"><img class="ic" src="/web/special/icon/tleg.png" alt=""><small>Coliseum Coins · March 2017</small><b>401</b></span><button type="button" class="fbtn"'));
+    const det = { boards: [], tiers: [], best: 0, ranked: [], maps: 'worldwide' };
+    const d = pages.detailPage([row(900, '2016-05', 'can', { coins: 4321 })], 900, det, CTX);
+    assert.ok(!d.includes('4,321') && !d.includes('<th>Coliseum Coins</th>'), 'no coin balance on the detail page');
+  },
   empty() {
     const html = pages.catalogPage([], CTX);
     assert.ok(html.includes('No Coliseum season is served yet.'));

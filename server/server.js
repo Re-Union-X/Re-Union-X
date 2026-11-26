@@ -5357,12 +5357,23 @@ function boardNodeProgress(sphereBoardId) {
   const cost = (list) => list.reduce((t, n) => t + ((masu && masu.spherePoint[n - 1]) || 0), 0), todo = nodes.filter((n) => !unlock.has(n));
   return { nodes: nodes.length, unlocked: nodes.length - todo.length, coinsLeft: cost(todo), coinsTotal: cost(nodes) };
 }
+function colosseumWallet() {
+  try {
+    const s = colosseum().liveSeason();
+    if (!s) return null;
+    const [y, m] = s.month.split('-').map(Number);
+    const month = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
+    return { ic: 'tleg', label: `Coliseum Coins · ${month}`, value: colosseum().coinsOf(), title: s.kept ? 'The kept season' : 'The season of your Story' };
+  } catch (e) { return null; }
+}
 function colosseumPageCtx(extra = {}) {
   const sphere = masterRows('sphere'), cards = colosseumBoardCards();
   const skills = new Map(masterRows('skill').map((r) => [r.skillId, r.name]));
   return { unlocked: colosseum().catalogCtx().unlocked, imgVersion: routesColosseum.COLOSSEUM_IMG_VERSION,
     boardImgVersion: cards.version, boardCard: (id) => cards.ids.has(Number(id)), bonusTier: (id) => makeColosseum.BONUS_TIER[id] || null,
-    itemName: (type, id) => boardRewardName(raidBoardIndex(), type, id) || '', skillName: (id) => skills.get(id) || '', ...extra,
+    itemName: (type, id) => boardRewardName(raidBoardIndex(), type, id) || '', skillName: (id) => skills.get(id) || '',
+    // the Coliseum Coins of the season the Coliseum plays now (kept or of the Story), on the header; none without a live season
+    wallet: colosseumWallet(), ...extra,
     boardName: (id) => (sphere.find((r) => r.sphereBoardId === id) || {}).boardName || null,
     unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: `${row.month}-01` }, periods: [] }, special.PERIODS) };
 }
@@ -5534,6 +5545,8 @@ function raidBoardDoneLookup() {
 }
 const raidPageCtx = (fromCatalog = false) => ({ ...raid().catalogCtx(), periods: special.PERIODS, imgVersion: routesRaid.RAID_IMG_VERSION, fromCatalog,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
+  // the Raid Coins owned, on the Raid Catalog header (catalog-pages.js walletChip; userPoint.raidSpherePoint)
+  wallet: { ic: 'raid', label: 'Raid Coins', value: Number(player.raidSpherePoint) || 0 },
   boardItems: raidBoardItems, boardName: raidBoardName, stageDone: (id) => catalogStageDone(id), boardDone: raidBoardDoneLookup(),
   boardNodes: boardNodeProgress, boardCardUrl: (id) => boardCardUrl('raid', id),
   hasNotice: (censusId) => !!raidNotices()?.rows?.[censusId] });
@@ -5572,6 +5585,8 @@ function respondRaidWeb(res, url) {
 const eventPageCtx = (fromCatalog = false) => ({ ...eventRoutes().catalogCtx(), imgVersion: routesEvents.EVENT_IMG_VERSION, fromCatalog,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
   stageDone: (id) => catalogStageDone(id), hasNotice: (censusId) => !!eventNotices()?.rows?.[censusId],
+  // the Event Coins the game shows now (userPoint.stageSpherePoint: the board set of the week's or the kept event), on the header
+  wallet: { ic: 'camp', label: 'Event Coins', value: eventCoinPoint(), title: 'The Event Coins of the board set the Events tab plays now (one balance per set)' },
   eventBoardCard: (id) => boardCardUrl('event', id), eventBoard: eventBoardCells, eventCoins: (setKey) => Number((player.eventCoins || {})[setKey]) || 0, questRewards: eventQuestRewardLookup(),
   boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)),
   // the HSC best run of an event (routes-hsc.js player.hsc): «Your best score» of the details page, HIGH SCORE filter (I-276)
@@ -5615,7 +5630,9 @@ function respondEventWeb(res, url) {
 // /web/avatar/unkeep: routes-events.js keepBoard / unkeepBoard, JSON {ok, why?}.
 const avatarPageCtx = (extra = {}) => ({ ...eventRoutes().boardCatalogCtx(), imgVersion: routesEvents.EVENT_IMG_VERSION,
   unlockQuestOf: (row) => special.unlockQuest(gachaCatalog().story, { campaign: { start: row.start }, periods: [] }, special.PERIODS),
-  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...boardCardCtx(), ...extra });
+  boardBought: (id) => (player.avatarBoardsBought || []).map(Number).includes(Number(id)), ...boardCardCtx(),
+  // the Avatar Coins owned (userPoint.spherePoint), on the Avatar Board Catalog header
+  wallet: { ic: 'avatar', label: 'Avatar Coins', value: Number(player.spherePoint) || 0 }, ...extra });
 // Board cards and marks of the Avatar Board pages (Task 5c): game_data/avatar_img written by recon/tools/make_avatar_card_web.py
 // (git-ignored): <sphereBoardId>.png at most 160 px and cards.json {version, ids}, read at request time (a new run is seen without
 // a restart; the version busts the WebView cache). No cards.json: no card, every board shows the neutral box.

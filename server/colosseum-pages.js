@@ -184,7 +184,7 @@ function catalogPage(rows, ctx = {}) {
     groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(SHOW_OPTS, cls('st'))}</div>`], ['COLISEUM BOARDS', `<div class="opts" data-g="bd">${filterOpts(BOARD_OPTS, cls('bd'))}</div>`],
       ['TIER REWARDS', `<div class="opts" data-g="tr">${filterOpts(TIER_OPTS, cls('pr'))}</div>`]] }) : '';
   return PAGE_HEAD('Coliseum Catalog', CSS + FILTER_CSS) + '<body>'
-    + `<div class="hdr"><h1>Coliseum Catalog</h1>${rows.length ? FILTER_BUTTON : ''}</div>`
+    + `<div class="hdr"><h1>Coliseum Catalog</h1>${parts.walletChip(ctx.wallet)}${rows.length ? FILTER_BUTTON : ''}</div>`
     + '<p class="n">Every Coliseum season of this server, one per month as in the original game. The Coliseum plays the season of your Story; '
     + 'a past season can be kept here, one at a time, and the Coliseum then plays it until you remove it. Each season keeps its own progress, '
     + 'Coliseum Coins and Coliseum Boards. The Coliseum Catalog is an addition of this server.</p>'
@@ -257,8 +257,8 @@ function detailPage(rows, id, det, ctx = {}) {
   const progress = row.userStageTotalCount
     ? `Cleared up to <span class="tn">Tier ${row.userRank}</span>, <span class="rd">Round ${num(row.userStageCount)}</span>` : MU('Not played yet');
   const kv = [['Month', `<b>${esc(monthYear(`${row.month}-01`))}</b>`], ['Game year', esc(GAME_YEARS[gameYearOf(`${row.month}-01`)].name)],
-    ['Tiers', `<b>${row.tiers}</b> tier${row.tiers === 1 ? '' : 's'} · ${aps} per round`], ['Your progress', progress],
-    ['Coliseum Coins', row.coins ? `<span class="cc">${num(row.coins)}</span> to spend on the boards` : MU('None yet')]]
+    // no coin balance here (user 26-11: it is on the Coliseum Catalog header)
+    ['Tiers', `<b>${row.tiers}</b> tier${row.tiers === 1 ? '' : 's'} · ${aps} per round`], ['Your progress', progress]]
     .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
   // Coliseum Boards: the boards table shared with the other catalog detail pages (detail-cards.js boardTable)
   const boardRows = det.boards.map((b) => ({ id: b.id, name: esc(b.name || (ctx.boardName && ctx.boardName(b.id)) || `Board ${b.id}`),

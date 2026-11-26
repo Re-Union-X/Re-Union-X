@@ -8,7 +8,7 @@ const { scrub: scrubNotice, OMIT_LINE: OMIT } = require('./make-raid-notices');
 const noticeTables = require('./notice-tables');
 
 const PAGE_HEAD = (title, css) => '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-  + `<title>${esc(title)}</title><style>${css}${NARROW_CSS}</style></head>`; // NARROW_CSS last: the phone-portrait layout (special-pages.js)
+  + `<title>${esc(title)}</title><style>${css}${WALLET_CSS}${NARROW_CSS}</style></head>`; // NARROW_CSS last: the phone-portrait layout (special-pages.js)
 // a status pill (special-pages PILL_CSS colours): class s-<c>, an icon key or none, the text (html)
 const pill = (c, k, text) => `<span class="s s-${c}">${k ? icon(k) : ''}${text}</span>`;
 const backBar = (href) => `<div class="bar"><a class="back" href="${href}">BACK<span></span></a></div>`;
@@ -60,6 +60,13 @@ const keepJs = (base, noun, where = 'Events') => `var KX_KEEP=${JSON.stringify(k
 // the header, the chips of a group and the sheet (FIND with its hint, the groups, Reset / «Show N results»). Styles: special-pages
 // CSS (.fbtn, .sheet, .opts .o) and NARROW_CSS. An option is [value, label, icon key]; the first one of a group is on.
 const FILTER_BUTTON = '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>';
+// The coins the player owns, in the catalogue header next to Filters (user 26-11: no balance in the detail sections): w = {ic (icon
+// key), label, value (number), title (tooltip)}; '' without one. Pushes Filters to the right; on phones as compact as the button.
+const walletChip = (w) => (w && Number.isFinite(Number(w.value)) ? `<span class="wal"${w.title ? ` title="${esc(w.title)}"` : ''}>${icon(w.ic)}<small>${esc(w.label)}</small>`
+  + `<b>${Number(w.value).toLocaleString('en-US')}</b></span>` : '');
+const WALLET_CSS = '.wal{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid #2f6f93;border-radius:18px;background:#06283e;padding:3px 12px 3px 6px;white-space:nowrap;font-size:14px;color:#d9e6ee}'
+  + '.wal .ic{width:1.6em;height:1.6em}.wal b{color:#ffcd4a;font-size:16px}.hdr .wal+.fbtn{margin-left:0}'
+  + '@media (max-width:700px) and (min-height:481px){.wal{-webkit-flex:1 1 100%;flex:1 1 100%;justify-content:center;min-height:40px;box-sizing:border-box}}';
 const optLabel = ([, l, k]) => (k ? icon(k) : '') + esc(l);
 const filterOpts = (list, cls = () => '', sa = () => '') => list.map((o, i) => `<button type="button" class="o${cls(o[0])}${i ? '' : ' on'}" data-v="${o[0]}"${sa(o[0])}>${optLabel(o)}</button>`).join('');
 // the labels of the summary chips, {value: html} without «All»
@@ -332,5 +339,5 @@ const UNPACK_JS = 'function kxImgs(){var a=document.querySelectorAll("#rows .row
   + '(function(){var d=JSON.parse(document.getElementById("kxrows").textContent),o=[],i,r;for(i=0;i<d.r.length;i++){r=d.r[i];'
   + 'o.push(r[6]+d.t[r[0]].replace(/\u0001([sdneyt])/g,function(x,k){if(k==="s"){var s=[],j;for(j=0;j<r[1].length;j++)s.push(d.w[r[1][j]]);return s.join(" | ");}return k==="d"?r[2]:k==="n"?r[3]:k==="e"?r[4]:k==="t"?r[7]:r[5];}).replace(/\u0002(\\d)/g,function(x,k){return r[8][k];}));}'
   + 'document.getElementById("rows").innerHTML=o.join("");})();';
-module.exports = { PAGE_HEAD, pill, backBar, KEEP_LABEL, REMOVE_LABEL, keepButton, keepJs, KEEP_ROWS_JS, replacesLine, RULE_CSS, SRV_CSS, FOLD_CSS, ONC_CSS, NOTICE_CSS, rebuiltValues, srvFrame,
+module.exports = { walletChip, WALLET_CSS, PAGE_HEAD, pill, backBar, KEEP_LABEL, REMOVE_LABEL, keepButton, keepJs, KEEP_ROWS_JS, replacesLine, RULE_CSS, SRV_CSS, FOLD_CSS, ONC_CSS, NOTICE_CSS, rebuiltValues, srvFrame,
   noticeCard, parseNotice, noticeBlocks, packCatalog, expandCatalog, UNPACK_JS, FILTER_BUTTON, optLabel, filterOpts, optLabels, filterSheet };

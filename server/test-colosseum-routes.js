@@ -673,6 +673,7 @@ function wiring() {
     assert.strictEqual(page.code, 200);
     const html = page.body.toString('utf8');
     assert.ok(html.includes('<h1>Coliseum Catalog</h1>') && html.includes('<style data-phone>'), 'the catalog page with the phone layout');
+    assert.ok(html.includes('<small>Coliseum Coins · May 2016</small><b>'), 'the coins of the live season (May 2016, the Story season) on the header');
     // every served season of the master (Part 1: 800-1100; with Part 2 the 13 seasons 800-2000), oldest first
     const served = require('./make-colosseum').SEASONS.map((s) => s.colosseumStageId)
       .filter((id) => t.masterRows('colosseumStage').some((r) => r.colosseumStageId === id));

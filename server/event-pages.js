@@ -460,7 +460,7 @@ function catalogOf(index, ctx, m) {
   const backTo = { special: '/web/special/catalog', event: `${BASE}/catalog` }[ctx.from];
   const back = m === MODES.board && backTo ? backBar(backTo) : '';
   return PAGE_HEAD(m.title, CSS + m.css) + `<body${back ? ' class="hb"' : ''}><script>${m.ncJs}</script>`
-    + `<div class="hdr"><h1>${m.title}</h1>${packed.length ? FILTER_BUTTON : ''}</div>`
+    + `<div class="hdr"><h1>${m.title}</h1>${parts.walletChip(ctx.wallet)}${packed.length ? FILTER_BUTTON : ''}</div>`
     + m.intro()
     + tabsHtml
     + `<div class="sum" id="sum"><span class="n1">${plural2(n0, m.noun)}</span>${def === 'all' ? '' : ` in <b>${esc(GAME_YEARS[Number(def)].name)}</b>`} · no filters</div>`
@@ -551,7 +551,8 @@ function boardsSection(index, e, ctx) {
   // only the events listed in the catalogue count (Task 8: an informative notice of the set, e.g. EV-0579, is not an event)
   const listed = new Set(entriesOf(index).map((x) => x.censusId));
   const num = (n) => Number(n).toLocaleString('en-US'), shared = (set.censusIds || []).filter((id) => listed.has(id)).length;
-  const coins = `<p class="ecoin">${icon('camp')}Your Event Coins: <b>${num(ctx.eventCoins ? ctx.eventCoins(key) : 0)}</b>. `
+  // a generic description (user 26-11: no balance in the detail sections, it is on the Event Catalog header)
+  const coins = `<p class="ecoin">The Event Boards of this event: unlock their nodes with Event Coins, earned in its quests. `
     + `One balance per board set${shared > 1 ? `, shared by ${plural(shared, 'event')}` : ''}; Event Coins never expire.</p>`;
   const cell = (c) => `<tr><td>${c.n}</td><td>${c.reward ? esc(c.reward) : '—'}</td><td>${num(c.cost)}</td>`
     + (c.done ? `<td class="cd">Unlocked${CROWN}</td>` : '<td>Not unlocked</td>') + '</tr>';

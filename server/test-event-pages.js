@@ -308,7 +308,14 @@ const tests = {
     const c = ctx({ eventBoard: () => ({ id: 7001, name: 'Board #1', done: false, finish: '', cells: [] }), eventCoins: (k) => (k === 'S1' ? 1234 : 0) });
     const d = pages.detailPage(ix, 29900, c);
     const line = (/<p class="ecoin">(.*?)<\/p>/.exec(d) || [])[1] || '';
-    assert.ok(line.includes('1,234'), line);
+    // a generic description, no balance (user 26-11: the balance is on the Event Catalog header)
+    assert.ok(line.startsWith('The Event Boards of this event: unlock their nodes with Event Coins, earned in its quests.') && !line.includes('1,234'), line);
+    assert.ok(!d.includes('Your Event Coins'), 'no owned coins in the detail page');
+    // the Event Coins owned on the catalogue header, next to Filters (catalog-pages.js walletChip)
+    const cat = pages.catalogPage(ix, ctx({ wallet: { ic: 'camp', label: 'Event Coins', value: 1234 } }));
+    assert.ok(cat.includes('<h1>Event Catalog</h1><span class="wal"><img class="ic" src="/web/special/icon/camp.png" alt=""><small>Event Coins</small><b>1,234</b></span><button type="button" class="fbtn"'), 'Event Coins on the header');
+    const av = pages.boardCatalogPage(ix, ctx({ wallet: { ic: 'avatar', label: 'Avatar Coins', value: 50 } }));
+    assert.ok(/<h1>Avatar Board Catalog<\/h1><span class="wal">[^]*?<small>Avatar Coins<\/small><b>50<\/b><\/span>/.test(av), 'Avatar Coins on the Avatar Board Catalog header');
     assert.ok(/never expire/i.test(line) && /one balance/i.test(line), line);
     assert.ok(line.includes('2 events'), 'the set is shared by its events');
     // texts: paid now, and the two reasons a set is not handed out
