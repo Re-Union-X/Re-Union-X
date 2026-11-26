@@ -330,7 +330,7 @@ const tests = {
     // thresholds: brackets top first, the rounds needed, prizes, reached ones marked
     const sc = html.slice(html.indexOf('id="sec-ranked"'), html.indexOf('id="sec-maps"'));
     assert.ok(sc.indexOf('1st – 100th') < sc.indexOf('101st – 1,000th'), 'top first');
-    assert.ok(sc.includes('200 rounds') && sc.includes('Scrooge <b class="v">x3</b></span> <span class="sk">(Attack Boost)</span>') && /<tr class="got">[\s\S]*?Reached/.test(sc) && sc.includes('Your best: <span class="rd">25 rounds</span>'), sc);
+    assert.ok(sc.includes('200 rounds') && sc.includes('Scrooge <b class="v">x3</b></span> <span class="sk">(Attack Boost)</span>') && /<tr class="got">[\s\S]*?Reached/.test(sc) && sc.includes('Your best: <span class="rd">25 rounds</span>') && !sc.includes('</span>: clear') && html.includes('Score thresholds<span class="ng">NOT ORIGINAL</span></h2>'), sc);
     // maps: the wording of the «Coliseum» notice and a link to it
     const maps = html.slice(html.indexOf('id="sec-maps"'));
     assert.ok(maps.includes('original') && maps.includes('2016 worldwide game files') && maps.includes('href="/web/notices#coliseum"'));

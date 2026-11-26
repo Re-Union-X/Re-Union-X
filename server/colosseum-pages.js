@@ -209,7 +209,7 @@ const WHY = { pinned: 'The Coliseum plays this season until you remove it, whate
 const MAPS = {
   worldwide: 'The maps of this season are the original ones, from the 2016 worldwide game files.',
   japanese: 'This season uses the original maps of the Japanese version, which the worldwide game most likely reused (its round lists match them).',
-  generated: 'No map of this season survives: its rounds are played on generated maps <span class="ng">NOT ORIGINAL</span>, built from the round lists of the community '
+  generated: '<span class="ng">NOT ORIGINAL</span> No map of this season survives. Its rounds are played on generated maps, built from the round lists of the community '
     + 'wiki (khuxwiki) with the original enemies of the season, in the original arena.' };
 const COIN = 17;
 const num = (n) => Number(n || 0).toLocaleString('en-US');
@@ -226,10 +226,12 @@ function itemText(x, ctx) {
 const rounds = (n) => `<span class="rd">${num(n)} round${n === 1 ? '' : 's'}</span>`;
 const OK = (t) => `<span class="yes">${t}${CROWN}</span>`, MU = (t) => `<span class="mu">${t}</span>`;
 // a section of the page: a card with its header band (the «Original notice» card of the raid notices, catalog-pages.js ONC_CSS)
-const section = (key, ic, title, body) => `<div class="cs" id="sec-${key}"><h2 class="csh">${icon(ic)}${esc(title)}</h2><div class="csb">${body}</div></div>`;
+const section = (key, ic, title, body, badge = '') => `<div class="cs" id="sec-${key}"><h2 class="csh">${icon(ic)}${esc(title)}${badge}</h2><div class="csb">${body}</div></div>`;
+// the NOT ORIGINAL tag of a section that is an addition of this server: in its header band, as the «On this server» box (srvFrame)
+const NG = '<span class="ng">NOT ORIGINAL</span>';
 const COLI_DETAIL_CSS = '.cs{border:1px solid #2f6f93;border-radius:10px;background:#06283e;margin:16px 0 12px;overflow:hidden}'
   + '.cs>h2.csh{margin:0;padding:8px 14px 7px;color:#ffcd4a;font-size:18px;letter-spacing:.03em;background:#0a4466;background:linear-gradient(#0f5a85,#0a4466);border-bottom:2px solid #39a7cf}'
-  + '.cs>h2.csh:before{content:""}.csh .ic{width:1.35em;height:1.35em;margin-right:8px}.csb{padding:6px 10px 8px}.csb>table{margin:4px 0 6px}.csb>p.n{margin:6px 2px 2px}'
+  + '.cs>h2.csh:before{content:""}.csh .ng{margin-left:10px;vertical-align:3px}.mp>.ng:first-child{margin:0 6px 0 0}.csh .ic{width:1.35em;height:1.35em;margin-right:8px}.csb{padding:6px 10px 8px}.csb>table{margin:4px 0 6px}.csb>p.n{margin:6px 2px 2px}'
   + '.tt{table-layout:auto}.tt small{display:block;color:#b9cfdc;font-size:13px}.tt td.nw{white-space:nowrap}.tt tr.got td{background:#0d4a3a}'
   + 'td.bc{width:64px;padding-right:0}td.bc img,td.bc .nb{display:block;width:64px;height:64px;border-radius:6px}'
   + '.v,.cc{color:#ffcd4a;font-weight:bold}.rd{color:#00d4ed;font-weight:bold}.yes{color:#6fd47f;font-weight:bold}.yes .ic{margin-left:4px}.mu{color:#8fa9ba}'
@@ -289,7 +291,7 @@ function detailPage(rows, id, det, ctx = {}) {
   const rk = det.ranked.map((b) => `<tr${b.reached ? ' class="got"' : ''}><td class="nw"><span class="tn">${ord(b.startRank)} – ${ord(b.endRank)}</span></td><td class="nw">${rounds(b.rounds)}</td>`
     + `<td>${b.rewards.map((x) => itemText(x, ctx)).join(', ') || MU('—')}</td><td>${b.reached ? OK('Reached') : MU('Not reached')}</td></tr>`).join('');
   const ranked = det.ranked.length
-    ? `<p class="n">Your best: ${rounds(det.best || 0)} cleared. Each original ranking bracket is a score threshold here <span class="ng">NOT ORIGINAL</span>: clear that many rounds and its prizes go to your Present Box, once.</p>`
+    ? `<p class="n">Your best: ${rounds(det.best || 0)} cleared.</p><p class="n">Each original ranking bracket is a score threshold on this server. Clear that many rounds and its prizes go to your Present Box, once.</p>`
       + `<table class="tt"><tr><th>Original rank</th><th>Rounds needed</th><th>Prizes</th><th>Status</th></tr>${rk}</table>`
     : `<p class="n">${MU('No ranking rewards are known for this season.')}</p>`;
   const maps = `<p class="mp">${MAPS[det.maps] || MAPS.worldwide} The ten maps of a season repeat in every tier. See the <a href="${NOTICE_LINK}">«Coliseum» notice ›</a></p>`;
@@ -298,7 +300,7 @@ function detailPage(rows, id, det, ctx = {}) {
     + `<script>${BOARD_NC_JS}</script><h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, row.colosseumStageId)}" alt="">${box}`
     + section('season', 'weekday', 'Season', `<table class="kv">${kv}</table>`)
     + section('boards', 'bdone', 'Coliseum Boards', boards) + section('tiers', 'tleg', 'Tiers', tiers)
-    + section('ranked', 'medal', 'Score thresholds', ranked) + section('maps', 'replaced', 'Maps', maps)
+    + section('ranked', 'medal', 'Score thresholds', ranked, det.ranked.length ? NG : '') + section('maps', 'replaced', 'Maps', maps)
     + `<p class="n">The Coliseum Catalog is an addition of this server: in the original game a season was played only in its own month.</p>${back}<script>${keepJs(BASE, 'season', WHERE)}</script></body></html>`;
 }
 
