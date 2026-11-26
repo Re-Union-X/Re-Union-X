@@ -74,10 +74,21 @@ if (!mc) { console.log(results.join('\n')); process.exit(1); }
 const S800 = [mc.SEASONS[0]];
 
 test('SEASONS and SEASON_BOARDS', () => {
-  assert.deepStrictEqual(mc.SEASONS.map((s) => [s.month, s.colosseumStageId]), [['2016-04', 800], ['2016-05', 900], ['2016-06', 1000], ['2016-07', 1100]]);
+  assert.deepStrictEqual(mc.SEASONS.map((s) => [s.month, s.colosseumStageId, s.source, !!s.genStages]), [
+    ['2016-04', 800, '113', false], ['2016-05', 900, '113', false], ['2016-06', 1000, '113', false], ['2016-07', 1100, '113', false],
+    ['2016-08', 1200, '113', true], ['2016-09', 1300, '113', true], ['2016-10', 1400, '113', true], ['2016-11', 1500, 'relux', true],
+    ['2016-12', 1600, 'relux', false], ['2017-01', 1700, 'relux', false], ['2017-02', 1800, 'relux', false], ['2017-03', 1900, 'relux', false],
+    ['2017-04', 2000, 'relux', false]]);
   assert.deepStrictEqual(mc.SEASON_BOARDS[800], [2200001]);
-  for (const s of mc.SEASONS) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
+  // Part 1 seasons have their boards; the Part 2 ones get theirs in Task 4 (none yet is not an error)
+  for (const s of mc.SEASONS.slice(0, 4)) assert.ok(mc.SEASON_BOARDS[s.colosseumStageId].length >= 1, `boards of ${s.colosseumStageId}`);
   for (const [t, [, lo, hi]] of Object.entries(mc.RANGES)) assert.ok(lo <= hi, t);
+});
+
+test('GEN_STAGE_IDS: 2116MMNN, never a JP id', () => {
+  assert.deepStrictEqual(mc.GEN_STAGE_IDS('2016-08'), Array.from({ length: 10 }, (_, i) => 21160801 + i));
+  assert.deepStrictEqual(mc.GEN_STAGE_IDS('2016-11'), Array.from({ length: 10 }, (_, i) => 21161101 + i));
+  assert.throws(() => mc.GEN_STAGE_IDS('2016-12'), /2016-12/, 'only the four generated months');
 });
 
 test('colosseumStage row 800', () => {
@@ -274,7 +285,7 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
   const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016, null);
   if (!src) { results.push('skip real_113: 1.1.3 master not on disk'); return; }
   src.masterEnemyIds = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).map((r) => r.enemyId);
-  const out = mc.seasonRows(src);
+  const out = mc.seasonRows(src, mc.SEASONS.slice(0, 4));
   assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId), [800, 900, 1000, 1100]);
   assert.deepStrictEqual(out.colosseum.length, 6 + 10 + 10 + 10);
   assert.strictEqual(out.stage.length, 40);
@@ -283,7 +294,7 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
   assert.deepStrictEqual(out.rankingReward.length, 4 + 2 + 8 + 8);
   assert.deepStrictEqual(out.sphere.map((r) => r.sphereBoardId), Object.values(mc.SEASON_BOARDS).flat().sort((a, b) => a - b));
   assert.strictEqual(out.enemy.length, 0, 'the 111 Coliseum enemy rows are already in our master');
-  for (const s of mc.SEASONS) {
+  for (const s of mc.SEASONS.slice(0, 4)) {
     const t = out.ranked[s.colosseumStageId];
     assert.ok(t.thresholds.length >= 1 && t.thresholds.length === t.brackets.length);
     t.thresholds.forEach((x, i) => { if (i) assert.ok(x.score >= t.thresholds[i - 1].score); });
@@ -303,6 +314,192 @@ test('board card pictures: 6★ Cid from the 2016 bundle, every other served boa
     mc.patch(dir, { src: fixture(), seasons: S800, artFile: art });
     assert.deepStrictEqual(fs.readFileSync(art, 'utf8').split('\n').filter((l) => l && !l.startsWith('#')), ['img/sphere_incentive/2200001.png\tb16']);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- Coliseum Part 2 Task 1: the nine seasons 2016-08 .. 2017-04 ----
+// relux = the cleaned ReLux season extract (readRelux shape): arrays already cut to their valid counts, coins /100,
+// a trailing 0-round marker after term, and (from 2017-01) hidden 999-round tiers after the wiki-visible endless tier
+const R = require('./colosseum-rules');
+const rtier = (sid, n, rounds, skip, cn, coin, extra = []) => ({ colosseumId: sid + n, colosseumStageId: sid, round: n, ap: n < 3 ? 3 : n < 5 ? 4 : 5,
+  arrivalStageCount: rounds, rankId: '', excellentUnlockCount: skip, validStageReward: cn ? 1 : 0, stageRewardType: 17, stageRewardId: 0, stageRewardAssignType: 1,
+  stageRewardSkillId: 0, stageRewardSkillLv: 1, stageRewardNum: cn, validReward: coin ? 1 + extra.length : 0,
+  rewardType: coin ? [17, ...extra.map(() => 3)] : [], rewardId: coin ? [0, ...extra] : [], rewardAssignType: coin ? [1, ...extra.map(() => 1)] : [],
+  rewardSkillId: coin ? [0, ...extra.map(() => 0)] : [], rewardSkillLv: coin ? [1, ...extra.map(() => 1)] : [], rewardNum: coin ? [coin, ...extra.map(() => 1)] : [] });
+const ROUNDS = [20, 15, 15, 10, 10, 10, 10, 10, 10, 10], SKIPS = [18, 16, 12, 10, 8, 6, 5, 4, 3, 3], CN = [1, 3, 5, 7, 10, 10, 10, 10, 10, 10];
+const TCOIN = [30, 40, 50, 70, 100, 100, 100, 100, 600, 900];
+// sid 1500: 10 finite tiers + the endless 11th (term), marker 12; sid 1700: + hidden 999-round tiers 12..15 (term 1715), marker 16
+const reluxSeason = (sid, month, setFirst, hidden) => {
+  const tiers = ROUNDS.map((n, i) => rtier(sid, i + 1, n, SKIPS[i], CN[i], TCOIN[i], [90076]));
+  tiers.push(rtier(sid, 11, 999, 3, 10, hidden ? 900 : 0, hidden ? [90076] : []));
+  for (let n = 12; n < 12 + hidden; n++) tiers.push(rtier(sid, n, 999, 3, 10, n < 11 + hidden ? 900 : 0, n < 11 + hidden ? [90076] : []));
+  const term = sid + tiers.length;
+  tiers.push(rtier(sid, tiers.length + 1, 0, 3, 0, 0));
+  return { colosseumStage: { colosseumStageId: sid, openDate: `${month}-01 07:00:00`, closeDate: '2030-01-01 00:00:00', rankingCloseDate: '2030-01-01 00:00:00',
+    headColosseumId: sid + 1, termColosseumId: term, rankingId: 4016 + (sid - 1500) / 100, validStage: 10, stageId: Array.from({ length: 10 }, (_, i) => setFirst + i),
+    loopStageCount: 10, lvPerLoop: 10, _closeDate_derived: true }, colosseum: tiers };
+};
+const reluxFixture = () => {
+  const seasons = [reluxSeason(1500, '2016-11', 20160401, 0), reluxSeason(1700, '2017-01', 20160601, 4)];
+  return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum) };
+};
+const S1500 = { month: '2016-11', colosseumStageId: 1500, source: 'relux', genStages: true };
+const S1700 = { month: '2017-01', colosseumStageId: 1700, source: 'relux' };
+const p2 = () => ({ ...fixture(), relux: reluxFixture() });
+
+test('readRelux: the extract flattened, null when not readable', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-colosseum-'));
+  try {
+    const f = path.join(dir, 'coliseum_seasons.json'), rf = reluxFixture();
+    fs.writeFileSync(f, JSON.stringify({ _provenance: {}, seasons: [1500, 1700].map((sid) => ({
+      colosseumStage: rf.colosseumStage.find((r) => r.colosseumStageId === sid), colosseum: rf.colosseum.filter((r) => r.colosseumStageId === sid) })) }));
+    assert.deepStrictEqual(mc.readRelux(f), rf);
+    assert.strictEqual(mc.readRelux(path.join(dir, 'none.json')), null);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('relux seasons: extract rows, generated stage ids, wiki-visible tiers', () => {
+  const out = mc.seasonRows(p2(), [S800[0], S1500, S1700]);
+  assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId), [800, 1500, 1700]);
+  const cs = (id) => out.colosseumStage.find((r) => r.colosseumStageId === id);
+  assert.deepStrictEqual(cs(1500).stageId, mc.GEN_STAGE_IDS('2016-11'), '1500: generated set, not the 20160401 of the extract');
+  assert.deepStrictEqual(cs(1700).stageId, Array.from({ length: 10 }, (_, i) => 20160601 + i), '1700: the JP set of the extract');
+  assert.strictEqual(cs(1500).closeDate, mc.END); assert.strictEqual(cs(1500).rankingId, 4016);
+  const tiersOf = (id) => out.colosseum.filter((r) => r.colosseumStageId === id);
+  assert.strictEqual(tiersOf(1500).length, 11, '2016-11: eleven tiers');
+  assert.deepStrictEqual([tiersOf(1500)[9].rewardType[0], tiersOf(1500)[9].rewardNum[0], tiersOf(1500)[9].arrivalStageCount], [17, 900, 10], 'the extra tier: 10 rounds, 900 coins');
+  assert.strictEqual(tiersOf(1700).length, 11, 'hidden 999-round tiers after the first endless one left out');
+  assert.deepStrictEqual([cs(1500).termColosseumId, cs(1700).termColosseumId], [1511, 1711], 'term = the last served tier');
+  for (const r of tiersOf(1500)) assert.strictEqual(r.rewardType.length, 4, 'padded to the schema');
+  // stage rows: one per stage id, ids in our range and unique, Coliseum stages
+  const ids = out.colosseumStage.flatMap((r) => r.stageId.slice(0, r.validStage));
+  assert.deepStrictEqual(out.stage.map((r) => r.stageId).sort((a, b) => a - b), [...ids].sort((a, b) => a - b));
+  assert.strictEqual(new Set(out.stage.map((r) => r.id)).size, 30);
+  for (const r of out.stage) {
+    assert.ok(r.id >= mc.RANGES.stage[1] && r.id <= mc.RANGES.stage[2], `id ${r.id}`);
+    assert.deepStrictEqual([r.stageKind, r.worldId, r.mapName], [3, 5, 'Coliseum']);
+  }
+  // ranking: own row and reward rows per season, inside our ranges, thresholds never going down
+  assert.deepStrictEqual(out.ranking.map((r) => r.rankingId), [4009, 4016, 4018]);
+  assert.strictEqual(new Set(out.rankingReward.map((r) => r.rankingRewardId)).size, out.rankingReward.length, 'no shared reward ids');
+  for (const rk of out.ranking) {
+    const rows = out.rankingReward.filter((r) => r.rankingRewardId >= rk.startRank && r.rankingRewardId <= rk.endRank);
+    assert.ok(rows.length >= 1 && rows.length === rk.endRank - rk.startRank + 1, `rewards of ${rk.rankingId}`);
+    for (const r of rows) assert.ok(r.rankingRewardId >= mc.RANGES.rankingReward[1] && r.rankingRewardId <= mc.RANGES.rankingReward[2]);
+  }
+  for (const id of [1500, 1700]) {
+    const t = out.ranked[id];
+    assert.ok(t.thresholds.length >= 1 && t.thresholds.length === t.brackets.length, `${id} thresholds`);
+    t.thresholds.forEach((x, i) => { assert.ok(x.score >= 1); if (i) assert.ok(x.score >= t.thresholds[i - 1].score, `${id} never down`); });
+  }
+  // the Part 1 rows of 800 are the same with or without the new seasons
+  const solo = mc.seasonRows(fixture(), S800);
+  assert.deepStrictEqual(out.colosseum.filter((r) => r.colosseumStageId === 800), solo.colosseum);
+  assert.deepStrictEqual(out.stage.filter((r) => r.stageId < 20160000), solo.stage);
+  assert.deepStrictEqual(out.ranked[800], solo.ranked[800]);
+});
+
+test('relux: a season missing from the extract or an x100 coin artefact stops the run', () => {
+  assert.throws(() => mc.seasonRows(fixture(), [S800[0], S1500]), /2016-11/);
+  const f = p2();
+  f.relux.colosseum.find((r) => r.colosseumId === 1510).rewardNum[0] = 90000;
+  assert.throws(() => mc.seasonRows(f, [S800[0], S1500]), /x100|90000/);
+});
+
+test('new seasons start fresh', () => {
+  const out = mc.seasonRows(p2(), [S800[0], S1500]);
+  const tiers = R.tiersOf({ stage: out.colosseumStage[1], tiers: out.colosseum.filter((r) => r.colosseumStageId === 1500) });
+  const save = { colosseum: { seasons: { 800: { last: 40, open: 43, coins: 321, cleared: [40], tierRewards: [1, 2], bestAt: 'T' } } } };
+  const before = JSON.stringify(save.colosseum.seasons[800]);
+  const st = R.seasonState(save, 1500);
+  assert.deepStrictEqual([st.last, st.open, st.coins, st.tierRewards], [0, 1, 0, []]);
+  assert.deepStrictEqual(R.playable(tiers, st).map((p) => [p.tier, p.round]), [[1, 1]], 'Tier 1 Round 1');
+  assert.strictEqual(JSON.stringify(save.colosseum.seasons[800]), before, 'April untouched');
+});
+
+test('extra tier 2016-11', () => {
+  const out = mc.seasonRows(p2(), [S800[0], S1500]);
+  const rows = out.colosseum.filter((r) => r.colosseumStageId === 1500);
+  const tiers = R.tiersOf({ stage: out.colosseumStage[1], tiers: rows });
+  const st = R.seasonState({}, 1500);
+  st.last = R.globalRound(tiers, 10, 7); st.open = st.last + 1; st.tierRewards = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  R.clear(tiers, st, { tier: 10, round: 8, oneTurn: true }, 'T1');
+  assert.deepStrictEqual(R.playable(tiers, st).map((p) => `T${p.tier}R${p.round}`), ['T10R9', 'T10R10', 'T11R1'], 'one-turn window from tier 10 into tier 11');
+  let res = R.clear(tiers, st, { tier: 11, round: 1, oneTurn: false }, 'T2');
+  assert.ok(res.ok); assert.deepStrictEqual(res.tierRewards, [10]);
+  assert.strictEqual(res.coins, 10 + 10 + 10 + 900, 'skipped rounds + tier 10 rewards (900 coins)');
+  assert.deepStrictEqual(res.tierItems[0].items.map((x) => [x.type, x.id, x.num]), [[17, 0, 900], [3, 90076, 1]]);
+  res = R.clear(tiers, st, { tier: 11, round: 2, oneTurn: false }, 'T3');
+  assert.ok(res.ok); assert.deepStrictEqual(res.tierRewards, [], 'paid once');
+  // the endless last tier: the source value (999, as Part 1 serves it) and playable past it
+  assert.strictEqual(rows[rows.length - 1].arrivalStageCount, 999);
+  assert.deepStrictEqual(R.tierRound(tiers, R.globalRound(tiers, 11, 1) + 1500), { tier: 11, round: 1501 });
+});
+
+// the real sources: the 1.1.3 master and the cleaned ReLux extract (both private, outside the repo)
+test('real_part2 (the nine seasons from the 1.1.3 master and the ReLux extract)', () => {
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
+  const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
+  if (!src || !relux) { results.push('skip real_part2: 1.1.3 master or ReLux extract not on disk'); return; }
+  src.relux = relux;
+  src.masterEnemyIds = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).map((r) => r.enemyId);
+  const out = mc.seasonRows(src);
+  assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId), [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]);
+  const cs = (id) => out.colosseumStage.find((r) => r.colosseumStageId === id);
+  const tiersOf = (id) => out.colosseum.filter((r) => r.colosseumStageId === id);
+  for (const [id, month] of [[1200, '2016-08'], [1300, '2016-09'], [1400, '2016-10']]) {
+    const orig = src.colosseumStage.find((r) => r.colosseumStageId === id);
+    for (const k of ['headColosseumId', 'termColosseumId', 'rankingId', 'validStage', 'loopStageCount', 'lvPerLoop']) assert.strictEqual(cs(id)[k], orig[k], `${id} ${k}`);
+    assert.deepStrictEqual(cs(id).stageId, mc.GEN_STAGE_IDS(month), `${id} generated set`);
+    const o = src.colosseum.filter((r) => r.colosseumStageId === id && r.colosseumId <= orig.termColosseumId);
+    assert.deepStrictEqual(tiersOf(id).map((r) => [r.arrivalStageCount, r.ap, r.excellentUnlockCount, r.stageRewardNum, r.validReward, r.rewardNum.slice(0, r.validReward)]),
+      o.map((r) => [r.arrivalStageCount, r.ap, r.excellentUnlockCount, r.stageRewardNum, r.validReward, r.rewardNum.slice(0, r.validReward)]), `${id} tiers = 1.1.3`);
+    assert.strictEqual(tiersOf(id).length, 10);
+  }
+  assert.deepStrictEqual(cs(1500).stageId, mc.GEN_STAGE_IDS('2016-11'));
+  assert.deepStrictEqual([1600, 1700, 1800, 1900, 2000].map((id) => cs(id).stageId[0]), [20160501, 20160601, 20160701, 20160801, 20160901]);
+  for (const id of [1600, 1700, 1800, 1900, 2000]) {
+    assert.deepStrictEqual(cs(id).stageId, relux.colosseumStage.find((r) => r.colosseumStageId === id).stageId, `${id} ReLux set`);
+  }
+  for (const r of out.colosseum) {
+    for (let i = 0; i < r.validReward; i++) if (r.rewardType[i] === 17) assert.ok(r.rewardNum[i] <= 10000, `${r.colosseumId} coins ${r.rewardNum[i]}`);
+  }
+  assert.strictEqual(tiersOf(1500).length, 11);
+  assert.deepStrictEqual([tiersOf(1500)[9].rewardType[0], tiersOf(1500)[9].rewardNum[0], tiersOf(1500)[9].arrivalStageCount], [17, 900, 10]);
+  for (const id of [1600, 1700, 1800, 1900, 2000]) assert.strictEqual(tiersOf(id).length, 11, `${id}: the wiki-visible tiers`);
+  for (const id of [1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]) assert.strictEqual(tiersOf(id).at(-1).arrivalStageCount, 999, `${id} endless last tier`);
+  // stages: one row per stage id of every season, unique ids inside our range
+  const ids = out.colosseumStage.flatMap((r) => r.stageId.slice(0, r.validStage));
+  assert.strictEqual(ids.length, 130); assert.strictEqual(new Set(ids).size, 130);
+  assert.deepStrictEqual(out.stage.map((r) => r.stageId).sort((a, b) => a - b), [...ids].sort((a, b) => a - b));
+  assert.strictEqual(new Set(out.stage.map((r) => r.id)).size, 130);
+  for (const r of out.stage) assert.ok(r.id >= mc.RANGES.stage[1] && r.id <= mc.RANGES.stage[2] && r.stageKind === 3, `stage ${r.stageId} id ${r.id}`);
+  // ranking: every season its own ranking row and >= 1 reward row; thresholds never going down
+  assert.deepStrictEqual(out.ranking.map((r) => r.rankingId), [4009, 4010, 4011, 4012, 4013, 4014, 4015, 4016, 4017, 4018, 4019, 4020, 4021]);
+  assert.strictEqual(new Set(out.rankingReward.map((r) => r.rankingRewardId)).size, out.rankingReward.length);
+  for (const s of mc.SEASONS) {
+    const rk = out.ranking.find((r) => r.rankingId === cs(s.colosseumStageId).rankingId);
+    assert.ok(rk, `${s.month} ranking row`);
+    const rows = out.rankingReward.filter((r) => r.rankingRewardId >= rk.startRank && r.rankingRewardId <= rk.endRank);
+    assert.ok(rows.length >= 1, `${s.month} rankingReward rows`);
+    for (const r of rows) assert.ok(r.rankingRewardId >= mc.RANGES.rankingReward[1] && r.rankingRewardId <= mc.RANGES.rankingReward[2], `${r.rankingRewardId}`);
+    const t = out.ranked[s.colosseumStageId];
+    assert.ok(t.thresholds.length >= 1 && t.thresholds.length === t.brackets.length, `${s.month} thresholds`);
+    t.thresholds.forEach((x, i) => { assert.ok(Number.isInteger(x.score) && x.score >= 1); if (i) assert.ok(x.score >= t.thresholds[i - 1].score, `${s.month} never down`); });
+  }
+  // Part 1 rows unchanged by the new seasons
+  const part1 = mc.seasonRows({ ...src }, mc.SEASONS.slice(0, 4));
+  const p1 = (rows, key, ids) => rows.filter((r) => ids.includes(r[key]));
+  assert.deepStrictEqual(p1(out.colosseumStage, 'colosseumStageId', [800, 900, 1000, 1100]), part1.colosseumStage);
+  assert.deepStrictEqual(p1(out.colosseum, 'colosseumStageId', [800, 900, 1000, 1100]), part1.colosseum);
+  assert.deepStrictEqual(p1(out.stage, 'stageId', part1.stage.map((r) => r.stageId)), part1.stage);
+  assert.deepStrictEqual(p1(out.rankingReward, 'rankingRewardId', part1.rankingReward.map((r) => r.rankingRewardId)), part1.rankingReward);
+  assert.deepStrictEqual(out.enemy, part1.enemy);
+  // new seasons start fresh: a save with only the Part 1 seasons plays 2016-08 from Tier 1 Round 1 with 0 coins
+  const save = { colosseum: { seasons: { 800: { last: 70, open: 71, coins: 50, cleared: [70], tierRewards: [1, 2, 3, 4, 5], bestAt: 'T' }, 1100: { last: 3, open: 4, coins: 4, cleared: [3], tierRewards: [], bestAt: 'T' } } } };
+  const st = R.seasonState(save, 1200);
+  const t1200 = R.tiersOf({ stage: cs(1200), tiers: tiersOf(1200) });
+  assert.deepStrictEqual([st.last, st.coins, R.playable(t1200, st).map((p) => [p.tier, p.round])], [0, 0, [[1, 1]]]);
+  assert.deepStrictEqual([save.colosseum.seasons[800].coins, save.colosseum.seasons[1100].last], [50, 3]);
 });
 
 console.log(results.join('\n'));

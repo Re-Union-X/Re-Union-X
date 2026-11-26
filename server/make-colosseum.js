@@ -35,6 +35,27 @@
 //     10,001-50,000 -> 105 | 2,501-10,000 -> 134 | 1,001-2,500 -> 159 | 101-1,000 -> 175 | 1-100 -> 216
 // (label «interpolated»; to be declared in the Coliseum notice).
 //
+// Coliseum Part 2 (plan docs/superpowers/plans/2026-11-26-coliseum-part2.md, Task 1): the nine WW seasons 2016-08 .. 2017-04.
+// - 2016-08 .. 2016-10 = 1.1.3 rows 1200, 1300, 1400 (source '113'); 2016-11 .. 2017-04 = 1500 .. 2000 from the cleaned ReLux
+//   season extract (source 'relux', readRelux; KHUX_COLOSSEUM_RELUX, default DEFAULT_RELUX, outside the repo; without it only the
+//   1.1.3 seasons are written). The extract is already cleaned (arrays cut, tier coins /100, rankId «...» -> «»); a type-17
+//   tier reward above COIN_MAX (an x100 artefact left in) stops the run; closeDate is START / END as for every season.
+// - Tiers: head..term cut after the first endless (999-round) tier, term rewritten to match: the wiki shows no tier after it
+//   (2017-01 .. 2017-04 hold hidden 999-round tiers 12..14/21 in the extract, unverified, not served). 2016-11 .. 2017-04 =
+//   eleven tiers (the extra 10-round Tier 10, tier coins 900; Tier 11 endless), 2016-08 .. 2016-10 ten (1.1.3).
+// - Stage sets: genStages seasons (2016-08 .. 2016-11: no original WW set; the 1.1.3 sets 20160101/0201/0301 and the extract's
+//   20160401 are JP sets WW did not play) serve GEN_STAGE_IDS(month) = 2116MMNN (generated files, Task 2); 2016-12 .. 2017-04
+//   serve the extract's JP 4.3.1 sets 20160501 .. 20160901. Stage rows: the 1.1.3 row of the original stage when it exists
+//   (1200 .. 1400 keep its id 81041 .. 81070, stageId replaced), else (no 1.1.3 row: 1500 .. 2000) the previous season's row at
+//   the same set position with the next free id (81071+) and name strDummy.
+// - Ranking: ReLux holds no rankingReward rows for 2016-12 .. 2018-03 (its 4019 rows are the donor's invention) and the 1.1.3
+//   row 4016 points to the 4015 rows: every relux season gets its own ranking row (rankingId of its colosseumStage row; the 1.1.3
+//   row when there is one, else the previous season's as template) and PROVISIONAL reward rows = the previous season's
+//   brackets and rewards (2016-10, the last original WW set, the same eight bracket edges the wiki lists to 2017-04),
+//   renumbered to REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK so the ids stay in 30000-39999 (the original 4021 range
+//   40000-40007 does not). Task 5 replaces brackets, rewards and thresholds; until then the thresholds are the curve above
+//   (2016-11 .. 2017-04: 120 finite rounds, so +10 over 2016-08 .. 2016-10).
+//
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
 'use strict';
@@ -45,13 +66,35 @@ const path = require('path');
 // the 1.1.3 data folder when neither the command line (argv[3]) nor KHUX_COLOSSEUM_SRC names one: the local default of the other
 // generators (make-raid.js DEFAULT_2016, the same folder); a missing folder only skips the Coliseum rows
 const DEFAULT_2016 = 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data';
+// the cleaned ReLux season extract (private, outside the repo) when KHUX_COLOSSEUM_RELUX names none
+const DEFAULT_RELUX = 'D:\\Progetto_Restauro_KH_UX\\private\\donations\\relux_2026-11\\verified\\coliseum_seasons.json';
 const START = '2015-01-01 00:00:00', END = '2030-12-31 23:59:59';
+// source: '113' = the 1.1.3 master rows, 'relux' = the cleaned ReLux extract; genStages: the stage set is GEN_STAGE_IDS(month)
 const SEASONS = [
-  { month: '2016-04', colosseumStageId: 800 },
-  { month: '2016-05', colosseumStageId: 900 },
-  { month: '2016-06', colosseumStageId: 1000 },
-  { month: '2016-07', colosseumStageId: 1100 },
+  { month: '2016-04', colosseumStageId: 800, source: '113' },
+  { month: '2016-05', colosseumStageId: 900, source: '113' },
+  { month: '2016-06', colosseumStageId: 1000, source: '113' },
+  { month: '2016-07', colosseumStageId: 1100, source: '113' },
+  { month: '2016-08', colosseumStageId: 1200, source: '113', genStages: true },
+  { month: '2016-09', colosseumStageId: 1300, source: '113', genStages: true },
+  { month: '2016-10', colosseumStageId: 1400, source: '113', genStages: true },
+  { month: '2016-11', colosseumStageId: 1500, source: 'relux', genStages: true },
+  { month: '2016-12', colosseumStageId: 1600, source: 'relux' },
+  { month: '2017-01', colosseumStageId: 1700, source: 'relux' },
+  { month: '2017-02', colosseumStageId: 1800, source: 'relux' },
+  { month: '2017-03', colosseumStageId: 1900, source: 'relux' },
+  { month: '2017-04', colosseumStageId: 2000, source: 'relux' },
 ];
+// generated stage sets (Task 2 writes cl_stg<id>.bin): 2116MMNN, MM = the WW month, NN = 01..10; never a JP id
+const GEN_MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11'];
+function GEN_STAGE_IDS(month) {
+  if (!GEN_MONTHS.includes(month)) throw new Error(`colosseum: ${month} has no generated stage set`);
+  return Array.from({ length: 10 }, (_, i) => 21160000 + Number(month.slice(5, 7)) * 100 + i + 1);
+}
+const ENDLESS = 999; // rounds of the endless tier
+const COIN_MAX = 10000; // a type-17 tier reward above it is the ReLux x100 artefact
+// provisional reward ids of the relux seasons (see the comment block): REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK
+const REWARD_BASE = 35000, REWARD_BLOCK = 50, REWARD_FIRST_RANKING = 4016;
 // type-3 boards of each season: 1.1.3 sphere rows (their startDatetime month, checked), = the wiki board list (6★ Cid
 // 04/16; 6★ Scrooge + Tier 10 Bonus 3390 05/16; KH Chip M/F + Tier 10 Bonus 3090 06/16; Moogle M/F + Tier 10 Bonus 07/16)
 const SEASON_BOARDS = { 800: [2200001], 900: [2200002, 2200023], 1000: [2210029, 2210030, 2210031], 1100: [2210033, 2210034, 2210035] };
@@ -157,38 +200,82 @@ function rankedOf(tierRows, rewardRows) {
 }
 
 // Pure: src = the 1.1.3 tables {colosseumStage, colosseum, stage, enemy, ranking, rankingReward, sphere, sphereArray,
-// sphereMasu} + masterEnemyIds (ids already in our master). -> rows per table + ranked {colosseumStageId: {brackets, thresholds}}.
+// sphereMasu} + masterEnemyIds (ids already in our master) + relux (readRelux, for the 'relux' seasons). -> rows per table +
+// ranked {colosseumStageId: {brackets, thresholds}}.
 function seasonRows(src, seasons = SEASONS) {
   const out = Object.fromEntries(TABLES.map((t) => [t, []]));
   out.ranked = {};
-  const find = (table, key, id, what) => {
-    const r = (src[table] || []).find((x) => x[key] === id);
-    if (!r) throw new Error(`colosseum: ${what}: 1.1.3 ${table} ${id} missing`);
+  const findIn = (from, label) => (table, key, id, what) => {
+    const r = ((from || {})[table] || []).find((x) => x[key] === id);
+    if (!r) throw new Error(`colosseum: ${what}: ${label} ${table} ${id} missing`);
     return r;
   };
+  const find = findIn(src, '1.1.3');
+  const clone = (r) => JSON.parse(JSON.stringify(r));
+  // the next free stage id: after the 1.1.3 Coliseum stage rows (stage rows the sources lack, see the comment block)
+  let nextStageId = Math.max(RANGES.stage[1] - 1, ...(src.stage || []).filter((r) => r.stageKind === 3 && r.id >= RANGES.stage[1] && r.id <= RANGES.stage[2]).map((r) => r.id)) + 1;
+  let prev = null; // the previous season's {stages, ranking, rewards}: templates of the rows the sources lack
   for (const s of seasons) {
-    const id = s.colosseumStageId;
-    const cs = find('colosseumStage', 'colosseumStageId', id, s.month);
-    const row = schemaRow('colosseumStage', cs, { stageId: cs.validStage });
-    Object.assign(row, { openDate: START, closeDate: END, rankingCloseDate: END });
-    out.colosseumStage.push(row);
-    const tiers = (src.colosseum || []).filter((t) => t.colosseumStageId === id && t.colosseumId >= cs.headColosseumId && t.colosseumId <= cs.termColosseumId)
+    const id = s.colosseumStageId, relux = s.source === 'relux';
+    if (relux && !src.relux) throw new Error(`colosseum: ${s.month}: the ReLux season extract is not loaded`);
+    const from = relux ? findIn(src.relux, 'ReLux') : find;
+    const cs = from('colosseumStage', 'colosseumStageId', id, s.month);
+    const all = ((relux ? src.relux : src).colosseum || []).filter((t) => t.colosseumStageId === id && t.colosseumId >= cs.headColosseumId && t.colosseumId <= cs.termColosseumId)
       .sort(byKey('colosseumId'));
-    if (tiers.length !== cs.termColosseumId - cs.headColosseumId + 1) throw new Error(`colosseum: ${s.month}: tier rows ${cs.headColosseumId}-${cs.termColosseumId} incomplete`);
+    if (all.length !== cs.termColosseumId - cs.headColosseumId + 1) throw new Error(`colosseum: ${s.month}: tier rows ${cs.headColosseumId}-${cs.termColosseumId} incomplete`);
+    // the wiki-visible tiers: up to the first endless one
+    const endless = all.findIndex((t) => t.arrivalStageCount >= ENDLESS);
+    const tiers = endless < 0 ? all : all.slice(0, endless + 1);
+    for (const t of tiers) {
+      for (let i = 0; i < (t.validReward || 0); i++) {
+        if (t.rewardType[i] === 17 && t.rewardNum[i] > COIN_MAX) throw new Error(`colosseum: ${s.month}: tier ${t.colosseumId} pays ${t.rewardNum[i]} coins (an x100 artefact?)`);
+      }
+    }
+    const row = schemaRow('colosseumStage', cs, { stageId: cs.validStage });
+    Object.assign(row, { openDate: START, closeDate: END, rankingCloseDate: END, termColosseumId: tiers[tiers.length - 1].colosseumId });
+    if (s.genStages) {
+      const gen = GEN_STAGE_IDS(s.month);
+      if (cs.validStage !== gen.length) throw new Error(`colosseum: ${s.month}: ${cs.validStage} stages, the generated set has ${gen.length}`);
+      row.stageId = row.stageId.map((v, i) => (i < gen.length ? gen[i] : v));
+    }
+    out.colosseumStage.push(row);
     const tierRows = tiers.map(tierRow);
     out.colosseum.push(...tierRows);
-    for (const stageId of row.stageId.slice(0, cs.validStage)) {
-      const st = find('stage', 'stageId', stageId, s.month);
-      if (st.stageKind !== 3) throw new Error(`colosseum: ${s.month}: stage ${stageId} is not a Coliseum stage`);
-      out.stage.push(schemaRow('stage', st, validMap(st, STAGE_VALID), STAGE_DEFAULTS));
+    const stages = [];
+    for (let i = 0; i < cs.validStage; i++) {
+      const st = (src.stage || []).find((x) => x.stageId === cs.stageId[i]); // the 1.1.3 row of the original stage
+      let r;
+      if (st) {
+        if (st.stageKind !== 3) throw new Error(`colosseum: ${s.month}: stage ${cs.stageId[i]} is not a Coliseum stage`);
+        r = schemaRow('stage', st, validMap(st, STAGE_VALID), STAGE_DEFAULTS);
+      } else if (relux && prev && prev.stages[i]) {
+        r = Object.assign(clone(prev.stages[i]), { id: nextStageId++, name: 'strDummy' });
+      } else throw new Error(`colosseum: ${s.month}: 1.1.3 stage ${cs.stageId[i]} missing`);
+      r.stageId = row.stageId[i];
+      stages.push(r);
     }
-    const rk = find('ranking', 'rankingId', cs.rankingId, s.month);
-    out.ranking.push(Object.assign(schemaRow('ranking', rk), { startDatetime: START, endDatetime: END }));
-    const rewards = (src.rankingReward || []).filter((r) => r.rankingRewardId >= rk.startRank && r.rankingRewardId <= rk.endRank)
-      .map((r) => schemaRow('rankingReward', r, validFor(RANK_REWARD, r.validReward)));
-    if (!rewards.length) throw new Error(`colosseum: ${s.month}: ranking ${rk.rankingId} has no rankingReward rows (the client's Rewards button would crash)`);
+    out.stage.push(...stages);
+    let rkRow, rewards;
+    if (!relux) {
+      const rk = find('ranking', 'rankingId', cs.rankingId, s.month);
+      rkRow = Object.assign(schemaRow('ranking', rk), { startDatetime: START, endDatetime: END });
+      rewards = (src.rankingReward || []).filter((r) => r.rankingRewardId >= rk.startRank && r.rankingRewardId <= rk.endRank)
+        .map((r) => schemaRow('rankingReward', r, validFor(RANK_REWARD, r.validReward)));
+      if (!rewards.length) throw new Error(`colosseum: ${s.month}: ranking ${rk.rankingId} has no rankingReward rows (the client's Rewards button would crash)`);
+    } else {
+      // PROVISIONAL (Task 5): the previous season's brackets and rewards, own ids
+      if (!prev) throw new Error(`colosseum: ${s.month}: a ReLux season needs an earlier season (ranking template)`);
+      const base = REWARD_BASE + (cs.rankingId - REWARD_FIRST_RANKING) * REWARD_BLOCK, n = prev.rewards.length;
+      if (cs.rankingId < REWARD_FIRST_RANKING || n > REWARD_BLOCK || base + n - 1 > RANGES.rankingReward[2]) throw new Error(`colosseum: ${s.month}: no reward id block for ranking ${cs.rankingId}`);
+      const tpl = (src.ranking || []).find((x) => x.rankingId === cs.rankingId);
+      rkRow = Object.assign(tpl ? schemaRow('ranking', tpl) : clone(prev.ranking),
+        { rankingId: cs.rankingId, startRank: base, endRank: base + n - 1, startDatetime: START, endDatetime: END });
+      rewards = prev.rewards.map((r, i) => Object.assign(clone(r), { rankingRewardId: base + i }));
+    }
+    out.ranking.push(rkRow);
     out.rankingReward.push(...rewards);
     out.ranked[id] = rankedOf(tierRows, rewards);
+    prev = { stages, ranking: rkRow, rewards };
     for (const boardId of SEASON_BOARDS[id] || []) {
       const b = find('sphere', 'sphereBoardId', boardId, s.month);
       if (b.type !== 3 || String(b.startDatetime).slice(0, 7) !== s.month) throw new Error(`colosseum: board ${boardId} (type ${b.type}, ${b.startDatetime}) is not a Coliseum board of ${s.month}`);
@@ -196,6 +283,12 @@ function seasonRows(src, seasons = SEASONS) {
       out.sphere.push(Object.assign(schemaRow('sphere', b), { arryId: boardId, masuId: boardId, detailUrl: '', startDatetime: START, endDatetime: END }));
       out.sphereArray.push(Object.assign(schemaRow('sphereArray', arr), { arryId: boardId }));
       out.sphereMasu.push(Object.assign(schemaRow('sphereMasu', masu), { masuId: boardId, sphereBoardId: boardId }));
+    }
+  }
+  for (const [t, keys] of [['stage', ['id', 'stageId']], ['ranking', ['rankingId']], ['rankingReward', ['rankingRewardId']]]) {
+    for (const k of keys) {
+      const seen = new Set();
+      for (const r of out[t]) { if (seen.has(r[k])) throw new Error(`colosseum: ${t} ${k} ${r[k]} served twice`); seen.add(r[k]); }
     }
   }
   const have = new Set(src.masterEnemyIds || []);
@@ -212,6 +305,14 @@ const rowsOf = (text) => { const r = JSON.parse(text); return Array.isArray(r) ?
 // the 1.1.3 tables of a folder, null when one is not readable
 function readSource(dir) {
   try { return Object.fromEntries(TABLES.map((t) => [t, rowsOf(fs.readFileSync(path.join(dir, `${t}.json`), 'utf8'))])); } catch { return null; }
+}
+// the cleaned ReLux season extract ({seasons: [{colosseumStage, colosseum[]}]}) as {colosseumStage[], colosseum[]}, null when
+// not readable
+function readRelux(file) {
+  let j;
+  try { j = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+  const seasons = Array.isArray(j && j.seasons) ? j.seasons : [];
+  return { colosseumStage: seasons.map((s) => s.colosseumStage), colosseum: seasons.flatMap((s) => s.colosseum || []) };
 }
 // a missing master table is empty; a corrupt one stops the run (it would be rewritten with our rows only)
 function readMaster(file) {
@@ -246,7 +347,18 @@ function patch(masterDir, opts = {}) {
       return !mine;
     });
   }
-  const out = seasonRows({ ...src, masterEnemyIds: master.enemy.map((r) => r.enemyId) }, opts.seasons || SEASONS);
+  // the ReLux seasons need the extract (opts.relux, src.relux, else KHUX_COLOSSEUM_RELUX / DEFAULT_RELUX); without it they are left out
+  let seasons = opts.seasons || SEASONS;
+  let relux = opts.relux || src.relux || null;
+  if (!relux && seasons.some((s) => s.source === 'relux')) {
+    const file = process.env.KHUX_COLOSSEUM_RELUX || DEFAULT_RELUX;
+    relux = readRelux(file);
+    if (!relux) {
+      console.warn(`colosseum: the ReLux season extract ${file} is not readable: ${seasons.filter((s) => s.source === 'relux').map((s) => s.month).join(', ')} left out`);
+      seasons = seasons.filter((s) => s.source !== 'relux');
+    }
+  }
+  const out = seasonRows({ ...src, relux, masterEnemyIds: master.enemy.map((r) => r.enemyId) }, seasons);
   const stageIds = new Set(out.stage.map((r) => r.stageId));
   const clash = master.stage.find((r) => stageIds.has(r.stageId));
   if (clash) throw new Error(`colosseum: stageId ${clash.stageId} already in the master (id ${clash.id})`);
@@ -257,7 +369,7 @@ function patch(masterDir, opts = {}) {
   fs.writeFileSync(path.join(masterDir, 'evStage.json'), JSON.stringify(banner ? [...ev, banner] : ev));
   if (opts.artFile) fs.writeFileSync(opts.artFile, artLines(out.sphere.map((r) => r.sphereBoardId)));
   if (!banner) console.warn(`colosseum: no Coliseum Catalog banner: the Training Grounds stage ${CATALOG_STAGE} is not in the master (make-special first)`);
-  console.log(`colosseum: ${out.colosseumStage.length} seasons (${(opts.seasons || SEASONS).map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
+  console.log(`colosseum: ${out.colosseumStage.length} seasons (${seasons.map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
     + `+${out.enemy.length} enemies, +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
   return out;
 }
@@ -265,4 +377,4 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { SEASONS, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
+module.exports = { SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, SEASON_BOARDS, BONUS_TIER, BOARD_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf };
