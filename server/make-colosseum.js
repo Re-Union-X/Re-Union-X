@@ -81,9 +81,8 @@
 // 07 / 09 / 11), 2017-09 also Defense Boost I Max on 5★ Scrooge to rank 100,000, 2017-12 the Santa Spirit parts (type 33, petParts:
 // Hat 402007 to rank 2,500, Beard 411002 to 50,000, Brows 401004 to 100,000; notice 34668 calls them Spirit parts, the wiki
 // «avatar»). Thresholds: one era curve ERA17 for the eleven seasons, replaced by a month curve where the month has data (below) (all with the same tiers: 570 rounds, then nine 999-round tiers,
-// 9,561 rounds served), fitted on the recorded border ranks of the era (private CUTOFFS_2017.md: 23 season-end points, reddit
-// r/KingdomHearts 6e01rg, 6f291y, 6o1ra2, 6o76ek, 6qhit7, 73i23q and a community member's border-rank posts 7aafnf / 7gtzkx / 7p6gif for
-// 2017-10 / 11 / 12; global round = rounds before the tier + round): least squares
+// 9,561 rounds served), fitted on the recorded border ranks of the era (private CUTOFFS_2017.md: 23 season-end points, r/KingdomHearts
+// border posts of 2017 and a community member's border-rank posts for 2017-10 / 11 / 12; global round = rounds before the tier + round): least squares
 //   log10(round) = a + b x log10(rank),  a = 3.5122, b = -0.1509  (ERA17.a / .b, computed from ERA17.points)
 // every fit point within x / ÷ 2.85 of the curve (ERA17.tolerance; worst 2017-11 rank 1,000: 3,222 recorded, 1,147 on the curve).
 // The months differ a lot (10,000th: 313 in 2017-05, 2,158 in 2017-11: new medals and Boosters), the curve is the era's middle.
@@ -131,9 +130,9 @@
 // ladder of the earlier months (VIII, VII, VI, V, IV) below. khuxwiki lists only the top bracket; the other eleven are the ReLux rows
 // (both sources agree where both exist; ladder: ReLux skill names ATK B VIII .. IV Max & GA 2 / Lux+, matched by name).
 // Thresholds: ERA18 (same interface as ERA17), fitted on the recorded border ranks of the era (private CUTOFFS_2018.md, 34 scattered
-// rows: u/xamaxin's border posts stopped after 2017-12 and nobody took over). Global round = enemy level = 1,570 + the round of the
-// 999-round tier. Controller ruling: only season-end / late-month points calibrate; the six used (ERA18_POINTS, r/KingdomHearts posts
-// 8g8ebk, 8vj3yy, 8un0ma, 8uyc6n, bhctoi): 2018-04 rank 4,068 at 1,840 (T16 R~270, told after the month); 2018-06 rank 10,000 at
+// rows: the 2017 border-rank posters stopped after 2017-12 and nobody took over). Global round = enemy level = 1,570 + the round of the
+// 999-round tier. Controller ruling: only season-end / late-month points calibrate; the six used (ERA18_POINTS, r/KingdomHearts border
+// posts): 2018-04 rank 4,068 at 1,840 (T16 R~270, told after the month); 2018-06 rank 10,000 at
 // 2,120 (T16 5xx, season-end upper bound, midpoint) and 2,070 (T16 midway, 06-28), rank 1,395 at 3,396 (T17 R827, reset day), rank ~230
 // at 4,567 (about to start T19, 06-28); 2019-04 rank ~100 at 4,575 (T19 R5 .. 12, 04-25). Listed, NOT fitted (mid-month, day-1..10 or
 // context rows, mostly one-sided): 2018-04 ranks 100 / ~385 / ~2,100 / ~2,000 (days 2-10, lower bounds: a player climbs on, the
@@ -149,7 +148,7 @@
 // the point); outside a month's own rank span the era slope goes on from the nearest point (the guard: 2018-06 rank 100). Beyond rank
 // 10,000 log-linear to 1 round at rank 100,000 (every ranked player inside); the 9 / 12-bracket seasons read the same curve at their own
 // edges. Thresholds 100 / 1,000 / 2,500 / 10,000 / 50,000 (then 1, 1, 1; label «fitted» inside a month's rank span, else «interpolated»):
-//   2018-04 own intercept (rank 4,068; 8g8ebk):    3,843 / 2,432 / 2,027 / 1,539 / 464
+//   2018-04 own intercept (rank 4,068):    3,843 / 2,432 / 2,027 / 1,539 / 464
 //   2018-06 own fit (ranks 230 .. 10,000):         5,546 / 3,448 / 2,843 / 2,123 / 640
 //   2019-04 own intercept (rank 100; bhctoi):      4,575 / 2,895 / 2,413 / 1,832 / 552
 //   2018-05, 2018-07 .. 2019-03: the era curve:    4,959 / 3,138 / 2,616 / 1,986 / 599 (2018-12 edge 7,000: 2,132; 15,000: 1,636;

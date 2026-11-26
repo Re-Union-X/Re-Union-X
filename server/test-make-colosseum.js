@@ -2046,7 +2046,6 @@ test('era18 fit: ERA18 has the ERA17 interface; every calibrating point within t
   assert.strictEqual(mc.ERA17.of(3200), null, '2018-04 is not ERA17');
 });
 // thresholds per season (lowest bracket first), as in the module comment
-const T18 = { 3200: [1, 1, 1, 1, 1], 3300: [1, 1, 1, 1, 1], 3400: [1, 1, 1, 1, 1] };
 test('era18 thresholds: 1 .. served rounds, never down, 100,000+ = 1 round; the month curve where the month has points, else the era curve', () => {
   const E = mc.ERA18;
   for (const s of T18_SEASONS) {

@@ -530,6 +530,53 @@ sphereMasu +40 each. Nothing else changed (events identical).
 Bench walk (controller, pending): LV > 999 probe first, then 2017-05, 2017-06, 2017-09, 2017-12, 2018-02, a Part 2 season past
 its old last tier, the earlier 999-round tiers in the client, the 2017-02 100-coin tiers.
 
+## Part 3b summary (26 November 2026)
+
+Plan `docs/superpowers/plans/2026-11-26-coliseum-part-2018.md`, ledger `.superpowers/sdd/2026-11-26-coliseum-part-2018/progress.md`.
+Master revision **401** (regenerated 26-11, HANDOFF recipe, twice); resources and bench walk: pending (controller).
+
+- **Seasons**: 37 served, 2016-04 .. 2019-04. New: 2018-04 .. 2019-04 = 3200 .. 4400 (rankingId 4033 .. 4045), all from the ReLux
+  season extract, arrays truncated to `valid*`.
+- **Tiers** (user 26-11, every tier row of head..term with rounds > 0): 22 tiers in 2018-04 / 05, 23 from 2018-06 (finite T1-T15 =
+  20, 15, 15, 10 x 7, 50, 100, 300, 500, 500 = 1,570 rounds, then 999-round tiers, the last endless). The 0-round end marker
+  (inside head..term in 2019-01 .. 04) is never served.
+- **Coins**: lump sums at tier completion: 2018-04 = 50, 85, 125, 140, 200, 200, 200, 250, 250, 1000, 1500, 2000, 3000 (9,000);
+  2018-05 .. 2019-04 = ... 250, 700, 1400, 1500, 3000 (8,100). Per-round coins 1/3/5/7/10 until 2018-11, none from 2018-12
+  (`validStageReward` 0). AP 0. `excellentUnlockCount` 99 on the finite tiers: a one-turn clear from T1 R1 opens rounds 2 .. 100
+  and the clear of round 100 pays the T1-T8 sums (1,250) once. 2018-07 / 08 T17 = 50 as ReLux (not khuxwiki's 3).
+- **Tier rewards**: ReLux medal ids 90135 = **Magic Broom 300948**, 90136 = **Fantasia Mickey B 300913** (proven slot for slot RX =
+  KW; the medals exist only with `KHUX_MEDALS_ALL=1`), Moon Gem = reward type 5, id 52 (T15).
+- **Stages**: JP 4.3.1 sets of the ReLux rows (2018-04 = 20170901, 05 = 20171001, 06 = 20171101, 07 .. 2019-04 = the same JP
+  month), 370 stages, room `OC_0001_00_00`. **Five rebuilt STG headers** (20181001 / 05, 20181102, 20190203 / 05) from their own
+  part file, never from another stage. **2018-07 pinned to the earlier JP revision** (the later one has 2019 `6xxxx` ids).
+- **Enemy rows**: 61 new, by source: raw ReLux old shape 31 (incl. 170920091 and the 30 `1710xxxxx` of 2018-05), variant rule
+  29 (from original bases, incl. 21545 / 21531 / 20249 / 21539), month copy 1: **21546 Jewel Sorceress** = JP Coliseum row
+  180911546 (September 2018) under 21546 (user 26-11; base 1546 exists nowhere, its only ReLux row is 2019 shape). ReLux
+  2019-shape rows are never used. 21557 is in no stage of this part.
+- **Boards and cards**: 44 boards, 2210107 .. 2210150: 2018-04 .. 11 three each (3500-coin board + Tier 10 / 11 Bonus), 2018-12 ..
+  2019-04 four each (Coliseum Board 1230 + **Tier 11 / 12 / 13 Bonus** 1470 / 1900 / 3500). Cell medal 90135 -> 300948. Cards
+  from `board_art_all.json` (`loc` 2210107 .. 127, `jp:` 2210128 .. 150). Side Ponytail checked: RX has 40120 + 41120, no mismatch.
+- **Ranking**: prizes by name (RX = khuxwiki): 2018-04 .. 11 eight brackets; **2018-12 nine** (1-100 ... 250,001-500,000, P / S / M
+  Gems after the 27-12-2018 increase); 2019-01 / 02 eight (Dual Meow Wow 9 / 8 / 7 = 301684 / 301683 / 301682); **2019-03 / 04
+  twelve** (the 11 lower brackets RX-only). 16 new `SKILL_LV` entries. The 17 earlier seasons' rankingReward rows are
+  byte-identical (checked by the regen diff).
+- **Thresholds ERA18** (a 4.0928, b -0.1987, tolerance x / ÷ 1.30; points in private CUTOFFS_2018.md, only season-end / late
+  points fitted): month curves for 2018-04 (era slope, own intercept: 3,843 / 2,432 / 2,027 / 1,539 / 464 at ranks 100 / 1,000 /
+  2,500 / 10,000 / 50,000), 2018-06 (own fit: 5,546 / 3,448 / 2,843 / 2,123 / 640) and 2019-04 (4,575 / 2,895 / 2,413 / 1,832 /
+  552); every other month the era curve (4,959 / 3,138 / 2,616 / 1,986 / 599); 1 round from rank 100,000. 2018-06 rank 100 is the
+  guard's lower bound; 2018-07 .. 2019-03 are a guess between 2018-06 and 2019-04.
+- **Notice** «Coliseum»: 37 seasons, lump sums and 99 skips, no round coins from 2018-12, Broom / Mickey B / Moon Gem, Tier 11-13
+  Bonus boards, the five rebuilt headers and the 2018-07 pin, 2019-shape rows never used and the Jewel Sorceress copy, 8 / 9 / 12
+  brackets, 2018-2019 thresholds.
+- **Hygiene**: Reddit handle and post ids dropped from the module comment; dead `T18` const removed from the test.
+
+Master regen diff (26-11, against a backup of `server/master_data`, run 1 then run 2 then run 3 = no change): colosseum +297
+rows (693 tiers in all), colosseumStage +13, stage +130, enemy +61, enemyAttack +7, enemy_display_orig +61 rows (2 distinct),
+ranking +13, rankingReward +113, sphere / sphereArray / sphereMasu +44 each; nothing removed, nothing else changed.
+
+Bench walk (controller, pending): see the task-6 brief (2018-04 lump sums / 99 skip / Broom, 2018-05, 2018-10 rebuilt header,
+2018-12 no round coin / Bonus boards / 9 brackets / gem threshold, 2019-03 12 brackets, Catalog Moon Gem).
+
 ### Follow-ups for the next part (final review, 26-11)
 
 - Enemy rule rows now stop the build when the base exists only as a row of our master (`MASTER_BASE_APPROVED`, empty): find an original base or ask the user.

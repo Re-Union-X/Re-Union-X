@@ -243,7 +243,7 @@ Ranking brackets became **score thresholds**; keep one past season from the **Co
 
 ### Overview — 24 seasons, from Story Quest 130
 
-The **Coliseum** is back in **Quests** from **Story Quest 130**: the monthly seasons of the Olympus arena with their Tiers and Rounds, the original enemies, the one-turn shortcut, Coliseum Coins, Tier Rewards, the Coliseum Boards and the ranking rewards. Twenty-four seasons are here: **April 2016 to March 2018**.
+The **Coliseum** is back in **Quests** from **Story Quest 130**: the monthly seasons of the Olympus arena with their Tiers and Rounds, the original enemies, the one-turn shortcut, Coliseum Coins, Tier Rewards, the Coliseum Boards and the ranking rewards. Thirty-seven seasons are here: **April 2016 to April 2019**.
 
 ### Seasons — follow your Story week, progress kept
 
@@ -257,6 +257,8 @@ Every season has **all the Tiers of the original data**: from **January 2017** s
 
 From **May 2017** a season has **22 Tiers**, as in the original: Tiers 11, 12 and 13 have 50, 100 and 300 rounds, then nine Tiers of 999 rounds, the last one endless.
 
+From **June 2018** a season has **23 Tiers**: Tiers 1 to 15 have 20, 15, 15, 10 (seven times), 50, 100, 300, 500 and 500 rounds, then 999-round Tiers, the last one endless. April and May 2018 have 22 Tiers.
+
 ### Rounds and AP — retry freely, original AP campaigns
 
 As in the original game, a lost or abandoned round can be tried again as often as you like, and the AP paid to start it is not given back. Clearing every wave in one turn unlocks the next rounds at once, also across tiers; when you clear a later round, the rounds and tiers you skipped pay their coins and Tier Rewards.
@@ -264,6 +266,10 @@ As in the original game, a lost or abandoned round can be tried again as often a
 Rounds cost their original **3 to 5 AP**. The Coliseum AP campaigns of 2016 are back on their original days of your Story week: **1 AP** from May 19 to 31 and from June 16 to 22, 2016, and **0 AP!** on November 1-3, 2016, for the Coliseum season being played: the November 2016 season, unless you keep another one.
 
 From **May 2017** every round costs **0 AP**, as in the original data.
+
+From **April 2018** the Coliseum Coins are paid when you **complete a Tier**, in one sum (9,000 in April 2018, 8,100 a month after), and no longer round by round. A one-turn clear can skip up to **99 rounds**: when you clear the later round, every Tier you completed pays its sum once. From **December 2018** a round pays **no coin** at all.
+
+The Tier Rewards of these seasons include the **Magic Broom**, the **Fantasia Mickey B** and the **Moon Gem**.
 
 The «1 AP» rate is (rebuilt): this version of the game rounds the original rate up to 2 AP on a round, so the rate is adjusted to keep 1 AP.
 
@@ -279,6 +285,8 @@ About 100,000 players a month were ranked in 2017, so almost everyone was in the
 
 The rewards of each bracket are the original ones: from the game data and the notices of their season up to November 2016, from the community wiki from December 2016. The December 2016 **Pegasus Knight Helm** goes to the top 10,000, as its notice says. The **December 2017** Santa Hat, Beard and Brows are **Spirit parts**, as its notice says.
 
+From **April 2018** the border ranks are rare: April and June 2018 and April 2019 use the few ranks posted by players for that month, the other months the curve of the whole 2018-2019 era (rebuilt). **December 2018** has **nine** reward brackets (Gems after the 27 December 2018 increase) and **March and April 2019 twelve**; **January and February 2019** pay the **Dual Meow Wow** medals.
+
 In May 2016 every ranked player got the same reward, as in the original: one cleared round is enough. Before your first round of May 2016 the goal reads **10000000th**: that was the original lowest bracket of that season (5,000,001st to 10,000,000th).
 
 ### Coliseum Catalog — keep one past season, filters
@@ -292,6 +300,8 @@ The Catalog **year tabs** and **Filters** (not original) find seasons by game ye
 The Coliseum Catalog card and the season cards are our own design (not original), made from original pieces of the game: the Olympus arena panel, the Coliseum Coin and the Tier crown.
 
 ### Maps — original, Japanese and generated maps
+
+The maps of **April 2018 to April 2019** use the original maps of the Japanese version. Five of them lost their header file in the game data: **October 2018** maps 1 and 5, **November 2018** map 2 and **February 2019** maps 3 and 5. Each header was (rebuilt) from the original map data of the same map, with no enemy taken from another map. **July 2018** uses the first Japanese version of its maps: the later one carried enemies of 2019.
 
 The maps of **April to July 2016** are the original ones, from the 2016 worldwide game files. **December 2016 to April 2017**, **May 2017** and **January to March 2018** use the original maps of the Japanese version, which the worldwide game most likely reused (its round lists match them).
 
@@ -313,6 +323,8 @@ The Coliseum enemies of 2017 and 2018 have their **original stats**: from the or
 
 Where no original row survives (the June 2017 **Ringmaster** among them), the row is (rebuilt): derived from its original base enemy by the variant rule of the original Coliseum rows (same moves, HP raised from level 300). No value is estimated.
 
+The Coliseum rows of the Japanese version that survive only in the 2019 shape are never used. **Jewel Sorceress** (June 2018, April 2019) has no surviving original row of its own: it is a copy of the Japanese Coliseum row of **September 2018**, under its own id (rebuilt).
+
 ### Graphics — board cards, one button icon stands in
 
 The card pictures of the Coliseum Boards are original art: from the 2016 worldwide files or the Japanese files where they match the board, else the board previews of the community wiki at their original size.
@@ -321,11 +333,13 @@ The cards of the **Mango Sweetie** (July 2017) and **Illusionist** (September 20
 
 The **Puppy Medium** and **Puppy Bob** boards were in the Japanese version only: they are not here.
 
+From **December 2018** the Coliseum Boards add the **Tier 11, 12 and 13 Bonus** boards, as in the original.
+
 The icon of the **Coliseum Boards** button is not in any surviving game file: the **Multi Board** icon stands in for it (not original).
 
 ### Not here yet — later seasons and PvP
 
-The seasons from April 2018 to June 2021 will come in later updates. The **PvP Coliseum** is not available yet.
+The seasons from May 2019 to June 2021 will come in later updates. The **PvP Coliseum** is not available yet.
 
 ## Event Quests: how they work
 
