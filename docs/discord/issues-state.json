@@ -96,7 +96,7 @@
    "thread": "1569614694765961252",
    "msg": "1569614694765961252",
    "group": "OPEN",
-   "hash": "a90a32ab17e54b05",
+   "hash": "10cbe4a65a079b2b",
    "name": "I-059 · Colosseum not playable"
   },
   "I-102": {
@@ -840,6 +840,20 @@
    "group": "ON HOLD",
    "hash": "6235030772625759",
    "name": "I-330 · Limited VIP Coin boards not served"
+  },
+  "I-331": {
+   "thread": "1575805102546092056",
+   "msg": "1575805102546092056",
+   "group": "OPEN",
+   "hash": "7302237f7457be07",
+   "name": "I-331 · One-turn banner never draws the hundreds digit"
+  },
+  "I-332": {
+   "thread": "1575805104924393557",
+   "msg": "1575805104924393557",
+   "group": "OPEN",
+   "hash": "a9f10691974a4992",
+   "name": "I-332 · What the Coliseum screen shows after round 4,000"
   }
  }
 }
