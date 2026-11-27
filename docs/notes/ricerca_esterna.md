@@ -50,3 +50,5 @@ Credits and licences are in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.m
   for game files: README «What we are looking for» and the
   [Reddit post of 22 October](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/).
 - Study of thethiny's public repositories: `reference\world_schema\thethiny_repos.md` (local).
+- 27-11: tracked here, no longer as an issue (I-029 closed: a standing activity of the user). Open questions
+  for the community: enemy graphics (I-194), which Medals counted as «Epic» in 2016-17 (I-140).
