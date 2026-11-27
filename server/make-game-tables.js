@@ -879,6 +879,8 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
   }
   // filmati: quelli assenti dalle risorse si cercano nel theater della versione finale
   // (righe con lo stesso stageId: i filmati della storia rifatti come lwf/drama/<id>)
+  const storyClosing = require('./story-drama-closing');
+  const overlayClosing = storyClosing.closingByStage();
   const theaterBy = new Map();
   for (const t of theater) {
     if (!t.validTheater || !t.stageId) continue;
@@ -896,8 +898,14 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
         // lists a quest's opening and closing cutscenes together (16-11-2026 tester report: Quests 34, 51, 73 played
         // their closing cutscene before the map, 51 and 73 twice)
         const closing = new Set((s.afterDramaId || []).slice(0, s.validAfterDrama));
-        const rows = flag === 'validBeforeDrama' && !keep.length
-          ? (theaterBy.get(s.stageId) || []).filter((t) => t.dramaId.every((d) => dramas.has(d) && !closing.has(d))) : [];
+        // I-333: nor with a cutscene the original overlay (drama_per_quest.json) lists as closing (Quest 34 played 2101101 first);
+        // such a cutscene is served once, after the clear
+        let rows = [];
+        if (flag === 'validBeforeDrama' && !keep.length) {
+          const op = storyClosing.theaterOpenings(s, theaterBy.get(s.stageId) || [], dramas, closing, overlayClosing.get(s.stageId));
+          rows = op.rows;
+          storyClosing.addClosing(s, op.closing);
+        }
         if (keep.length) {
           s[ids] = keep.map((k) => k[0]);
           s[types] = keep.map((k) => k[1]);
