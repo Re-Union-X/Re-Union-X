@@ -486,9 +486,11 @@ const tests = {
     // the real config: 13 pilot ids, the GEM type (Part 2), the COIN type (Part 3), the challenge types EQ, KEY, QUIZ (Part 4),
     // the 35 Org XIII / Keyblade War ids (Part 5), the High Score Challenges HSC (Part 8) and the 11 CELEB / SPEC / COLLAB quest events
     // of 2016-11..2018-03 (Part 10a), the 6 Booster Challenges of 2017-11..2018-03 (Part 10c), the CELEB row EV-1266 of the ten
-    // «Genie Jafar - n/10» quests (I-248)
-    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6 + 1);
+    // «Genie Jafar - n/10» quests (I-248), the three CELEB rows EV-1305 / EV-1319 / EV-1414 of the 2020 Halloween, Coco and Year-End
+    // Countdown quests (I-343)
+    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6 + 1 + 3);
     assert.ok(REAL_CONFIG.serve.censusIds.includes('EV-1266'));
+    for (const id of ['EV-1305', 'EV-1319', 'EV-1414']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     for (const id of ['EV-0319', 'EV-0332', 'EV-0350', 'EV-0369', 'EV-0392', 'EV-0411']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     for (const id of ['EV-0094', 'EV-0214', 'EV-0402', 'EV-0423']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     assert.strictEqual(new Set(REAL_CONFIG.serve.censusIds).size, REAL_CONFIG.serve.censusIds.length, 'no id twice');
@@ -1276,6 +1278,56 @@ const tests = {
     const h = entry(held, 'EV-1266');
     assert.deepStrictEqual([h.communityBonus.ready, h.communityBonus.stageIds.length], [false, 9], 'one quest not served: not ready');
     assert.ok(!h.labels.includes('completionReward'));
+  },
+  // I-343 (27-11-2026): three WW celebration rows (census CELEB, built only because the real config names their ids). The seasonal
+  // currency of the first objective is our own ticket of the run (type 41 id 2 Spooky Cookie, id 1 Holiday Draw Ticket: the
+  // notices name it), paid into its own wallet. The Year-End Countdown has one donor row per Pacific day: one evStage row and one
+  // window per quest, the 2019 maps 741551.. named by stageBinId, the Sparkler «launch» objective (dataType 4) kept as the donor's.
+  ww_celebrations_i343() {
+    const named = (n, extra) => ({ name: n.replace(/\d+\/(\d+)$/, '%d/$1'), displayName: n, ...extra });
+    const cookie = (num) => ({ type: 41, id: 2, num, name: 'Spooky Cookie', note: 'donor type 41 id 41; notice 70277' });
+    const halloween = Array.from({ length: 10 }, (_, i) => quest(743510 + i, 1, [501], named(`Happy Halloween! - ${i + 1}/10`, { level: 100 + 300 * i,
+      map: { key: 743510 + i, stageBinId: 0, status: 'ok' }, objectives: [objective(3, 'Defeat 3 enemies for 10 Spooky Cookies', cookie(10)),
+        objective(3, 'Defeat 2 or more enemies', { type: 3, id: 90011, num: 5, name: 'Quest Medal' })] })));
+    const coco = Array.from({ length: 5 }, (_, i) => quest(743580 + i, 1, [502], named(`Coco Screen Debut Celebration - ${i + 1}/5`, {
+      map: { key: 743580 + 2 * Math.floor(i / 2), stageBinId: i % 2 ? 743580 + 2 * Math.floor(i / 2) : 0, status: 'ok' },
+      objectives: [objective(10, 'Complete without having to continue for 10 Spooky Cookies', cookie(10))] })));
+    const days = [208979, 208978, 208977, 208976];
+    const at = ['2020-12-28', '2020-12-29', '2020-12-30', '2020-12-31', '2021-01-01'];
+    const countdown = days.map((row, i) => quest(743970 + i, 2, [501], { name: `Countdown Event: ${4 - i} day${i < 3 ? 's' : ''} left!`, evStageId: row,
+      window: [`${at[i]} 08:00:00`, `${at[i + 1]} 07:59:59`], map: { key: 741551 + i, stageBinId: 741551 + i, status: 'ok' },
+      objectives: [{ code: 4, text: `Launch Sparkler x ${4 + i}`, dataType: 4, idType: 1, id: 501, num: 4 + i,
+        reward: { type: 41, id: 1, num: 5, name: 'Holiday Draw Ticket', note: 'donor type 41 id 41; notice 72707' } }] }));
+    const ev = (id, s, e) => donorEv({ eventStageId: id, startTime: s, endTime: e, eventType: 3 });
+    const recs = [
+      record('EV-1305', halloween, { name: 'Halloween Event', type: 'CELEB', start: '2020-10-12', end: '2020-10-26', notices: [70277],
+        evStage: [ev(203074, '2020-10-12 07:00:00', '2020-10-26 06:59:59')] }),
+      record('EV-1319', coco, { name: 'Coco Screen Debut Celebration', type: 'CELEB', start: '2020-10-26', end: '2020-11-02', notices: [70583],
+        evStage: [ev(203081, '2020-10-26 07:00:00', '2020-11-02 07:59:59')] }),
+      record('EV-1414', countdown, { name: 'Year-End Countdown Event', type: 'CELEB', start: '2020-12-28', end: '2021-01-01', notices: [72707],
+        evStage: days.map((row, i) => ev(row, `${at[i]} 08:00:00`, `${at[i + 1]} 07:59:59`)) }),
+      record('EV-1306', [quest(743600, 1, [501])], { type: 'CELEB', evStage: [donorEv({ eventStageId: 203099 })] }),
+    ];
+    const out = me.buildEvents(recs, { ...CONFIG, serve: REAL_CONFIG.serve }, master());
+    assert.deepStrictEqual(out.skipped, [{ censusId: 'EV-1306', reason: 'notSelected' }], 'another CELEB row is not built');
+    const rows = (e) => out.stage.filter((st) => e.stageIds.includes(st.stageId));
+    const h = entry(out, 'EV-1305'), c = entry(out, 'EV-1319'), y = entry(out, 'EV-1414');
+    for (const [e, n] of [[h, 10], [c, 5], [y, 4]]) {
+      assert.ok(e && e.available && e.quests.every((q) => q.served), JSON.stringify(e && e.quests.map((q) => q.why)));
+      assert.strictEqual(e.stageIds.length, n);
+      assert.strictEqual(e.label, 'original');
+    }
+    assert.deepStrictEqual(h.quests.map((q) => q.name), halloween.map((q) => q.displayName), 'ordinal names');
+    assert.ok(rows(h).concat(rows(c)).every((st) => st.submissionRewardType[0] === 41 && st.submissionItemId[0] === 2 && st.submissionItemNum[0] === 10),
+      'Spooky Cookies (type 41 id 2)');
+    assert.deepStrictEqual(rows(c).map((st) => st.stageBinId), [743580, 743580, 743582, 743582, 743584], 'shared JP maps');
+    const yr = rows(y);
+    assert.deepStrictEqual(yr.map((st) => st.stageBinId), [741551, 741552, 741553, 741554], 'the maps named by the donor stage rows');
+    assert.ok(yr.every((st) => st.submissionRewardType[0] === 41 && st.submissionItemId[0] === 1), 'Holiday Draw Tickets (type 41 id 1)');
+    assert.deepStrictEqual(yr.map((st) => [st.submissionDataType[0], st.submissionNum[0]]), [[4, 4], [4, 5], [4, 6], [4, 7]], 'launch objectives');
+    assert.deepStrictEqual(y.quests.map((q) => q.window[0]), ['2020-12-28 08:00:00', '2020-12-29 08:00:00', '2020-12-30 08:00:00', '2020-12-31 08:00:00'],
+      'one Pacific day per quest');
+    assert.strictEqual(new Set(y.quests.map((q) => q.evStageId)).size, 4, 'one evStage row per day');
   },
   // fix round 1 (M3): a record's own boardSetKey that the board sets do not have stops the run (when board sets are given)
   record_set_key_known() {

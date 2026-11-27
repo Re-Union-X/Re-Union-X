@@ -1960,3 +1960,41 @@ I-343 events below: 4,167).
 - **Sound files.** All 30 music ids of the overlay are served: 25 by the client, 501000630 / 501000730 / 501005002 by
   `recon/tools/originals.tsv` (group 39), 501006041 / 501006042 copied from JP 4.3.1 by `import_jp_coco.py` (stage_bgm_plan).
   None is missing.
+
+## Halloween, Coco and Year-End Countdown 2020 quests (I-343, 27 November 2026)
+
+Three WW census CELEB rows whose quests had no record, built the same way as EV-1266 Genie Jafar (I-248): build_challenge.py read
+their donor evStage rows under the EQ records of the same notice and moved them (`rowsMoved`) to a census id without a record.
+- **EV-1305 «Halloween Event»** (notice 70277, Oct. 12-25, 2020 PT): donor row 203074 (banner 94EnNJHQ3), the ten «Happy Halloween!
+  - n/10» quests, stages 743510..743519, Lv 100-3000, JP 4.3.1 maps of their own keys in Daybreak Town (DB_0030_00/01/02_00).
+  Enemies: Jack O' Lantern, Pumpkin Soldier, Swaying Spook, Wight Knight, Nimble Reaper (khuxwiki's lists of every page = the maps).
+- **EV-1319 «Coco Screen Debut Celebration»** (notice 70583, Oct. 26 - Nov. 1, 2020 PT): row 203081 (banner 94KyNbK9k), the five
+  «Coco Screen Debut Celebration - n/5» quests, stages 743580..743584, Lv 100-2000, maps 743580 / 743582 / 743584 (two quests
+  share a map, as in the original), Jewel Sorceress x1, no continue; rewards include the Dante Ornament spirit part (402073) and the
+  two Balloon Sugar Skull avatar parts (208118 / 208119, khuxwiki's «(♂)» and «(♀)»).
+- **EV-1414 «Year-End Countdown Event»** (notice 72707, Dec. 28-31, 2020 PT): rows 208979 / 208978 / 208977 / 208976, one quest
+  and one Pacific day each («Countdown Event: 4 days left!» .. «1 day left!», stages 743970..743973, Lv 100), maps 741551..741554
+  named by the stage rows (the JP maps of the December 2019 countdown: Enchanted Dominion / Castle of Dreams rooms), Sparkler row
+  1912001507 (model 1507, user-approved), objectives «Launch Sparkler x 4..7» plus gems and Kyroo [SAB LV 10] medals.
+- **Enemy rows.** The 16 run rows (2010x00042, 2010x00043, 2010x00172, 2010x02505, 2010001639, 2010x01546, 1912001507; every
+  model already drawn) and 13 attacks were added in place to the private event enemy file by `tmp\events\i343\add_i343_rows.py`
+  (the add_jafar_rows.py procedure). The records are written into `challenge_2020.json` by `tmp\events\i343\add_i343_records.py`
+  (idempotent; rerun it, after add_ev1266.py, after any build_challenge.py rebuild). WW check: khuxwiki agrees with the JP maps on
+  all 19 quests; entry label `original`.
+- **Seasonal currency.** The first objective of every quest pays donor type 41 id 41 (a plain Draw Ticket here) where khuxwiki and
+  the record's own notice name the run's currency, so it pays our seasonal ticket, as the Holiday Draw Tickets rule of 10-11
+  (patch_surprise.py step 3): Spooky Cookies (type 41 id 2) for EV-1305 («Complete the challenge and receive 100 Spooky
+  Cookies!», also printed on the banner) and EV-1319 («... 50 Spooky Cookies, and Speed Gem!»), Holiday Draw Tickets (type 41
+  id 1) for EV-1414 («Complete the challenge and receive Holiday Draw Tickets, Gems, and Subslot Medals!»). Each reward carries
+  the notice quote in its `note`. No completion reward: each notice's total is the sum of the objectives.
+- **Music** from the donor stage rows through `event_bgm.json` (501000810 / 820 / 130 Halloween and Coco; 501000710 / 720 / 730
+  and 501006005 / 006 Countdown; all served).
+- **Served** with `serve.censusIds` EV-1305, EV-1319, EV-1414 (event_config.json), test `ww_celebrations_i343`.
+- **Dry regen** (`tmp\i343`, copies, maps imported into a scratch folder): 4,279 of 4,289 quests served (the ten not served are
+  Genie Jafar, whose maps the live import has not run yet); +19 stage (4004526..4004544), +6 evStage (23089..23094), +16 enemy,
+  +13 enemyAttack rows, +0 reward rows, +17 POI keys; no other row changed. event_ids.json +3 rows, +19 entries, +3 checks, +3
+  subRows (EV-1414/r-1..r-3). The 17 maps import (rooms served, enemies in the master, no reward missing).
+- **Cards.** Only the Halloween banner (row key 94EnNJHQ3) is in the local banner folder. The Coco row key 94KyNbK9k and the four
+  Countdown keys (9wBFNq1nI, 9wBrNRLji, 9wBaNeMyk, 9wBHN7oXJu) must be fetched (`make_event_banners.py --fetch --ids 23090-23094`)
+  before the cards are built: without them the tool falls back to the first banner of the notice, which is another event's
+  (a Surprise Event and a Union Cross banner).
