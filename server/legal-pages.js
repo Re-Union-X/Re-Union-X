@@ -100,7 +100,7 @@ const CREDITS_CSS = '<style>body{margin:0;background:#043654;color:#fff;font:17p
   + '.pill{display:inline-block;border-radius:12px;padding:0 12px;font-size:12px;font-weight:bold;letter-spacing:1.5px;line-height:1.8;color:#fff}'
   + '.p-gold{background:linear-gradient(#ffcf6b,#e0a43a);color:#3a2400}.p-blue{background:linear-gradient(#45a6e2,#2a7fbf)}'
   + '.p-purple{background:linear-gradient(#b57bd0,#9b59b6 55%,#7a3f94)}.p-pink{background:linear-gradient(#ff8fa8,#e0506f)}'
-  + '.row{padding:10px 0 10px 12px;border-left:5px solid #1a6fa8;border-bottom:1px solid #2f5d78}.row p{margin:4px 0 0}'
+  + '.row{padding:10px 0 10px 12px;border-left:5px solid #1a6fa8;border-bottom:1px solid #2f5d78}.row p{margin:4px 0 0}.row .rt{font-size:19px;font-weight:bold;margin:6px 0 0}'
   + '.row.t{border-left-color:#9b59b6}.names{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}'
   + '.names span{border:1px solid #c79be0;background:#3b2152;color:#f1e2fb;border-radius:14px;padding:1px 12px;font-weight:bold;font-size:15px}'
   + '.heart{margin:18px 0 6px;padding:14px 16px;text-align:center;border:2px solid #ff8fa8;border-radius:14px;background:linear-gradient(#0d4a70,#06283e)}'
@@ -116,8 +116,8 @@ const CREDITS_CSS = '<style>body{margin:0;background:#043654;color:#fff;font:17p
 
 function creditsPage() {
   const k = (s) => esc(s).replace(/\*([^*]+)\*/g, '<b class="g">$1</b>'); // *words* in gold
-  const row = (tag, text, cls = '', extra = '') => `<div class="row ${cls}"><span class="pill ${cls === 't' ? 'p-purple' : 'p-blue'}">${esc(tag)}</span>`
-    + `<p>${k(text)}</p>${extra}</div>`;
+  const row = (tag, text, cls = '', extra = '', title = '') => `<div class="row ${cls}"><span class="pill ${cls === 't' ? 'p-purple' : 'p-blue'}">${esc(tag)}</span>`
+    + (title ? `<div class="rt">${esc(title)}</div>` : '') + `<p>${k(text)}</p>${extra}</div>`;
   const member = (initial, name, role, text) => `<div class="member"><span class="mav">${esc(initial)}</span><div>`
     + `<span class="mname">${esc(name)}</span><span class="mrole">${esc(role)}</span><p>${k(text)}</p></div></div>`;
   const body = '<h1>Credits</h1><p class="sub">Re-Union X</p>'
@@ -134,7 +134,7 @@ function creditsPage() {
       + '</div>')
     + row('SmellyOctopus', 'Thank you for teaching so many of us to *play free-to-play wisely*, and for keeping us company back then with *videos full of joy*. Those videos are now *a huge help* as references for the restoration.')
     + row('Testers', 'They played every new piece of the restoration before anyone else and *reported what broke*, so that everyone else would find it working. Thank you!', 't',
-      `<div class="names">${TESTERS.map((n) => `<span>${esc(n)}</span>`).join('')}</div>`)
+      `<div class="names">${TESTERS.map((n) => `<span>${esc(n)}</span>`).join('')}</div>`, 'Dandelions of testing')
     + `<div class="heart"><div class="h">&#9829;</div><span class="pill p-pink">FROM THE HEART</span><div class="ttl">To our community</div><p>${k('Thank you to *every player who never let this game go*: to everyone who kept videos, screenshots and guides, shared what they remembered or simply asked ')}<i>“is it coming back?”</i>${k('. You are the reason this restoration keeps going, and *this game lives on because of you*.')}</p><div class="sign">May your heart be your guiding key.</div></div>`
     + '<h2>The original game</h2>'
     + `<p>${esc('KINGDOM HEARTS Union χ[Cross] was developed and published by SQUARE ENIX. KINGDOM HEARTS and all its characters, images, music and texts belong to SQUARE ENIX and Disney.')}</p><p class="n">${esc(NOT_AFFILIATED)}</p>`;
