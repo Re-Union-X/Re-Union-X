@@ -76,7 +76,8 @@ title popup tested on the bench** (resources 32, revision 81).
 - LWF `lwf/sphere/SpIcon_Open` and `SphereMap_Complete`: renamed copies of Result_Reward (an empty LWF
   has no label: crash).
 - Style (from the originals): completed card with red bow and «COMPLETE» band
-  (`Sphere_Board_Clear` in the `Clear` widget; simpler drawing than the painted original, ISSUES
+  (the painted JP 4.3.1 original `LB_Complete.png` in the `Clear` widget, 326x324 at -6/+6 from the card
+  centre as in the JP layout; originals.tsv section 64, our drawn `Sphere_Board_Clear` removed 27-11, ISSUES
   I-025), yellow check mark `Sphere_Node_Check` in the `Get` widget (+1/+24 from the node centre), title
   plate `RankTitle_Board` like `AvatarTitle_PanelButton_Big` (610x82, scale 0.8), orange title popup
   like `Result_Reward_Win`, bottom boxes `Win09` 9-slice, pill `Plate18`, Unlock

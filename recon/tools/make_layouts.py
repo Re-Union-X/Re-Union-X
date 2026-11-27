@@ -1154,9 +1154,9 @@ LAYOUTS = {
         # nell'elenco, banco v32): New, Clear (completata), Select_On (carta scelta), costo in
         # Jewel (Jewel_Panel, LB_Jewel, Txt_Jewel_Label), No_Panel/Txt_No_Label, Txt_Offer_Ends
         I('New', 60, 280, 69, 30, 'Deck_Medal_New.png', s9=False, visible=False),
-        # bacheca completata: fiocco rosso in alto a sinistra e fascia «COMPLETE» in basso a destra
-        # (ab_ref_list_complete_01; Sphere_Board_Clear di make_textures, 306x306 come la carta)
-        I('Clear', 153, 153, 306, 306, 'Sphere_Board_Clear.png', s9=False, visible=False),
+        # bacheca completata: the painted original LB_Complete (red bow top left, «COMPLETE» sash bottom right; I-025,
+        # originals.tsv), JP geometry: 326x324 at (-6, +6) from the card centre (JP card 200,200 -> Clear 194,206)
+        I('Clear', 147, 159, 326, 324, 'LB_Complete.png', s9=False, visible=False),
         I('Select_On', 153, 153, 306, 306, 'Board_0001.png', s9=False, visible=False),
         P('Jewel_Panel', 53, 10, 200, 40, [
             I('LB_Jewel', 100, 20, 200, 30, 'Plate02.png', opts=PLATE3, children=[
@@ -1886,6 +1886,8 @@ TEXTURES |= set(make_pet_training_fx.TEXTURE_NAMES)
 # coin icons of the Avatar / Raid Boards: JP 4.3.1 files written into cocostudio/publish by import_originals.py
 # (originals.tsv, «Avatar Board coin icons»), which runs after this script and stops the build if one is missing
 TEXTURES |= {'SpherePointIcon_%s.png' % k for k in ('normal', 'OC', 'EV', 'Raid', 'SP')}
+# COMPLETE ribbon of the board cards (I-025): JP 4.3.1 LB_Complete, same way (originals.tsv section 64)
+TEXTURES |= {'LB_Complete.png'}
 # Movimenti del pet (lwf/pet/motion/*): LWF nostri che animano le 9 parti servite di
 # lwf/pet/part/001 (attaccate dal client ai movie omonimi), con l'evento «end» dove la
 # battaglia aspetta la fine del movimento (I-005: con i vuoti la battaglia col pet si bloccava

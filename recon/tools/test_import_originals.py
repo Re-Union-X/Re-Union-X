@@ -164,4 +164,23 @@ try:
     assert open(so).read().split('\n')[:2] == [first[0], 'skipped']
 finally:
     shutil.rmtree(t)
+# I-025 (27-11-2026): the COMPLETE ribbon of the Avatar Board cards is the painted original (JP cocostudio/publish/
+# LB_Complete.png, the texture of the JP SphereBoard_Select_Icon_ver130 «Clear» widget), not our drawn Sphere_Board_Clear
+here = os.path.dirname(os.path.abspath(__file__))
+rows = io.parse(open(os.path.join(here, 'originals.tsv'), encoding='utf8'))
+lb = [r for r in rows if r['dest'] == 'cocostudio/publish/LB_Complete.png']
+assert lb and 'jp' in lb[-1]['sources'], 'originals.tsv: LB_Complete.png from the JP root'
+src_layouts = open(os.path.join(here, 'make_layouts.py'), encoding='utf8').read()
+src_textures = open(os.path.join(here, 'make_textures.py'), encoding='utf8').read()
+assert "I('Clear', 147, 159, 326, 324, 'LB_Complete.png'" in src_layouts, 'make_layouts: Clear on LB_Complete (JP geometry)'
+assert 'Sphere_Board_Clear' not in src_layouts and 'Sphere_Board_Clear' not in src_textures, 'drawn ribbon still made'
+sys.path.insert(0, here)
+import private_tools  # noqa: E402
+jp_root = private_tools.local_path('jp_data')
+if jp_root and os.path.isdir(jp_root):
+    io.jp_listing.cache_clear()
+    hit = io.resolve(lb[-1]['src'], (jp_root, 'jp'))
+    assert [n for n, _ in hit] == ['LB_Complete.png'], 'real JP root: LB_Complete.png %r' % hit
+else:
+    print('(JP root absent: LB_Complete check on the real files skipped)')
 print('OK: import_originals')

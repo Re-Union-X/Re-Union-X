@@ -22787,3 +22787,8 @@ lwf/adventure/Colosseum_Open/	b16
 #     placeholders World_Ico2A/2B): the Multi Board icon in their place (declared substitute, jp_coco_layouts.txt)
 cocostudio/publish/World_Ico8A.png	jp	cocostudio/publish/World_Ico10A.png
 cocostudio/publish/World_Ico8B.png	jp	cocostudio/publish/World_Ico10B.png
+
+# 64. COMPLETE ribbon of the Avatar Board cards (I-025, 27-11-2026): the painted original of the JP SphereBoard_Select_Icon_ver130
+#     «Clear» widget (red bow top left, sash bottom right, 326x324) in place of our drawn Sphere_Board_Clear (make_textures,
+#     removed); also imported by import_jp_coco with the JP layout, listed here so make_layouts' own card has it too
+cocostudio/publish/LB_Complete.png	jp
