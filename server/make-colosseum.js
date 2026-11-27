@@ -1008,8 +1008,8 @@ function enemyRows(src, out) {
         if (srx && reluxShape(srx) === want) res = { row: { ...enemySchemaRow(srx), enemyId: id }, source: 'monthCopy', extra: { base: sid, baseSource: 'relux', ...refused, ...named } };
       } else if (mb !== null) {
         const b = baseRow(mb, want);
-        if (b) res = { row: { ...enemySchemaRow(b), enemyId: id }, source: 'monthCopy', extra: { base: mb, ...refused, ...named, ...(want === '2019' && !master.get(mb) ? taken : {}) } };
-      } else if (variantId(id) && want === 'old') { // never the variant rule for a revamp row
+        if (b) res = { row: { ...enemySchemaRow(b), enemyId: id }, source: 'monthCopy', extra: { base: mb, ...refused, ...named, ...(want === '2019' && reluxShape(b) === '2019' ? taken : {}) } };
+      } else if (variantId(id) && id < ENEMY_RANGES[1][0] && want === 'old') { // never the variant rule for a revamp row
         const bid = id - 20000, b113 = row113.get(bid), brx = relux.get(bid), bm = master.get(bid);
         const [b, baseSource] = b113 ? [b113, '113'] : brx && reluxShape(brx) === 'old' ? [enemySchemaRow(brx), 'relux'] : bm && MASTER_BASE_APPROVED.includes(bid) ? [bm, 'master'] : [null, null];
         const rule = b && ruleRow(id, b);
@@ -1025,7 +1025,7 @@ function enemyRows(src, out) {
       if (added.has(id)) { added.get(id).stages = stages; continue; }
       if (have.has(id)) continue;
       const where = `enemy ${id} of stage ${stages.join(', ')}`;
-      if (!variantId(id) && monthBase(id) === null) throw new Error(`colosseum: ${where} is missing from the master and is not a Coliseum variant id (20000-29999) nor a month id (YYMM / 1 + one)`);
+      if (!variantId(id) && monthBase(id) === null) throw new Error(`colosseum: ${where} is missing from the master and is not a Coliseum variant id (20000-29999, 60000-62999) nor a month id (YYMM / 1 + one)`);
       const want = acceptedShape(needBy.get(id));
       const res = resolve(id, want);
       if (!res) {
@@ -1036,7 +1036,7 @@ function enemyRows(src, out) {
       }
       add(id, res.row, res.source, stages, res.extra);
       rows.set(id, res.row);
-      if (want === '2019') rev19.add(id);
+      if (want === '2019' && reluxShape(res.row) === '2019') rev19.add(id); // the label follows the row served, not the era asked for
     }
     // the ids a revamp season needs that keep a pre-revamp row (our master's, or this run's old-shape row of an id of both eras): the
     // user's rule «ids already in the master keep their row» (27-11), declared in the notice

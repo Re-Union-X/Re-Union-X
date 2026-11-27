@@ -2324,5 +2324,29 @@ test('real_part4_enemies: every enemy of every served revamp stage is in the mas
 });
 
 
+test('era shapes: a month copy of a revamp-only id is labelled by its base row (old base: not 2019, listed in sharedOldRows)', () => {
+  const f = eraFixture();
+  const monthOf = (stageEnemies, masterBase) => {
+    const out = JSON.parse(JSON.stringify(f.out));
+    const base = f.masterEnemies.find((r) => r.enemyId === 20007);
+    mc.enemyRows({ masterEnemies: masterBase ? f.masterEnemies : f.masterEnemies.filter((r) => r.enemyId !== 20007), reluxEnemies: f.raw.concat([rawRow(20007, 'Large Body', OLD6, [20000, 51000, 70000, 176000, 766260, 114656559], [1650, 2160, 3120, 6300, 18434, 8531902], { displayId: 7 })]), stageEnemies }, out);
+    return out;
+  };
+  // case 1: the base 20007 is an old-shape row of our master; 120007 is needed by a revamp season only
+  const a = monthOf({ 4: [120007], 1: [20007], 7: [20007] }, true);
+  const ra = a.colosseumEnemies.find((e) => e.enemyId === 120007);
+  assert.deepStrictEqual([ra.source, ra.base, ra.reluxShape], ['monthCopy', 20007, undefined]);
+  assert.ok(a.sharedOldRows.includes(120007) && a.sharedOldRows.includes(20007));
+  // case 2: the base is derived in this run (needed by both eras, old raw row)
+  const b = monthOf({ 4: [120007], 1: [20007], 7: [20007] }, false);
+  const rb = b.colosseumEnemies.find((e) => e.enemyId === 120007);
+  assert.deepStrictEqual([b.colosseumEnemies.find((e) => e.enemyId === 20007).source, rb.source, rb.reluxShape], ['relux', 'monthCopy', undefined]);
+  assert.ok(b.sharedOldRows.includes(120007) && b.sharedOldRows.includes(20007));
+  // a 2019 base stays labelled 2019 and is not shared (121565)
+  const c = runEra({ 4: [121565, 21565] });
+  assert.ok(!c.sharedOldRows.includes(21565));
+});
+
+
 console.log(results.join('\n'));
 if (process.exitCode) console.log('test-make-colosseum: FAIL'); else console.log('test-make-colosseum: OK');
