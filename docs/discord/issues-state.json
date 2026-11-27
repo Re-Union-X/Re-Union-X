@@ -796,7 +796,7 @@
    "thread": "1575423523579494502",
    "msg": "1575423523579494502",
    "group": "CLOSED",
-   "hash": "325ca9d3dad03746",
+   "hash": "82475a4df1084ea8",
    "name": "I-324 · Raid boss attack animation breaks apart: Queen Bee Ω"
   },
   "I-325": {
@@ -859,7 +859,7 @@
    "thread": "1575831532034326693",
    "msg": "1575831532034326693",
    "group": "CLOSED",
-   "hash": "f84cc204e3c53b11",
+   "hash": "c39551090ece9c0a",
    "name": "I-333 · Quest 34 plays the same Power Bangle scene before and after the mission"
   },
   "I-334": {
@@ -873,7 +873,7 @@
    "thread": "1575831548790571079",
    "msg": "1575831548790571079",
    "group": "CLOSED",
-   "hash": "8855b38f3b64400f",
+   "hash": "502ee70534cc8c64",
    "name": "I-335 · Quest 275 «Complete within 4 turns» cannot be done"
   }
  }
