@@ -84,6 +84,8 @@ check(st(n50.id).status === 1, 'Nova 50: LV50 completata');
 delete process.env.KHUX_GUILT_BURST_LV;
 
 // 40 Spirit = rango della Gear (petRank, punti dalle medaglie nei 6 slot)
+// the Spirit unlocks after Story Quest 14 (I-329)
+p.stageScores = { ...p.stageScores, [t.masterRows('stage').find((r) => r.id === 14 && r.stageKind === 1).stageId]: 0 };
 const s2 = row(40, 2), s3 = row(40, 3);
 p.pet = p.pet || {};
 p.pet.subslot = [];

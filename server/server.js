@@ -654,6 +654,7 @@ function startSession() {
   }
   player.sessionRevision = masterRevisionNow();
   player.sessionRealMs = realNow();
+  player.sessionPet = petUnlocked() ? 1 : 0; // I-329: the Spirit as the client builds it in the startup chain (petOn)
 }
 const sessionFixed = () => Number.isFinite(player.sessionRevision) && Number.isFinite(player.sessionRealMs);
 const sessionRevision = () => (sessionFixed() ? player.sessionRevision : masterRevisionNow());
@@ -1718,7 +1719,7 @@ function stageEnemyDrops(stageId, rng = Math.random) {
 // del 50% per nemico con drop, in ordine di uid, il primo che riesce.
 const STEAL_CHANCE = 0.5;
 function stealMultiplier() {
-  if (!PET_ENABLED) return 0;
+  if (!petOn()) return 0;
   const open = new Set(pet().petSubslotData().openSkillIds);
   return Math.max(0, ...masterRows('petSkill').filter((r) => open.has(r.skillId) && r.invokeType === 1).map((r) => r.skillValue3 || 0));
 }
@@ -2166,7 +2167,7 @@ function respondGachaDraw(res, body) {
     missionCount('draw', 1); // Beginner «Draw Medal»: una per richiesta riuscita, non per medaglia
     price = gacha.payDraw(banner, player, realMs, draw.featured);
     // slot 3 dello Spirit Training: 5 Deal da 10 medaglie in Jewel (pet.js noteDraw)
-    if (PET_ENABLED) pet().noteDraw({ payType: banner.payType, lotCount: banner.lotCount, freeDaily: gacha.isFreeDaily(banner) });
+    if (petOn()) pet().noteDraw({ payType: banner.payType, lotCount: banner.lotCount, freeDaily: gacha.isFreeDaily(banner) });
   } catch (e) {
     for (const k of Object.keys(player)) delete player[k];
     Object.assign(player, JSON.parse(undo));
@@ -2197,7 +2198,7 @@ function petDraws() {
 }
 const ownedPartIds = () => new Set(pet().ownedParts().map((x) => x.petPartsId));
 function petListed(ctx = storyCtx()) {
-  if (!PET_DRAW) return [];
+  if (!PET_DRAW || !petOn()) return [];
   return petDraw.listed(petDraws().banners, { shopFrom: ctx.shopFrom, shopTo: ctx.shopTo, storyQuest: ctx.storyQuest, periodStart: ctx.periodStart, keptRowId: player.gacha?.pinnedPet });
 }
 function petPageCtx(fromCatalog) {
@@ -2698,7 +2699,7 @@ function respondUserProfile(res) {
       userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
     },
     // 6° slot del keyblade preferito (server/pet.js; 0 con KHUX_PET spento)
-    petBaseSlotMedal: petBaseSlotMedal(player, deckIdOf(favoriteKeybladeId(), activeDeck(favoriteKeybladeId())),
+    petBaseSlotMedal: !petOn() ? 0 : petBaseSlotMedal(player, deckIdOf(favoriteKeybladeId(), activeDeck(favoriteKeybladeId())),
       new Set(userMedalList().map((m) => m.userMedalId))),
     userPvpRanking: { rank: 0, class: 0, point: 0 },
     followerNum: 0,
@@ -2842,7 +2843,7 @@ function userDetailData() {
     // sblocco/rilancio della guilt e Magic Mirror nel Level Up: Power Bangle,
     // Quest 34 (isGuiltUnlocked). Il pulsante resta nascosto finche' guiltBurstLv e' 0.
     // isPet: 1 = pet sbloccato (6° slot, catena /pet/profile all'avvio): server/pet.js
-    isGuilt: isGuiltUnlocked(), isPet: PET_ENABLED ? 1 : 0, pvpClass: 0, pvpMvpCount: 0, // uint
+    isGuilt: isGuiltUnlocked(), isPet: petOn() ? 1 : 0, pvpClass: 0, pvpMvpCount: 0, // uint
   };
 }
 
@@ -4801,7 +4802,7 @@ function respondMedalRemove(res, body) {
     // elemento il client lo copia nel pet della sessione anche se il pet non esiste
     // (crash, I-005): il pet lo crea solo l'azione 170 (/pet/profile),
     // che il client chiede all'avvio solo con isPet 1. Quindi l'elemento solo con KHUX_PET=1.
-    petSubslots: PET_ENABLED ? [pet().petSubslotData()] : [],
+    petSubslots: petOn() ? [pet().petSubslotData()] : [],
     subslotMaxNum: kbEvo().subslotMaxNum(), userKeybladeSubslots: userKeybladeSubslotsData(),
   });
 }
@@ -4955,7 +4956,7 @@ function userDecksData(compact = false) {
   return ownedKeyblades().flatMap((k) => ns.map((n) => ({
     userDeckId: deckIdOf(k.userKeybladeId, n), userKeybladeId: k.userKeybladeId, // uint64
     deckMedals: sentKeybladeDeck(k.userKeybladeId, compact, n),
-    petBaseSlotMedal: petBaseSlotMedal(player, deckIdOf(k.userKeybladeId, n), ownedMedals),
+    petBaseSlotMedal: !petOn() ? 0 : petBaseSlotMedal(player, deckIdOf(k.userKeybladeId, n), ownedMedals),
   })));
 }
 
@@ -4983,7 +4984,7 @@ function respondKeybladeUpdate(res, body) {
     if (n > 1) ((player.keybladeDeckSets ||= {})[id] ||= {})[n] = medals;
     else if (id === USER_KEYBLADE_ID) player.deck = medals;
     else (player.keybladeDecks = player.keybladeDecks || {})[id] = medals;
-    setPetBaseSlotMedal(player, deckIdOf(id, n), d.petBaseSlotMedal); // 6° slot (solo con KHUX_PET=1)
+    if (petOn()) setPetBaseSlotMedal(player, deckIdOf(id, n), d.petBaseSlotMedal); // 6° slot (solo con KHUX_PET=1)
     console.log(`  [keyblade] deck ${id}/${n}: ${medals.join(',')}` + (PET_ENABLED ? ` + pet ${d.petBaseSlotMedal || 0}` : ''));
   }
   savePlayer();
@@ -6503,9 +6504,20 @@ function pet() {
     medalResumption: medalResumptionData, vipUntil, monthlyUntil,
   });
 }
+// I-329: the Spirit unlocks after Story Quest 14 «The Mine Pt. 2» (reference/pet/NOTE.md §1), not from the tutorial.
+// The client creates its pet only from /pet/profile, asked in the startup chain when userDetail.isPet is 1: isPet and the
+// pet data the server sends (petSubslot, petSubslots, 6th slot, steal) follow the state at the login (player.sessionPet),
+// so a Quest 14 clear shows the Spirit from the next login, never a pet the client has not built (I-005 crash).
+const PET_UNLOCK_QUEST = 14;
+function petUnlocked() {
+  return PET_ENABLED && stageNumber(lastStoryStageId()) >= PET_UNLOCK_QUEST; // the Story, not the Tour (lastClearStageId)
+}
+function petOn() {
+  return player.sessionPet === undefined ? petUnlocked() : player.sessionPet === 1;
+}
 // petSubslot per le azioni 55/56: spento = il segnaposto di prima (tutto a 0)
 function petSubslotNow() {
-  return PET_ENABLED ? pet().petSubslotData()
+  return petOn() ? pet().petSubslotData()
     : { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 };
 }
 
@@ -6691,6 +6703,7 @@ module.exports._test = {
   checkCampaignGifts, respondUserPresent, respondPresentReceive, livePresents, // server/test-campaign-gifts.js (I-234)
   respondCoppa, // server/test-coppa.js (I-322)
   addBattleLux, luxRankFor, // server/test-level-coins.js (I-325)
+  userDetailData, petSubslotNow, // server/test-pet-unlock.js (I-329)
   respondMedalSell, drawPointsUnlocked, // server/test-draw-points.js
   userTitlesData, // server/test-title-popup.js (I-220)
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
