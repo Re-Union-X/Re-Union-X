@@ -3,12 +3,13 @@
     python -I recon/tools/gen_colosseum_stages.py [--wiki F] [--cl-sets F] [--sets F] [--gap F] [--enemy113 F]
                                                   [--templates D] [--out D] [--months 2016-08,2016-09,...]
 
-WW 2016-08 .. 2016-11 and 2017-06 .. 2017-12 have no original stage set on any disk (docs/notes/coliseum.md «Gap research»;
+WW 2016-08 .. 2016-11, 2017-06 .. 2017-12 and 2019-07 have no original stage set on any disk (docs/notes/coliseum.md «Gap research»;
 the 1.1.3 / ReLux rows point to JP sets WW did not play or that are absent from JP 4.3.1). Their rounds are rebuilt from the
 khuxwiki lineups (--wiki: month -> round -> waves [{enemies: [[name, count]], buffs: [...]}]; one wiki row = one wave, proven
 exact on 180 rounds; 10/10 rounds in every 2017 month) as the stage ids of server/make-colosseum.js GEN_STAGE_IDS(month) =
 21YYMMNN (YY = 16 / 17 / 19, NN = round 01..10; the 2017 ids never those of 2016-08 .. 11): cl_stg<id>.bin + cl_stg<id>_00.bin,
 room OC_0001_00_00, one part, one team per wave, every enemy level = round number (1..10; the client adds the tier levels).
+2019-07 (ids 21190701 .. 10) resolves its names only through MONTH_NAMED (13 raw ReLux 6xxxx ids).
 The default --months is every generated month (MONTHS); the 2016 files do not depend on the 2017 months.
 
 Enemy ids: original Coliseum variant ids only (20000 + base, 21xxx / 22xxx), never a substitute model. A wiki name resolves by,

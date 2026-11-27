@@ -80,8 +80,7 @@ node = subprocess.run(['node', '-e', 'const c = require(process.argv[1]); consol
 check(node.returncode == 0 and json.loads(node.stdout) == [gcs.gen_stage_ids(m) for m in gcs.MONTHS],
       'GEN_STAGE_IDS of make-colosseum.js: %s %s' % (node.stdout.strip()[:80], node.stderr.strip()[:200]))
 ids16 = {i for m in gcs.MONTHS if m < '2017' for i in gcs.gen_stage_ids(m)}
-ids17 = {i for m in gcs.MONTHS if m > '2017' for i in gcs.gen_stage_ids(m)}  # 2017 and 2019
-ids17 = {i for i in ids17 if i // 10000 == 2117}  # the 2019 set is 2119MMNN
+ids17 = {i for m in gcs.MONTHS if '2017' < m < '2018' for i in gcs.gen_stage_ids(m)}
 check(len(ids16) == 40 and len(ids17) == 70 and not ids16 & ids17, 'gen ids disjoint: %d / %d / %s' % (len(ids16), len(ids17), ids16 & ids17))
 check(all(i // 10000 == 2116 for i in ids16) and all(i // 10000 == 2117 for i in ids17), 'gen ids 2116MMNN / 2117MMNN')
 check(gcs.gen_stage_ids('2017-08')[:2] == [21170801, 21170802], '2017-08 ids %s' % gcs.gen_stage_ids('2017-08')[:2])
@@ -264,7 +263,7 @@ try:
     write_template(tp, 20150701, [[(2740, 874)]])
     write_template(tp, 20150702, [[(2740, 874), (2600, 870), (2500, 860)], [(1928, 894), (1660, 876), (1500, 870), (1400, 880)], [(1460, 878), (1300, 878), (1200, 878)]])
     o19 = os.path.join(t19, 'o')
-    r19 = gcs.generate(wiki19, ['2016-08', '2019-07'] if False else ['2019-07'], res19, gcs.template_pool(tp), o19)
+    r19 = gcs.generate(wiki19, ['2019-07'], res19, gcs.template_pool(tp), o19)
     s19 = {s['stageId']: s for s in r19['stages']}
     check(sorted(s19) == [21190701, 21190706], 'stage ids %s' % sorted(s19))
     check(r19['summary']['enemyIds'] == {'2019-07': [60095, 60126, 61020, 61024]}, 'ids %s' % r19['summary']['enemyIds'])

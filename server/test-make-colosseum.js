@@ -2293,10 +2293,27 @@ test('real_part4_enemies: every enemy of every served revamp stage is in the mas
   const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
   const raw = mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY);
   const reportFile = process.env.KHUX_COLOSSEUM_P4_REPORT || 'D:\\Progetto_Restauro_KH_UX\\tmp\\p4t2_report_all.json';
-  const genReport = process.env.KHUX_COLOSSEUM_P4_GEN_REPORT || 'D:/Progetto_Restauro_KH_UX/tmp/p4t3/gen/report.json'; // the generated 2019-07 set (Task 3)
-  const stageEnemies = fs.existsSync(reportFile) && fs.existsSync(genReport) ? mc.readStageEnemies([reportFile, genReport, ...mc.stageEnemyFiles()]) : null;
-  if (!src || !relux || !raw || !stageEnemies || !mc.SEASONS.filter((s) => s.colosseumStageId >= 4500).every((s) => s.pending || Object.keys(stageEnemies).some((k) => +k >= 20190000))) {
-    results.push('skip real_part4_enemies: 1.1.3 master, ReLux extracts or the stage enemy lists of the revamp sets not on disk'); return;
+  // the generated 2019-07 set (Task 3): regenerated here in the test's own temp dir from the private sources (never a scratch path)
+  let genDir = null, genWhy = '';
+  const heavy0 = 'D:\Progetto_Restauro_KH_UX\tmp';
+  if (fs.existsSync(reportFile)) {
+    genDir = fs.mkdtempSync(path.join(fs.existsSync(heavy0) ? heavy0 : os.tmpdir(), 'khux-p4-gen-'));
+    try { require('child_process').execFileSync('python', ['-I', path.join(__dirname, '..', 'recon', 'tools', 'gen_colosseum_stages.py'), '--months', '2019-07', '--out', genDir], { stdio: 'pipe' }); }
+    catch (e) { genWhy = `gen_colosseum_stages.py failed (${String(e.stderr || e.message).trim().split(/\r?\n/).pop()})`; }
+  }
+  const stageEnemies = genDir && !genWhy ? mc.readStageEnemies([reportFile, path.join(genDir, 'report.json'), ...mc.stageEnemyFiles()]) : null;
+  const sk = !src || !relux || !raw || !fs.existsSync(reportFile) ? '1.1.3 master, ReLux extracts or the stage enemy lists of the revamp sets not on disk' : genWhy;
+  if (sk || !stageEnemies) {
+    if (genDir) fs.rmSync(genDir, { recursive: true, force: true });
+    const msg = `skipped: real_part4_enemies: ${sk || 'no stage enemy list'}`;
+    if (process.env.KHUX_REQUIRE_REAL) throw new Error(msg);
+    console.warn(msg); results.push(`SKIP ${msg}`); return;
+  }
+  try { for (const sid of mc.GEN_STAGE_IDS('2019-07')) assert.ok(stageEnemies[sid] && stageEnemies[sid].length, `generated 2019-07 stage ${sid} has an enemy list`); }
+  catch (e) { fs.rmSync(genDir, { recursive: true, force: true }); throw e; }
+  fs.rmSync(genDir, { recursive: true, force: true });
+  if (!mc.SEASONS.filter((s) => s.colosseumStageId >= 4500).every((s) => s.pending || Object.keys(stageEnemies).some((k) => +k >= 20190000))) {
+    const msg = 'skipped: real_part4_enemies: no 2019 stage enemy lists'; console.warn(msg); results.push(`SKIP ${msg}`); return;
   }
   const masterRows = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).filter((r) => !mc.PART4_ENEMY_IDS.has(r.enemyId));
   const REV = mc.SEASONS.filter((s) => s.colosseumStageId >= 4500 && !s.pending).map((s) => s.colosseumStageId);
