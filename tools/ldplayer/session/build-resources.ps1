@@ -464,10 +464,10 @@ python recon\tools\btf_fix.py @btfState "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
 # guard (I-279): the client reads only BTF; a plain PNG left in img/ui or cocostudio/publish (e.g. a copied JP file that btf_fix
 # skipped) silently fails to load. Header check only (4 bytes per file)
-$notBtf = foreach ($d in 'img\ui', 'cocostudio\publish') {
-    foreach ($f in [IO.Directory]::EnumerateFiles("$sg\files\$d", '*.png')) {
-        $fs = [IO.File]::OpenRead($f); $b = New-Object byte[] 4; [void]$fs.Read($b, 0, 4); $fs.Dispose()
-        if ($b[0] -ne 0x89 -or $b[1] -ne 0x42 -or $b[2] -ne 0x54 -or $b[3] -ne 0x46) { $f }
+$notBtf = foreach ($btfDir in 'img\ui', 'cocostudio\publish') {
+    foreach ($btfFile in [IO.Directory]::EnumerateFiles("$sg\files\$btfDir", '*.png')) {
+        $btfStream = [IO.File]::OpenRead($btfFile); $btfHead = New-Object byte[] 4; [void]$btfStream.Read($btfHead, 0, 4); $btfStream.Dispose()
+        if ($btfHead[0] -ne 0x89 -or $btfHead[1] -ne 0x42 -or $btfHead[2] -ne 0x54 -or $btfHead[3] -ne 0x46) { $btfFile }
     }
 }
 if ($notBtf) { throw ("not BTF after btf_fix: " + (($notBtf | Select-Object -First 10) -join ', ')) }
