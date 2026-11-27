@@ -518,6 +518,11 @@ function respondCoppa(res) {
   for (const k of ['116', '804', '900', '901', '902', '903', '904', '905', '906', '907']) {
     misc[k] = 0;
   }
+  // I-322: 900-907 from the master misc (900-902 age brackets, 903/904 spend limits, 905/906 = 1910/2016 the year range of
+  // the Birthdate Registration picker: with 0 the Year list was empty)
+  for (const r of masterRows('misc')) {
+    if (r.miscId >= 900 && r.miscId <= 907) misc[String(r.miscId)] = Number(r.value) || 0;
+  }
   // misc 116 non puo' essere 0: se coincide con il valore iniziale del client (0), chi rientra
   // va in crash alla fine di ogni aggiornamento dei master (osservato al banco). Con un valore
   // diverso il client prosegue verso la home.
@@ -6654,6 +6659,7 @@ module.exports = { SESSION, parseBody, start, route, multi };
 // per i test senza client (server/test-medal-enhance.js, con KHUX_SAVE e KHUX_MASTER_DIR propri)
 module.exports._test = {
   checkCampaignGifts, respondUserPresent, respondPresentReceive, livePresents, // server/test-campaign-gifts.js (I-234)
+  respondCoppa, // server/test-coppa.js (I-322)
   respondMedalSell, drawPointsUnlocked, // server/test-draw-points.js
   userTitlesData, // server/test-title-popup.js (I-220)
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
