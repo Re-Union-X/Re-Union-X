@@ -187,7 +187,8 @@ python recon\tools\make_keyblade_decks.py server\master_data\keyblade.json $kl "
 if ($LASTEXITCODE) { throw 'make_keyblade_decks fallito' }
 # posa del keyblade nei riquadri dei menu (rule/keyblade_rule.bin, una riga per keyblade, centrata
 # come Starlight: Treasure Trove era a destra e tagliato in «Select a Keyblade»)
-python -I recon\tools\keyblade_rule.py server\master_data\keyblade.json "$kl\rule\keyblade_rule.bin" "$kl\lwf\avatar\keyblade" "$sg\files"
+# --jp (I-338): the series 12000-16000 only in the JP 4.3.1 rule (keyblade_rule.00351791.bin), else Starlight's pose
+python -I recon\tools\keyblade_rule.py server\master_data\keyblade.json "$kl\rule\keyblade_rule.bin" "$kl\lwf\avatar\keyblade" "$sg\files" --jp "$jpData"
 if ($LASTEXITCODE) { throw 'keyblade_rule fallito' }
 python recon\tools\make_keyblade_images.py server\master_data\keyblade.json $kl "$sg\files"
 if ($LASTEXITCODE) { throw 'make_keyblade_images fallito' }

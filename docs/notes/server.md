@@ -545,6 +545,9 @@ The screens have their own APIs, described in the area files: medals
   keyblade (64) with the position that brings it onto Starlight's center, original rotation and scale
   of the series. The model matches Square Enix's values for almost all series (Lady Luck,
   Three Wishes, Divine Rose, Olympia within 2 units). The avatar is not touched (same LWFs).
+  I-338 (27-11): the WW rule has only the series 1000..11000, so 12000-16000 took Starlight's rotation and scale;
+  `--jp <JP 4.3.1 root>` adds the series only the JP `rule/keyblade_rule.00351791.bin` has (12000..16000; the WW
+  records win on the common series, the JP revision only moves mode 3 by ~10 units for the JP layouts).
 - Levels (I-067): the level is the row of the keyblade table (one keybladeId per level:
   series*1000 + lv*10 up to +20, then series*1000 + 200 + lv-20; Bad Guy Breaker lv*10). The row gives
   the materials for the next level (`validNeedMaterial`, `needMaterialId/Num`: the KEYBLADE window
