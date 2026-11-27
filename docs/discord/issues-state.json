@@ -26,7 +26,7 @@
    "thread": "1569614654169153538",
    "msg": "1569614654169153538",
    "group": "OPEN",
-   "hash": "ec5843fa737b7cdf",
+   "hash": "b301a31b1e02b00b",
    "name": "I-018 · Buttons never tested"
   },
   "I-022": {
@@ -95,22 +95,22 @@
   "I-059": {
    "thread": "1569614694765961252",
    "msg": "1569614694765961252",
-   "group": "OPEN",
-   "hash": "10cbe4a65a079b2b",
+   "group": "CLOSED",
+   "hash": "7fe33d180e632b6a",
    "name": "I-059 · Colosseum not playable"
   },
   "I-102": {
    "thread": "1569614697496449075",
    "msg": "1569614697496449075",
-   "group": "OPEN",
-   "hash": "06a836b12bbe922a",
-   "name": "I-102 · Moogle Shop style"
+   "group": "CLOSED",
+   "hash": "72f1c9d1719d0c14",
+   "name": "I-102 · Moogle Shop style: scene, Traits and popups are JP originals"
   },
   "I-117": {
    "thread": "1569614699786534926",
    "msg": "1569614699786534926",
    "group": "OPEN",
-   "hash": "7843f43ee5ae4a35",
+   "hash": "099fd03a1a086f75",
    "name": "I-117 · Original layouts and textures from the JP 4.3.1 data"
   },
   "I-120": {
@@ -130,8 +130,8 @@
   "I-128": {
    "thread": "1569614707118055460",
    "msg": "1569614707118055460",
-   "group": "OPEN",
-   "hash": "b5e8a3aafc949a93",
+   "group": "CLOSED",
+   "hash": "0d78966f481685dc",
    "name": "I-128 · Device date «End of Service» after 29/6/2021"
   },
   "I-129": {
@@ -165,9 +165,9 @@
   "I-139": {
    "thread": "1569614738172678175",
    "msg": "1569614738172678175",
-   "group": "OPEN",
-   "hash": "7ef256ec0e534b02",
-   "name": "I-139 · Banner catalog"
+   "group": "CLOSED",
+   "hash": "25dda5b2cebade16",
+   "name": "I-139 · Banner catalog: INCOMPLETE rows and Free Deal x1 without rarityMix"
   },
   "I-140": {
    "thread": "1569614740878135297",
@@ -179,9 +179,9 @@
   "I-141": {
    "thread": "1569614743784783965",
    "msg": "1569614743784783965",
-   "group": "OPEN",
-   "hash": "1f69208a2567c500",
-   "name": "I-141 · B0612"
+   "group": "CLOSED",
+   "hash": "60a7e0b61d832191",
+   "name": "I-141 · B0612: banner image taken from its VIP twin B0579"
   },
   "I-142": {
    "thread": "1569614746704019518",
@@ -271,7 +271,7 @@
    "thread": "1569614797228482571",
    "msg": "1569614797228482571",
    "group": "OPEN",
-   "hash": "c9319a2331281caf",
+   "hash": "0a146a115762d06c",
    "name": "I-170 · Replace with the originals what we generated"
   },
   "I-191": {
@@ -320,7 +320,7 @@
    "thread": "1569614838051639307",
    "msg": "1569614838051639307",
    "group": "TO VERIFY",
-   "hash": "f688a3c0414eb2c1",
+   "hash": "30713c52d36768f9",
    "name": "I-242 · Medal Gallery"
   },
   "I-243": {
@@ -340,8 +340,8 @@
   "I-245": {
    "thread": "1569615909541249058",
    "msg": "1569615909541249058",
-   "group": "IN PROGRESS",
-   "hash": "a064f1721067db89",
+   "group": "OPEN",
+   "hash": "f3f100336949fcca",
    "name": "I-245 · Events: non-raid event quests"
   },
   "I-246": {
@@ -396,15 +396,15 @@
   "I-254": {
    "thread": "1569615947264688129",
    "msg": "1569615947264688129",
-   "group": "OPEN",
-   "hash": "b48420db0d6c27ee",
+   "group": "CLOSED",
+   "hash": "d760fec40bcf071b",
    "name": "I-254 · Events Parts 1-4: original maps recoverable for held quests"
   },
   "I-255": {
    "thread": "1569615950192312382",
    "msg": "1569615950192312382",
-   "group": "OPEN",
-   "hash": "c932a45005acce00",
+   "group": "CLOSED",
+   "hash": "50d0a0b2594463a0",
    "name": "I-255 · Org XIII 2016-17: 53 quests with no original map, exact enemy ids unknown"
   },
   "I-256": {
@@ -417,8 +417,8 @@
   "I-257": {
    "thread": "1569694833189330987",
    "msg": "1569694833189330987",
-   "group": "OPEN",
-   "hash": "2c5b8b7773659356",
+   "group": "CLOSED",
+   "hash": "e44d6de87bfa9767",
    "name": "I-257 · Unplayable first rows of five served events whose Event Catalog card is that row's…"
   },
   "I-258": {
@@ -438,8 +438,8 @@
   "I-261": {
    "thread": "1569824440190246916",
    "msg": "1569824440190246916",
-   "group": "IN PROGRESS",
-   "hash": "aa9e0b1d66d265d1",
+   "group": "OPEN",
+   "hash": "bcc03bea24e35785",
    "name": "I-261 · Enemy special attacks: copied moves and missing atkSp animations"
   },
   "I-262": {
@@ -606,8 +606,8 @@
   "I-294": {
    "thread": "1574125247425159244",
    "msg": "1574125247425159244",
-   "group": "OPEN",
-   "hash": "b44f9bcbff273869",
+   "group": "CLOSED",
+   "hash": "3d641871c3e7148d",
    "name": "I-294 · Events Part 10: the 2016-11..2018-03 events"
   },
   "I-297": {
