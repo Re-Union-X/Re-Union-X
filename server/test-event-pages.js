@@ -364,6 +364,7 @@ const tests = {
     assert.deepStrictEqual(tabs, [['all', 'All years', 6, true, false], ['2', 'Year 3', 5, false, false], ['3', 'Year 4', 1, false, true]]);
     assert.ok(/<div class="tabs" id="tabs" data-def="all">/.test(raw), 'default tab = All years');
     assert.ok(raw.includes('title="Your Story is in this year"') && raw.split('class="here"').length === 2, 'exactly one pin');
+    assert.ok(raw.split('<span class="hc">You are here</span></span><b>').length === 2 && !raw.includes('Your Story</span>'), 'caption You are here, once, before the title');
     assert.ok(!/class="tab[^"]*" data-p="\w+"><span class="here"/.test(raw.replace(/data-p="3"/, 'x')), 'only the tab of the Story year');
     const noPos = pages.catalogPage(ix, ctx({ shopFrom: undefined }));
     assert.ok(!noPos.includes('class="here"') && /<div class="tabs" id="tabs" data-def="all">/.test(noPos), 'no position: no pin');
@@ -518,6 +519,10 @@ const tests = {
     assert.ok(tag.includes('btodo.png') && tag.includes('alt="Boards not completed"') && tag.includes('title="Boards not completed"'));
     assert.ok(nm(29901).endsWith(`${tag}</a>`), 'todo row: icon after the name');
     for (const id of [29900, 29903, 29909]) assert.ok(!nm(id).includes('btodo.png'), `no icon on ${id}`);
+    assert.ok(sp.BOARD_DONE.includes('bdone.png') && sp.BOARD_DONE.includes('alt="Boards completed"') && sp.BOARD_DONE.includes('title="Boards completed"'));
+    assert.ok(nm(29900).endsWith(`${sp.BOARD_DONE}</a>`), 'done row: completed icon');
+    for (const id of [29901, 29903, 29909]) assert.ok(!nm(id).includes('bdone.png'), `no completed icon on ${id}`);
+    assert.ok(nm(29900).includes(sp.CROWN) ? nm(29900).indexOf(sp.CROWN) < nm(29900).indexOf(sp.BOARD_DONE) : true, 'completed icon after the crown');
     assert.ok(!nm(29901).includes(sp.CROWN) || nm(29901).indexOf(sp.CROWN) < nm(29901).indexOf(tag), 'after the crown');
     assert.ok(/<h4>EVENT BOARDS<\/h4><div class="opts" data-g="bd">/.test(raw), 'the EVENT BOARDS group of the sheet');
     const fp = fakePage(raw);

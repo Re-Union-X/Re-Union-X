@@ -171,7 +171,10 @@ const tests = {
     const nm = (id) => (/<a class="nm"[^>]*>([\s\S]*?)<\/a>/.exec(rowHtml(html, id)) || [])[1];
     assert.ok(sp.BOARD_TODO.includes('btodo.png') && sp.BOARD_TODO.includes('alt="Boards not completed"') && sp.BOARD_TODO.includes('title="Boards not completed"'));
     assert.ok(nm(900).endsWith(sp.BOARD_TODO) && nm(1000).endsWith(sp.BOARD_TODO), 'todo rows');
-    assert.ok(!nm(800).includes('btodo.png') && !nm(1100).includes('btodo.png'), 'done and no-board rows have none');
+    assert.ok(!nm(800).includes('btodo.png') && !nm(1100).includes('btodo.png'), 'done and no-board rows have no todo icon');
+    assert.ok(sp.BOARD_DONE.includes('bdone.png') && sp.BOARD_DONE.includes('alt="Boards completed"') && sp.BOARD_DONE.includes('title="Boards completed"'));
+    assert.ok(nm(800).endsWith(sp.BOARD_DONE), 'done row: completed icon');
+    assert.ok(!nm(1100).includes('bdone.png') && !nm(900).includes('bdone.png') && !nm(1000).includes('bdone.png'), 'only done rows have it');
   },
   filters_sheet() {
     const html = pages.catalogPage(FILTER_ROWS, CTX);
@@ -262,6 +265,7 @@ const tests = {
     const html = pages.catalogPage(more, { ...CTX, shopFrom: '2017-05-08' });
     assert.ok(/<button type="button" class="tab on" data-p="all"/.test(html) && (html.match(/class="tab on"/g) || []).length === 1, 'All years selected on opening');
     assert.ok(/class="tab" data-p="1"><span class="here" title="Your Story is in this year" aria-label="Your Story is in this year"><svg/.test(html) && (html.match(/class="here"/g) || []).length === 1, 'the pin on Year 2 only');
+    assert.ok(html.includes('<svg class="ic"') && /<\/svg><span class="hc">You are here<\/span><\/span><b>Year 2<\/b>/.test(html) && (html.match(/class="hc"/g) || []).length === 1, 'pin inline before the title, caption You are here');
     assert.ok(!/data-p="all"><span class="here"/.test(html), 'never on All years');
     assert.ok(!pages.catalogPage(more, CTX).includes('class="here"'), 'no position: no pin');
     assert.ok(!pages.catalogPage(more, { ...CTX, shopFrom: '2019-01-01' }).includes('class="here"'), 'a year without a tab: no pin');

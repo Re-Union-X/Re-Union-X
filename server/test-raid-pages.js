@@ -26,7 +26,7 @@ function index() {
   ] };
 }
 // the player's Shop week holds 2019-10-14: 2018-09-03 and 2019-10-07 are past, 2020 rows later
-const HERE = '<span class="here" title="Your Story is in this year" aria-label="Your Story is in this year">' + require('./detail-cards').LOCATION_ICON + '</span>';
+const HERE = '<span class="here" title="Your Story is in this year" aria-label="Your Story is in this year">' + require('./detail-cards').LOCATION_ICON + '<span class="hc">You are here</span></span>';
 function ctx(extra = {}) {
   const ix = extra.index || index();
   const week = { shopFrom: '2019-10-17', shopTo: '2019-10-23' };
@@ -259,6 +259,11 @@ const tests = {
     const tag = special.BOARD_TODO, nm = (id) => (/<a class="nm"[^>]*>[\s\S]*?<\/a>/.exec(rowOf(html, id)) || [''])[0];
     assert(tag.includes('btodo.png') && tag.includes('alt="Boards not completed"') && tag.includes('title="Boards not completed"'));
     assert(nm(8100).endsWith(`${tag}</a>`) && !nm(8071).includes('btodo.png') && !nm(8101).includes('btodo.png') && !nm(8180).includes('btodo.png'), 'icon on todo only');
+    const dn = special.BOARD_DONE;
+    assert(dn.includes('bdone.png') && dn.includes('alt="Boards completed"') && dn.includes('title="Boards completed"'));
+    assert(nm(8071).endsWith(`${dn}</a>`) && nm(8180).endsWith(`${dn}</a>`), 'completed icon on done rows');
+    assert(!nm(8100).includes('bdone.png') && !nm(8101).includes('bdone.png') && !nm(8150).includes('bdone.png'), 'no completed icon on todo / no-board rows');
+    assert(!nm(8101).includes('btodo.png') && !nm(8150).includes('btodo.png'), 'no-board rows: neither');
     assert(/data-v="done"><img[^>]*bdone\.png[^>]*>Completed</.test(html) && /data-v="todo"><img[^>]*btodo\.png[^>]*>Not completed</.test(html), 'chips with the board icons (completed board with a check, partly lit board), not padlocks');
     assert(html.includes('Raid Boards: '), 'summary tag label');
     assert.strictEqual(count(rowOf(html, 8071), 'class="s s-'), 1, 'still one status line');

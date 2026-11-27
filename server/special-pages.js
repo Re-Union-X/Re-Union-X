@@ -45,7 +45,9 @@ const icon = (k) => `<img class="ic" src="/web/special/icon/${k}.png" alt="">`;
 const CROWN = '<img class="ic cw" src="/web/special/icon/done.png" alt="Completed" title="Completed">';
 // the «Not completed» board icon of a catalog row (user 27-11): after the crown, or after the name; shown for the rows the BOARDS filter calls 'todo'
 const BOARD_TODO = '<img class="ic cw" src="/web/special/icon/btodo.png" alt="Boards not completed" title="Boards not completed">';
-const boardMark = (state) => (state === 'todo' ? BOARD_TODO : '');
+// the «Completed» board icon (the BOARDS filter chip icon) for the rows whose served boards are all complete (user 27-11)
+const BOARD_DONE = '<img class="ic cw" src="/web/special/icon/bdone.png" alt="Boards completed" title="Boards completed">';
+const boardMark = (state) => (state === 'todo' ? BOARD_TODO : state === 'done' ? BOARD_DONE : '');
 const KEEP_LABEL = `${icon('pin')}Keep in Special`, REMOVE_LABEL = 'Remove from Special';
 
 // same pattern as the Shop catalogue (server/gacha.js): the element carries data-pin (POST URL) and data-on
@@ -784,4 +786,4 @@ function detailPage(index, evStageId, ctx = {}) {
 
 // CSS, DETAIL_CSS, esc, niceDay, monthYear, icon: shared with the Raid Catalog pages (server/raid-pages.js), which follow this style
 module.exports = { gameYearOf, GAME_YEARS, hereYear, hereMark, YEAR_SPAN, entryYears, SHOW_SETS, catalogPage, catalogFacts, detailPage, familiesOf, buildNames, typesOf, SPECIAL_ICON_KEYS, RANK_JS, khuxRank, MATCH_JS, khuxMatch,
-  CSS, DETAIL_CSS, NARROW_CSS, esc, niceDay, monthYear, icon, CROWN, BOARD_TODO, boardMark, PROG_OPTS, progCls };
+  CSS, DETAIL_CSS, NARROW_CSS, esc, niceDay, monthYear, icon, CROWN, BOARD_TODO, BOARD_DONE, boardMark, PROG_OPTS, progCls };
