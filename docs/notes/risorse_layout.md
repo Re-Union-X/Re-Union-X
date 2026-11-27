@@ -383,6 +383,18 @@ a battle motion).
     `stage_gen\jp_import\sound_effects.json` (ids, bytes, LWFs citing them, missing, unresolved); cache
     of the events of the served ones in `served_lwf_sounds.json` (fingerprint of index and data; first run ~45 s,
     then ~5 s). On its own (`python -I recon/tools/jp_sound_effects.py`) it is a report that writes nothing.
+- **Code-played UI sounds** (Coliseum sounds, 27-11-2026): the client also plays SE ids hard-coded in its code
+  (`audio/%09d.akb`, e.g. the Coliseum start / ALL 1 TURN / victory animations of `StageDirection`), never named by an
+  LWF event, so the pass above cannot find them. The served base lacks part of the `ui2_se` (5090xxxxx) / `ui_se`
+  (5091xxxxx) set (5.0.1 dropped the Coliseum). With `--b16 <WW 2016 bundle files>` (`code_se_plan`, only in the
+  build's `--apply` call after `import_originals.py`, not in `import_jp_coco.py`) every `audio/509[01]xxxxx.akb` of the
+  JP root that is not served, in a static pack or already generated is copied into the generated pack: the **WW 2016
+  copy first**, else the latest JP revision. No text/audio needed (the code uses the id). Report: `code_se` in the
+  plan (`ids`, `from_b16`, `from_jp`, `bytes`). Dry run 27-11 (resources 195): **100 AKBs, 93 from the WW 2016 bundle
+  + 7 JP-only, 4,620,746 bytes**. Being copied by `--apply` (outside the import manifest), they stay in
+  `stage_geniles` and count as present on the next build. With `-Append` there is no reserve limit (the delta piece
+  grows by ~4.6 MB). Exact ids of the Coliseum animations not proven (callbacks not decompiled): if still silent, the
+  id is outside 509 (triage `tmp	riage\coliseum_audio.md`, plan B).
 - **Dry run** (17-10, copy of `stage_gen` in `tmp\se_dry_r1`, resources 41; repeated after the review with the same outcome): 1,395 LWFs with sounds, 627 names;
   **216 new AKBs, 4,327,702 bytes**: 509000390/740 (x10, Nova), 509000700 (`BurstGauge_Recovery`),
   509100190/220 (avatar motions `dash`, `excavate`), 509100250 (`Sburst`), 509100310/320

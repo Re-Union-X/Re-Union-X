@@ -458,7 +458,9 @@ foreach ($qt in @('special', 'event', 'raid')) {
 $seApply = @()
 if ($raidSkipped) { $seApply += @('--static-root', "$rmg\files") }
 if ($fast) { $seApply += @('--stamp-cache', "$sg\jp_import\sound_effects_cache.json") }
-python -I recon\tools\jp_sound_effects.py --out "$sg\files" --apply @seOpt @seApply
+# --b16: also the ui2_se / ui_se sounds played by client code (Coliseum start / one-turn / victory, 27-11-2026), missing from
+# the served base: WW 2016 copy first, else the latest JP revision (docs/notes/risorse_layout.md#suoni-jp)
+python -I recon\tools\jp_sound_effects.py --out "$sg\files" --b16 "$refWork\bundle2016\files" --apply @seOpt @seApply
 if ($LASTEXITCODE) { throw 'jp_sound_effects fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py @btfState "$sg\files"

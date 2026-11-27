@@ -232,6 +232,54 @@ with tempfile.TemporaryDirectory() as t:
     check(m.stage_bgm_plan(rows, have | {'audio/501006041.akb', 'audio/501006042.akb', 'audio/501000730.akb'}, jt, ja)['add'] == {},
           'stage_bgm_plan: nothing when all served')
 
+# --- code-played UI SE (Coliseum sounds, 27-11-2026): every ui2_se / ui_se AKB (5090xxxxx / 5091xxxxx) of the JP root
+# that is not available is copied, the WW 2016 bundle copy first, else the latest JP revision; other ranges untouched
+with tempfile.TemporaryDirectory() as t:
+    jp_a = {'509000010.akb': 'J1', '509000020.akb': 'J2', '509100030.akb': 'J3', '509100040.akb': 'J4',
+            '501000110.akb': 'JB', '510000010.akb': 'JX', '5090000100.akb': 'JW'}
+    b16_a = {'509000010.akb': 'B1', '509100030.akb': 'B3', '509100990.akb': 'B99'}
+    have = {'audio/509000020.akb'}
+    cp = m.code_se_plan(have, jp_a, b16_a)
+    check(cp['add'] == {'audio/509000010.akb': 'B1', 'audio/509100030.akb': 'B3', 'audio/509100040.akb': 'J4'},
+          'code_se_plan: add %r' % cp['add'])
+    check(cp['from_b16'] == [509000010, 509100030] and cp['from_jp'] == [509100040],
+          'code_se_plan: sources %r %r' % (cp['from_b16'], cp['from_jp']))
+    check(cp['ids'] == [509000010, 509100030, 509100040], 'code_se_plan: ids')
+    check(m.code_se_plan(have, jp_a, b16_a, taken={'audio/509000010.akb'})['ids'] == [509100030, 509100040],
+          'code_se_plan: an id already planned by the LWF pass is not copied twice')
+    check(m.code_se_plan(have | set(cp['add']), jp_a, b16_a)['add'] == {}, 'code_se_plan: nothing when all served')
+    # collect with b16_root: the code SE land in p['code_se'] and count in p['bytes']; without it, nothing changes
+    out, jp, b16 = os.path.join(t, 'out'), os.path.join(t, 'jp'), os.path.join(t, 'b16')
+    os.makedirs(out)
+    scrivi(os.path.join(jp, 'audio', '509100050.akb'), b'jp5')
+    scrivi(os.path.join(jp, 'audio', '509100050.00000007.akb'), b'jp5rev7')
+    scrivi(os.path.join(jp, 'audio', '509100060.akb'), b'jp6')
+    scrivi(os.path.join(jp, 'audio', '509100070.akb'), b'jp7')
+    scrivi(os.path.join(out, 'audio', '509100070.akb'), b'gen7')            # already in the generated pack
+    scrivi(os.path.join(b16, 'audio', '509100060.akb'), b'b16six')
+    p0 = m.collect(out, set(), jp_root=jp, served=None, static_roots=[])
+    check(p0['code_se']['add'] == {} and p0['bytes'] == 0, 'collect: no code SE without b16_root')
+    p1 = m.collect(out, {'audio/509100080.akb'}, jp_root=jp, served=None, static_roots=[], b16_root=b16)
+    check(sorted(p1['code_se']['add']) == ['audio/509100050.akb', 'audio/509100060.akb'],
+          'collect: code SE %r' % p1['code_se']['add'])
+    check(os.path.basename(p1['code_se']['add']['audio/509100050.akb']) == '509100050.00000007.akb',
+          'collect: latest JP revision')
+    check(p1['code_se']['add']['audio/509100060.akb'] == os.path.join(b16, 'audio', '509100060.akb'),
+          'collect: b16 copy first')
+    check(p1['bytes'] == 7 + 6 and p1['code_se']['bytes'] == 13, 'collect: code SE bytes %d' % p1['bytes'])
+    # --apply copies them into --out
+    os.makedirs(os.path.join(t, 'res'))
+    names = os.path.join(t, 'res', 'names.tsv')
+    scrivi(names, 'revision\t1\n')
+    pa = m.main(['--out', out, '--jp', jp, '--served', names, '--addnl', names, '--data', os.path.join(t, 'res', 'none'),
+                 '--b16', b16, '--apply', '--manifest', os.path.join(t, 'res', 'none.json'),
+                 '--cache', os.path.join(t, 'res', 'c.json')] + [x for sp in m.STATIC_PACKS for x in ('--no-static', sp)])
+    check(open(os.path.join(out, 'audio', '509100060.akb'), 'rb').read() == b'b16six' and
+          open(os.path.join(out, 'audio', '509100050.akb'), 'rb').read() == b'jp5rev7' and
+          open(os.path.join(out, 'audio', '509100070.akb'), 'rb').read() == b'gen7',
+          '--apply: code SE copied, generated file untouched')
+    check(pa['code_se']['ids'] == [509100050, 509100060], '--apply: plan %r' % pa['code_se']['ids'])
+
 # --- radice JP vera: i due suoni muti di I-152 ci sono
 if os.path.isdir(m.JP_ROOT):
     a = m.latest(os.path.join(m.JP_ROOT, 'audio'))
@@ -248,4 +296,4 @@ if errori:
         print(' -', e)
     sys.exit(1)
 print('OK: eventi LWF, id come, revisioni JP, piano, collect (statici, owned, scritture), '
-      'Served.read/_read_at a cavallo dei pezzi, cache e impronta, JP vero')
+      'Served.read/_read_at a cavallo dei pezzi, cache e impronta, code SE, JP vero')

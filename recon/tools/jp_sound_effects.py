@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 JP_ROOT = private_tools.local_path('jp_data')
 STATIC_PACKS = ('medal_gen', 'rooms_gen', 'enemy_gen', 'raisedraw_gen')
-RESERVE = 176 * 1024 * 1024        # riserva del pacchetto generato (build-resources.ps1 $dataSize, versioni complete)
+RESERVE = 640 * 1024 * 1024        # riserva del pacchetto generato (build-resources.ps1 $dataSize, versioni complete; -Append has none)
 # playSE_<nome>: eventi delle LWF della ruota del trait (Kakusei_Get1/2: playSE_ui2_se_000075/76, AKB 509000750/760
 # assenti dalle risorse WW; il client ha il gestore «playSE», banco 19-10: animazione muta)
 PREFIXES = ('se_', 'playBGM_', 'playSE_')
@@ -170,6 +170,33 @@ def stage_bgm_plan(stage_rows, have, jp_text, jp_audio):
     return dict(add=dict(sorted(add.items())), texts=texts, ids=sorted(int(k[6:15]) for k in add), missing_jp=missing)
 
 
+CODE_SE = re.compile(r'^509[01]\d{5}\.akb$')
+
+
+def code_se_plan(have, jp_audio, b16_audio, taken=()):
+    """Interface sounds played by client code (Coliseum sounds, 27-11-2026): the client plays a code SE as
+    audio/%09d.akb with an id hard-coded in the binary (e.g. the Coliseum start / one-turn / victory animations of
+    StageDirection), never named by an LWF event, so the LWF pass cannot find it. The served base (OBB 5.0.1 + addnl)
+    lacks part of the ui2_se (5090xxxxx) / ui_se (5091xxxxx) set: every such id of the JP root that `have` lacks is copied,
+    from the WW 2016 bundle when it has it (English originals), else from the latest JP revision.
+    have      available resource names; taken  names already planned (LWF pass)
+    jp_audio / b16_audio  {'%09d.akb': path}
+    -> dict(add={audio/...: src}, ids, from_b16=[ids], from_jp=[ids])"""
+    add, from_b16, from_jp = {}, [], []
+    for k in sorted(jp_audio):
+        name = 'audio/' + k
+        if not CODE_SE.match(k) or name in have or name in taken:
+            continue
+        sid = int(k[:9])
+        if k in b16_audio:
+            add[name] = b16_audio[k]
+            from_b16.append(sid)
+        else:
+            add[name] = jp_audio[k]
+            from_jp.append(sid)
+    return dict(add=add, ids=sorted(from_b16 + from_jp), from_b16=from_b16, from_jp=from_jp)
+
+
 # ---- risorse servite ------------------------------------------------------------------------
 class Served:
     """Lettura per nome dalle risorse servite (indice nome<TAB>offset, pezzi d0000.. concatenati)."""
@@ -288,7 +315,7 @@ def _sub(tree, prefix):
 
 
 def collect(out, served_names, writes=None, owned=(), jp_root=JP_ROOT, served=None, static_roots=None,
-            cache_path=None, save_cache=True, cache=None):
+            cache_path=None, save_cache=True, cache=None, b16_root=None):
     """Piano per il pacchetto generato <out> (stage_gen\\files).
 
     served_names  nomi serviti (names_v4 + addnl)
@@ -299,6 +326,8 @@ def collect(out, served_names, writes=None, owned=(), jp_root=JP_ROOT, served=No
                   import_jp_coco toglie quelle escluse con --no-static)
     cache         optional stamp_cache.StampCache: the sound names of an LWF file whose size and date did not change
                   are not read again (the ~1.5k LWFs of the static packs, 4 Nov 2026)
+    b16_root      files\ folder of the WW 2016 bundle: with it, the code-played UI SE pass (code_se_plan) runs too,
+                  result in p['code_se'] (build-resources.ps1 --apply only; import_jp_coco does not pass it)
     """
     sys.path.insert(0, HERE)
     from stamp_cache import scan_tree
@@ -350,7 +379,13 @@ def collect(out, served_names, writes=None, owned=(), jp_root=JP_ROOT, served=No
                 served_text[n] = read_text(served.read('text/audio/' + n) or b'')
     p = plan(sounds, served_text, gen_text, latest(os.path.join(jp_root, 'text', 'audio')),
              have, latest(os.path.join(jp_root, 'audio')))
-    p['bytes'] = sum(os.path.getsize(s) for s in list(p['add'].values()) + list(p['texts'].values()))
+    cs = dict(add={}, ids=[], from_b16=[], from_jp=[])
+    if b16_root:
+        cs = code_se_plan(have, latest(os.path.join(jp_root, 'audio')), latest(os.path.join(b16_root, 'audio')),
+                          taken=p['add'])
+    cs['bytes'] = sum(os.path.getsize(s) for s in cs['add'].values())
+    p['code_se'] = cs
+    p['bytes'] = sum(os.path.getsize(s) for s in list(p['add'].values()) + list(p['texts'].values())) + cs['bytes']
     p['lwf_with_sounds'] = len(sounds)
     p['sound_names'] = len(needed)
     return p
@@ -362,10 +397,13 @@ def static_dirs(skip=()):
 
 
 def summary(p):
+    cs = p.get('code_se') or {}
     return ('suoni JP: %d AKB aggiunti (%d byte), %d testi text/audio, %d LWF con suoni, %d nomi; '
             'assenti anche nel JP: %d, non risolti: %d' % (
                 len(p['add']), p['bytes'], len(p['texts']), p['lwf_with_sounds'], p['sound_names'],
-                len(p['missing_jp']), len(p['unresolved'])))
+                len(p['missing_jp']), len(p['unresolved']))
+            + ('; code UI SE: %d (%d WW 2016, %d JP, %d byte)' % (
+                len(cs['ids']), len(cs['from_b16']), len(cs['from_jp']), cs['bytes']) if cs.get('ids') else ''))
 
 
 def main(argv=None):
@@ -385,6 +423,9 @@ def main(argv=None):
                          "quando i modelli dei boss raid non sono ricopiati nel generato perche' invariati)")
     ap.add_argument('--stamp-cache', default=None,
                     help='stamp_cache.json for the sound names of the LWF files (size + mtime), as import_jp_coco')
+    ap.add_argument('--b16', default=None,
+                    help='files\ folder of the WW 2016 bundle: also copy the code-played UI SE (ui2_se / ui_se ids '
+                         'missing from the served set, 2016 copy first, else JP; Coliseum sounds 27-11-2026)')
     ap.add_argument('--apply', action='store_true',
                     help="copia in --out gli AKB e i testi mancanti (build-resources, dopo import_originals.py: "
                          "i LWF originali importati dopo import_jp_coco hanno suoni propri)")
@@ -414,20 +455,23 @@ def main(argv=None):
         sc = StampCache(a.stamp_cache, h.hexdigest())
     p = collect(a.out, names, writes=writes, owned=owned, jp_root=a.jp, served=served,
                 static_roots=static_dirs(a.no_static) + a.static_root,
-                cache_path=a.cache or os.path.join(rep_dir, 'served_lwf_sounds.json'), cache=sc)
+                cache_path=a.cache or os.path.join(rep_dir, 'served_lwf_sounds.json'), cache=sc, b16_root=a.b16)
     if sc is not None:
         sc.save()
     # file gia' nel generato, senza quelli che il piano riscrive (corsa precedente dell'import)
-    gen = sum(os.path.getsize(f) for n, f in walk_names(a.out).items() if n not in p['add'] and n not in p['texts'])
+    gen = sum(os.path.getsize(f) for n, f in walk_names(a.out).items()
+              if n not in p['add'] and n not in p['texts'] and n not in p['code_se']['add'])
     print(summary(p))
     print('id: ' + ' '.join(str(i) for i in p['ids']))
+    if p['code_se']['ids']:
+        print('code UI SE id: ' + ' '.join(str(i) for i in p['code_se']['ids']))
     print('pacchetto generato stimato (file, senza intestazioni): %d + %d = %d byte su %d di riserva (%.1f%%)' % (
         gen, p['bytes'], gen + p['bytes'], RESERVE, 100.0 * (gen + p['bytes']) / RESERVE))
     if a.json:
         json.dump(p, open(a.json, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     if a.apply:
         import shutil
-        for name, src in sorted(list(p['add'].items()) + list(p['texts'].items())):
+        for name, src in sorted(list(p['add'].items()) + list(p['texts'].items()) + list(p['code_se']['add'].items())):
             dst = os.path.join(a.out, *name.split('/'))
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copyfile(src, dst)
