@@ -619,13 +619,13 @@ all. Implemented, committed and reviewed task by task; master regen, resources a
 - **Stages:** JP 4.3.1 sets of the same month (highest revision), 28 stages without an STG header rebuilt from a same-month sibling
   (`rebuild_from_sibling`, never another stage's enemies); **2020-01** = JP 2020-05 stages 1-9 copied whole (ids 21200101 .. 09),
   **2020-10** = per-round whole copies of other months' stages (21201001 .. 09; user 27-11); **2019-07** has no stage file: generated
-  from the khuxwiki lineup (21190701 .. 10, `MONTH_NAMED['2019-07']`, 5 wiki buffs dropped). The build runs the import with
+  from the khuxwiki lineup (21190701 .. 10, `MONTH_NAMED['2019-07']`, 5 wiki buffs dropped, on maps 3, 5, 6 and 10: checked against the generator report). The build runs the import with
   `--copy-from-make`.
 - **Enemies:** original ids only; per-era row shape (old shape <= 4400, 2019 shape for an id needed only by seasons >= 4500, the old
   rule when both), `ENEMY_RANGES` = 20000-29999 and 60000-62999; 97 new rows (`PART4_ENEMY_IDS`), 2019-07 = 13 raw ReLux 6xxxx rows
   (round rules kept in the rows). The **14 shared pre-revamp ids** (20007 20011 20012 20015 20016 20017 20035 20059 20071 20110 20131
   20136 20137 20144) and 25 Part 3 / 3b ids (`sharedOldRows`, 39) keep their earlier rows and fight at LV 1,000-4,000 (bench: LV > 999 probe).
-- **Boards:** 125 served (five a month: avatar, Huey/Dewey/Louie, Chip, Dale, Scrooge skill; 30,900 coins a month), none tier-gated
+- **Boards:** 130 served (26 seasons x 5, 2019-07 included; five a month: avatar, Huey/Dewey/Louie, Chip, Dale, Scrooge skill; 30,900 coins a month), none tier-gated
   (user 27-11); ids 2210151 + 5n .. 2210256, then 2310163 / 168 / 173 / 178; `RANGES.sphere*` up to 2399999; types 33 (Spirit parts)
   and 7 (titles) in cells. Cards: JP twins, wiki previews (`loc`, incl. all HDL boards, user-approved list), 2021-03 .. 06 fitted JP cards.
 - **Ranking:** 12 brackets 2019-05 .. 09, the RX edges 2019-10 .. 2020-10 (user), 16 brackets 2020-11 .. 2021-04, 2 brackets 2021-05 / 06

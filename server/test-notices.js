@@ -199,7 +199,7 @@ check(p.includes('a&lt;b&gt;&quot;&amp;') && !p.includes('<script>alert') && p.i
     && has('**Saturday and Sunday** raid quests cost **0 AP**') && has('**doubled**') && has('**no exceptions**') && has('costs **5 AP** from Monday to Friday') && has('Bonus Time came four times a day') && has('daily windows'), 'Raid Bosses: regola giorni feriali / weekend (I-228)');
   check(has('24-hour Bonus Time of June 2020 is not served') && !has('outside them the raid stays open') && !has('## Raid hours') && !has('**90 AP**'), 'Raid Bosses: niente finestre, niente giugno 2020');
   check(!has('Daily raids stay open all day'), 'Raid Bosses: la vecchia riga «open all day» non c\'è più');
-  check(/Japanese version/.test(t) && /given at every win/.test(t) && /AI/.test(t) && /Medal pictures/.test(t), 'Raid Bosses: JP, monete ripetibili, immagini');
+  check(/Japanese version/.test(t) && /given at every win/.test(t) && /where no larger original exists/.test(t) && /Medal pictures/.test(t), 'Raid Bosses: JP, monete ripetibili, immagini');
 }
 {
   // the counts come from raids.json: a fixture with one tier off and one story boss off
