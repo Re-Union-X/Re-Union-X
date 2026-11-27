@@ -262,6 +262,8 @@ const tests = {
     assert.deepStrictEqual(e.userTitles, [], 'no second title');
     const done = w.call('list');
     assert.deepStrictEqual(done.colosseumStages, [], 'no round 7 is offered');
+    assert.strictEqual(done.colosseumInfo.status, 2, 'finished season: the game says «unavailable»');
+    assert.strictEqual(done.colosseumInfo.colosseumStageId, 4500, 'the id stays so Ranking / Tier Rewards open');
     assert.deepStrictEqual(done.userColosseum, { userRank: 3, userStageCount: 1, userStageTotalCount: 6 });
     assert.deepStrictEqual(keys(w.start(3, 1)), ['ret', 'userData'], 'a round already cleared is refused');
     assert.deepStrictEqual(keys(w.start(3, 2)), ['ret', 'userData'], 'a round past the end is refused');

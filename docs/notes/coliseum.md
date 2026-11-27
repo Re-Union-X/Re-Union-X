@@ -647,7 +647,7 @@ Resources 191, master revision 402; saves `p4*` (copies of `colip3b_mar` with `c
   past LV 999 not measurable with the bench deck (as in Part 3), declared in the notice.
 - May 2019: round 1 (Fortuneteller 61549) won in one turn opens rounds 2 .. 200 (199 skips; the banner says «99 ROUNDS», I-331);
   «Round 400/400» on Tier 2; round 3,200 clears Tier 10 and grants «May 2019 Victor»; round 4,000 (LV 4,000, revamp rows) beat the
-  bench deck; after round 4,000 the Coliseum screen shows no round (I-332), the Catalog page says «Season complete».
+  bench deck; after round 4,000 the Coliseum screen says «This event is unavailable.» (status 2, Ranking / Tier Rewards / Boards still open; I-332 DONE), the Catalog page says «Season complete».
 - January and October 2020 (whole copies): round 1 plays.
 - Rewards dialogs: December 2020 (16 brackets: 30,001-80,000 medal + Avatar Coins x10) and May 2021 (2 brackets) open.
 - May 2021 board (sun card): Unlock All for 4,900 coins, board complete, EXP medal granted.

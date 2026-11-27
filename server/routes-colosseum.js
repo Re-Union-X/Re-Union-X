@@ -184,9 +184,13 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     const s = liveSeason();
     if (!s) return send(res, 200, { ret: ret(), ...unavailable() });
     const st = stateOf(s);
+    // a finished finite (revamp) season (last round cleared, nothing playable): status 2 makes the client show its own «This event is
+    // unavailable.» while the id, rank and progress stay, so Ranking, Tier Rewards and the boards still open (I-332, user 27-11).
+    // The 128 / 126 answers are not touched: the clear of the last round keeps its result screens
+    const finished = rules.total(s.tiers) !== Infinity && st.last >= rules.total(s.tiers) && rules.playable(s.tiers, st).length === 0;
     send(res, 200, {
       ret: ret(),
-      colosseumInfo: { colosseumStageId: s.id, status: STATUS_OPEN },
+      colosseumInfo: { colosseumStageId: s.id, status: finished ? STATUS_UNAVAILABLE : STATUS_OPEN },
       colosseumStages: stagesOf(s, st),
       colosseumRank: shownRank(s, st),
       userColosseum: userColosseum(s, st.last),
