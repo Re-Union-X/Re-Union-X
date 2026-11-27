@@ -725,7 +725,7 @@ for (const x of n.NOTICES) {
 }
 { const c = n.NOTICES.find((x) => x.title === 'Coliseum'), t = c ? c.body.join(' ') : '';
   check(c && /Tiers 2 to 7 have 400/.test(t) && !/Season complete» and no round/.test(t) && /This event is unavailable\.»/.test(t) && /Ranking, Tier Rewards and Coliseum Boards stay open/.test(t) && /Catalog says «Season complete»/.test(t), 'Coliseum notice: Tier sizes and the end-of-season wording');
-  check(c && /99 ROUNDS UNLOCKED/.test(t) && /to be fixed later/.test(t), 'Coliseum notice: the one-turn banner digit is declared');
+  check(c && /ROUNDS UNLOCKED/.test(t) && /hundreds digit is \{rebuilt\}/.test(t) && !/to be fixed later/.test(t), 'Coliseum notice: the rebuilt hundreds digit of the one-turn banner is declared');
   check(c && !/no picture of it survives/.test(t) && /hand-made card \{not original\}/.test(t), 'Coliseum notice: hand-made card wording'); }
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');
