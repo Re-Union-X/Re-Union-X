@@ -486,6 +486,14 @@ const SEASON_BOARDS = {
   3600: [2210119, 2210120, 2210121], 3700: [2210122, 2210123, 2210124], 3800: [2210125, 2210126, 2210127], 3900: [2210128, 2210129, 2210130],
   4000: [2210131, 2210132, 2210133, 2210134], 4100: [2210135, 2210136, 2210137, 2210138], 4200: [2210139, 2210140, 2210141, 2210142],
   4300: [2210143, 2210144, 2210145, 2210146], 4400: [2210147, 2210148, 2210149, 2210150],
+  // Part 4 Task 5: the revamp boards, five a month in id order (private research PART4_AUDIT 4b): the avatar board N (18 cells,
+  // 4,900 coins), Huey & Dewey & Louie N + 1, Chip N + 2, Dale N + 3 (8,580 coins each) and the Scrooge-skill «Coliseum Board» N + 4
+  // (9 cells, 260). N = 2210151 + 5 x (months since 2019-05) to 2021-02, then 2310163 / 168 / 173 / 178 (2021-03 .. 06). None of
+  // them is tier-gated (user 27-11, no BONUS_TIER entry). A pending season (2019-07) keeps its entry and serves none of its boards.
+  ...Object.fromEntries(Array.from({ length: 26 }, (_, i) => {
+    const n = i < 22 ? 2210151 + 5 * i : 2310163 + 5 * (i - 22);
+    return [4500 + 100 * i, [n, n + 1, n + 2, n + 3, n + 4]];
+  })),
 };
 // the «Tier N Bonus» boards (boardName): unlocked on reaching Tier N of their season (client text «Unlocked a Coliseum Board!»;
 // routes-colosseum-boards.js hands them out from then on). test-colosseum-boards.js checks it against the board names
@@ -523,7 +531,19 @@ const BOARD_ART = { 2200001: 'b16', 2210037: 'jp:2200037.png', 2210038: 'jp:2200
   ...Object.fromEntries(Array.from({ length: 21 }, (_, i) => [2210107 + i, 'loc'])),
   2210128: 'jp:2200168.png', 2210129: 'jp:2200169.png', 2210130: 'jp:2200170.png', 2210131: 'jp:2200172.png', 2210135: 'jp:2200176.png',
   2210139: 'jp:2200180.png', 2210143: 'jp:2200184.png', 2210147: 'jp:2200188.png',
-  ...Object.fromEntries([2210132, 2210136, 2210140, 2210144, 2210148].flatMap((b) => [[b, 'jp:2200169.png'], [b + 1, 'jp:2200170.png'], [b + 2, 'jp:2200171.png']])) };
+  ...Object.fromEntries([2210132, 2210136, 2210140, 2210144, 2210148].flatMap((b) => [[b, 'jp:2200169.png'], [b + 1, 'jp:2200170.png'], [b + 2, 'jp:2200171.png']])),
+  // Part 4 Task 5 (private board_art_all.json, PART4_AUDIT 4b): the avatar board = the JP card of the same month's block (fit 3.7 .. 7.0
+  // on the board screenshots, wiki preview = the same picture), 2019-07 / 2020-10 the wiki preview (no JP block: loc), 2020-01 the
+  // hand-made card (loc, approved 26-11); 2021-03 .. 06 the JP cards 2200302 / 307 / 312 / 317 (fit 3.81 / 4.49 on layouts 30 / 31,
+  // as good as the twins above). Chip / Dale / the skill board: the fixed JP 2200194 / 195 / 196; Huey & Dewey & Louie: the
+  // same-month JP block file (2200248 in the 2020-04 .. 08 blocks, 2200193 in every other: the neighbour block for 2019-07,
+  // 2020-01, 2020-10 holds 2200193 too).
+  ...Object.fromEntries(Object.entries(SEASON_BOARDS).filter(([sid]) => sid >= 4500).flatMap(([sid, [av, hdl, chip, dale, skill]], i) => {
+    const jp = { 4500: 2200192, 4600: 2200197, 4800: 2200207, 4900: 2200212, 5000: 2200217, 5100: 2200222, 5200: 2200227, 5400: 2200237, 5500: 2200242, 5600: 2200247,
+      5700: 2200252, 5800: 2200257, 5900: 2200262, 6000: 2200267, 6100: 2200272, 6300: 2200282, 6400: 2200287, 6500: 2200292, 6600: 2200297, 6700: 2200302,
+      6800: 2200307, 6900: 2200312, 7000: 2200317 }[sid];
+    return [[av, jp ? `jp:${jp}.png` : 'loc'], [hdl, i >= 11 && i <= 15 ? 'jp:2200248.png' : 'jp:2200193.png'], [chip, 'jp:2200194.png'], [dale, 'jp:2200195.png'], [skill, 'jp:2200196.png']];
+  })) };
 // Mango Sweetie M / F 2210075 / 076 and Illusionist M / F 2210083 / 084: loc cards rebuilt from the small (144 px) wiki picture,
 // approved by the user 26-11; no board waits for its card now
 const PENDING_ART = new Set();
@@ -548,7 +568,7 @@ const RANGES = {
   colosseumStage: ['colosseumStageId', 1, 9999], colosseum: ['colosseumId', 1, 99999],
   stage: ['id', 81001, 81999], // stageKind 3, stageId YYYYMMNN
   ranking: ['rankingId', 4000, 4099], rankingReward: ['rankingRewardId', 30000, 39999],
-  sphere: ['sphereBoardId', 2200001, 2299999], sphereArray: ['arryId', 2200001, 2299999], sphereMasu: ['masuId', 2200001, 2299999],
+  sphere: ['sphereBoardId', 2200001, 2399999], sphereArray: ['arryId', 2200001, 2399999], sphereMasu: ['masuId', 2200001, 2399999], // 2310163 .. 182 = 2021-03 .. 06
 };
 // Coliseum enemy ids: the variants (20000 + base id, later 21xxx/22xxx) and the revamp's own 6xxxx ids (Part 4: 60000-62999)
 const ENEMY_RANGES = [[20000, 29999], [60000, 62999]];

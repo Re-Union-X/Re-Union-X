@@ -392,7 +392,7 @@ test('real_113 (the four seasons from the 1.1.3 master)', () => {
 
 test('board card pictures: 6★ Cid from the 2016 bundle, every other served board from --loc', () => {
   const all = Object.values(mc.SEASON_BOARDS).flat();
-  assert.strictEqual(all.length, 9 + 30 + 40 + 44);
+  assert.strictEqual(all.length, 9 + 30 + 40 + 44 + 130);
   // a board whose card waits for the user's review (PENDING_ART: no card of its own yet) gets no line: the client keeps its
   // default card slot, the Catalog its placeholder; every other board one line, in the order of the boards
   for (const id of mc.PENDING_ART) assert.ok(all.includes(id) && id >= 2210067 && !(id in mc.BOARD_ART), `${id} pending: a Part 3 board without BOARD_ART`);
@@ -2347,6 +2347,87 @@ test('era shapes: a month copy of a revamp-only id is labelled by its base row (
   assert.ok(!c.sharedOldRows.includes(21565));
 });
 
+
+// Coliseum Part 4 Task 5: the 130 boards of 2019-05 .. 2021-06 (five a month: avatar, HDL, Chip, Dale, Scrooge-skill board)
+const P4_BOARDS = {};
+Array.from({ length: 26 }, (_, i) => { const n = i < 22 ? 2210151 + 5 * i : 2310163 + 5 * (i - 22); P4_BOARDS[4500 + 100 * i] = [n, n + 1, n + 2, n + 3, n + 4]; });
+test('Part 4 boards: five a month in the order avatar, HDL, Chip, Dale, skill; ids 2210151 .. 2210260 and 2310163 .. 2310182; none tier-gated', () => {
+  for (const [id, ids] of Object.entries(P4_BOARDS)) assert.deepStrictEqual(mc.SEASON_BOARDS[id], ids, `boards of ${id}`);
+  const all = Object.values(P4_BOARDS).flat();
+  assert.strictEqual(all.length, 130);
+  assert.deepStrictEqual(all.slice(0, 3), [2210151, 2210152, 2210153]);
+  assert.strictEqual(P4_BOARDS[6700][0], 2310163); assert.strictEqual(P4_BOARDS[7000][4], 2310182);
+  assert.strictEqual(P4_BOARDS[6600][4], 2210260);
+  assert.ok(all.every((b) => !(b in mc.BONUS_TIER)), 'no Part 4 board is in BONUS_TIER (user 27-11)');
+  for (const id of all) assert.ok(id >= mc.RANGES.sphere[1] && id <= mc.RANGES.sphere[2] && id >= mc.RANGES.sphereArray[1] && id <= mc.RANGES.sphereArray[2]
+    && id >= mc.RANGES.sphereMasu[1] && id <= mc.RANGES.sphereMasu[2], `${id} inside RANGES`);
+  assert.strictEqual(mc.RANGES.sphere[2], 2399999);
+});
+
+test('Part 4 board cards: JP twins, loc for the wiki previews and the hand-made card, fixed boards by block, none pending', () => {
+  const all = Object.values(P4_BOARDS).flat();
+  for (const id of all) assert.ok(id in mc.BOARD_ART && !mc.PENDING_ART.has(id), `${id}: a card`);
+  const lines = mc.artLines(all).split('\n').filter((l) => l && !l.startsWith('#'));
+  assert.strictEqual(lines.length, 130, 'artLines covers all 130');
+  assert.strictEqual(mc.PENDING_ART.size, 0);
+  // avatar boards: the JP twin of the month (PART4_AUDIT 4b), 2019-07 / 2020-10 the wiki preview, 2020-01 the hand-made card
+  const JP_AVATAR = [2200192, 2200197, null, 2200207, 2200212, 2200217, 2200222, 2200227, null, 2200237, 2200242, 2200247, 2200252, 2200257, 2200262, 2200267, 2200272, null,
+    2200282, 2200287, 2200292, 2200297, 2200302, 2200307, 2200312, 2200317];
+  const LOC = new Set([2210161, 2210191, 2210236]);
+  Object.entries(P4_BOARDS).forEach(([sid, ids], i) => {
+    const av = ids[0], jp = JP_AVATAR[i];
+    assert.strictEqual(mc.BOARD_ART[av], LOC.has(av) ? 'loc' : `jp:${jp}.png`, `${sid} avatar card`);
+    assert.strictEqual(mc.BOARD_ART[ids[2]], 'jp:2200194.png', `${sid} Chip`);
+    assert.strictEqual(mc.BOARD_ART[ids[3]], 'jp:2200195.png', `${sid} Dale`);
+    assert.strictEqual(mc.BOARD_ART[ids[4]], 'jp:2200196.png', `${sid} skill`);
+    // HDL: the same-month JP block file (2200248 in the 2020-04 .. 08 blocks, 2200193 elsewhere; neighbours for 2019-07, 2020-01, 2020-10)
+    assert.strictEqual(mc.BOARD_ART[ids[1]], (i >= 11 && i <= 15) ? 'jp:2200248.png' : 'jp:2200193.png', `${sid} HDL`);
+  });
+  assert.deepStrictEqual(lines.filter((l) => /\tloc\t/.test(l)).map((l) => l.split('\t')[0]),
+    [2210161, 2210191, 2210236].map((id) => `img/sphere_incentive/${id}.png`));
+  assert.strictEqual(mc.BOARD_ART[2310163], 'jp:2200302.png'); assert.strictEqual(mc.BOARD_ART[2310168], 'jp:2200307.png');
+  assert.strictEqual(mc.BOARD_ART[2310173], 'jp:2200312.png'); assert.strictEqual(mc.BOARD_ART[2310178], 'jp:2200317.png');
+});
+
+test('real_part4_boards (2019-05 .. 2021-06: 125 served boards; START, empty corner, totals, cell ids in the masters)', () => {
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
+  const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
+  if (!src || !relux) { results.push('skip real_part4_boards: 1.1.3 master or ReLux extract not on disk (private sources)'); return; }
+  src.relux = relux;
+  src.masterEnemyIds = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).map((r) => r.enemyId);
+  const REV = mc.SEASONS.filter((s) => s.colosseumStageId >= 4500);
+  const served = REV.filter((s) => !s.pending);
+  const out = withRanking(served.map((s) => s.colosseumStageId), () => mc.seasonRows(src, mc.SEASONS));
+  const parts = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'petParts.json'), 'utf8')).map((r) => r.petPartsId || r.id || r.partsId));
+  const titles = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'title.json'), 'utf8')).map((r) => r.titleId || r.id));
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  assert.strictEqual(out.sphere.filter((r) => r.sphereBoardId >= 2210151).length, 125, '25 served seasons x 5 boards');
+  assert.ok(!out.sphere.some((r) => P4_BOARDS[4700].includes(r.sphereBoardId)), 'the pending 2019-07 serves none of its boards');
+  assert.ok(P4_BOARDS[4700].every((b) => mc.SEASON_BOARDS[4700].includes(b)), 'but keeps its SEASON_BOARDS entry');
+  const NAMES = ['Coliseum Board', 'Huey & Dewey & Louie', 'Chip', 'Dale', 'Coliseum Board'];
+  const PAID = { 33: 0, 7: 0 };
+  for (const s of served) {
+    const ids = P4_BOARDS[s.colosseumStageId];
+    assert.deepStrictEqual(out.sphere.filter((r) => ids.includes(r.sphereBoardId)).map((r) => r.sphereBoardId), ids, `${s.month} boards in order`);
+    const tot = ids.map((id) => sum(out.sphereMasu.find((r) => r.masuId === id).spherePoint.slice(0, 22)));
+    assert.deepStrictEqual(tot, [4900, 8580, 8580, 8580, 260], `${s.month} board totals`);
+    assert.strictEqual(sum(tot), 30900, `${s.month}: 30,900 coins a month`);
+    ids.forEach((id, k) => {
+      const b = out.sphere.find((r) => r.sphereBoardId === id), m = out.sphereMasu.find((r) => r.masuId === id), a = out.sphereArray.find((r) => r.arryId === id);
+      assert.deepStrictEqual([b.boardName, b.type, b.kindId], [NAMES[k], 3, 0], `${id} from its ReLux row`);
+      assert.strictEqual(a.spCol4[0], 1000, `${id} START at row 4 column 0`);
+      assert.deepStrictEqual([a.spCol0[0], a.spCol0[1], a.spCol1[0], a.spCol1[1]], [0, 0, 0, 0], `${id} empty top-left 2 x 2`);
+      assert.deepStrictEqual([b.arryId, b.masuId, m.sphereBoardId], [id, id, id]);
+      m.rewardSelect.forEach((sel, c) => {
+        const rid = m.rewardId[c];
+        if (sel === 33) { PAID[33]++; assert.ok(parts.has(rid), `${id} cell ${c}: Spirit part ${rid} in petParts.json`); }
+        if (sel === 7) { PAID[7]++; assert.ok(titles.has(rid), `${id} cell ${c}: title ${rid} in title.json`); }
+      });
+    });
+    assert.deepStrictEqual(out.sphere.filter((r) => ids.includes(r.sphereBoardId)).map((r) => mc.BONUS_TIER[r.sphereBoardId]), [undefined, undefined, undefined, undefined, undefined]);
+  }
+  assert.ok(PAID[33] >= 3, 'the three Spirit-part boards are served (401016, 401018, 407048)');
+});
 
 console.log(results.join('\n'));
 if (process.exitCode) console.log('test-make-colosseum: FAIL'); else console.log('test-make-colosseum: OK');

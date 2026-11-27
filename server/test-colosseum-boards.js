@@ -26,12 +26,12 @@ const sphereRow = (id, name) => ({ sphereBoardId: id, boardName: name, kindId: 0
 const APR = SEASON_BOARDS[800][0], MAY1 = SEASON_BOARDS[900][0], MAY2 = SEASON_BOARDS[900][1];
 const TABLES = () => ({
   sphere: [sphereRow(APR, '6★ Cid'), sphereRow(MAY1, '6★ Scrooge'), sphereRow(MAY2, 'Tier 10 Bonus'), { ...sphereRow(4999001, 'Event'), type: 4 },
-    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000]].map((id) => sphereRow(id, BONUS_TIER[id] ? `Tier ${BONUS_TIER[id]} Bonus` : 'Avatar'))],
-  sphereArray: [rb.gridRow(APR, 2), rb.gridRow(MAY1, 1), rb.gridRow(MAY2, 1), rb.gridRow(4999001, 1), ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000]].map((id) => rb.gridRow(id, 1))],
+    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000], ...SEASON_BOARDS[4500], ...SEASON_BOARDS[6700]].map((id) => sphereRow(id, BONUS_TIER[id] ? `Tier ${BONUS_TIER[id]} Bonus` : 'Avatar'))],
+  sphereArray: [rb.gridRow(APR, 2), rb.gridRow(MAY1, 1), rb.gridRow(MAY2, 1), rb.gridRow(4999001, 1), ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000], ...SEASON_BOARDS[4500], ...SEASON_BOARDS[6700]].map((id) => rb.gridRow(id, 1))],
   sphereMasu: [masu(APR, [[30, 3, 90035, 0], [50, 2, 0, 5]], [7, 17001, 0]), masu(MAY1, [[70, 3, 90125, 0]], [7, 17002, 0]), masu(MAY2, [[300, 3, 90016, 0]], [3, 90016, 0]),
     masu(4999001, [[1, 2, 0, 1]], [2, 0, 1]),
     // Coliseum Part 2: the 2016-12 (1600) and 2017-02 (1800: Tier 10 and Tier 11 Bonus) boards
-    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000]].map((id) => masu(id, [[50, 3, 90076, 0]], [3, 90076, 0]))],
+    ...[...SEASON_BOARDS[1600], ...SEASON_BOARDS[1800], ...SEASON_BOARDS[4000], ...SEASON_BOARDS[4500], ...SEASON_BOARDS[6700]].map((id) => masu(id, [[50, 3, 90076, 0]], [3, 90076, 0]))],
 });
 
 function world(opts = {}) {
@@ -218,6 +218,19 @@ const tests = {
     assert.deepStrictEqual(w.cb.check(HOME), { add: [T13], close: [] }, 'the Tier 13 Bonus announced at Tier 13');
     assert.deepStrictEqual(w.cb.list({ setSent: true }), [BOARD, T11, T12, T13]);
     assert.strictEqual(w.cb.update(T13, 1).ok, true);
+  },
+  // Coliseum Part 4 Task 5: the five boards of 2019-05 (ids 2210151 ..) and of 2021-03 (ids 2310163 ..) are handed out whole from the
+  // first round, whatever tier is reached: no BONUS_TIER entry, no gate
+  part4_boards_not_gated() {
+    for (const sid of [4500, 6700]) {
+      const ids = SEASON_BOARDS[sid];
+      assert.strictEqual(ids.length, 5);
+      assert.ok(ids.every((id) => BONUS_TIER[id] === undefined), `${sid}: no board is tier-gated`);
+      const w = world({ live: sid, reached: { [sid]: 1 } });
+      assert.deepStrictEqual(w.cb.list({ setSent: true }), ids, `${sid}: all five from Tier 1`);
+      assert.ok(ids.every((id) => w.cb.isColosseumBoard(id)), `${sid}: ids accepted as Coliseum boards`);
+      assert.deepStrictEqual(ids.map((id) => w.cb.update(id, 1).why), ids.map(() => 'coins 0 < 50'), `${sid}: handed out (refused only for coins)`);
+    }
   },
   // a medal cell with the medal storage full goes to the Presents (as the raid rewards), the coins are still spent
   medal_over_cap_to_presents() {
