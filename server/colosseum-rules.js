@@ -16,6 +16,11 @@
 // Extra result field (beyond the brief): clear() returns `tierItems` [{tier, items:[{type,id,assignType,skillId,
 // skillLv,num}]}], the full reward slots of the completed tiers, so the routes can grant non-coin items.
 // `coins` counts type-17 slots only (round coins and tier coins).
+// Coliseum Part 4: a last tier with rounds 0 or >= 999 is endless (total = Infinity); any other last tier is finite and the season ends
+// after its last round (total = the rounds of all tiers: `open` is capped there, no later round is playable or clearable). From the
+// revamp (REVAMP_FIRST = colosseumStageId 4500) the stage of round n is ((n - 1) mod loopStageCount) + 1 with n the GLOBAL round (9 stages
+// from 2020-01); older seasons keep the round inside its tier.
+const ENDLESS_ROUNDS = 999, REVAMP_FIRST = 4500;
 const COIN = 17;
 // reward slots of a row: the tier reward fields are int[4]; the per-round stageReward* fields are plain ints in the 4.3.1 schema
 // (recon/out/master_types_ww431.json), read as one slot
@@ -34,8 +39,9 @@ const coinsOf = (list) => list.filter((s) => s.type === COIN).reduce((a, s) => a
 
 function tiersOf(season) {
   const loop = (season.stage && season.stage.loopStageCount) || 1;
+  const global = !!(season.stage && season.stage.colosseumStageId >= REVAMP_FIRST);
   return [...season.tiers].sort((a, b) => a.round - b.round).map((r) => ({
-    tier: r.round, rounds: r.arrivalStageCount, skip: r.excellentUnlockCount, ap: r.ap, loop, colosseumId: r.colosseumId,
+    tier: r.round, rounds: r.arrivalStageCount, skip: r.excellentUnlockCount, ap: r.ap, loop, global, colosseumId: r.colosseumId,
     roundReward: slots(r, 'stageReward', 'validStageReward'), tierReward: slots(r, 'reward', 'validReward'),
   }));
 }
@@ -75,11 +81,17 @@ function tierRound(tiers, n) {
   return { tier: tiers[i].tier, round: n - s[i] + 1 };
 }
 
+// rounds of a season whose last tier is finite, Infinity when the last tier is endless (0 rounds or >= 999)
+function total(tiers) {
+  const l = tiers[tiers.length - 1];
+  return !l || !l.rounds || l.rounds >= ENDLESS_ROUNDS ? Infinity : tiers.reduce((n, t) => n + t.rounds, 0);
+}
+
 function playable(tiers, st) {
-  const out = [];
-  for (let n = st.last + 1; n <= st.open; n++) {
+  const out = [], end = Math.min(st.open, total(tiers));
+  for (let n = st.last + 1; n <= end; n++) {
     const tr = tierRound(tiers, n), t = tiers[tierIndex(tiers, tr.tier)];
-    out.push({ tier: tr.tier, round: tr.round, stageIndex: (tr.round - 1) % (t.loop || 1) });
+    out.push({ tier: tr.tier, round: tr.round, stageIndex: ((t.global ? n : tr.round) - 1) % (t.loop || 1) });
   }
   return out;
 }
@@ -90,7 +102,7 @@ function clear(tiers, st, { tier, round, oneTurn }, nowIso) {
   try { ti = tierIndex(tiers, tier); } catch (e) { return none; }
   if (!Number.isInteger(round) || !Number.isInteger(tier) || round < 1 || (tiers[ti].rounds && round > tiers[ti].rounds)) return none;
   const r = globalRound(tiers, tier, round);
-  if (r <= st.last || r > st.open) return none;
+  if (r <= st.last || r > Math.min(st.open, total(tiers))) return none;
   const cleared = [], tierItems = [];
   let coins = 0;
   for (let n = st.last + 1; n <= r; n++) {
@@ -105,7 +117,7 @@ function clear(tiers, st, { tier, round, oneTurn }, nowIso) {
     tierItems.push({ tier: t.tier, items: t.tierReward });
     coins += coinsOf(t.tierReward);
   });
-  st.open = oneTurn ? r + Math.max(1, tiers[ti].skip) : r + 1;
+  st.open = Math.min(oneTurn ? r + Math.max(1, tiers[ti].skip) : r + 1, total(tiers));
   st.last = r;
   st.bestAt = nowIso;
   st.coins += coins;
@@ -114,4 +126,4 @@ function clear(tiers, st, { tier, round, oneTurn }, nowIso) {
   return { ok: true, cleared, coins, tierRewards, tierItems, st };
 }
 
-module.exports = { tiersOf, seasonState, globalRound, tierRound, playable, clear };
+module.exports = { REVAMP_FIRST, total, tiersOf, seasonState, globalRound, tierRound, playable, clear };

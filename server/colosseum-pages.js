@@ -220,7 +220,7 @@ const MAPS = {
 const COIN = 17;
 const num = (n) => Number(n || 0).toLocaleString('en-US');
 const ord = (n) => { const k = n % 100, s = k >= 11 && k <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'); return `${num(n)}${s}`; };
-const FALLBACK = { 3: 'Medal', 17: 'Coliseum Coins', 19: 'Avatar part', 20: 'Avatar part', 23: 'Avatar part' };
+const FALLBACK = { 3: 'Medal', 5: 'Material', 7: 'Title', 17: 'Coliseum Coins', 19: 'Avatar part', 20: 'Avatar part', 23: 'Avatar part' };
 // the colours of the detail page (user 26-11: «colours in the text like the other detail pages and the notices»): .v a value (gold),
 // .cc Coliseum Coins (gold), .rd rounds (cyan), .yes taken / reached (green), .mu not yet / locked (muted), .tn a tier or board name
 function itemText(x, ctx) {
@@ -256,7 +256,8 @@ function detailPage(rows, id, det, ctx = {}) {
     intro: `This server follows your Story, not the calendar: this season of the original game (${esc(monthYear(`${row.month}-01`))}) plays when your Story week reaches its month, or when you keep it here.`,
     links: [[NOTICE_LINK, '«Coliseum» notice ›'], [`${BASE}/catalog`, 'Coliseum Catalog ›']] }, 'pin');
   const aps = row.apMin === row.apMax ? `<b>${row.apMin} AP</b>` : `<b>${row.apMin}–${row.apMax} AP</b>`;
-  const progress = row.userStageTotalCount
+  const progress = det.complete ? OK('Season complete') + (row.userStageTotalCount ? ` · <span class="rd">${num(row.userStageTotalCount)} rounds</span>` : '')
+    : row.userStageTotalCount
     ? `Cleared up to <span class="tn">Tier ${row.userRank}</span>, <span class="rd">Round ${num(row.userStageCount)}</span>` : MU('Not played yet');
   const kv = [['Month', `<b>${esc(monthYear(`${row.month}-01`))}</b>`], ['Game year', esc(GAME_YEARS[gameYearOf(`${row.month}-01`)].name)],
     // no coin balance here (user 26-11: it is on the Coliseum Catalog header)
@@ -281,7 +282,9 @@ function detailPage(rows, id, det, ctx = {}) {
   }).join('');
   const last = det.tiers[det.tiers.length - 1];
   const tiers = `<table class="tt"><tr><th>Tier</th><th>Rounds</th><th>AP</th><th>Coins per round</th><th>Tier Reward</th><th>Status</th></tr>${tierRows}</table>`
-    + (last && last.endless ? `<p class="n">Tier ${last.tier} is the endless one: the game counts its rounds up to ${num(last.rounds)}, as in the original.</p>` : '');
+    + (last && last.endless ? `<p class="n">Tier ${last.tier} is the endless one: the game counts its rounds up to ${num(last.rounds)}, as in the original.</p>` : '')
+    // a finite last tier (the revamp seasons): the season ends after its last round
+    + (last && !last.endless ? `<p class="n">Tier ${last.tier} is the last one: after round ${num(det.tiers.reduce((n, t) => n + t.rounds, 0))} the season is complete, no round follows.</p>` : '');
   // Score thresholds (the original rank brackets as thresholds on the furthest round cleared)
   const rk = det.ranked.map((b) => `<tr${b.reached ? ' class="got"' : ''}><td class="nw"><span class="tn">${ord(b.startRank)} – ${ord(b.endRank)}</span></td><td class="nw">${rounds(b.rounds)}</td>`
     + `<td>${b.rewards.map((x) => itemText(x, ctx)).join(', ') || MU('—')}</td><td>${b.reached ? OK('Reached') : MU('Not reached')}</td></tr>`).join('');

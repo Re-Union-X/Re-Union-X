@@ -54,7 +54,7 @@ function world(opts = {}) {
     userKeybladesData: () => [{ userKeybladeId: 1 }], send: (res, code, body) => { w.sent = body; }, ret: () => ({ ok: 1 }),
     apNow: () => w.ap, changeAp: (d) => { w.ap += d; }, campaignIds: () => [7], campaignAp: opts.campaignAp,
     battlePoints: (gp, burst) => { const l = Number(gp?.lux) || 0; w.lux += l; w.burst = burst; return l; }, beginBattle: (k) => { w.keyblade = k; },
-    grantItem: (it) => w.grants.push(it), addPresent: (it, text) => w.presents.push({ ...it, text }),
+    grantItem: (it) => { w.grants.push(it); if (it.type === 7) w.player.titles = [...new Set([...(w.player.titles || []), it.id])]; }, addPresent: (it, text) => w.presents.push({ ...it, text }),
     medalCount: opts.medalCount, medalCap: opts.medalCap,
     element: (now, rank, uc, arrival) => ({ userData: { user: { userId: 1 } }, rank, userColosseum: uc, arrivalTime: arrival }),
     stageState: (id) => w.stageStates[id] || { score: 0, playStatus: 0, clearMissionIds: [] }, webBase: 'http://web.test',
@@ -238,6 +238,39 @@ const tests = {
     assert.deepStrictEqual(b.clearColosseums, [{ rank: 2, stageCount: 1 }]);
     assert.strictEqual(w.player.colosseum.seasons[800].last, 0);
     assert.strictEqual(b.getLux, 0);
+  },
+  // Coliseum Part 4: a revamp season (2019-05, colosseumStageId 4500) is finite: its last tier is not endless, the season is complete after its
+  // last round, and the Tier 10 reward is a title (type 7, id 17079) granted once and listed in the clear answer (userTitles)
+  tier_10_title() {
+    const w = world();
+    w.week = { storyQuest: 800, shopFrom: '2019-05-02' };
+    const title = tierRow(4500, 2, 0, 2, 1, 0, [0, 0, 1]);
+    Object.assign(title, { validReward: 1, rewardType: [7, 0, 0, 0], rewardId: [17079, 0, 0, 0], rewardNum: [1, 0, 0, 0] });
+    const S4500 = { stage: { ...seasonRows(4500, 4046, 21190501).stage, termColosseumId: 4503 }, tiers: [tierRow(4500, 1, 0, 3, 2, 0, null), title, tierRow(4500, 3, 0, 1, 0, 0, null)] };
+    w.tables.colosseumStage = [S4500.stage]; w.tables.colosseum = [...S4500.tiers];
+    // the rounds 1 .. 3 (Tier 1), 4 .. 5 (Tier 2 = the title), 6 (Tier 3, the last)
+    w.start(1, 1); w.clear(1, 1, true); // opens 2 .. 3
+    w.start(1, 3); w.clear(1, 3, true); // opens 4 .. 5
+    assert.deepStrictEqual(w.call('list').colosseumStages.map((x) => [x.rank, x.stageCount]), [[2, 1], [2, 2]]);
+    w.start(2, 2); const b = w.clear(2, 2, true); // global round 5: Tier 2 complete, one-turn skip 1 opens round 6
+    assert.deepStrictEqual(b.userTitles.map((x) => x.titleId), [17079], 'the title is in the clear answer');
+    assert.deepStrictEqual(w.grants.filter((g) => g.type === 7).map((g) => g.id), [17079]);
+    assert.deepStrictEqual(w.player.titles, [17079]);
+    assert.deepStrictEqual(w.call('list').colosseumStages.map((x) => [x.rank, x.stageCount]), [[3, 1]]);
+    // the last round: the season is complete, nothing is offered after it
+    w.start(3, 1); const e = w.clear(3, 1, true);
+    assert.deepStrictEqual(e.userTitles, [], 'no second title');
+    const done = w.call('list');
+    assert.deepStrictEqual(done.colosseumStages, [], 'no round 7 is offered');
+    assert.deepStrictEqual(done.userColosseum, { userRank: 3, userStageCount: 1, userStageTotalCount: 6 });
+    assert.deepStrictEqual(keys(w.start(3, 1)), ['ret', 'userData'], 'a round already cleared is refused');
+    assert.deepStrictEqual(keys(w.start(3, 2)), ['ret', 'userData'], 'a round past the end is refused');
+    const again = w.clear(3, 1);
+    assert.deepStrictEqual(again.userTitles, []); assert.strictEqual(w.grants.filter((g) => g.type === 7).length, 1, 'the title is granted once');
+    const d = w.c.seasonDetail(4500);
+    assert.deepStrictEqual(d.tiers.map((t) => [t.tier, t.endless, t.taken, t.items.map((x) => [x.type, x.id, x.num])]), [[1, false, true, []], [2, false, true, [[7, 17079, 1]]], [3, false, true, []]]);
+    assert.strictEqual(d.complete, true, 'season complete');
+    assert.strictEqual(w.c.seasonDetail(800), null, 'the other seasons are not in this master');
   },
   reward_list_sorted() {
     const w = world();

@@ -156,6 +156,15 @@
 // The values at rank 100 are lower bounds read off 4,500 .. 5,500 (T19 starts at 4,567): the top is open-ended, and the top brackets lie in
 // the endless tiers as in the earlier eras. Private sources are named by their public evidence only.
 //
+// Coliseum Part 4 (plan docs/superpowers/plans/2026-11-27-coliseum-part4.md, Task 1): the 26 revamp seasons 2019-05 .. 2021-06 = ReLux rows
+// 4500 .. 7000 (rankingId 4046 .. 4071). Tiers: T1-T18 are served (T1 200 rounds, T2-T7 400, T8 300, T9 200, T10-T18 100 = 4,000 rounds in
+// all); the ReLux T19 (1,000 rounds, AP 99) is a designer wall and is NOT served (user 27-11; the rule: from REVAMP_FIRST a tier row with
+// ap > 0 is cut), so the last tier is FINITE and the season ends after round 4,000 (colosseum-rules.js total). AP 0 everywhere, per-round
+// coins from Tier 5 (10) and Tier 8 (30), tier coins 100 / 300 / 500 / 700, the T10 reward a title (type 7, id 17079 + the months since
+// 2019-05, title.json «<Month YYYY> Victor»). From 2020-01 a season has 9 stages (validStage 9). 2019-07 carries pending: 'enemies' (its
+// stage set is generated only after every enemy is settled): seasonRows skips a pending season whole and lists it in out.pending.
+// Until their ranking prizes (RELUX_RANKING) exist the default build leaves the new seasons out with a warning, as in Part 3b.
+//
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
 'use strict';
@@ -215,7 +224,36 @@ const SEASONS = [
   { month: '2019-02', colosseumStageId: 4200, source: 'relux' },
   { month: '2019-03', colosseumStageId: 4300, source: 'relux' },
   { month: '2019-04', colosseumStageId: 4400, source: 'relux' },
+  // Coliseum Part 4 (ReLux rows 4500 .. 7000, rankingId 4046 .. 4071): the revamp seasons; 2019-07 is pending until its enemies are settled
+  { month: '2019-05', colosseumStageId: 4500, source: 'relux' },
+  { month: '2019-06', colosseumStageId: 4600, source: 'relux' },
+  { month: '2019-07', colosseumStageId: 4700, source: 'relux', pending: 'enemies' },
+  { month: '2019-08', colosseumStageId: 4800, source: 'relux' },
+  { month: '2019-09', colosseumStageId: 4900, source: 'relux' },
+  { month: '2019-10', colosseumStageId: 5000, source: 'relux' },
+  { month: '2019-11', colosseumStageId: 5100, source: 'relux' },
+  { month: '2019-12', colosseumStageId: 5200, source: 'relux' },
+  { month: '2020-01', colosseumStageId: 5300, source: 'relux' },
+  { month: '2020-02', colosseumStageId: 5400, source: 'relux' },
+  { month: '2020-03', colosseumStageId: 5500, source: 'relux' },
+  { month: '2020-04', colosseumStageId: 5600, source: 'relux' },
+  { month: '2020-05', colosseumStageId: 5700, source: 'relux' },
+  { month: '2020-06', colosseumStageId: 5800, source: 'relux' },
+  { month: '2020-07', colosseumStageId: 5900, source: 'relux' },
+  { month: '2020-08', colosseumStageId: 6000, source: 'relux' },
+  { month: '2020-09', colosseumStageId: 6100, source: 'relux' },
+  { month: '2020-10', colosseumStageId: 6200, source: 'relux' },
+  { month: '2020-11', colosseumStageId: 6300, source: 'relux' },
+  { month: '2020-12', colosseumStageId: 6400, source: 'relux' },
+  { month: '2021-01', colosseumStageId: 6500, source: 'relux' },
+  { month: '2021-02', colosseumStageId: 6600, source: 'relux' },
+  { month: '2021-03', colosseumStageId: 6700, source: 'relux' },
+  { month: '2021-04', colosseumStageId: 6800, source: 'relux' },
+  { month: '2021-05', colosseumStageId: 6900, source: 'relux' },
+  { month: '2021-06', colosseumStageId: 7000, source: 'relux' },
 ];
+// the first colosseumStageId of the revamp (2019-05): its stage of round n follows the global round (colosseum-rules.js)
+const REVAMP_FIRST = require('./colosseum-rules').REVAMP_FIRST;
 // ReLux medal ids of the tier rewards that are not ours -> ours (Part 3b, proven slot for slot RX = khuxwiki): 90135 = Magic Broom,
 // 90136 = Fantasia Mickey B. Every other ReLux medal id must be in our medal master (the build stops otherwise). Both medals exist
 // in the master only when it is built with KHUX_MEDALS_ALL=1 (the regen recipe).
@@ -664,7 +702,7 @@ function rankedOf(tierRows, rewardRows) {
   const tiers = [...tierRows].sort(byKey('round'));
   // the rounds before the first endless (999-round) tier (Part 3: the later 999-round tiers served too do not move the curve)
   const endless = tiers.findIndex((t) => t.arrivalStageCount >= ENDLESS);
-  const finite = tiers.slice(0, endless < 0 ? -1 : endless).reduce((n, t) => n + t.arrivalStageCount, 0);
+  const finite = tiers.slice(0, endless < 0 ? tiers.length : endless).reduce((n, t) => n + t.arrivalStageCount, 0);
   const brackets = bracketsOf(rewardRows);
   return { brackets, thresholds: thresholdsOf(brackets, finite, tiers.length ? tiers[0].colosseumStageId : 0) };
 }
@@ -675,6 +713,7 @@ function rankedOf(tierRows, rewardRows) {
 function seasonRows(src, seasons = SEASONS) {
   const out = Object.fromEntries(TABLES.map((t) => [t, []]));
   out.ranked = {};
+  out.pending = []; // seasons skipped whole (SEASONS pending: the enemies are not settled yet): {month, colosseumStageId, pending}
   const findIn = (from, label) => (table, key, id, what) => {
     const r = ((from || {})[table] || []).find((x) => x[key] === id);
     if (!r) throw new Error(`colosseum: ${what}: ${label} ${table} ${id} missing`);
@@ -692,6 +731,7 @@ function seasonRows(src, seasons = SEASONS) {
     return schemaRow('stage', st, validMap(st, STAGE_VALID), STAGE_DEFAULTS);
   };
   for (const s of seasons) {
+    if (s.pending) { out.pending.push({ month: s.month, colosseumStageId: s.colosseumStageId, pending: s.pending }); continue; }
     const id = s.colosseumStageId, relux = s.source === 'relux';
     if (relux && !src.relux) throw new Error(`colosseum: ${s.month}: the ReLux season extract is not loaded`);
     const from = relux ? findIn(src.relux, 'ReLux') : find;
@@ -704,7 +744,8 @@ function seasonRows(src, seasons = SEASONS) {
     // (= head..term on every 1.1.3 row served)
     const endless = all.findIndex((t) => t.arrivalStageCount >= ENDLESS);
     // a 0-round row inside head..term is the end marker of the source (2018-08 .. 2019-04): never served (Part 3b)
-    const tiers = relux ? all.filter((t) => t.arrivalStageCount > 0) : endless < 0 ? all : all.slice(0, endless + 1);
+    // the revamp (Part 4): a tier row with AP > 0 is not served (the designer wall T19), the last tier served is finite
+    const tiers = relux ? all.filter((t) => t.arrivalStageCount > 0 && !(id >= REVAMP_FIRST && t.ap > 0)) : endless < 0 ? all : all.slice(0, endless + 1);
     if (!tiers.length) throw new Error(`colosseum: ${s.month}: no tier with rounds`);
     for (const t of tiers) {
       for (let i = 0; i < (t.validReward || 0); i++) {
@@ -1059,6 +1100,14 @@ function patch(masterDir, opts = {}) {
       seasons = seasons.filter((s) => s.source !== 'relux');
     }
   }
+  // Part 4 until its ranking task: of the default SEASONS a revamp season whose ranking prizes are not written yet (RELUX_RANKING) is left
+  // out whole with a warning, never served without its Rewards rows (a pending season is skipped by seasonRows itself); an explicit
+  // opts.seasons list stops on it (seasonRows)
+  const notBuilt = opts.seasons ? [] : seasons.filter((s) => s.source === 'relux' && s.colosseumStageId >= REVAMP_FIRST && !s.pending && !RELUX_RANKING[s.colosseumStageId]);
+  if (notBuilt.length) {
+    console.warn(`colosseum: WARNING ${notBuilt.map((s) => s.month).join(', ')} not built yet (no ranking prizes in RELUX_RANKING): left out`);
+    seasons = seasons.filter((s) => !notBuilt.includes(s));
+  }
   // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the raw ReLux enemy table (opts.reluxEnemies,
   // else KHUX_COLOSSEUM_RELUX_ENEMY / DEFAULT_RELUX_ENEMY); without the lists only the 1.1.3 variants are checked (the stage import
   // still refuses a stage with an enemy missing from the master); without the table an id that needs it stops the run (enemyRows).
@@ -1069,8 +1118,12 @@ function patch(masterDir, opts = {}) {
   if (!reluxEnemies) console.warn(`colosseum: the raw ReLux enemy table ${reluxEnemyFile} is not readable: the ids that need it stop the run`);
   const medals = readMaster(path.join(masterDir, 'medal.json')).map((r) => r.medalId);
   // without a medal master the medal stops of the ReLux seasons are off: say so (a warning, not a stop: test masters have no medal.json)
-  if (!medals.length && seasons.some((x) => x.source === 'relux')) console.warn(`colosseum: WARNING medal.json is missing or empty in ${masterDir}: the ReLux medal checks are OFF (build the master with KHUX_MEDALS_ALL=1)`);
+  if (!medals.length && seasons.some((x) => x.source === 'relux')) {
+    console.warn('colosseum: no medal master, ReLux medal ids unchecked');
+    console.warn(`colosseum: medal.json is missing or empty in ${masterDir}: build the master with KHUX_MEDALS_ALL=1 to check the medal stops of the ReLux seasons`);
+  }
   const out = seasonRows({ ...src, relux, masterMedalIds: medals.length ? new Set(medals) : null, masterEnemyIds: master.enemy.map((r) => r.enemyId), masterEnemies: master.enemy, stageEnemies, reluxEnemies }, seasons);
+  if (out.pending.length) console.warn(`colosseum: ${out.pending.map((p) => `${p.month} (${p.pending})`).join(', ')} pending: skipped, no rows`);
   // the flag of an unchecked run (out.enemyCheck); make-game-tables prints it as a banner. Not a stop: on a clean machine the
   // stage files come after this run (build-resources.ps1), the stage import then refuses a missing enemy
   if (!out.enemyCheck.checked && !opts.src) {
@@ -1086,7 +1139,7 @@ function patch(masterDir, opts = {}) {
   fs.writeFileSync(path.join(masterDir, 'evStage.json'), JSON.stringify(banner ? [...ev, banner] : ev));
   if (opts.artFile) fs.writeFileSync(opts.artFile, artLines(out.sphere.map((r) => r.sphereBoardId)));
   if (!banner) console.warn(`colosseum: no Coliseum Catalog banner: the Training Grounds stage ${CATALOG_STAGE} is not in the master (make-special first)`);
-  console.log(`colosseum: ${out.colosseumStage.length} seasons (${seasons.map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
+  console.log(`colosseum: ${out.colosseumStage.length} seasons (${seasons.filter((s) => !s.pending).map((s) => s.month).join(', ')}): +${out.colosseum.length} tiers, +${out.stage.length} stages, `
     + `+${out.enemy.length} enemies (${['113', 'relux', 'monthCopy', 'rule'].map((k) => `${k} ${out.colosseumEnemies.filter((e) => e.source === k).length}`).join(', ')}), +${out.ranking.length} rankings / ${out.rankingReward.length} brackets, +${out.sphere.length} boards`);
   return out;
 }
@@ -1094,5 +1147,5 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
+module.exports = { REVAMP_FIRST, MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
   PART3_ENEMY_IDS, PART3B_ENEMY_IDS, MONTH_COPY_OF, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, BRACKETS9, BRACKETS12, RELUX_RANKING, rankItem, ENDLESS, ERA17, ERA18, reluxRewardRows, REWARD_BASE, REWARD_BLOCK, REWARD_FIRST_RANKING };

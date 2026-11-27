@@ -146,4 +146,45 @@ assert.deepStrictEqual([last.coins, last.tierRewards], [50, [1]]);
 // a stageReward slot left filled while validStageReward is 0 pays nothing
 const dirty = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [{ ...lump(1, 5, 1, 0), stageRewardType: 17, stageRewardNum: 9 }] });
 assert.deepStrictEqual(dirty[0].roundReward, []);
+// Coliseum Part 4: a finite last tier ends the season. Tiers [3, 2] = 5 rounds in all
+const fin = R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [row(1, 3, 2, 1, 30), row(2, 2, 2, 3, 40)] });
+assert.strictEqual(R.total(fin), 5, 'finite last tier: total = the rounds of all tiers');
+assert.strictEqual(R.total(tiers), Infinity, 'endless last tier (0 rounds): no total');
+assert.strictEqual(R.total(R.tiersOf({ stage: { loopStageCount: 4 }, tiers: [row(1, 3, 2, 1, 30), row(2, 999, 2, 3, 40)] })), Infinity, 'a 999-round last tier is endless');
+{
+  const sf = R.seasonState({}, 70);
+  sf.last = 4; sf.open = 5;
+  const end = R.clear(fin, sf, { tier: 2, round: 2, oneTurn: true }, 'F1'); // global round 5, skip 2
+  assert(end.ok); assert.deepStrictEqual(end.tierRewards, [1, 2]);
+  assert.strictEqual(sf.open, 5, 'a one-turn clear of the last round never opens past the total');
+  assert.deepStrictEqual(R.playable(fin, sf), [], 'nothing playable after the last round');
+  assert.strictEqual(R.clear(fin, sf, { tier: 2, round: 3, oneTurn: false }, 'F2').ok, false, 'round 6 refused');
+  assert.strictEqual(R.clear(fin, sf, { tier: 2, round: 2, oneTurn: false }, 'F3').ok, false, 'round 5 not paid twice');
+  const s2 = R.seasonState({}, 71);
+  R.clear(fin, s2, { tier: 1, round: 1, oneTurn: true }, 'F4'); // open 3
+  R.clear(fin, s2, { tier: 1, round: 3, oneTurn: true }, 'F5'); // would open 5 + ... capped
+  assert.strictEqual(s2.open, 5); assert.deepStrictEqual(R.playable(fin, s2).map((p) => [p.tier, p.round]), [[2, 1], [2, 2]]);
+}
+// the same, a stale state with open past the total (a save from before the cap) is cut by playable
+{
+  const sf = R.seasonState({}, 72); sf.last = 4; sf.open = 9;
+  assert.deepStrictEqual(R.playable(fin, sf).map((p) => [p.tier, p.round]), [[2, 2]]);
+}
+
+// Coliseum Part 4: the nine-stage loop of the revamp seasons (colosseumStageId >= 4500: the stage of round n = ((n - 1) mod validStage) + 1,
+// n the GLOBAL round); the older seasons keep the stage of the round inside its tier
+const REV = [200, 400, 400, 400, 400, 400, 400, 300, 200, ...Array(9).fill(100)];
+assert.strictEqual(REV.reduce((a, b) => a + b, 0), 4000);
+const rev = (loop, sid = 6000) => R.tiersOf({ stage: { colosseumStageId: sid, loopStageCount: loop }, tiers: REV.map((c, i) => row(i + 1, c, 49, 0, 0)) });
+const at = (ts, n) => { const x = R.seasonState({}, 1000 + n); x.last = n - 1; x.open = n; return R.playable(ts, x)[0]; };
+const r9 = rev(9);
+assert.strictEqual(R.total(r9), 4000);
+assert.strictEqual(at(r9, 10).stageIndex, 0, 'round 10 plays stage 1');
+assert.deepStrictEqual([1, 9, 10, 201, 3100, 4000].map((n) => at(r9, n).stageIndex), [0, 8, 0, 2, 3, 3]);
+assert.strictEqual(R.tierRound(r9, 3100).tier, 9, 'round 3100 is the last round of Tier 9');
+assert.strictEqual(at(r9, 3100).stageIndex, 3, 'round 3,100 plays stage 4 (global round, not the round of its tier)');
+assert.strictEqual(at(rev(10), 201).stageIndex, 0, 'ten stages: same as before');
+assert.strictEqual(at(rev(9, 4400), 201).stageIndex, 0, 'a pre-revamp season keeps the stage of the round inside its tier');
+assert.strictEqual(at(rev(9, 4400), 3100).stageIndex, 1, 'round 200 of its tier: (200 - 1) mod 9');
+console.log('colosseum-rules part4: ok');
 console.log('colosseum-rules: ok');

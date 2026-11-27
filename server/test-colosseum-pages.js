@@ -321,6 +321,27 @@ const tests = {
     const bare = pages.detailPage([row(4000, '2018-12', 'can')], 4000, det, { ...CTX, itemName: () => '' });
     assert.ok(bare.includes('Medal') && !bare.includes('300948'));
   },
+  // Coliseum Part 4: a revamp season (2019-05): no endless tier, the Tier 10 reward is the title «May 2019 Victor», «Season complete» after the last round
+  detail_tier_10_title() {
+    const fs = require('fs'), path = require('path');
+    const titles = new Map(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'title.json'), 'utf8')).map((r) => [r.titleId, r.title]));
+    const itemName = (type, id) => (type === 7 ? titles.get(id) : '') || '';
+    assert.strictEqual(titles.get(17079), 'May 2019 Victor');
+    const tiers = Array.from({ length: 18 }, (_, i) => ({ tier: i + 1, rounds: [200, 400, 400, 400, 400, 400, 400, 300, 200][i] || 100, endless: false, ap: 0,
+      roundCoins: i >= 4 && i < 9 ? (i < 7 ? 10 : 30) : 0, coins: i === 0 ? 100 : 0, items: i === 9 ? [{ type: 7, id: 17079, num: 1 }] : [], taken: i < 10 }));
+    assert.strictEqual(tiers.reduce((n, t) => n + t.rounds, 0), 4000);
+    const det = { boards: [], best: 4000, complete: true, ranked: [], maps: 'japanese', tiers };
+    const html = pages.detailPage([row(4500, '2019-05', 'can', { userRank: 18, userStageCount: 100, userStageTotalCount: 4000 })], 4500, det, { ...CTX, itemName });
+    const sec = html.slice(html.indexOf('id="sec-tiers"'), html.indexOf('id="sec-ranked"'));
+    assert.ok(sec.includes('May 2019 Victor'), sec);
+    assert.ok(!sec.includes('endless') && !html.includes('∞'), 'no endless tier, no infinity sign');
+    assert.ok(sec.includes('4,000 rounds') || sec.includes('after round 4,000'), 'the total is stated');
+    assert.ok(html.includes('Season complete'), 'the season is complete');
+    const open = pages.detailPage([row(4500, '2019-05', 'can', { userRank: 2, userStageCount: 5, userStageTotalCount: 205 })], 4500, { ...det, complete: false, best: 205 }, { ...CTX, itemName });
+    assert.ok(!open.includes('Season complete'), 'not complete before the last round');
+    // without a name the title falls back to its type, never the id
+    assert.ok(!pages.detailPage([row(4500, '2019-05', 'can')], 4500, det, { ...CTX, itemName: () => '' }).includes('17079'));
+  },
   // Season detail page (26-11, as the Raid Catalog detail page)
   detail_page() {
     const rows = [row(800, '2016-04', 'kept', { base: 'can' }), row(900, '2016-05', 'can', { base: 'can', boardIds: [2200002, 2200023], coins: 123, userRank: 2, userStageCount: 5, userStageTotalCount: 25 })];

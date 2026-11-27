@@ -373,8 +373,8 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
   }
   // Season detail page (colosseum-pages.js detailPage, 26-11): null for a season not served, else
   //   boards [{id, name, served (in the master as a type-3 board), nodes, unlocked, coinsLeft (coins still needed), coinsTotal, bonusTier}]
-  //   tiers [{tier, rounds, endless (the last tier), ap, roundCoins, coins (tier reward coins), items (the other tier rewards), taken}]
-  //   best (the furthest round cleared), ranked [{startRank, endRank, rounds (threshold), reached, rewards}] top first, maps (mapsOf)
+  //   tiers [{tier, rounds, endless (the last tier, only when it is endless: 0 or 999 rounds), ap, roundCoins, coins (tier reward coins), items (the other tier rewards), taken}]
+  //   best (the furthest round cleared), complete (a finite season whose last round is cleared), ranked [{startRank, endRank, rounds (threshold), reached, rewards}] top first, maps (mapsOf)
   function seasonDetail(id) {
     const s = season(id);
     if (!s) return null;
@@ -389,12 +389,14 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
         coinsLeft: core.costOf(masu, todo), coinsTotal: core.costOf(masu, nodes), bonusTier };
     });
     const taken = st.tierRewards.map(Number), coins = (list) => list.filter((x) => x.type === COIN).reduce((a, x) => a + x.num, 0);
-    const tiers = s.tiers.map((t, i) => ({ tier: t.tier, rounds: t.rounds, endless: i === s.tiers.length - 1, ap: Number(t.ap) || 0, roundCoins: coins(t.roundReward),
+    // endless = the last tier of 0 or >= 999 rounds (a revamp season, Part 4, ends after its last finite tier)
+    const open = rules.total(s.tiers) === Infinity;
+    const tiers = s.tiers.map((t, i) => ({ tier: t.tier, rounds: t.rounds, endless: open && i === s.tiers.length - 1, ap: Number(t.ap) || 0, roundCoins: coins(t.roundReward),
       coins: coins(t.tierReward), items: t.tierReward.filter((x) => x.type !== COIN), taken: taken.includes(t.tier) }));
     const r = rankedOfSeason(s);
     const ranked = r ? r.brackets.map((b, i) => ({ startRank: b.startRank, endRank: b.endRank, rounds: r.thresholds[i].score, reached: st.last > 0 && st.last >= r.thresholds[i].score,
       rewards: b.rewards.map((x) => ({ type: x.type, id: x.id, num: x.num, skillId: x.skillId || 0 })) })).reverse() : [];
-    return { boards, tiers, best: st.last, ranked, maps: mapsOf(SEASONS.find((x) => x.colosseumStageId === s.id)) };
+    return { boards, tiers, best: st.last, complete: !open && st.last >= rules.total(s.tiers), ranked, maps: mapsOf(SEASONS.find((x) => x.colosseumStageId === s.id)) };
   }
   // POST /web/colosseum/keep/<colosseumStageId> and /web/colosseum/unkeep: {code, body {ok, why?}}. Only a past season ('can') of an
   // open Coliseum can be kept (else why: locked, now, other, later); keeping one replaces the previous. Neither touches any
