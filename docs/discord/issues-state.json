@@ -914,9 +914,16 @@
   "I-343": {
    "thread": "1575972820385529970",
    "msg": "1575972820385529970",
-   "group": "OPEN",
-   "hash": "f26d451e133220e8",
+   "group": "CLOSED",
+   "hash": "17a0a5bea64ff4a6",
    "name": "I-343 · Event leftovers found by I-248: three unserved WW celebration events and the original…"
+  },
+  "I-344": {
+   "thread": "1575981369543229625",
+   "msg": "1575981369543229625",
+   "group": "OPEN",
+   "hash": "f570765cbd8664f7",
+   "name": "I-344 · Unserved worldwide events: the «every WW event quest served» claim does not hold"
   }
  }
 }
