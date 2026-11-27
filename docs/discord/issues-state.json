@@ -536,8 +536,8 @@
   "I-279": {
    "thread": "1573952526569447426",
    "msg": "1573952526569447426",
-   "group": "OPEN",
-   "hash": "29bdb3af40cfa4f0",
+   "group": "CLOSED",
+   "hash": "c405712465d108ee",
    "name": "I-279 · Lady Luck: slot attribute arrows follow the Moogle o' Glory slots"
   },
   "I-280": {
@@ -795,8 +795,8 @@
   "I-324": {
    "thread": "1575423523579494502",
    "msg": "1575423523579494502",
-   "group": "OPEN",
-   "hash": "2843f8a7987d44ce",
+   "group": "CLOSED",
+   "hash": "325ca9d3dad03746",
    "name": "I-324 · Raid boss attack animation breaks apart: Queen Bee Ω"
   },
   "I-325": {
@@ -858,22 +858,22 @@
   "I-333": {
    "thread": "1575831532034326693",
    "msg": "1575831532034326693",
-   "group": "OPEN",
-   "hash": "d8b7a47c539f1170",
+   "group": "CLOSED",
+   "hash": "f84cc204e3c53b11",
    "name": "I-333 · Quest 34 plays the same Power Bangle scene before and after the mission"
   },
   "I-334": {
    "thread": "1575831543736180908",
    "msg": "1575831543736180908",
-   "group": "OPEN",
-   "hash": "bed559aa4a7af1ae",
+   "group": "CLOSED",
+   "hash": "3d51978598d92498",
    "name": "I-334 · Draw near the medal cap: «A server error has occurred. (200 ERROR :76)»"
   },
   "I-335": {
    "thread": "1575831548790571079",
    "msg": "1575831548790571079",
-   "group": "OPEN",
-   "hash": "acfb02e12d46e75d",
+   "group": "CLOSED",
+   "hash": "8855b38f3b64400f",
    "name": "I-335 · Quest 275 «Complete within 4 turns» cannot be done"
   }
  }
