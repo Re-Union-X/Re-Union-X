@@ -2380,13 +2380,23 @@ test('Part 4 board cards: JP twins, loc for the wiki previews and the hand-made 
     assert.strictEqual(mc.BOARD_ART[ids[2]], 'jp:2200194.png', `${sid} Chip`);
     assert.strictEqual(mc.BOARD_ART[ids[3]], 'jp:2200195.png', `${sid} Dale`);
     assert.strictEqual(mc.BOARD_ART[ids[4]], 'jp:2200196.png', `${sid} skill`);
-    // HDL: the same-month JP block file (2200248 in the 2020-04 .. 08 blocks, 2200193 elsewhere; neighbours for 2019-07, 2020-01, 2020-10)
-    assert.strictEqual(mc.BOARD_ART[ids[1]], (i >= 11 && i <= 15) ? 'jp:2200248.png' : 'jp:2200193.png', `${sid} HDL`);
+    // HDL: loc, the wiki preview (user-approved list)
+    assert.strictEqual(mc.BOARD_ART[ids[1]], 'loc', `${sid} HDL`);
   });
   assert.deepStrictEqual(lines.filter((l) => /\tloc\t/.test(l)).map((l) => l.split('\t')[0]),
-    [2210161, 2210191, 2210236].map((id) => `img/sphere_incentive/${id}.png`));
+    all.filter((id) => LOC.has(id) || P4_BOARDS[Object.keys(P4_BOARDS).find((s) => P4_BOARDS[s].includes(id))][1] === id).map((id) => `img/sphere_incentive/${id}.png`));
   assert.strictEqual(mc.BOARD_ART[2310163], 'jp:2200302.png'); assert.strictEqual(mc.BOARD_ART[2310168], 'jp:2200307.png');
   assert.strictEqual(mc.BOARD_ART[2310173], 'jp:2200312.png'); assert.strictEqual(mc.BOARD_ART[2310178], 'jp:2200317.png');
+});
+
+test('Part 4 BOARD_ART = the user-approved private list board_art_all.json for all 130; every loc card file exists', () => {
+  const list = 'D:/Progetto_Restauro_KH_UX/private/events/sources/coliseum/board_art_all.json', locDir = 'D:/Progetto_Restauro_KH_UX/raid_loc/img/sphere_incentive_coli';
+  if (!fs.existsSync(list)) { results.push('skip BOARD_ART vs the approved list: private board_art_all.json not on disk'); return; }
+  const art = JSON.parse(fs.readFileSync(list, 'utf8'));
+  for (const id of Object.values(P4_BOARDS).flat()) {
+    assert.strictEqual(mc.BOARD_ART[id], art[id].art, `${id} card = the approved list`);
+    if (art[id].art === 'loc' && fs.existsSync(path.dirname(locDir))) assert.ok(fs.existsSync(`${locDir}/${id}.png`), `${id}: loc file present`);
+  }
 });
 
 test('real_part4_boards (2019-05 .. 2021-06: 125 served boards; START, empty corner, totals, cell ids in the masters)', () => {

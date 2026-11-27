@@ -535,14 +535,13 @@ const BOARD_ART = { 2200001: 'b16', 2210037: 'jp:2200037.png', 2210038: 'jp:2200
   // Part 4 Task 5 (private board_art_all.json, PART4_AUDIT 4b): the avatar board = the JP card of the same month's block (fit 3.7 .. 7.0
   // on the board screenshots, wiki preview = the same picture), 2019-07 / 2020-10 the wiki preview (no JP block: loc), 2020-01 the
   // hand-made card (loc, approved 26-11); 2021-03 .. 06 the JP cards 2200302 / 307 / 312 / 317 (fit 3.81 / 4.49 on layouts 30 / 31,
-  // as good as the twins above). Chip / Dale / the skill board: the fixed JP 2200194 / 195 / 196; Huey & Dewey & Louie: the
-  // same-month JP block file (2200248 in the 2020-04 .. 08 blocks, 2200193 in every other: the neighbour block for 2019-07,
-  // 2020-01, 2020-10 holds 2200193 too).
+  // as good as the twins above). Chip / Dale / the skill board: the fixed JP 2200194 / 195 / 196; Huey & Dewey & Louie: loc (the
+  // wiki preview, as the user-approved list board_art_all.json has it for all 26 months).
   ...Object.fromEntries(Object.entries(SEASON_BOARDS).filter(([sid]) => sid >= 4500).flatMap(([sid, [av, hdl, chip, dale, skill]], i) => {
     const jp = { 4500: 2200192, 4600: 2200197, 4800: 2200207, 4900: 2200212, 5000: 2200217, 5100: 2200222, 5200: 2200227, 5400: 2200237, 5500: 2200242, 5600: 2200247,
       5700: 2200252, 5800: 2200257, 5900: 2200262, 6000: 2200267, 6100: 2200272, 6300: 2200282, 6400: 2200287, 6500: 2200292, 6600: 2200297, 6700: 2200302,
       6800: 2200307, 6900: 2200312, 7000: 2200317 }[sid];
-    return [[av, jp ? `jp:${jp}.png` : 'loc'], [hdl, i >= 11 && i <= 15 ? 'jp:2200248.png' : 'jp:2200193.png'], [chip, 'jp:2200194.png'], [dale, 'jp:2200195.png'], [skill, 'jp:2200196.png']];
+    return [[av, jp ? `jp:${jp}.png` : 'loc'], [hdl, 'loc'], [chip, 'jp:2200194.png'], [dale, 'jp:2200195.png'], [skill, 'jp:2200196.png']];
   })) };
 // Mango Sweetie M / F 2210075 / 076 and Illusionist M / F 2210083 / 084: loc cards rebuilt from the small (144 px) wiki picture,
 // approved by the user 26-11; no board waits for its card now
