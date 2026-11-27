@@ -219,12 +219,13 @@ check(gv['_pityStarWritten'] == 7, 'stella della pity scritta')
 O = g.SLOT_OVERRIDES
 for rid in ('B0678', 'B0733', 'B0740', 'B0049', 'B0055', 'B0372', 'B0695', 'B0721', 'B0725', 'B0726', 'B0734', 'B0739', 'B0419', 'B0421'):
     check(rid in O and O[rid].get('source'), f'override {rid}')
-check(O['B0678']['count'] == 1 and 'image 10678' in O['B0678']['source'], 'B0678 count 1')
+check([(x['kind'], x['count'], x['star'], x['prefix']) for x in O['B0678']['slots']] == [('list', 1, 6, ['kh iii '])]
+      and 'image 10678' in O['B0678']['source'], 'B0678 KH III Medal 6★ x1 (I-151)')
 check(O['B0419']['pityNames'] == ['hd aced [ex+]'] and O['B0421']['pityNames'] == ['hd gula [ex+]']
       and O['B0419']['erratum'] and O['B0421']['erratum'], 'B0419/B0421 erratum')
 gv = g.guarantee_v3(R(row_id='B0678'), TXT['k39'],
                     [[6, 1], [5, 4]], [], MR)
-check(gv['count'] == 1 and gv['slots'][0]['count'] == 1 and gv['source'] == O['B0678']['source'], f'B0678 applicato {gv}')
+check(gv['count'] == 1 and gv['slots'][0]['count'] == 1 and gv['slots'][0]['star'] == 6 and gv['source'] == O['B0678']['source'], f'B0678 applicato {gv}')
 T33 = TXT['k40']
 gv = g.guarantee_v3(R(row_id='B0733'), T33, [[7, 3], [6, 7]], [], MR)
 check([(x['kind'], x['slot'], x['count'], x['star']) for x in gv['slots']] == [('list', 0, 3, 7), ('list', 3, 7, 6)]

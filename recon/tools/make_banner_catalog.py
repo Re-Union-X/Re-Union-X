@@ -870,6 +870,10 @@ def apply_slot_override(g, ov_row):
     # «...;up» (D5, B0430/B0431 «Two 6 or 7★ Frozen Medals»): lo slot a lista sale di una stella come uno slot normale
     up = v.endswith(';up')
     v = v[:-3] if up else v
+    # «...;own» (I-151, B0447 «one 6★ Imitation Medal OR Illustrated Rai / Seifer / Fuu»): ogni nome della lista alla
+    # sua stella (la decisione 1 non toglie i nomi senza la stella dello slot), scelta uniforme anche sui featured
+    own = v.endswith(';own')
+    v = v[:-4] if own else v
     # «new@2x1/5:names=a|b» (2c/G5): riserva a lista nuova dalla posizione 2, 1 medaglia, stella 5 (B0066: «you will
     # be guaranteed at least one of the new Medals», sulla prima posizione 5★: le due 6★ restano casuali)
     # «new@0x1/6:tier=4-» (2c/G9, B0204): riserva Tier nuova, Tier minimo 4 senza massimo
@@ -902,6 +906,8 @@ def apply_slot_override(g, ov_row):
         raise SystemExit(f'override slot {v!r}: atteso tier= o names=')
     if up:
         s['up'] = True
+    if own:
+        s['own'] = True
     return g
 
 
@@ -1269,7 +1275,7 @@ def build_catalog(inputs):
                 pool = pool_names_at(b, medals, sub_members, sub_date, first_r)
                 s['names'] = [n for n in s['names'] if n in pool]
             s.pop('prefix', None)
-            if s['kind'] == 'list':  # con «up» restano anche i nomi che hanno solo la stella sopra (Supernova - Elsa 7★)
+            if s['kind'] == 'list' and not s.get('own'):  # con «up» restano anche i nomi che hanno solo la stella sopra (Supernova - Elsa 7★)
                 keep = bg.star_filter(s['names'], s['star'], rares.get)
                 s['names'] = [n for n in s['names'] if n in keep or (s.get('up') and s['star'] + 1 in (rares.get(n) or ()))]
         first = next((s for s in g['slots'] if s['kind'] == 'list'), None)

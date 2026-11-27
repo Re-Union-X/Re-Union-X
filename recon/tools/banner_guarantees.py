@@ -546,7 +546,9 @@ SLOT_OVERRIDES = {
     'B0055': {'count': 1, 'source': 'note «Guarantees at least one of the following medals» (audit D5; elenco troncato a 500 caratteri)'},
     'B0372': {'count': 1, 'star': 7, 'source': 'note «Guarantees one of the following 7★ Medals» (audit D5)'},
     'B0695': {'count': 1, 'source': 'note «Guarantees oe of the following Medals» (audit D5, refuso della wiki)'},
-    'B0678': {'count': 1, 'source': 'image 10678 («KH III Medal ×1» + «5★+ ×4»; il testo «three» e\' un errore della wiki, audit D4)'},
+    'B0678': {'slots': [_res('list', 1, 6, prefix=KH3)],
+              'source': 'image 10678 («KH III Medal ×1» + «5★+ ×4»; il testo «three» e\' un errore della wiki, audit D4): lista KH III = '
+                        'medaglie «KH III» del pool come B0733 (I-151, scelta dell\'utente 27-11); la lista SN delle note e\' la pity'},
     'B0733': {'count': 3, 'star': 7, 'append': [_res('list', 7, 6, prefix=KH3)],
               'source': 'image 10733 («SN+ Medal ×3» + «KH III Medal+ ×7», decisione 2): lista KH III = medaglie «KH III» del master'},
     'B0740': {'append': [_res('list', 5, 6, prefix=KH3)],

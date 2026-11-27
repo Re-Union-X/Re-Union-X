@@ -510,7 +510,7 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(B['B0419']['guarantee']['pityNames'] == ['hd aced [ex+]'] and B['B0421']['guarantee']['pityNames'] == ['hd gula [ex+]'],
           'decisione 4')
     ks = {'kind', 'slot', 'count', 'star', 'names', 'tierMin', 'tierMax'}
-    check(all(ks <= set(s) <= ks | {'conflict', 'slotsUsed', 'up'} for b in bs for s in b['guarantee']['slots']), 'campi delle riserve')
+    check(all(ks <= set(s) <= ks | {'conflict', 'slotsUsed', 'up', 'own'} for b in bs for s in b['guarantee']['slots']), 'campi delle riserve')
     check(not any(k.startswith('_') for b in bs for k in b['guarantee']), 'nessun campo privato nel catalogo')
     # fix 1, punto 1: liste prese dal master per prefisso («SN+ or SN++», «KH III Medal+») solo coi nomi del pool alla data
     sub_m = {k: v['names'] for k, v in cat['subsets'].items()}
@@ -541,7 +541,7 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
             bad.append(b['rowId'])
     check(not bad, f'pityStar non scritta diversa dallo slot finale {bad[:8]}')
     # decisione 1: nessun nome di una lista su uno slot 6★ senza variante 6★ (se la lista ne ha almeno uno)
-    bad = [b['rowId'] for b in bs for s in b['guarantee']['slots'] if s['kind'] == 'list' and s['star'] == 6 and not s.get('up')
+    bad = [b['rowId'] for b in bs for s in b['guarantee']['slots'] if s['kind'] == 'list' and s['star'] == 6 and not s.get('up') and not s.get('own')
            and any(n in med for n in s['names']) and any(n in med and 6 not in {i[1] for i in med[n]['ids']} for n in s['names'])
            and any(n in med and 6 in {i[1] for i in med[n]['ids']} for n in s['names'])]
     check(not bad, f'decisione 1 {bad[:5]}')
@@ -713,6 +713,18 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     for r in ('B0430', 'B0431'):
         s0 = B[r]['guarantee']['slots'][0]
         check(s0.get('up') and 'supernova - elsa' in s0['names'] and s0['star'] == 6, f'D5 {r} Frozen 6★ con salita')
+    # I-151 (scelta dell'utente 27-11): B0447 slot 1 = 14 Copy Medal 6★ + Rai/Seifer/Fuu alla loro 7★ (own), pity 7★ sullo slot 1;
+    # B0678 slot 0 = le 29 KH III 6★ del pool, pity alla 3a sui 20 SN-o-superiori (Pierces Defense Boost) a 7★
+    g = B['B0447']['guarantee']
+    s1 = next(s for s in g['slots'] if s['slot'] == 1)
+    check(s1['kind'] == 'list' and s1.get('own') and s1['star'] == 6 and len(s1['names']) == 17
+          and {'illustrated rai', 'illustrated seifer', 'illustrated fuu', 'hd naminé', 'toon naminé'} <= set(s1['names'])
+          and g['pity'] == 5 and g['pityStar'] == 7 and g['pitySlot'] == 1, f'I-151 B0447 slot 1 own e pity 7★ ({len(s1["names"])}, {g["pityStar"]}, {g["pitySlot"]})')
+    g = B['B0678']['guarantee']
+    s0 = g['slots'][0]
+    check(s0['kind'] == 'list' and s0['star'] == 6 and len(s0['names']) == 29 and all(n.startswith('kh iii ') for n in s0['names'])
+          and g['pity'] == 3 and g['pityStar'] == 7 and g['pitySlot'] == 0 and len(g['pityNames']) == 20 and g['pityLabel'] == 'SN or higher Medal',
+          f'I-151 B0678 slot 0 KH III e pity 7★ ({len(s0["names"])}, {g["pityStar"]}, {len(g["pityNames"])})')
     # I-150: nessun nome guasto nel catalogo vero
     dump = _json.dumps({"banners": bs}, ensure_ascii=False)
     check('�' not in dump, 'I-150 niente U+FFFD')

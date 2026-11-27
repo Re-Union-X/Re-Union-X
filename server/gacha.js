@@ -506,7 +506,8 @@ function oddsTable(banner, ex, medalNames) {
   }
   const every = banner.guarantee?.every;
   const rows = gd.slotOdds(banner, ex).map((s) => {
-    const lead = s[0]?.list ? `${every ? `every ${ordinal(every)} draw: ` : ''}one of the listed Medals (featured Medals twice as likely)` : '';
+    const lead = s[0]?.list ? `${every ? `every ${ordinal(every)} draw: ` : ''}one of the listed Medals ${s[0].own
+      ? '(each at its own rarity, all equally likely)' : '(featured Medals twice as likely)'}` : ''; // own: I-151
     const kind = s[0]?.kind === 'tier' ? `Tier ${tierWords(s[0].tier)}` : s[0]?.kind === 'trait' ? (s[0].names ? s[0].names.map(traitLabel).join(' or ') : 'Trait Medal slot') : s[0]?.kind === 'pity' ? 'guaranteed Medal slot' : '';
     return { what: [kind, lead].filter(Boolean).join(', '), odds: s };
   });

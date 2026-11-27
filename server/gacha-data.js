@@ -175,7 +175,8 @@ function expandPool(banner, catalog, at) {
     pool: bySets(pool), featuredIds: sorted(featuredIds), listIds: sorted(listIds),
     listNames: named(g.list || [], (n) => (feat.has(n) ? FEATURED_WEIGHT : 1)),
     featuredNames: named(p.featured || [], () => 1), weighted: [],
-    slotNames: res.map((s) => named(s.names || [], (n) => (feat.has(n) ? FEATURED_WEIGHT : 1), resByName)),
+    // I-151: le riserve «own» (B0447) scelgono il nome in modo uniforme, senza il peso della vetrina
+    slotNames: res.map((s) => named(s.names || [], (n) => (!s.own && feat.has(n) ? FEATURED_WEIGHT : 1), resByName)),
     pityNames, pityIds: sorted(new Set(pityIds)), tiers, medalInfo,
   };
 }
@@ -250,7 +251,10 @@ const pickName = (names, rng) => names[pickWeighted(names.map((x, i) => [i, x[1]
 const hasAtOrBelow = (v, star) => Object.keys(v).some((r) => Number(r) <= star && poolOf(v, r).length);
 // Riserva a lista: solo i nomi con una variante alla stella dello slot o sotto (decisione 1: una lista a 6★
 // non da' le medaglie che hanno solo la 7★), niente salita; se nessun nome ce l'ha, tutta la lista.
-function pickList(names, rare, rng) {
+// own (I-151, B0447 «one 6★ Imitation Medal OR Illustrated Rai / Seifer / Fuu»): tutti i nomi, ognuno alla sua stella
+// (la variante alla stella dello slot, o la piu' bassa sopra per chi non l'ha).
+function pickList(names, rare, rng, own = false) {
+  if (own) return pickVariant(pickName(names, rng), rare, rng);
   const ok = names.filter(([, , v]) => hasAtOrBelow(v, rare));
   return pickVariant(pickName(ok.length ? ok : names, rng), rare, rng);
 }
@@ -302,7 +306,7 @@ function rollReserved(banner, ex, rng, state) {
     if (s?.kind === 'list' && listOn && (ex.slotNames?.[j] || []).length) {
       // s.up (D5, Frozen «6 or 7★»): salita dello slot normale (UPGRADE) verso i nomi con la stella sopra
       const top = s.up && UPGRADE[rare] && ex.slotNames[j].some(([, , v]) => poolOf(v, rare + 1).length);
-      return pickList(ex.slotNames[j], top && rng() < UPGRADE[rare] ? rare + 1 : rare, rng);
+      return pickList(ex.slotNames[j], top && rng() < UPGRADE[rare] ? rare + 1 : rare, rng, !!s.own);
     }
     if (s?.kind === 'tier') return pickTier(banner, ex, s, j, rare, rng);
     if (s?.kind === 'trait' && (ex.slotNames?.[j] || []).length) return pickList(ex.slotNames[j], rare, rng); // Trait Medal #N
@@ -404,6 +408,11 @@ function slotOdds(banner, ex) {
   const pitySlot = !g.pity || g.pityGift ? -1 : g.pitySlot != null && g.pitySlot < rares.length ? g.pitySlot : 0;
   return rares.map((rare, i) => {
     const j = reservationIndex(g, i), s = j >= 0 ? g.slots[j] : null;
+    if (s?.kind === 'list' && s.own && (ex.slotNames?.[j] || []).length) { // I-151: la stella di ogni nome, pesi dei nomi
+      const by = {}, names = ex.slotNames[j], tot = names.reduce((t, [, w]) => t + w, 0);
+      for (const [, w, v] of names) { const r = pityVariantStar(v, rare); by[r] = (by[r] || 0) + w / tot; }
+      return Object.keys(by).map(Number).sort((a, b) => a - b).map((r) => ({ list: true, own: true, rare: r, pct: r2(by[r]), kind: 'list' }));
+    }
     if (s?.kind === 'list' && (ex.slotNames?.[j] || []).length) return [{ list: true, rare, pct: 100, kind: 'list' }];
     if (s?.kind === 'tier') {
       // la salita conta solo se la stella sopra ha medaglie del Tier

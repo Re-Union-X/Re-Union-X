@@ -348,6 +348,25 @@ check(J(g.slotOdds(B3({ guarantee: G3({ slots: [RES({ kind: 'tier', slot: 0, sta
 // compatibilita': banner senza slots -> extras presenti, featured dalla vetrina
 const cd = g.rollDraw(B({}), ex, seq(0.5, 0.0));
 check(Array.isArray(cd.extras) && cd.extras.length === 3 && cd.pityFired === false, 'percorso vecchio: extras e pityFired');
+// I-151: riserva a lista «own» (B0447: 6★ Imitation OR Rai/Seifer/Fuu alla loro 7★): ogni nome alla sua stella
+// (la variante alla stella dello slot, o la piu' bassa sopra se non l'ha), scelta uniforme anche sui featured
+try {
+  const lcg = (s) => () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const ownB = B3({ pool: P({ sets: [], names: ['zack', 'sn only'], featured: ['sn only'] }),
+    guarantee: G3({ slots: [RES({ kind: 'tier', slot: 0, star: 7, tierMax: 4 }), RES({ slot: 1, names: ['kairi', 'sn only'], own: true })] }) });
+  const ox = g.expandPool(ownB, TCAT, '2018-11-01');
+  check(J(ox.slotNames[1]) === '[["kairi",1,{"6":[61],"7":[73]}],["sn only",1,{"7":[74]}]]', `own: pesi uniformi anche sui featured (${J(ox.slotNames[1])})`);
+  const rng = lcg(151), tally = {};
+  const N = 4000;
+  for (let k = 0; k < N; k++) { const id = g.rollDraw(ownB, ox, rng, NOPITY).medalIds[1]; tally[id] = (tally[id] || 0) + 1; }
+  check(Object.keys(tally).sort().join() === '61,74', `own: solo 61 (kairi 6★) e 74 (sn only alla sua 7★), mai 73 (${J(tally)})`);
+  check(Math.abs(tally[74] / N - 0.5) < 0.04, `own: sn only circa 50% (${J(tally)})`);
+  check(J(g.slotOdds(ownB, ox)[1]) === '[{"list":true,"own":true,"rare":6,"pct":50,"kind":"list"},{"list":true,"own":true,"rare":7,"pct":50,"kind":"list"}]',
+    `own: slotOdds per stella (${J(g.slotOdds(ownB, ox)[1])})`);
+  // senza own resta la decisione 1 (sempre 61)
+  check([...Array(200)].every(() => g.rollDraw(b3, x3, rng, NOPITY).medalIds[1] === 61), 'senza own: decisione 1 invariata');
+} catch (err) { errors.push(`I-151 own: eccezione ${err.stack}`); }
+
 } catch (e) { errors.push(`2b: eccezione ${e.message}`); }
 
 // abilita'

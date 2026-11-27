@@ -717,5 +717,40 @@ try {
   for (const code of inl) { check(!/=>|\blet\b|\bconst\b|`|\bfetch\(/.test(code), 'script inline ES5'); try { new Function(code); } catch (e) { check(false, `script inline: sintassi ${e.message}`); } }
 } catch (err) { errors.push(`catalogo per anni: eccezione ${err.stack}`); }
 
+// I-151 sul catalogo vero (decisione dell'utente 27-11): B0447 slot 1 = una 6★ Imitation (14 Copy Medal) OPPURE
+// Rai/Seifer/Fuu alla loro 7★, scelta uniforme (~18%), pity sui tre alla 5a a 7★; B0678 slot 0 = una 6★ KH III
+// (29 nomi), pity alla 3a sui 20 SN-o-superiori con Pierces Defense Boost a 7★. Prima: 7★ al 100% su entrambi.
+try {
+  const cat = require('./game_data/gacha_catalog.json');
+  const info = new Map();
+  for (const [n, m] of Object.entries(cat.medals)) for (const [id, st] of m.ids) info.set(id, [n, st]);
+  const lcg = (s) => () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const roll = (rid, state, slot, N = 3000) => {
+    const b = cat.banners.find((x) => x.rowId === rid), ex = gd.expandPool(b, cat, b.start), rng = lcg(151), out = [];
+    for (let k = 0; k < N; k++) out.push(info.get(gd.rollDraw(b, ex, rng, { ...state }).medalIds[slot]));
+    return { b, out };
+  };
+  const THREE = ['illustrated rai', 'illustrated seifer', 'illustrated fuu'];
+  const COPY = ['hd naminé', 'key art "sky"', 'key art "bonds"', 'key art "beginning"', 'hd xion', 'hd antiform sora', 'hd vanitas',
+    'kh ii naminé', 'hd riku replica', 'beagle boys', 'lion pete', 'phantom', 'illustrated dusk', 'toon naminé'];
+  const n447 = roll('B0447', { draws: 0, sinceFeatured: 0 }, 1).out;
+  const three = n447.filter(([n]) => THREE.includes(n));
+  check(three.every(([, st]) => st === 7) && n447.every(([n, st]) => THREE.includes(n) || (COPY.includes(n) && st === 6)),
+    `I-151 B0447 slot 1: solo le 14 Copy 6★ o i tre a 7★ (${[...new Set(n447.map(([n, st]) => `${n} ${st}`))].slice(0, 6).join('; ')})`);
+  check(Math.abs(three.length / n447.length - 3 / 17) < 0.03, `I-151 B0447 slot 1: i tre circa 18% (${(100 * three.length / n447.length).toFixed(1)}%)`);
+  check(new Set(n447.map(([n]) => n)).size === 17, `I-151 B0447 slot 1: tutti i 17 nomi escono (${new Set(n447.map(([n]) => n)).size})`);
+  const p447 = roll('B0447', { draws: 4, sinceFeatured: 4 }, 1, 300);
+  check(p447.b.guarantee.pity === 5 && p447.b.guarantee.pityStar === 7 && p447.b.guarantee.pitySlot === 1 && p447.out.every(([n, st]) => THREE.includes(n) && st === 7),
+    `I-151 B0447 pity alla 5a: uno dei tre a 7★ sullo slot 1 (${p447.b.guarantee.pity}/${p447.b.guarantee.pityStar}/${p447.b.guarantee.pitySlot})`);
+  const n678 = roll('B0678', { draws: 0, sinceFeatured: 0 }, 0).out;
+  check(n678.every(([n, st]) => /^kh iii /.test(n) && st === 6), `I-151 B0678 slot 0: sempre una 6★ KH III (${[...new Set(n678.filter(([n, st]) => !/^kh iii /.test(n) || st !== 6).map(([n, st]) => `${n} ${st}`))].slice(0, 4).join('; ')})`);
+  check(new Set(n678.map(([n]) => n)).size === 29, `I-151 B0678 slot 0: i 29 nomi KH III (${new Set(n678.map(([n]) => n)).size})`);
+  const p678 = roll('B0678', { draws: 2, sinceFeatured: 2 }, 0, 300);
+  const g678 = p678.b.guarantee;
+  check(g678.pity === 3 && g678.pityStar === 7 && g678.pitySlot === 0 && g678.pityNames.length === 20 && p678.out.every(([n, st]) => g678.pityNames.includes(n) && st === 7),
+    `I-151 B0678 pity alla 3a: SN o superiore a 7★ (${g678.pity}/${g678.pityStar}/${g678.pitySlot}/${g678.pityNames.length})`);
+  check(roll('B0678', { draws: 1, sinceFeatured: 1 }, 0, 300).out.every(([n, st]) => /^kh iii /.test(n) && st === 6), 'I-151 B0678: alla 2a la pity non scatta');
+} catch (err) { errors.push(`I-151: eccezione ${err.stack}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');

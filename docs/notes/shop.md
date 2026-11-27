@@ -451,7 +451,10 @@ and `node server/make-nova-rows.js` and `node server/make-trait-groups.js` are e
 
 - slots: the `tier` reserves filter by Tier (`tierMin..tierMax`, alternative names allowed), the `list` ones draw by
   name at the slot's star, the `trait` ones are generic slots; empty pool -> no filter with a log, never an exception;
-  never a medal before its date;
+  never a medal before its date; a `list` reserve with `own` (I-151, override `slot` ending in `;own`, only B0447) keeps
+  every name at its own star (the slot's star, or the lowest above for a name without it) with a uniform pick, so B0447
+  slot 1 gives a 6★ Copy Medal or Illustrated Rai / Seifer / Fuu at 7★ (3 of 17); B0678 slot 0 is the KH III 6★ list
+  (prefix `kh iii `, as B0733) and its SN list is only the 3rd-draw pity at 7★;
 - pity: after `pity` draws without the target, slot `pitySlot` becomes the target at `pityStar` (the highest
   variant already released at the date, otherwise the lowest above); `pityGift` puts it into the Present Box without
   touching the slots (Dual Meow Wow 301684, Blue Fairy 301502);

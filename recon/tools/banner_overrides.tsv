@@ -144,7 +144,9 @@ B0435	pity	5;names=prime - chernabog;star=7;slot=2	notice 48299 ([notice text ke
 B0435	max_skill	pity;skills=attack boost vi max|defense boost i max|defense boost ii max|defense boost iii max|atk b v max & ga 1|atk b v max & lux+|triple threat ii	notice 48299 ([notice text kept locally]), regola G2
 B0452	pity	5;names=prime - chernabog;star=7;slot=2	notice 48298 ([notice text kept locally] nella colonna Standard; [notice text kept locally])
 B0452	max_skill	pity;skills=attack boost vi max|defense boost i max|defense boost ii max|defense boost iii max|atk b v max & ga 1|atk b v max & lux+|triple threat ii	notice 48298 (stessa frase delle abilita' al massimo di 48299), regola G2
-B0447	pity	5;names=illustrated rai|illustrated seifer|illustrated fuu	notice 48293 ([notice text kept locally])
+B0447	pity	5;names=illustrated rai|illustrated seifer|illustrated fuu;star=7;slot=1	notice 48293 ([notice text kept locally]); I-151: star 7, the three exist only at 7★ (user 27-11)
+B0447	slot	1:names=hd naminé|key art "sky"|key art "bonds"|key art "beginning"|hd xion|hd antiform sora|hd vanitas|kh ii naminé|hd riku replica|beagle boys|lion pete|phantom|illustrated dusk|toon naminé|illustrated rai|illustrated seifer|illustrated fuu;own	I-151, notice 48293 ([notice text kept locally]): the 14 6★ Copy Medals of B0667 (all released by 11-01-2019) + the three at their own 7★, uniform pick (user 27-11)
+B0678	pity	3;star=7;slot=0	I-151, notice 66508 ([notice text kept locally]): the 20 pity names are 7★ only; all 20 carry Pierces Defense Boost in burst.json (checked 27-11)
 B0645	pity	5;names=sn++ - kh iii pooh;star=7	notice 63324 ([notice text kept locally])
 B0584	pity	5;mode=every	notice 56838 ([notice text kept locally])
 B0770	pity	10;mode=every	notice 72828 ([notice text kept locally])
