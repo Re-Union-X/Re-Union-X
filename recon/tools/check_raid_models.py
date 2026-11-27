@@ -18,6 +18,10 @@ raidStatus 4 / 2 for it. Models checked: those in --models (default recon/tools/
 # comments) plus every folder found under lwf/character/raid.
 --served: the name lists build-resources.ps1 gives import_originals.py (first column = served path). Files in them are
 not copied into the pack, so a name counts as present if it is on disk (size > 0) or served.
+Aspect check (I-324, always run): every texture of a fight LWF that is on disk must have the aspect ratio its LWF table
+declares (tolerance 12 %, and sizes within 2 px of the declared one pass; uniform up/down scaling is fine, the client stretches it). A different aspect means another
+picture sits in the slot (the generic bitmap names are shared by the 2016 and the JP packages). Failures are printed as
+ASPECT lines and make the script exit 1.
 """
 import json
 import os
@@ -27,6 +31,42 @@ import sys
 ANIMS = ('atk1', 'atk2', 'knockback1', 'knockback2', 'wait')
 DEMOS = ('start', 'escape', 'put_down')
 HERE = os.path.dirname(os.path.abspath(__file__))
+ASPECT_TOL = 0.12
+
+
+def image_canvas(path):
+    """(w, h) of a served texture: BTF canvas or PNG header; None if unreadable"""
+    with open(path, 'rb') as f:
+        h = f.read(32)
+    if h[:4] == b'\x89BTF':
+        return struct.unpack_from('<2H', h, 0x16)
+    if h[:8] == b'\x89PNG\r\n\x1a\n':
+        return struct.unpack_from('>2I', h, 16)
+    return None
+
+
+def aspect_errors(files_dir, mid):
+    """['<anim>/<texture> declared WxH served wxh', ...]: fight textures on disk whose aspect ratio differs from the LWF"""
+    sys.path.insert(0, HERE)
+    from lwf_rig import LWF
+    out = []
+    base = os.path.join(files_dir, 'lwf', 'character', 'raid', mid)
+    for a in ANIMS:
+        p = os.path.join(base, a, a + '.lwf')
+        if not os.path.isfile(p):
+            continue
+        try:
+            tex = LWF(p).textures
+        except Exception:
+            continue
+        for name, _f, w, h, _sc in tex:
+            q = os.path.join(base, a, name)
+            if not (os.path.isfile(q) and os.path.getsize(q) > 0) or not w or not h:
+                continue
+            c = image_canvas(q)
+            if c and c[0] and c[1] and (abs(c[0] - w) > 2 or abs(c[1] - h) > 2) and abs((c[0] / w) / (c[1] / h) - 1) > ASPECT_TOL:
+                out.append('%s/%s declared %dx%d served %dx%d' % (a, name, w, h, c[0], c[1]))
+    return out
 
 
 def lwf_textures(data):
@@ -182,6 +222,8 @@ def main(argv):
     served = read_served(argv[argv.index('--served') + 1]) if '--served' in argv else set()
     notes = []
     result = {m: check_model(files_dir, m, served, notes) for m in sorted(ids)}
+    bad = {m: aspect_errors(files_dir, m) for m in sorted(ids)}
+    bad = {m: e for m, e in bad.items() if e}
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(result, f, indent=1)
@@ -192,8 +234,14 @@ def main(argv):
     for m in sorted(result):
         if not available(result[m]):
             print('  NOT available %s %s' % (m, result[m]))
+    for m in sorted(bad):
+        for e in bad[m]:
+            print('  ASPECT %s %s' % (m, e))
+    print('aspect check: %d texture(s) with a wrong aspect ratio in %d model(s)' % (sum(map(len, bad.values())), len(bad)))
+    main.aspect_failures = sum(map(len, bad.values()))
     return result
 
 
 if __name__ == '__main__':
     main(sys.argv)
+    sys.exit(1 if getattr(main, 'aspect_failures', 0) else 0)
