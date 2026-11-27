@@ -224,6 +224,32 @@ def load_stage(files, sid):
     return stg, parts
 
 
+SECTION_FIELDS = dict(zip(SECTIONS, (0x20, 0x24, 0x28, 0x2c, 0x30)))
+
+
+def add_chests(stg_raw, part_raw, chests):
+    """Append chest records (dicts x, y, reward, kind, uid) to a MAP part (client layout, version >= 13) and raise the
+    STG chest total [14] by as many -> (new STG bytes, new part bytes). The records go after the part's last chest; every
+    section that starts at or after that point moves by 20 bytes per record (offset fields +0x20..+0x30). I-335: the
+    late JP single-target maps of 9350 and 2170 part 1 have no chest where the wiki lists one (the 2016 map has it)."""
+    p = parse_map(part_raw)
+    if not p['client_layout']:
+        raise FormatError('add_chests: MAP version %d < 13' % p['version'])
+    stg = parse_stg(stg_raw)
+    if not stg['client_layout']:
+        raise FormatError('add_chests: STG version %d < 13' % stg['version'])
+    end = p['ends']['chests']
+    add = b''.join(struct.pack('<5i', c['x'], c['y'], c['reward'], c['kind'], c['uid']) for c in chests)
+    b = bytearray(part_raw[:end] + add + part_raw[end:])
+    struct.pack_into('<i', b, p['offsets']['chests'], p['counts']['chests'] + len(chests))
+    for s, field in SECTION_FIELDS.items():
+        if s != 'chests' and p['offsets'][s] >= end:
+            struct.pack_into('<i', b, field, p['offsets'][s] - 0x34 + len(add))
+    st = bytearray(stg_raw)
+    struct.pack_into('<i', st, 0x38, stg['chests_total'] + len(chests))
+    return bytes(st), bytes(b)
+
+
 def main(argv):
     out_json = None
     quiet = '--quiet' in argv

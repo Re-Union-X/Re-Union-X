@@ -26,6 +26,18 @@ soddisfatti e l'altra fonte ne ha meno, si usa l'altra (JP ha ridisegnato alcune
 solo JP, es. 1210 con 10240 invece di 10011: il 2016 corrisponde alla master WW).
 I file vanno in <out>\\stage\\ (da copiare in stage_gen\\files\\stage).
 Il campo [7] dell'STG (WW 1, JP 40/41/43...: significato ignoto) resta quello della fonte.
+Without --oltre only the quests 1-525 of the master (row `id` <= 525): the master also holds 526-979 since 21-10.
+
+Late single-target quests (I-335, user decision 27-11, docs/notes/mappe_storia.md#late-single): the 19 quests of
+LATE_SINGLE («Complete within N turns» + 2 x «Complete without having to continue») were redesigned by the late JP patch
+files (version 16/17, the highest revision) with the target alone (275: Fortress Crab 10261 Lv 92, not the 2016 Air
+Soldier and 11 others); the wiki lists only that target. For them the JP file is preferred (FORCE_2016 too: 5300, 7170
+become 1 part, as the wiki rooms) when its version is >= 16 and its only failed checks are the objective-enemy ones of
+old objectives («Defeat X» not in the stage, «Defeat N enemies» above the countable enemies; waived, listed in
+`late_single.waived`); unknown enemyIds, target/uid problems still reject it. Their enemies are master rows (event
+enemy rows of the donated WW table, KHUX_EVENT_ENEMIES=1, approved models). The late files keep their own chests (wiki
+count in 17 of 19); OLD_CHESTS adds the 2016 chests of the same room to the two parts left with none where the wiki
+lists a treasure (9350 part 0, 2170 part 1), STG [14] raised (mapfile.add_chests).
 
 Missioni 526-979 (I-009, docs/notes/mappe_storia.md#oltre525):
 
@@ -88,6 +100,14 @@ B16_STAGE = private_tools.local_path('ref_work', 'bundle2016', 'files', 'stage')
 REAL = os.path.join(D, 'external', 'thethiny')
 FORCE_2016 = {2060, 3310, 5300, 7170, 11220, 2320}
 KEEP_WW = {1010, 1013, 1016, 1019, 1020, 1030, 1040}
+# I-335: stageId -> quest of the late JP single-target maps (see the top), and the late file's minimum version
+LATE_SINGLE = {1110: 14, 1210: 24, 2100: 47, 2170: 54, 2290: 66, 2390: 76, 2440: 81, 3150: 96, 3210: 102, 3390: 120,
+               4100: 130, 5300: 160, 6230: 183, 6400: 200, 7170: 217, 7300: 230, 8200: 250, 9350: 275, 11250: 325}
+LATE_MIN_VERSION = 16
+# I-335: parts of a late map with no chest where the wiki lists a treasure in that room: the 2016 chests of the same part
+# (same room) are added. 9350 «Bazaar: Upper Level» i2, 2170 part 1 «Path to the Mine» i3. The other late parts keep
+# their own chests (76 and 200 have one more than the wiki: served as the late file has them).
+OLD_CHESTS = {9350: (0,), 2170: (1,)}
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--out')
@@ -100,7 +120,7 @@ args.out = args.out or os.path.join(D, 'stage_gen', 'orig_stages_oltre' if args.
 if args.oltre and os.path.normcase(os.path.abspath(args.out)) == os.path.normcase(os.path.join(D, 'stage_gen', 'orig_stages')):
     sys.exit("--oltre: --out non puo' essere stage_gen\\orig_stages (cancellerebbe gli stage 1-525)")
 if args.oltre:
-    FORCE_2016, KEEP_WW = set(), set()
+    FORCE_2016, KEEP_WW, LATE_SINGLE, OLD_CHESTS = set(), set(), {}, {}
 Q555 = (18300, 18301, 18302, 18303, 18304)
 # Lv where original gameplay footage contradicts the wiki (I-206, 23-10): Q960 Crabby Cake shown at LV 1900 (wiki 1850)
 LEVEL_FOOTAGE = {960: 1900}
@@ -128,7 +148,7 @@ def jload(p):
 
 master = lambda n: jload(os.path.join(REPO, 'server', 'master_data', n + '.json'))
 stage_rows = {r['stageId']: r for r in master('stage')}
-story = sorted(s for s, r in stage_rows.items() if r['stageKind'] == 1 and s < 990000)
+story = sorted(s for s, r in stage_rows.items() if r['stageKind'] == 1 and s < 990000 and r.get('id', 0) <= 525)
 if args.rows:
     stage_rows.update({r['stageId']: r for r in jload(args.rows) if r.get('stageKind') == 1})
 enemy_ids = {r['enemyId'] for r in master('enemy')}
@@ -197,7 +217,39 @@ def load(src, sid):
     if miss:
         return None, 'stanze non disponibili: ' + ', '.join(miss)
     raw = [open(f[(sid, None)], 'rb').read()] + [open(f[(sid, k)], 'rb').read() for k in range(len(parts))]
-    return (stg, parts, warn, raw), None
+    extra = {}
+    if src == 'jp' and sid in OLD_CHESTS and stg['version'] >= LATE_MIN_VERSION:
+        try:
+            raw, extra = old_chests(sid, parts, raw)
+        except mapfile.FormatError as e:
+            return None, 'forzieri del 2016: %s' % e
+        stg, parts = mapfile.load_stage({(sid, k - 1 if k else None): b for k, b in enumerate(raw)}, sid)
+        bad, warn = mapfile.check_stage(stg, parts)
+        if bad:
+            return None, 'incoerente dopo i forzieri del 2016: ' + '; '.join(bad)
+    return (stg, parts, warn, raw, extra), None
+
+
+def old_chests(sid, parts, raw):
+    """I-335 OLD_CHESTS: the 2016 chests of the same part (same room) into a late part with none. A chest uid already used
+    by the late stage (teams, enemies, chests of every part) is an error. -> (raw, {part: [chests]})."""
+    old_stg, old_parts = mapfile.load_stage(files['2016'], sid)
+    used = {x['uid'] for p in parts for x in p['teams'] + p['enemies'] + p['chests']}
+    added = {}
+    for k in OLD_CHESTS[sid]:
+        if k >= len(parts) or k >= len(old_parts) or parts[k]['room'] != old_parts[k]['room']:
+            raise mapfile.FormatError('parte %d: stanza diversa dal 2016' % k)
+        if parts[k]['chests']:
+            raise mapfile.FormatError('parte %d: la mappa tarda ha gia\' %d forzieri' % (k, len(parts[k]['chests'])))
+        chests = old_parts[k]['chests']
+        clash = sorted({c['uid'] for c in chests} & used)
+        if not chests or clash:
+            raise mapfile.FormatError('parte %d: %s' % (k, 'uid gia\' usati %s' % clash if clash else 'nessun forziere nel 2016'))
+        raw = list(raw)
+        raw[0], raw[k + 1] = mapfile.add_chests(raw[0], raw[k + 1], chests)
+        used |= {c['uid'] for c in chests}
+        added[k] = [dict(c) for c in chests]
+    return raw, added
 
 
 def checks(sid, stg, parts):
@@ -212,17 +264,19 @@ def checks(sid, stg, parts):
         refs.setdefault(stg['target_enemy'], 'bersaglio [6]')
     if stg['card_enemy']:
         refs.setdefault(stg['card_enemy'], 'scheda [10]')
-    row, notes = stage_rows.get(sid) or {}, []
+    row, notes, objective_enemy = stage_rows.get(sid) or {}, [], []
     for i in range(row.get('validSubmission', 0)):
         req, idt, sid_ = row['submissionRequire'][i], row['submissionIdType'][i], row['submissionId'][i]
         num = row['submissionNum'][i]
         if idt == 1 and sid_:
             refs.setdefault(sid_, 'obiettivo')
             if sid_ not in eids:
-                notes.append('obiettivo %d: enemyId %d non e\' nello stage' % (i, sid_))
+                objective_enemy.append('obiettivo %d: enemyId %d non e\' nello stage' % (i, sid_))
+                notes.append(objective_enemy[-1])
         if req == 3 and num > stg['enemies_total'] - stg['enemies_not_counted']:
-            notes.append('obiettivo %d «sconfiggi %d nemici»: contabili %d' % (
+            objective_enemy.append('obiettivo %d «sconfiggi %d nemici»: contabili %d' % (
                 i, num, stg['enemies_total'] - stg['enemies_not_counted']))
+            notes.append(objective_enemy[-1])
         if req == 17 and stg['chests_total'] != len(chs):
             notes.append('obiettivo %d «apri tutti i forzieri»: STG %d, forzieri %d' % (i, stg['chests_total'], len(chs)))
         if req == 18 and stg['materials_total'] != sum(p['counts']['materials'] for p in parts):
@@ -233,7 +287,7 @@ def checks(sid, stg, parts):
     uids = [x['uid'] for x in ens + chs] + [t['uid'] for t in teams]
     if len(uids) != len(set(uids)):
         notes.append('uid ripetuti')
-    return ens, chs, refs, notes
+    return ens, chs, refs, notes, objective_enemy
 
 
 def fix_levels(sid, stg, raw):
@@ -260,7 +314,7 @@ def fix_levels(sid, stg, raw):
 
 
 report, miss_e, miss_e_real, miss_r, miss_r_real, enemy_cat = [], {}, {}, {}, {}, {}
-level_fixed, level_unfixed = {}, []
+level_fixed, level_unfixed, late_unused = {}, [], []
 reward_use = {}
 out_stage = os.path.join(args.out, 'stage')
 if not args.check:
@@ -270,17 +324,22 @@ for sid in story:
     if sid in KEEP_WW:
         report.append({'stageId': sid, 'source': 'ww', 'note': 'originale delle risorse WW'})
         continue
-    order = ['2016', 'jp'] if sid in FORCE_2016 else ['jp', '2016']
-    cands, why = [], []
+    order = ['2016', 'jp'] if sid in FORCE_2016 and sid not in LATE_SINGLE else ['jp', '2016']
+    cands, why, waived = [], [], {}
     for src in order:
         got, err = load(src, sid)
         if not got:
             why.append('%s: %s' % (src, err))
             continue
-        ens, chs, refs, notes = checks(sid, got[0], got[1])
+        ens, chs, refs, notes, objective_enemy = checks(sid, got[0], got[1])
         # 526-979: un id di Task 2 (clone o non coperto) non fa scartare la fonte
         unknown = [e for e in refs if (category(e) == 'other' if oltre else e not in enemy_ids and e not in real_enemy)]
-        cands.append(((len(unknown), len(notes)), src, got, (ens, chs, refs, notes)))
+        # I-335: the late single-target file is not rejected by the objective-enemy checks of old objectives
+        late = sid in LATE_SINGLE and src == 'jp' and got[0]['version'] >= LATE_MIN_VERSION
+        counted = [n for n in notes if not (late and n in objective_enemy)]
+        if late:
+            waived[src] = [n for n in notes if n in objective_enemy]
+        cands.append(((len(unknown), len(counted)), src, got, (ens, chs, refs, notes)))
     if not cands:
         report.append({'stageId': sid, 'source': None, 'note': '; '.join(why)})
         continue
@@ -293,7 +352,7 @@ for sid in story:
                                                            and e not in real_enemy]])))
     else:
         best = cands[0]
-    _, src, (stg, parts, warn, raw), (ens, chs, refs, notes) = best
+    _, src, (stg, parts, warn, raw, extra), (ens, chs, refs, notes) = best
     bad_e = sorted(e for e in refs if e not in enemy_ids)
     bad_r = sorted({x['reward'] for x in ens + chs if x['reward'] not in reward_ids})
     for e in refs:
@@ -317,6 +376,15 @@ for sid in story:
                    'materials': sum(p['counts']['materials'] for p in parts),
                    'missing_enemies': bad_e, 'missing_rewards': bad_r, 'checks': notes, 'stg_warnings': warn,
                    'note': '; '.join(why)})
+    if sid in LATE_SINGLE:
+        used = src == 'jp' and stg['version'] >= LATE_MIN_VERSION
+        report[-1]['late_single'] = {
+            'q': LATE_SINGLE[sid], 'used': used, 'waived': waived.get(src, []) if used else [],
+            'parts': [{'room': p['room'], 'enemies': [[e['enemyId'], e['level']] for e in p['enemies']],
+                       'chests': len(p['chests']), 'chests_from_2016': len(extra.get(k, []))}
+                      for k, p in enumerate(parts)]}
+        if not used:
+            late_unused.append(sid)
     if oltre:
         raw, fix = fix_levels(sid, stg, raw)
         if fix:
@@ -350,6 +418,9 @@ summary = {
     'missing_rewards_also_from_real_table': {str(k): v for k, v in sorted(miss_r_real.items())},
     'checks': {str(r['stageId']): r['checks'] for r in report if r.get('checks')},
 }
+if LATE_SINGLE:
+    summary['late_single'] = {'used': sorted(s for s in LATE_SINGLE if s not in late_unused and s in story),
+                              'not_used': sorted(late_unused)}
 if oltre:
     summary['parts_missing'] = sum(1 for r in report if not r['source'])
     summary['rebuilt'] = {str(k): v for k, v in rebuilt.items()}
@@ -411,6 +482,10 @@ if oltre:
 print(json.dumps(summary['by_source']), '| nemici assenti:', len(miss_e), '(dalla tabella vera: %d)' % len(miss_e_real),
       '| premi assenti:', len(miss_r), '(dalla tabella vera: %d)' % len(miss_r_real),
       '| stage con avvisi:', len(summary['checks']))
+if LATE_SINGLE:
+    print('late single-target maps (I-335): %d used, not used %s' % (len(summary['late_single']['used']), late_unused))
 for r in report:
     if not r['source']:
         print('  ! %d: %s' % (r['stageId'], r['note']))
+    elif r.get('late_single') and not r['late_single']['used']:
+        print('  ! %d: late single-target file not used (%s)' % (r['stageId'], r['note']))

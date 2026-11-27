@@ -130,7 +130,17 @@ at the offsets written in the header (+ 0x34), in this order and contiguous:
   opens with the 5.0.1 key in `BGAD_KEY`); the others come from the JP 4.3.1 data and from the 2016 pack
   (`recon/tools/import_orig_stages.py`, I-116). JP redesigned 17 quests (single boss, JP-only enemyIds
   1027/10240/10242/10261/11025/11028/11029/11033/11530, master objectives no longer
-  satisfied): for those the importer takes the 2016 one, which matches the WW master.
+  satisfied): for those the importer took the 2016 one until 27-11 (see below).
+- <a id="late-single"></a>**Late single-target maps (I-335, user decision 27-11).** 19 quests with «Complete within N
+  turns» + 2 x «Complete without having to continue» (14, 24, 47, 54, 66, 76, 81, 96, 102, 120, 130, 160, 183, 200, 217,
+  230, 250, 275, 325; `LATE_SINGLE` in the importer) are served from the late JP patch file (version 16/17): the target
+  alone, as the wiki lists it (275: Fortress Crab 10261 Lv 92 instead of the 2016 Air Soldier + 11 enemies; 120, 217,
+  250 keep the two extras of the late file). The JP file wins when its only failed checks are the objective-enemy
+  ones of old objectives (waived, `late_single.waived` in report.json); 5300 and 7170 leave FORCE_2016 and become one
+  part (the wiki rooms). Their enemies are the event enemy rows (donated WW table, approved models, master built with
+  `KHUX_EVENT_ENEMIES=1`). Chests: the late file's own (wiki count in 17 of 19); `OLD_CHESTS` adds the 2016 chest of the
+  same room to the two parts left empty where the wiki lists one (9350 part 0 uid 20, 2170 part 1), `mapfile.add_chests`.
+  Test `recon/tools/test_import_late_single.py`. The target shown in the quest list is STG [6] of the stage file.
 
 <a id="generatore"></a>
 ## Generator
