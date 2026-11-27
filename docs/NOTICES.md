@@ -69,9 +69,7 @@ The **Shop**, **Raids**, **Events** and **Special Quests** show **one week of yo
 
 Every **Monday** (08:00 UTC) they move on to the **next week of the same period**. After the last week of the period they start again from its first week, so nothing is lost.
 
-**Example:** Story Quests **451-475** = **Oct 13 - Nov 9, 2016**, **4 weeks**. You see Oct 13-19 first; each Monday the next week (Oct 20-26, Oct 27 - Nov 2, Nov 3-9), then Oct 13-19 again.
-
-Clear **Story Quest 476** to reach the next period (from November 10, 2016), with its new banners, raids and events.
+**Example:** Story Quests **451-475** = **Oct 13 - Nov 9, 2016**, **4 weeks**: Oct 13-19 first, each Monday the next week (Oct 20-26, Oct 27 - Nov 2, Nov 3-9), then Oct 13-19 again. Clear **Story Quest 476** for the next period (from Nov 10, 2016).
 
 **Seasonal banners** (New Year, Halloween, Holidays...) follow the **real calendar** instead.
 
