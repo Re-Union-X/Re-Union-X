@@ -26,6 +26,7 @@ function index() {
   ] };
 }
 // the player's Shop week holds 2019-10-14: 2018-09-03 and 2019-10-07 are past, 2020 rows later
+const HERE = '<span class="here" title="Your Story is in this year" aria-label="Your Story is in this year">' + require('./detail-cards').LOCATION_ICON + '</span>';
 function ctx(extra = {}) {
   const ix = extra.index || index();
   const week = { shopFrom: '2019-10-17', shopTo: '2019-10-23' };
@@ -203,7 +204,7 @@ const tests = {
     // tabs = the Shop's game years (user 06-11): All years plus one per game year that has raids, no «Now» mark (the Shop has none)
     const years = new Set(calendar.catalogRows(index()).map((r) => special.gameYearOf(r.start)));
     assert.strictEqual(count(html, ' data-p="'), 1 + years.size);
-    assert(html.includes('data-p="3" data-nww="2" data-njp="0"><b>Year 4</b><small>3rd 🎂 → 4th 🎂</small>') && html.includes('data-p="all" data-nww="5" data-njp="0"><b>All years</b><small id="span" data-ww="2016–2021" data-jp="2016–2021">2016–2021</small>'), 'Shop tab names');
+    assert(html.includes('data-p="3" data-nww="2" data-njp="0">' + HERE + '<b>Year 4</b><small>3rd 🎂 → 4th 🎂</small>') && html.includes('data-p="all" data-nww="5" data-njp="0"><b>All years</b><small id="span" data-ww="2016–2021" data-jp="2016–2021">2016–2021</small>'), 'Shop tab names');
     assert(!html.includes('class="now"'), 'no Now mark');
     assert(!html.includes('data-yr='), 'no calendar-year chips (user 13-11)');
     assert(/<title>Raid Catalog<\/title>/.test(html));
@@ -378,6 +379,15 @@ const tests = {
     }
     // the summary tag of a chosen chip shows the same icon (LAB of the page script)
     assert(/"epic":"<img class=\\"ic\\" src=\\"\/web\/special\/icon\/tepic\.png\\"/.test(html), 'TIER tag with its icon');
+  },
+  // user 27-11: «All years» is the selected tab on opening; the year of the Story week (shopFrom 2019-10-17 = Year 4) carries the pin
+  year_tabs_here() {
+    const html = catalog(index(), ctx());
+    assert(/<button type="button" class="tab on" data-p="all"/.test(html) && count(html, 'class="tab on"') === 1, 'All years selected on opening');
+    assert(count(html, 'class="here"') === 1 && html.includes('data-nww="2" data-njp="0">' + HERE + '<b>Year 4</b>'), 'the pin on Year 4 only');
+    assert(!html.includes(HERE + '<b>All years</b>'), 'never on All years');
+    assert(!catalog(index(), ctx({ shopFrom: undefined, shopTo: undefined })).includes('class="here"'), 'no position: no pin');
+    assert(/<div id="rows" data-defy="all" data-defy-jp="all">/.test(html), 'the page script starts on All years');
   },
   two_sections() {
     // user 06-11: two big tabs above the year tabs, Worldwide (opened first) and Japan only, each with its own counts, year tabs,

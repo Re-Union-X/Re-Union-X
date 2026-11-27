@@ -662,6 +662,9 @@ try {
   const yb = [sb({ start: '2016-04-07', name: 'Launch' }), sb({ start: '2017-04-07', name: 'Y2', unlockQuest: 999 }), sb({ start: '2018-05-01', payType: 8, currency: 'spooky' }),
     sb({ start: '2019-06-01', flags: ['VIP'] }), sb({ start: '2020-04-07', payType: 7, currency: 'platinum' }), sb({ start: '2021-04-07', catalogOnly: 'VIP_TWIN' }), sb({ start: '2016-12-01', payType: 9, currency: 'points' })];
   const yp = g.catalogPage(yb, { ...sctx, storyQuest: 525 });
+  check(/<button type="button" class="tab on" data-y="all">/.test(yp) && (yp.match(/class="tab on"/g) || []).length === 1 && !yp.includes('class="here"'), 'catalogo: All years aperto, nessun segnaposto senza posizione');
+  const yh = g.catalogPage(yb, { ...sctx, storyQuest: 525, shopFrom: '2019-06-03', shopTo: '2019-06-09' });
+  check((yh.match(/class="here"/g) || []).length === 1 && /data-y="3"><span class="here" title="Your Story is in this year"/.test(yh) && !/data-y="all"><span class="here"/.test(yh), 'catalogo: segnaposto «Your Story is in this year» sull anno 4 soltanto');
   for (const t of ['All years', 'Launch year', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Final months']) check(yp.includes(`<b>${t}</b>`), `catalogo: scheda ${t}`);
   check(yp.includes('GAME YEAR <span>— each year runs from one anniversary (April 7) to the next</span>'), 'catalogo: titolo GAME YEAR');
   for (const t of ['⚙ Filters', 'FIND A MEDAL', 'Shows the banners where this Medal can be drawn.', 'PAID WITH', 'alt="">Jewels<', 'alt="">Platinum Ticket<', 'alt="">Draw Ticket<',

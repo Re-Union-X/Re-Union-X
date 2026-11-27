@@ -13,7 +13,7 @@ const special = require('./special-pages');
 const calendar = require('./raid-calendar');
 const windows = require('./raid-windows');
 
-const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, MATCH_JS, khuxMatch, CROWN, PROG_OPTS, progCls, gameYearOf, GAME_YEARS, YEAR_SPAN, boardMark } = special;
+const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, MATCH_JS, khuxMatch, CROWN, PROG_OPTS, progCls, gameYearOf, GAME_YEARS, YEAR_SPAN, boardMark, hereMark } = special;
 // the parts shared with the Event Catalog (event-pages.js): head, pill, Keep button and script, «On this server» box, notice card
 const parts = require('./catalog-pages');
 const { PAGE_HEAD, pill, keepJs, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues, srvFrame, noticeCard, parseNotice, noticeBlocks } = parts;
@@ -247,7 +247,7 @@ function catalogPage(index, ctx = {}) {
   // the raids of the section in that year (a tab without any is hidden in that section)
   const perYearOf = (list) => GAME_YEARS.map((g, i) => list.filter((r) => gameYearOf(r.start) === i).length);
   const perYear = perYearOf(rows), perSec = { ww: perYearOf(ww), jp: perYearOf(bySec.jp) };
-  const tab = (p, name, sub, n, nww, njp, subAttr = '') => `<button type="button" class="tab${p === 'all' ? ' on' : ''}${nww ? '' : ' hide'}" data-p="${p}" data-nww="${nww}" data-njp="${njp}"><b>${esc(name)}</b>`
+  const tab = (p, name, sub, n, nww, njp, subAttr = '') => `<button type="button" class="tab${p === 'all' ? ' on' : ''}${nww ? '' : ' hide'}" data-p="${p}" data-nww="${nww}" data-njp="${njp}">${hereMark(ctx, p)}<b>${esc(name)}</b>`
     + `<small${subAttr}>${esc(sub)}</small><span class="c" id="tc${p}">${n}</span></button>`;
   // TYPE / TIER chips: data-sec = the sections that have a raid of that value (secChips of the page script hides the others)
   const tiersOf = (r) => r.entries.map((e) => String(e.tier).toLowerCase());

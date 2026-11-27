@@ -777,6 +777,12 @@ const GAME_YEARS = [0, 1, 2, 3, 4, 5].map((i) => ({
   phrase: i === 0 ? 'the launch year' : i === 5 ? 'the final months' : `Year ${i + 1}`,
   dates: i === 5 ? 'Apr 7, 2021 – end' : `Apr 7, ${2016 + i} – Apr 6, ${2017 + i}`,
 }));
+// «You are here» on the year tabs of every catalog (user 27-11): the game year of the player's Story week (ctx.shopFrom, the Shop
+// week of storyCtx()) carries a location pin, never «All years»; no known position (no shopFrom) = no pin, and a year without a tab has none
+const HERE_TITLE = 'Your Story is in this year';
+const hereYear = (ctx) => (ctx && /^\d{4}-\d\d-\d\d/.test(ctx.shopFrom || '') ? gameYearOf(ctx.shopFrom) : null);
+const hereMark = (ctx, i) => (hereYear(ctx) === Number(i) ? `<span class="here" title="${HERE_TITLE}" aria-label="${HERE_TITLE}">${cards.LOCATION_ICON}</span>` : '');
+const HERE_CSS = '.tab{position:relative}.tab .here{position:absolute;top:1px;right:2px;line-height:0}.tab .here .ic{width:13px;height:13px}';
 // PAID WITH (spec 7.2, revisione del 20-10): Jewels = payType 1, Platinum = 7, Draw Ticket = 8 con valuta draw, Seasonal =
 // 8 con spooky/holiday/moogle, Other = 4/5/6/9 (e ogni payType sconosciuto). VIP e' a parte (flag del banner, qualunque moneta).
 const SEASONAL_CURRENCIES = new Set(['spooky', 'holiday', 'moogle']);
@@ -816,7 +822,7 @@ const CATALOG_CSS = 'img.ic{display:inline-block;width:1.3em;height:1.3em;max-wi
   + '.gy{color:#00d4ed;font-size:13px;letter-spacing:.5px;margin:10px 0 3px;line-height:1.4}.gy span{color:#b9cfdc;letter-spacing:0}'
   + '.tabs{display:flex;gap:3px}.tab{flex:1 1 0;min-width:0;border:0;font-family:inherit;cursor:pointer;text-align:center;background:#0d4a70;border-radius:7px 7px 0 0;padding:4px 1px 3px;line-height:1.15;color:#b9cfdc;letter-spacing:0}'
   + '.tab b{display:block;font-size:11.5px;color:#fff}.tab small{display:block;font-size:9px}.tab .c{display:block;color:#ffa500;font-weight:bold;font-size:12px}'
-  + '.tab.on{background:linear-gradient(#25c4d8,#0a8fa3);color:#e9fbff}.tabline{height:3px;background:#0a8fa3;margin-bottom:8px}'
+  + '.tab.on{background:linear-gradient(#25c4d8,#0a8fa3);color:#e9fbff}.tabline{height:3px;background:#0a8fa3;margin-bottom:8px}' + HERE_CSS
   + '.sum{background:#06283e;border-radius:6px;padding:6px 10px;margin:0 0 6px;font-size:15px;line-height:1.7}.sum .n1{color:#ffa500;font-weight:bold}'
   + '.tag{display:inline-block;background:#0d5f86;border:1px solid #39a7cf;border-radius:14px;padding:0 4px 0 10px;margin:3px 4px 0 0;font-size:14px;line-height:1.6}'
   + '.tag a{display:inline-block;background:#043654;border-radius:10px;width:20px;text-align:center;margin-left:5px;color:#fff;text-decoration:none}.clear{font-size:14px;margin-left:3px;color:#5fe0f0;font-weight:bold}'
@@ -952,7 +958,7 @@ function catalogPage(banners, ctx) {
       + `<div class="info"><a class="nm" href="${href}">${esc(b.name)}</a><div class="n">${esc(niceRange(b))}</div>`
       + `${priceLine(b) ? `<div class="pay">${PAY_ICON[pay]}${priceLine(b)}</div>` : ''}<span class="s s-${st.key}">${esc(st.text)}</span>${pk}</div></div>`;
   });
-  const tab = (y, name, sub, n) => `<button type="button" class="tab${y === 'all' ? ' on' : ''}" data-y="${y}"><b>${name}</b><small>${sub}</small><span class="c" id="yc${y}">${n}</span></button>`;
+  const tab = (y, name, sub, n) => `<button type="button" class="tab${y === 'all' ? ' on' : ''}" data-y="${y}">${hereMark(ctx, y)}<b>${name}</b><small>${sub}</small><span class="c" id="yc${y}">${n}</span></button>`;
   const opts = (list, cls = () => '') => list.map(([v, l], i) => `<button type="button" class="o${cls(v)}${i ? '' : ' on'}" data-v="${v}">${l}</button>`).join('');
   const n = sorted.length, nb = `${n} banner${n === 1 ? '' : 's'}`;
   const js = CATALOG_JS.replace('__YEARS__', JSON.stringify(GAME_YEARS.map(({ phrase, dates: d }) => ({ phrase, dates: d }))))
@@ -986,5 +992,5 @@ module.exports = { spanDays,
   KIND_OPTS, niceRange, PAY_ICON, MEDAL_GALLERY_HREF,
   KEPT_STYLE, CATALOG_PLATE_STYLE, CATALOG_PAY_TYPE, PAY_ICON_KEYS, page, PIN_JS, esc,
   TUTORIAL_BANNER, tutorialOpen, tutorialRow, SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketCurrency, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, listedCurrency, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawEffect, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, GAME_YEARS, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, isFreeDaily, pinnable, pinnedBanner,
+  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawEffect, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, GAME_YEARS, hereYear, hereMark, HERE_CSS, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, isFreeDaily, pinnable, pinnedBanner,
 };

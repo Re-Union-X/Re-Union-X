@@ -358,10 +358,16 @@ const tests = {
     ix.entries.push({ censusId: 'E-7', evStageId: 29907, name: 'Old Fun', start: '2018-06-01', end: '2018-06-07', stageIds: [4009907], available: true, labels: [], noticeIds: [], quests: [quest(4009907)] },
       { censusId: 'E-8', evStageId: 29908, name: 'Early April', start: '2019-04-02', end: '2019-04-05', stageIds: [4009908], available: true, labels: [], noticeIds: [], quests: [quest(4009908)] });
     const raw = pages.catalogPage(ix, ctx()), html = pages.expandCatalog(raw);
-    const tabs = [...raw.matchAll(/<button type="button" class="tab( on)?" data-p="(\w+)"><b>([^<]*)<\/b><small>[^<]*<\/small><span class="c">(\d+)<\/span>/g)].map((m) => [m[2], m[3], Number(m[4]), !!m[1]]);
-    // shopFrom 2019-04-08 is game year 3 (Apr 7, 2019 -> Apr 6, 2020): open first; 2019-03 and 2019-04-02 are game year 2
-    assert.deepStrictEqual(tabs, [['all', 'All years', 6, false], ['2', 'Year 3', 5, false], ['3', 'Year 4', 1, true]]);
-    assert.ok(/<div class="tabs" id="tabs" data-def="3">/.test(raw), 'default tab = game year of the Story week');
+    const tabs = [...raw.matchAll(/<button type="button" class="tab( on)?" data-p="(\w+)">(<span class="here"[^>]*>[\s\S]*?<\/span>)?<b>([^<]*)<\/b><small>[^<]*<\/small><span class="c">(\d+)<\/span>/g)].map((m) => [m[2], m[4], Number(m[5]), !!m[1], !!m[3]]);
+    // user 27-11: every catalog opens on «All years» (selected, data-def); shopFrom 2019-04-08 is game year 3 (Apr 7, 2019 -> Apr 6,
+    // 2020): its tab carries the «you are here» pin; 2019-03 and 2019-04-02 are game year 2
+    assert.deepStrictEqual(tabs, [['all', 'All years', 6, true, false], ['2', 'Year 3', 5, false, false], ['3', 'Year 4', 1, false, true]]);
+    assert.ok(/<div class="tabs" id="tabs" data-def="all">/.test(raw), 'default tab = All years');
+    assert.ok(raw.includes('title="Your Story is in this year"') && raw.split('class="here"').length === 2, 'exactly one pin');
+    assert.ok(!/class="tab[^"]*" data-p="\w+"><span class="here"/.test(raw.replace(/data-p="3"/, 'x')), 'only the tab of the Story year');
+    const noPos = pages.catalogPage(ix, ctx({ shopFrom: undefined }));
+    assert.ok(!noPos.includes('class="here"') && /<div class="tabs" id="tabs" data-def="all">/.test(noPos), 'no position: no pin');
+    assert.ok(!pages.catalogPage(ix, ctx({ shopFrom: '2017-01-01' })).includes('class="here"'), 'a year without a tab: no pin');
     assert.strictEqual(rowOf(html, 29907).match(/data-p="(\d)"/)[1], '2');
     assert.strictEqual(rowOf(html, 29908).match(/data-p="(\d)"/)[1], '2', 'April 2-5 is still the year before the anniversary');
     assert.strictEqual(rowOf(html, 29903).match(/data-p="(\d)"/)[1], '3');
@@ -369,10 +375,12 @@ const tests = {
     assert.ok(!/kxImgs\(\);<\/script>/.test(raw.split('id="kxrows"')[1].split('</script>')[1] + '</script>'), 'no card load before the tab filter');
     // run the tab and filter script on the page: only the rows of the open tab are shown, the month label of a hidden month is hidden
     const fp = fakePage(raw), labels = () => fp.kids.filter((k) => k.className.startsWith('ml')).map((k) => [k.attrs['data-m'], !/ hide/.test(k.className)]);
+    assert.strictEqual(fp.shown().length, 6, 'opens on All years (user 27-11)');
+    fp.tab('3');
     assert.deepStrictEqual(fp.shown(), [29903]);
     assert.deepStrictEqual(labels(), [['2018-06', false], ['2019-03', false], ['2019-04', false], ['2019-05', true]]);
     assert.ok(fp.loads() >= 1, 'cards of the open tab requested after the filter');
-    assert.deepStrictEqual(fp.byId.tabs.qa['.tab'].map((t) => / on/.test(t.className)), [false, false, true]);
+    assert.deepStrictEqual(fp.byId.tabs.qa['.tab'].map((t) => / on/.test(t.className)), [false, false, true], 'the open tab is the only one on');
     fp.tab('all');
     assert.strictEqual(fp.shown().length, 6, 'All years shows every row');
     fp.tab('2');
@@ -397,7 +405,7 @@ const tests = {
     assert.deepStrictEqual(group('prog'), [['all', 'All'], ['done', 'Completed'], ['todo', 'Incomplete']]);
     // only the kinds in the index (E-0 and E-9 have no type: Event Quests), in the order of the list
     assert.deepStrictEqual(group('type'), [['all', 'All'], ['EQ', 'Event Quests'], ['GEM', 'Gem Quests'], ['QUIZ', 'Quizzes']]);
-    assert.ok(/<div class="foot"><a href="#" class="reset" id="freset">Reset filters<\/a><button type="button" class="ok" id="fok">Show 1 result<\/button><\/div>/.test(sheet), 'results of the open tab');
+    assert.ok(/<div class="foot"><a href="#" class="reset" id="freset">Reset filters<\/a><button type="button" class="ok" id="fok">Show 4 results<\/button><\/div>/.test(sheet), 'results of the open tab: All years (user 27-11)');
     assert.ok(raw.includes('<div class="sum" id="sum">') && raw.includes('<div id="none" class="none" style="display:none"></div>'));
     for (const e of ix.entries) {
       const r = rowOf(html, e.evStageId);
@@ -569,6 +577,14 @@ const tests = {
   // records) joined at run time with game_data/avatar_boards.json (avatar-boards.js catalogIndex): its boards with their price, a
   // held board with its reason in plain words; a board-only entry with no served board is «Not built yet»; the held boards no
   // window places are listed at the end of the Avatar Board Catalog
+  // user 27-11: the Avatar Board Catalog opens on «All years» and carries the pin on the year of the Story week as the Event Catalog
+  board_catalog_year_tabs() {
+    const raw = pages.boardCatalogPage(BOARD_INDEX(), ctx());
+    assert.ok(/<div class="tabs" id="tabs" data-def="all">/.test(raw) && /<button type="button" class="tab on" data-p="all">/.test(raw) && (raw.match(/class="tab on"/g) || []).length === 1, 'All years selected');
+    assert.strictEqual((raw.match(/class="here"/g) || []).length, 1, 'one pin');
+    assert.ok(!/data-p="all"><span class="here"/.test(raw), 'never on All years');
+    assert.ok(!pages.boardCatalogPage(BOARD_INDEX(), ctx({ shopFrom: undefined })).includes('class="here"'), 'no position: no pin');
+  },
   board_entry_listed() {
     const ix = BOARD_INDEX();
     const html = boardCatalog(ix, ctx({ current: new Set(['B-1']) }));

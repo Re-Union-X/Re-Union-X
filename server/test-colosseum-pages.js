@@ -256,6 +256,18 @@ const tests = {
     assert.deepStrictEqual(shown(), []);
     assert.ok(p.el('none').textContent.includes('No seasons match'));
   },
+  // user 27-11: «All years» is selected on opening; the game year of the Story week carries the «you are here» pin
+  year_tabs_here() {
+    const more = [...SEASONS13, row(2100, '2017-05', 'later', { base: 'later', boards: 'todo' })];
+    const html = pages.catalogPage(more, { ...CTX, shopFrom: '2017-05-08' });
+    assert.ok(/<button type="button" class="tab on" data-p="all"/.test(html) && (html.match(/class="tab on"/g) || []).length === 1, 'All years selected on opening');
+    assert.ok(/class="tab" data-p="1"><span class="here" title="Your Story is in this year" aria-label="Your Story is in this year"><svg/.test(html) && (html.match(/class="here"/g) || []).length === 1, 'the pin on Year 2 only');
+    assert.ok(!/data-p="all"><span class="here"/.test(html), 'never on All years');
+    assert.ok(!pages.catalogPage(more, CTX).includes('class="here"'), 'no position: no pin');
+    assert.ok(!pages.catalogPage(more, { ...CTX, shopFrom: '2019-01-01' }).includes('class="here"'), 'a year without a tab: no pin');
+    const p = fakePage(html);
+    assert.strictEqual(p.rows.filter((r) => !/ hide/.test(r.className)).length, 14, 'the script starts on All years');
+  },
   year_tabs_phone() {
     const html = withPhone(pages.catalogPage(SEASONS13, CTX));
     assert.ok(html.includes('<style data-phone>') && html.includes('.fbtn,.tab,.yc,.pk,.o,button{min-height:30px}'), 'phone tap floor of the tabs');

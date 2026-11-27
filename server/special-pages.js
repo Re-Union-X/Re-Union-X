@@ -8,7 +8,7 @@ const special = require('./special');
 // Catalogue tabs = the game years of the Shop's Banner Catalog (gacha.js gameYearOf / GAME_YEARS: one anniversary, April 7, to the
 // next; Launch year .. Final months; user 06-11): same names, same boundaries, a tab only for a year with rows, no «Now» mark
 // (the Shop has none). Display grouping only: special.PERIODS (Launch .. Last) still drives the unlocks and the entries' periods.
-const { gameYearOf, GAME_YEARS } = require('./gacha');
+const { gameYearOf, GAME_YEARS, hereYear, hereMark, HERE_CSS } = require('./gacha'); // hereMark: the «you are here» pin of the year tabs (gacha.js)
 const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const cards = require('./detail-cards'), DC = cards; // section cards and colour roles of the detail pages
 const YEAR_SPAN = '2016–2021';
@@ -26,7 +26,7 @@ function entryYears(en, periods) {
   }
   return [...out].sort((a, b) => a - b);
 }
-const YEAR_TAB_CSS = '.tab small{display:block;font-size:9px;line-height:1.2}';
+const YEAR_TAB_CSS = '.tab small{display:block;font-size:9px;line-height:1.2}' + HERE_CSS;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -619,7 +619,7 @@ function catalogPage(index, ctx = {}) {
   }
   cards.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.id - b.id));
   const nQuest = cards.filter((c) => !c.camp).length, nCamp = cards.length - nQuest;
-  const tab = (p, name, sub, n) => `<button type="button" class="tab${p === 'all' ? ' on' : ''}" data-p="${p}"><b>${esc(name)}</b><small>${esc(sub)}</small><span class="c" id="tc${p}">${n}</span></button>`;
+  const tab = (p, name, sub, n) => `<button type="button" class="tab${p === 'all' ? ' on' : ''}" data-p="${p}">${hereMark(ctx, p)}<b>${esc(name)}</b><small>${esc(sub)}</small><span class="c" id="tc${p}">${n}</span></button>`;
   const opts = (list, cls = () => '') => list.map((o, i) => `<button type="button" class="o${cls(o[0])}${i ? '' : ' on'}" data-v="${o[0]}">${optLabel(o)}</button>`).join('');
   const count = (y) => cards.filter((c) => gameYearOf(c.start) === y).length;
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -783,5 +783,5 @@ function detailPage(index, evStageId, ctx = {}) {
 }
 
 // CSS, DETAIL_CSS, esc, niceDay, monthYear, icon: shared with the Raid Catalog pages (server/raid-pages.js), which follow this style
-module.exports = { gameYearOf, GAME_YEARS, YEAR_SPAN, entryYears, SHOW_SETS, catalogPage, catalogFacts, detailPage, familiesOf, buildNames, typesOf, SPECIAL_ICON_KEYS, RANK_JS, khuxRank, MATCH_JS, khuxMatch,
+module.exports = { gameYearOf, GAME_YEARS, hereYear, hereMark, YEAR_SPAN, entryYears, SHOW_SETS, catalogPage, catalogFacts, detailPage, familiesOf, buildNames, typesOf, SPECIAL_ICON_KEYS, RANK_JS, khuxRank, MATCH_JS, khuxMatch,
   CSS, DETAIL_CSS, NARROW_CSS, esc, niceDay, monthYear, icon, CROWN, BOARD_TODO, boardMark, PROG_OPTS, progCls };

@@ -23,7 +23,7 @@ const { rowState, informative } = require('./calendar-util');
 const parts = require('./catalog-pages');
 const { shownRank } = require('./ranked-rewards');
 
-const { CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, CROWN, gameYearOf, GAME_YEARS, YEAR_SPAN, MATCH_JS, PROG_OPTS, progCls, boardMark } = special;
+const { CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, CROWN, gameYearOf, GAME_YEARS, YEAR_SPAN, MATCH_JS, PROG_OPTS, progCls, boardMark, hereMark } = special;
 const { PAGE_HEAD, pill, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues, srvFrame, noticeCard, parseNotice, noticeBlocks, backBar, packCatalog, expandCatalog, UNPACK_JS,
   FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet } = parts;
 
@@ -439,10 +439,11 @@ function catalogOf(index, ctx, m) {
       + `${replacesLine(st, kept)}${st.button === null ? '' : `<div>${m.button(e.evStageId, st.button, ' onclick="return kxK(this)"')}</div>`}`
       + '<div class="mt"></div></div><span class="go">›</span></div>\n' });
   }
-  // game-year tabs (the Raid Catalog's): All years + every game year with entries, its count; the year of the Story week first
+  // game-year tabs (the Raid Catalog's): All years + every game year with entries, its count; every catalog opens on «All years»
+  // (user 27-11; it opened on the year of the Story week), the year of the Story week carries the «you are here» pin
   const perYear = GAME_YEARS.map((g, i) => entries.filter((e) => gameYearOf(e.start) === i).length);
-  const shopYear = ctx.shopFrom ? gameYearOf(ctx.shopFrom) : null, def = shopYear !== null && perYear[shopYear] ? String(shopYear) : 'all';
-  const tab = (p, name, sub, n) => `<button type="button" class="tab${p === def ? ' on' : ''}" data-p="${p}"><b>${esc(name)}</b><small>${esc(sub)}</small><span class="c">${n}</span></button>`;
+  const def = 'all';
+  const tab = (p, name, sub, n) => `<button type="button" class="tab${p === def ? ' on' : ''}" data-p="${p}">${hereMark(ctx, p)}<b>${esc(name)}</b><small>${esc(sub)}</small><span class="c">${n}</span></button>`;
   const tabsHtml = entries.length ? `<div class="tabs" id="tabs" data-def="${def}">${tab('all', 'All years', YEAR_SPAN, entries.length)}`
     + `${GAME_YEARS.map((g, i) => (perYear[i] ? tab(String(i), g.name, g.sub, perYear[i]) : '')).join('')}</div><div class="tabline"></div>` : '';
   // the Filters sheet (the Raid Catalog's: FIND, SHOW, PROGRESS, then TYPE with the kinds of the index only)

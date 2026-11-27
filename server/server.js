@@ -5519,7 +5519,8 @@ function colosseumWallet() {
 function colosseumPageCtx(extra = {}) {
   const sphere = masterRows('sphere'), cards = colosseumBoardCards();
   const skills = new Map(masterRows('skill').map((r) => [r.skillId, r.name]));
-  return { unlocked: colosseum().catalogCtx().unlocked, imgVersion: routesColosseum.COLOSSEUM_IMG_VERSION,
+  return { unlocked: colosseum().catalogCtx().unlocked, shopFrom: storyCtx().shopFrom, // shopFrom: the «you are here» pin of the year tabs
+     imgVersion: routesColosseum.COLOSSEUM_IMG_VERSION,
     boardImgVersion: cards.version, boardCard: (id) => cards.ids.has(Number(id)), bonusTier: (id) => makeColosseum.BONUS_TIER[id] || null,
     itemName: (type, id) => boardRewardName(raidBoardIndex(), type, id) || '', skillName: (id) => skills.get(id) || '',
     // the Coliseum Coins of the season the Coliseum plays now (kept or of the Story), on the header; none without a live season
