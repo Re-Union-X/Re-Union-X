@@ -1919,3 +1919,29 @@ Nothing kept: «Nothing kept: pick a past item in a catalog to keep it».
 Off the phone layout the hub shows the five catalogues side by side as cards (`#rows` grid, `repeat(auto-fit, minmax(200px, 1fr))`)
 and the kept items in two columns, so the whole hub fits a 1280x720 WebView without vertical scrolling (checked with six kept rows:
 page height 628 px in a 628 px viewport). The phone keeps its 3-column grid; there the Remove buttons read «Remove» only.
+
+## Genie Jafar quests of the WW 5th anniversary (I-248, 27 November 2026)
+
+User decision 10-11: the ten «Genie Jafar - n/10» quests of WW notice 68893 («Japanese ver. 5th Anniversary KHUX & KHDR Campaign»,
+Sep. 3-15, 2020 PT) and the completion reward of that notice, 3,000 Jewels in full.
+- **Record.** Census EV-1266 is a CELEB row, outside the challenge selection (EQ, KEY, QUIZ): build_challenge.py read its donor
+  evStage row 202665 under EV-1263 (same notice) and moved it to EV-1266 (`rowsMoved`, rule_window), where no record existed. The
+  private script `tmp\events\i248dd_ev1266.py` writes the record into `challenge_2020.json` after EV-1263 from the builder's own
+  quests of that row (`challenge\workuilt_all.json`): donor stage rows 743270..743279, JP 4.3.1 maps 743270 / 743273 / 743276 /
+  743279 (three quests per map, as in the original), donor objectives (Draw Tickets 2-5 and Power / Speed / Magic Gems: «up to 30
+  Draw Tickets, and 30 Gems» of the notice), drops and restrictions (no continue), card from the row's banner key 9BEENftQu (the
+  notice banner). A rerun of build_challenge.py drops the record: rerun the script after it (like patch_surprise.py).
+- **Enemies.** The run's own rows 2009001554 / 2009101554 / 2009201554 / 2009301554 (Jafar, displayId 1554 = the genie form,
+  already served; attacks 1554013..1554016 and 1554023 from the donated table), added in place to the private event enemy file by
+  `tmp\events\i248dd_jafar_rows.py` (as the Sept 2020 Dragon Maleficent / Ramuh rows). khuxwiki «KHUX & KHDR Campaign» is this
+  event's own series page (one run): «Jafar (Genie)» x1, Magic, every objective and reward equal to the donor's (wwCheck
+  `confirmed`, khuxwiki name of displayId 1554). Nothing is reconstructed: entry label `original`.
+- **Completion reward.** `make_community_bonus.py` moved EV-1266 from `pending` to `events` (kind `completion`, prefix «Genie Jafar - »):
+  3,000 Jewels, Draw Ticket x50, Spirit / NM Sir Kyroo [SAB LV 7] x10, LV 8 x6, LV 9 x3, LV 10 x1, Power / Speed / Magic Gem x10,
+  Sun and Moon Gem x1 (the KHDR-only rewards left out), paid once into the Presents when all 30 objectives are cleared (label
+  completionReward; the «Community goals» paragraph of the Events notice lists it from events.json).
+- **Served** with `serve.censusIds` EV-1266 (event_config.json), test `genie_jafar_completion`. Music: the ten donor stage rows
+  (bgm 501005001 / 501005002) added to `event_bgm.json`.
+- **Dry regen** (`tmp\i248`, copies): 4,270 of 4,270 quests (4,260 before); +10 stage (4004516..4004525), +1 evStage (23088), +4
+  enemy, +5 enemyAttack rows, +4 POI keys, no other row or entry changed; event_ids.json +1 row, +10 entries, +1 check. The four
+  maps must be imported by `import_event_stages.py` (all four import, room DG_0100_02_00 served).

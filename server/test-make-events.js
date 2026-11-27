@@ -485,8 +485,10 @@ const tests = {
     assert.deepStrictEqual(old.index.entries.map((e) => e.censusId), ['E-2']);
     // the real config: 13 pilot ids, the GEM type (Part 2), the COIN type (Part 3), the challenge types EQ, KEY, QUIZ (Part 4),
     // the 35 Org XIII / Keyblade War ids (Part 5), the High Score Challenges HSC (Part 8) and the 11 CELEB / SPEC / COLLAB quest events
-    // of 2016-11..2018-03 (Part 10a), the 6 Booster Challenges of 2017-11..2018-03 (Part 10c)
-    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6);
+    // of 2016-11..2018-03 (Part 10a), the 6 Booster Challenges of 2017-11..2018-03 (Part 10c), the CELEB row EV-1266 of the ten
+    // «Genie Jafar - n/10» quests (I-248)
+    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6 + 1);
+    assert.ok(REAL_CONFIG.serve.censusIds.includes('EV-1266'));
     for (const id of ['EV-0319', 'EV-0332', 'EV-0350', 'EV-0369', 'EV-0392', 'EV-0411']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     for (const id of ['EV-0094', 'EV-0214', 'EV-0402', 'EV-0423']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     assert.strictEqual(new Set(REAL_CONFIG.serve.censusIds).size, REAL_CONFIG.serve.censusIds.length, 'no id twice');
@@ -1234,6 +1236,46 @@ const tests = {
     assert.throws(() => run(done('E-C1', { quests: ['Nothing'] })), /no quest named «Nothing\.\.\.»/);
     assert.throws(() => run(done('E-C1', { rewards: [] })), /without rewards/);
     assert.throws(() => run(done('E-C1', { kind: 'other' })), /unknown kind/);
+  },
+  // I-248 (27-11-2026): the WW 5th-anniversary «Genie Jafar - n/10» quests (census EV-1266, a CELEB row: built only because the
+  // real config names its id) and the completion reward of notice 68893 (3,000 Jewels in full, KHUX rewards only). The donor stage
+  // names carry a literal %d (ordinalName numbers them); the completion prefix «Genie Jafar - » counts all ten, and the reward is
+  // ready only when all ten are served; another CELEB row of the same notice is not built (type CELEB is not a served type)
+  genie_jafar_completion() {
+    const genie = Array.from({ length: 10 }, (_, i) => quest(743270 + i, 1, [501], { name: 'Genie Jafar - %d/10', displayName: `Genie Jafar - ${i + 1}/10`,
+      level: 100 + 250 * i, ap: 5, map: { key: 743270 + 3 * Math.floor(i / 3), stageBinId: i % 3 ? 743270 + 3 * Math.floor(i / 3) : 0, status: 'ok' },
+      objectives: [objective(10, 'Complete without having to continue', { type: 41, id: 41, num: 2, name: 'Draw Ticket' }),
+        objective(10, 'Complete without having to continue', { type: 5, id: 48, num: 2, name: 'Power Gem' }),
+        objective(10, 'Complete without having to continue', { type: 3, id: 90011, num: 5, name: 'Quest Medal' })] }));
+    const ev = donorEv({ eventStageId: 202665, startTime: '2020-09-03 07:00:00', endTime: '2020-09-16 06:59:59', eventType: 3 });
+    const rec = (cid, quests, extra = {}) => record(cid, quests, { name: 'Japanese ver. 5th Anniversary KHUX & KHDR Campaign', type: 'CELEB', start: '2020-09-03',
+      end: '2020-09-16', notices: [68893], evStage: [ev], ...extra });
+    const rewards = [{ type: 2, id: 0, num: 3000, name: 'Jewels' }, { type: 41, id: 0, num: 50, name: 'Draw Ticket' }, { type: 5, id: 51, num: 1, name: 'Sun Gem' }];
+    const bonus = [{ censusId: 'EV-1266', name: 'Japanese ver. 5th Anniversary KHUX & KHDR Campaign', noticeId: 68893, kind: 'completion', quests: ['Genie Jafar - '], rewards }];
+    const cfg = { ...CONFIG, serve: REAL_CONFIG.serve };
+    const m = { ...master(), ...BOARD_MASTER(), material: [48, 51].map((id) => ({ materialId: id, name: `Gem ${id}` })) };
+    const out = me.buildEvents([rec('EV-1266', genie), rec('EV-1264', [quest(743300, 1, [501])], { evStage: [donorEv({ eventStageId: 202999 })] })], cfg, m, undefined, {},
+      null, null, { bonus });
+    const e = entry(out, 'EV-1266');
+    assert.ok(e && e.available, 'the CELEB row EV-1266 is built (serve.censusIds)');
+    assert.deepStrictEqual(out.skipped, [{ censusId: 'EV-1264', reason: 'notSelected' }], 'another CELEB row is not');
+    assert.deepStrictEqual(e.quests.map((q) => q.name), genie.map((q) => q.displayName), 'ordinal names');
+    assert.ok(e.quests.every((q) => q.served), JSON.stringify(e.quests.map((q) => q.why)));
+    assert.deepStrictEqual(e.communityBonus, { name: 'Japanese ver. 5th Anniversary KHUX & KHDR Campaign', noticeId: 68893, kind: 'completion', count: null,
+      stageIds: e.stageIds, rewards, ready: true });
+    assert.strictEqual(e.stageIds.length, 10, 'all ten quests counted');
+    assert.ok(e.labels.includes('completionReward'));
+    assert.strictEqual(e.label, 'original', 'an original reward: no reconstruction label');
+    assert.strictEqual(out.evStage.length, 1, 'one row: the donor row 202665');
+    const rows = out.stage.filter((st) => e.stageIds.includes(st.stageId));
+    assert.deepStrictEqual(rows.map((st) => st.stageBinId), [743270, 743270, 743270, 743273, 743273, 743273, 743276, 743276, 743276, 743279], 'shared JP maps');
+    assert.ok(rows.every((st) => st.submissionRewardType[0] === 41 && st.submissionItemNum[0] === 2), 'the donor objectives');
+    // a Genie Jafar quest not served (its enemy missing): the reward waits
+    const held = me.buildEvents([rec('EV-1266', genie.map((q, i) => (i === 9 ? { ...q, enemies: [{ ...q.enemies[0], id: 999 }], targets: [{ id: 999, name: 'Foe' }] } : q)))], cfg, m,
+      undefined, {}, null, null, { bonus });
+    const h = entry(held, 'EV-1266');
+    assert.deepStrictEqual([h.communityBonus.ready, h.communityBonus.stageIds.length], [false, 9], 'one quest not served: not ready');
+    assert.ok(!h.labels.includes('completionReward'));
   },
   // fix round 1 (M3): a record's own boardSetKey that the board sets do not have stops the run (when board sets are given)
   record_set_key_known() {
