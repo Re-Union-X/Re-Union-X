@@ -235,7 +235,7 @@ Kept items still appear where they did: a kept raid or event in **Events**, a ke
 
 **IMPORTANT** · 11/26
 
-The monthly **Coliseum** seasons are back from Story Quest 130: April 2016 to March 2018 for now.
+The monthly **Coliseum** seasons are back from Story Quest 130: every season, April 2016 to June 2021.
 
 The season follows your **Story week**; each season keeps its own progress and coins (not original).
 

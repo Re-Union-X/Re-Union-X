@@ -71,7 +71,7 @@ function helpPage() {
       ['Why does the game download data?', 'The first start downloads the game resources (a few GB). After an update of the server only the game data is downloaded again (some MB): tap Download when the popup asks.'],
       ['Why do events come back on their own dates?', 'Events, raids and campaigns return on a reconstructed calendar. The Notices explain how it works.'],
       ['Can I play with other players?', 'No: the restoration is single player. Parties, Union Cross and PvP are not available yet; the Notices say what changes in their place.'],
-      ['Is the Coliseum back?', 'Yes, the PvE Coliseum, from Story Quest 130: the seasons of April to July 2016 for now, single player, with the ranking rewards as score thresholds. The PvP Coliseum is not available yet. The Coliseum notice explains the differences.'],
+      ['Is the Coliseum back?', 'Yes, the PvE Coliseum, from Story Quest 130: every season from April 2016 to June 2021, single player, with the ranking rewards as score thresholds. The PvP Coliseum is not available yet. The Coliseum notice explains the differences.'],
       ['Where are the raid bosses?', 'In the Events tab: the Raid Catalog lists the raids you can keep and play again.'],
       ['Can I buy Jewels?', 'No. There are no real-money purchases: Jewels, Medals and items come from quests, missions, presents and events.']]],
     ['Your save', [
