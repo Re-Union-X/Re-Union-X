@@ -1,11 +1,11 @@
 # Coliseum (PvE) - spec summary
 
-Research and state of the PvE Coliseum (I-054 entry screen done; I-059 gameplay: **Part 1 served**, seasons 2016-04 .. 2016-07,
-see «Part 1 summary» at the end). Facts only; the detailed
+Research and state of the PvE Coliseum (I-054 entry screen done; I-059 gameplay: **Parts 1-4 served**, 63 seasons 2016-04 .. 2021-06,
+see the part summaries at the end). Facts only; the detailed
 per-month data and the sources stay in the private event catalogue (`private\events\sources\coliseum\COLISEUM.md`).
 Tags: **proven** = read from original data/code or two agreeing primary sources; **probable** = one good source or
 strong inference; **unknown** = not found yet. Current server state: `server/routes-colosseum.js` (Coliseum Part 1 Task 3)
-answers 124-128 and 139/140/180 for the served seasons 2016-04 .. 2016-07; status 2 «This event is unavailable.» below story
+answers 124-128 and 139/140/180 for the served seasons 2016-04 .. 2021-06; status 2 «This event is unavailable.» below story
 quest 130 or in a month with no served season.
 
 ## Rules
@@ -17,7 +17,7 @@ quest 130 or in a month with no served season.
 | Structure | Tiers (client `rank`) of N Rounds (`stageCount`); one round = one Coliseum stage `cl_stg<YYYYMMNN>`, room `OC_0001_00_00`, one map part, 1-4 waves (map teams) | proven |
 | Stage set | 10 stages per month (9 from 2020-02), rounds cycle through them | proven (data), cycle probable |
 | Enemy strength | 1.0.1 client: level rise = rounds of all previous tiers + `lvPerLoop` x floor((round-1)/`loopStageCount`) (10 / 10 in the master); stage files carry levels 1..10 ; the 4.3.1 client uses (rounds of previous tiers + round) x floor(`lvPerLoop`/`loopStageCount`) | proven (1.0.1 and 4.3.1 code) |
-| Last tier | endless; the 2016 master writes 999, the 4.3.1 client shows «∞» only for `arrivalStageCount` 0 | proven |
+| Last tier | endless (finite from 2019-05: 4,000 rounds, then «Season complete»); the 2016 master writes 999, the 4.3.1 client shows «∞» only for `arrivalStageCount` 0 | proven |
 | One-turn shortcut | clearing all waves in one turn unlocks the next rounds at once («Unlocked Round %d!», «Shortcut Unlocked!»); clearing a round locks the skipped ones again; size per tier = master `excellentUnlockCount` (= wiki "skip limit") | proven that the values match, exact rule probable |
 | AP | 3-5 per round until 2017-04 (1 AP / 0 AP campaigns), 0 at every tier from 2017-05 | proven (notices + wiki) |
 | Currency | Coliseum Coins (`userPoint.colosseumSpherePoint`, reward type 17) per round and per tier clear; spent on Coliseum boards | proven (type 17 in the 4.3.1 client) |
@@ -603,3 +603,37 @@ Resources 190, master revision 401.
   Scourge Spider 61032, Wyvern 60137. The round rules (buffs, counters) are in those enemy rows, so this month keeps them; the
   maps themselves carry no buff. `PART4_ENEMY_IDS` grows from 86 to 97 (60095 and 60137 were already there).
 - The 2016 / 2017 generated files are byte-identical (220 files compared with the served set).
+
+## Part 4 summary (27 November 2026)
+
+Seasons 2019-05 .. 2021-06 (26 seasons, `colosseumStageId` 4500 .. 7000 in steps of 100, rankingId 4046 .. 4071): **63 seasons** served in
+all. Implemented, committed and reviewed task by task; master regen, resources and bench walk are the controller's (pending).
+
+- **Tiers (user 27-11):** T1-T18 served, **T19 (1,000 rounds, AP 99) not served** (a designer wall; a ReLux tier row with `ap` > 0 is
+  cut for the revamp). T1 200 rounds / skip 199 / 100 coins; T2-T3 400 / 199 / 300; T4 400 / 149 / 300; T5-T7 400 / 99 / 500 + 10 a round;
+  T8 300 / 99 / 700 + 30; T9 200 / 99 / 700 + 30; T10 100 / 49 with the title (type 7, 17079 + months since 2019-05, «<Mon. YYYY> Victor»);
+  T11-T18 100 / 49. 4,000 rounds in all, **no endless tier**: round 4,000 clears to «Season complete» (`total()` finite, `complete`
+  in `seasonDetail`). AP 0 everywhere.
+- **Levels / stages:** enemy level = global round; 10 stages a month to 2019-12, 9 from 2020-01 (`validStage` 9); stage of round n =
+  ((n - 1) mod validStage) + 1 (older seasons keep the round inside the tier).
+- **Stages:** JP 4.3.1 sets of the same month (highest revision), 28 stages without an STG header rebuilt from a same-month sibling
+  (`rebuild_from_sibling`, never another stage's enemies); **2020-01** = JP 2020-05 stages 1-9 copied whole (ids 21200101 .. 09),
+  **2020-10** = per-round whole copies of other months' stages (21201001 .. 09; user 27-11); **2019-07** has no stage file: generated
+  from the khuxwiki lineup (21190701 .. 10, `MONTH_NAMED['2019-07']`, 5 wiki buffs dropped). The build runs the import with
+  `--copy-from-make`.
+- **Enemies:** original ids only; per-era row shape (old shape <= 4400, 2019 shape for an id needed only by seasons >= 4500, the old
+  rule when both), `ENEMY_RANGES` = 20000-29999 and 60000-62999; 97 new rows (`PART4_ENEMY_IDS`), 2019-07 = 13 raw ReLux 6xxxx rows
+  (round rules kept in the rows). The **14 shared pre-revamp ids** (20007 20011 20012 20015 20016 20017 20035 20059 20071 20110 20131
+  20136 20137 20144) and 25 Part 3 / 3b ids (`sharedOldRows`, 39) keep their earlier rows and fight at LV 1,000-4,000 (bench: LV > 999 probe).
+- **Boards:** 125 served (five a month: avatar, Huey/Dewey/Louie, Chip, Dale, Scrooge skill; 30,900 coins a month), none tier-gated
+  (user 27-11); ids 2210151 + 5n .. 2210256, then 2310163 / 168 / 173 / 178; `RANGES.sphere*` up to 2399999; types 33 (Spirit parts)
+  and 7 (titles) in cells. Cards: JP twins, wiki previews (`loc`, incl. all HDL boards, user-approved list), 2021-03 .. 06 fitted JP cards.
+- **Ranking:** 12 brackets 2019-05 .. 09, the RX edges 2019-10 .. 2020-10 (user), 16 brackets 2020-11 .. 2021-04, 2 brackets 2021-05 / 06
+  (Moogle 3 / 1 star); Avatar Coins (type 14), gems, SP Chip & Dale; skill 1271 «ATK B XV Max & GA 2» added to the ladder in
+  `make-skill-table.js`.
+- **Thresholds:** era registry `ERAS` 17 / 18 / 19 / 20 with the semi-log form; ERA19 (2019-05 .. 2020-04) and ERA20 (2020-05 ..
+  2021-06) fitted on the few season-end points of `CUTOFFS_2019.md`, everything else «interpolated»; the low end is 1 round at the player
+  count of the month (32k in 2019 down to 9k in 2021): 2021-04 8,001-10,000 = 1 round.
+- **Notice** «Coliseum»: 63 seasons, all of the above; a placeholder sentence for the LV > 999 bench result is replaced after the walk.
+- **Open:** regen x2, resources, bench walk (LV > 999 probe, 2019-05, round 400, T10 title, 2020-01 / 2020-10, round 4,000, 16- and
+  2-bracket Rewards, a 2021 board, Catalog) and the Task 3 / Task 6 minors for the final review.

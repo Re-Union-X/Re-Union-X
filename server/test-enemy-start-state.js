@@ -49,7 +49,10 @@ check(choc.bufAttack === 1 && choc.bufTurn === 5 && choc.bufAttackUpright === 0,
 // turns): they must stay exactly as their source row
 const evSrc = require('./make-event-enemies').readEventEnemies();
 const evIds = require('./make-event-enemies').eventIds(evSrc);
-const bogus = master.filter((e) => !evIds.has(e.enemyId) && (e.bufAttackUpright || e.bufDefenseUpright || e.bufAttackReverse || e.bufDefenseReverse));
+// the Coliseum rows of Parts 3, 3b and 4 are raw original ReLux / rule rows with their real Upright/Reversed buffs too
+const mc = require('./make-colosseum');
+const colIds = new Set([...mc.PART3_ENEMY_IDS, ...mc.PART3B_ENEMY_IDS, ...mc.PART4_ENEMY_IDS]);
+const bogus = master.filter((e) => !evIds.has(e.enemyId) && !colIds.has(e.enemyId) && (e.bufAttackUpright || e.bufDefenseUpright || e.bufAttackReverse || e.bufDefenseReverse));
 check(bogus.length === 0, `buff Upright/Reversed rimasti: ${bogus.length} (${bogus.slice(0, 5).map((e) => e.enemyId)})`);
 if (evSrc) {
   const moved = master.filter((e) => evIds.has(e.enemyId) && evSrc.enemies[e.enemyId]?.row

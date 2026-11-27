@@ -243,7 +243,7 @@ Ranking brackets became **score thresholds**; keep one past season from the **Co
 
 ### Overview — 24 seasons, from Story Quest 130
 
-The **Coliseum** is back in **Quests** from **Story Quest 130**: the monthly seasons of the Olympus arena with their Tiers and Rounds, the original enemies, the one-turn shortcut, Coliseum Coins, Tier Rewards, the Coliseum Boards and the ranking rewards. Thirty-seven seasons are here: **April 2016 to April 2019**.
+The **Coliseum** is back in **Quests** from **Story Quest 130**: the monthly seasons of the Olympus arena with their Tiers and Rounds, the original enemies, the one-turn shortcut, Coliseum Coins, Tier Rewards, the Coliseum Boards and the ranking rewards. Sixty-three seasons are here: **April 2016 to June 2021**, the whole life of the Coliseum.
 
 ### Seasons — follow your Story week, progress kept
 
@@ -259,6 +259,12 @@ From **May 2017** a season has **22 Tiers**, as in the original: Tiers 11, 12 an
 
 From **June 2018** a season has **23 Tiers**: Tiers 1 to 15 have 20, 15, 15, 10 (seven times), 50, 100, 300, 500 and 500 rounds, then 999-round Tiers, the last one endless. April and May 2018 have 22 Tiers.
 
+From **May 2019** the Coliseum was **revamped**, and so are its seasons here: **eighteen Tiers**, 4,000 rounds in all. Tier 1 has 200 rounds, Tiers 2 and 3 have 400, Tiers 4 to 7 have 400, Tier 8 has 300, Tier 9 has 200, then Tier 10 to Tier 18 have 100 rounds each. There is **no endless Tier**: when you clear **round 4,000** the season is **complete** (the Coliseum says «Season complete» and no round 4,001 exists) (not original). The original had one more Tier, **Tier 19** (1,000 rounds at 99 AP): it is **not served**, as a wall made for the designers (not original).
+
+In these seasons the enemy level is the **round number** (up to 4,000) and a month has **ten maps** until December 2019 and **nine maps from January 2020**: round 10 plays map 1 again in a nine-map month. The one-turn shortcut unlocks up to **199 rounds** at once in Tiers 1 to 3, then 149, 99 and 49 in the later Tiers.
+
+Clearing **Tier 10** (round 3,200 of the season) gives the Tier title of the month, one for each season, for example **May 2019 Victor**; Tier 11 to Tier 18 pay no reward of their own.
+
 ### Rounds and AP — retry freely, original AP campaigns
 
 As in the original game, a lost or abandoned round can be tried again as often as you like, and the AP paid to start it is not given back. Clearing every wave in one turn unlocks the next rounds at once, also across tiers; when you clear a later round, the rounds and tiers you skipped pay their coins and Tier Rewards.
@@ -266,6 +272,8 @@ As in the original game, a lost or abandoned round can be tried again as often a
 Rounds cost their original **3 to 5 AP**. The Coliseum AP campaigns of 2016 are back on their original days of your Story week: **1 AP** from May 19 to 31 and from June 16 to 22, 2016, and **0 AP!** on November 1-3, 2016, for the Coliseum season being played: the November 2016 season, unless you keep another one.
 
 From **May 2017** every round costs **0 AP**, as in the original data.
+
+Each Tier of the revamp pays its Coliseum Coins when you complete it: 100 in Tier 1, 300 in Tiers 2 to 4, 500 in Tiers 5 to 7 and 700 in Tiers 8 and 9. Tiers 5 to 7 also pay 10 coins a round and Tiers 8 and 9 pay 30 a round.
 
 The «1 AP» rate is (rebuilt): this version of the game rounds the original rate up to 2 AP on a round, so the rate is adjusted to keep 1 AP.
 
@@ -289,6 +297,10 @@ The rewards of each bracket are the original ones: from the game data and the no
 
 From **April 2018** the border ranks are rare: April and June 2018 and April 2019 use the few ranks posted by players for that month, the other months the curve of the whole 2018-2019 era (rebuilt). Most months have **eight** reward brackets; **December 2018** has **nine** reward brackets (Gems after the 27 December 2018 increase) and **March and April 2019 twelve**; **January and February 2019** pay the **Dual Meow Wow** medals.
 
+From **May 2019** the ranking has **twelve** reward brackets from May to September 2019; from **October 2019 to October 2020** twelve brackets with the community edges (the first eight of before, then 10,001-15,000, 15,001-20,000, 20,001-35,000 and 35,001-80,000); from **November 2020 to April 2021 sixteen** brackets (1-100 up to 30,001-80,000); **May and June 2021 two**: 1-40,000 for a **Moogle 3-star** and 40,001-80,000 for a **Moogle 1-star**. The prizes of the revamp are the featured Special Attacks of the month, medals, **Gems** (Power, Speed, Magic, Sun, Moon, Rainbow, Brilliant), **SP Chip & Dale** and **Avatar Coins** in the higher brackets, as named in the community wiki and the notices of the original game. The February 2021 top prize is the **ATK B XV Max & GA 2** Special Attack, which the game data of this server did not hold: it was added as the next step of its ladder (rebuilt).
+
+The thresholds of these seasons are (rebuilt) and mostly **interpolated**: only a few cutoffs survive for 2019 to 2021 (the season-end points of **December 2019**, **July 2019** and **December 2020** among them) and the number of ranked players fell from about 32,000 in 2019 to under 10,000 in 2021. Where a month has no point, its thresholds follow the curve of the era, moved by the player count of that month. The lowest bracket of each season needs **1 round**; in **April 2021** the **8,001-10,000th** bracket needs 1 round too, since fewer than 10,000 players were ranked.
+
 In May 2016 every ranked player got the same reward, as in the original: one cleared round is enough. Before your first round of May 2016 the goal reads **10000000th**: that was the original lowest bracket of that season (5,000,001st to 10,000,000th).
 
 ### Coliseum Catalog — keep one past season, filters
@@ -302,6 +314,12 @@ The Catalog **year tabs** and **Filters** (not original) find seasons by game ye
 The Coliseum Catalog card and the season cards are our own design (not original), made from original pieces of the game: the Olympus arena panel, the Coliseum Coin and the Tier crown.
 
 ### Maps — original, Japanese and generated maps
+
+From **May 2019** the maps are the original ones of the Japanese version of the same month, as before. **Twenty-eight** of them lost their header file in the game data; each header was (rebuilt) from the original map data of the same map, with no enemy taken from another map.
+
+The maps of **January 2020** are not in any surviving file: they are whole copies of the nine maps of the **May 2020** season (not original), under their own map numbers. The maps of **October 2020** are the same: each round is a whole copy of a map of another month (maps of May 2020, January 2021, July 2020 and March 2020, among them), each with its own enemies and positions (not original).
+
+The maps of **July 2019** do not survive either: they are generated from the round lists of the community wiki (khuxwiki) with its thirteen enemies, like the 2016 and 2017 months, and their enemy buffs are dropped (not original).
 
 The maps of **April 2018 to April 2019** use the original maps of the Japanese version. Five of them lost their header file in the game data: **October 2018** maps 1 and 5, **November 2018** map 2 and **February 2019** maps 3 and 5. Each header was (rebuilt) from the original map data of the same map, with no enemy taken from another map. **July 2018** uses the first Japanese version of its maps: the later one carried enemies of 2019.
 
@@ -325,7 +343,11 @@ The Coliseum enemies of 2017 and 2018 have their **original stats**: from the or
 
 Where no original row survives (the June 2017 **Ringmaster** among them), the row is (rebuilt): derived from its original base enemy by the variant rule of the original Coliseum rows (same moves, HP raised from level 300). No value is estimated.
 
-The Coliseum rows of the Japanese version that survive only in the 2019 shape are never used. **Jewel Sorceress** (June 2018, April 2019) has no surviving original row of its own: it is a copy of the Japanese Coliseum row of **September 2018**, under its own id (rebuilt).
+The rows of the Japanese version that survive only in the 2019 shape are not used before **May 2019**. **Jewel Sorceress** (June 2018, April 2019) has no surviving original row of its own: it is a copy of the Japanese Coliseum row of **September 2018**, under its own id (rebuilt).
+
+The seasons from **May 2019** use the original enemy rows of the revamp (ReLux Team donation), among them the **6xxxx** rows made for the new Coliseum. The thirteen enemies of **July 2019** are those original rows, recovered from the same data; the round rules of the month (buffs, counters) are kept inside them.
+
+The 14 enemies of the older game that are in the new seasons too (20007, 20011, 20012, 20015, 20016, 20017, 20035, 20059, 20071, 20110, 20131, 20136, 20137 and 20144), and the 25 that earlier seasons added, keep their **earlier row**: they fight at levels 1,000 to 4,000 with the stats they had before the revamp (not original). LV999_PROBE_RESULT
 
 ### Graphics — board cards, one button icon stands in
 
@@ -333,13 +355,15 @@ The card pictures of the Coliseum Boards are original art: from the 2016 worldwi
 
 The cards of the **Mango Sweetie** (July 2017) and **Illusionist** (September 2017) boards are (rebuilt) from the small picture of the community wiki, the only one that survives.
 
+From **May 2019** each month has five boards: the avatar board, **Chip**, **Dale**, **Huey, Dewey & Louie** (as in the original, no board needs a Tier to be bought) and the **Coliseum Board** with the Scrooge Special Attack, 30,900 coins in all. Their rewards include Gems, titles, avatar parts and Spirit parts. The cards of the avatar boards come from the original files of the Japanese version; the Huey, Dewey & Louie cards and those of **July 2019** and **October 2020** are the board previews of the community wiki; the cards of **March to June 2021** were (rebuilt) to fit the layout. The season cards of the Catalog are our own design.
+
 The **Puppy Medium** and **Puppy Bob** boards were in the Japanese version only: they are not here.
 
 The icon of the **Coliseum Boards** button is not in any surviving game file: the **Multi Board** icon stands in for it (not original).
 
 ### Not here yet — later seasons and PvP
 
-The seasons from May 2019 to June 2021 will come in later updates. The **PvP Coliseum** is not available yet.
+The **PvP Coliseum** is not available yet.
 
 ## Event Quests: how they work
 
