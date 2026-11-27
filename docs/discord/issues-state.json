@@ -137,22 +137,22 @@
   "I-129": {
    "thread": "1569614710586867783",
    "msg": "1569614710586867783",
-   "group": "OPEN",
-   "hash": "5e184c2cd40f7686",
+   "group": "CLOSED",
+   "hash": "534afbc558c00856",
    "name": "I-129 · Fake clock, months with twin May 2021"
   },
   "I-130": {
    "thread": "1569614729901514843",
    "msg": "1569614729901514843",
-   "group": "OPEN",
-   "hash": "d391c2685f0e35d2",
+   "group": "CLOSED",
+   "hash": "afc37b5d9f8b0580",
    "name": "I-130 · Fake clock"
   },
   "I-131": {
    "thread": "1569614732703571968",
    "msg": "1569614732703571968",
-   "group": "OPEN",
-   "hash": "47d06069260390dc",
+   "group": "CLOSED",
+   "hash": "36a033c7e29af42e",
    "name": "I-131 · Fake clock"
   },
   "I-132": {
@@ -781,8 +781,8 @@
   "I-322": {
    "thread": "1575423517204414510",
    "msg": "1575423517204414510",
-   "group": "OPEN",
-   "hash": "be626fccce2c7ff3",
+   "group": "CLOSED",
+   "hash": "5c8a9e71f0242fbc",
    "name": "I-322 · Birthdate Registration: the year list is empty"
   },
   "I-323": {
@@ -802,8 +802,8 @@
   "I-325": {
    "thread": "1575423526058463262",
    "msg": "1575423526058463262",
-   "group": "OPEN",
-   "hash": "70af2d4d55ae88cf",
+   "group": "CLOSED",
+   "hash": "e2dbdd6e0a74c0f4",
    "name": "I-325 · No Avatar Coins from level-ups"
   },
   "I-326": {
