@@ -30,7 +30,8 @@ const multi = [Object.assign(blank('multi'), {
   valid: 1,
   stageStartId: [1], stageEndId: [1], weight: [100], // intervallo di multiStageId e pesi
   bannerUrl: '', detailUrl: '',
-  startTime: '2020-01-01 00:00:00', endTime: '2030-12-31 23:59:59', boardEndTime: '2030-12-31 23:59:59',
+  // I-130: start before SAFE_FROM (5/2016), so the row is open in every twin month (some are before 2020)
+  startTime: '2016-04-01 00:00:00', endTime: '2030-12-31 23:59:59', boardEndTime: '2030-12-31 23:59:59',
 })];
 
 const multiStage = [Object.assign(blank('multiStage'), {
