@@ -243,6 +243,10 @@ ActionMap_BaseBuff_eff.json
 ActionMap_PlayerStatusField_new.json    rev=360289 graft=BaseBuff_Avt_Null1,BaseBuff_Avt_Null2
 # Lato nemico: cerca BaseBuff_Enm1/2 nella barra del nemico. Il WW li ha solo in
 # RaidBattle_EnemyStatusField_S e _S_Raid; nelle revisioni JP ci sono anche in _L, _L_Multi e _S_Boss
+# absorb icon placeholder (Rush Ghost and every absorbAttribute enemy, user report 27-11): the WW plates lack
+# AbsorbAttribute_Icon under Panel_18, so the client drops the icon (FUN_00b226c8)
+ActionMap_EnmNamePanel.json             rev=335870 graft=AbsorbAttribute_Icon
+ActionMap_BossNamePanel.json            rev=335872 graft=AbsorbAttribute_Icon
 RaidBattle_EnemyStatusField_L.json         rev=438800 graft=BaseBuff_Enm1,BaseBuff_Enm2
 RaidBattle_EnemyStatusField_L_Multi.json   rev=376985 graft=BaseBuff_Enm1,BaseBuff_Enm2
 # I-213 (29-10): il contatore dei nemici (InterruptIcon) aggancia il widget ActMapSpEnmUI_CountReset a SpEnm_NumNull
