@@ -249,31 +249,27 @@ check(p.drawTickets.draw === 7 && p.drawTickets.holiday === tk0.holiday + 5 && p
 
 // box pieno
 p.freeStone = 3000; p.gacha.count = {};
-{ // I-334: medals that do not fit the storage go to the Presents, the draw is not refused
-  const medals0 = p.medals.slice(), presents0 = (p.presents || []).slice(), cells0 = quiet(() => t.stackedMedalList().length);
-  // room for exactly 2 more cells: the cap is max(300, medals + 50) + extra
-  p.medalMaxExtra = cells0 + 2 - Math.max(300, p.medals.length + 50);
-  check(t.maxMedal() - cells0 === 2, `box: 2 free cells (${t.maxMedal() - cells0})`);
-  const nPresents = (p.presents || []).length;
+{ // I-334 (bench 27-11): a draw may exceed the capacity by 50 Medals, every drawn medal stays in the storage
+  const medals0 = p.medals.slice(), presents0 = (p.presents || []).slice();
+  const fill = (cells) => { // exactly `cells` cells counted as the client counts (the starting deck medals do not count)
+    p.medals = []; p.medalState = {};
+    for (let i = 0; i < cells; i++) p.medals.push({ userMedalId: 70000 + i, medalId: 11013, level: 1, exp: 0 });
+    p.medalMaxExtra = 0; p.freeStone = 3000; p.gacha.count = {};
+  };
+  fill(2998); // 2998/3000 + 10 = 3008: allowed, 10 stored, nothing in the Presents
+  let n = (p.presents || []).length;
   r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
-  const full = p.presents.slice(nPresents).filter((x) => x.resourceType === 3 && x.comment === 'Gacha draw «Epic Medal Carnival»: medal storage full');
-  check(r.userMedalIds && r.userMedalIds.length === 2 && inMedals(r) && neutral(r) && p.freeStone === 0, 'box: 2 free cells, normal answer with 2 medals, -3000');
-  check(p.medals.length === medals0.length + 2 && quiet(() => t.stackedMedalList().length) === cells0 + 2, 'box: 2 medals in the storage, never over the cap');
-  check(full.length === 8 && full.every((x) => x.number === 1 && x.resourceId > 0), `box: 8 medals in the Presents with the text (${full.length})`);
-  check(r.effectNumbers.length === 2, 'box: one effect per medal shown');
-  // storage completely full: all 10 go to the Presents
-  p.freeStone = 3000; p.gacha.count = {};
-  p.medalMaxExtra = quiet(() => t.stackedMedalList().length) - Math.max(300, p.medals.length + 50);
-  const n2 = p.presents.length;
+  check(r.userMedalIds && r.userMedalIds.length === 10 && inMedals(r) && neutral(r) && p.freeStone === 0 && p.medals.length === 3008 && p.presents.length === n,
+    'box at 2998/3000: 10-draw allowed, 10 stored (3008/3000), none in the Presents');
+  check(t.medalCells() === 3008 && t.maxMedal() === 3000, 'box: 3008 cells over a capacity of 3000');
+  fill(3040); // 3040 + 10 = 3050: the limit, allowed
   r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
-  check(r.userMedalIds && r.userMedalIds.length === 0 && p.presents.length === n2 + 10 && p.freeStone === 0, 'box: storage full, all 10 to the Presents, still paid');
-  // free room: unchanged, nothing in the Presents
-  p.medalMaxExtra = 0; p.freeStone = 3000; p.gacha.count = {};
-  const n3 = p.presents.length, m3 = p.medals.length;
+  check(r.userMedalIds && r.userMedalIds.length === 10 && p.medals.length === 3050, 'box: 3050/3000 reached, allowed');
+  fill(3045); // 3045 + 10 = 3055 > 3050: refused, nothing charged
   r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
-  check(r.userMedalIds.length === 10 && p.medals.length === m3 + 10 && p.presents.length === n3, 'box: free room unchanged (10 in the storage, none in the Presents)');
+  check(!r.userMedalIds && Object.keys(r).join() === 'ret' && p.freeStone === 3000 && p.medals.length === 3045, 'box at 3045: 10-draw refused (past 3050), nothing charged');
   p.medals = medals0; p.presents = presents0; p.medalState = {}; p.medalSkills = {};
-  p.freeStone = 3000; p.gacha.count = {};
+  p.medalMaxExtra = 0; p.freeStone = 3000; p.gacha.count = {};
 }
 
 // pagine e immagini
@@ -388,7 +384,7 @@ check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client ac
   p.medalState = {};
   p.medals = p.medals.slice(0, 2995);
   r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
-  check(r.userMedalIds && r.userMedalIds.length === 2 && t.stackedMedalList().length === 3000 && p.presents.filter((x) => /medal storage full/.test(x.comment)).length >= 8, 'I-334: 2995 copies + 3 starting medals = 2998/3000: 2 in the storage, 8 to the Presents');
+  check(r.userMedalIds && r.userMedalIds.length === 10 && t.medalCells() === 3005, 'I-334: 2995 cells (client count): 10-draw allowed, 3005/3000');
   p.medals = []; p.medalState = {};
 }
 

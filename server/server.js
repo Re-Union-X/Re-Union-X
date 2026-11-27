@@ -2074,7 +2074,10 @@ function respondGachaDraw(res, body) {
   // the tutorial draw (I-266): its own banner, outside the catalogue, while the tutorial window is open
   const tutorialDraw = Number(body?.drawMedalTypeId) === gacha.TUTORIAL_BANNER.drawMedalTypeId && gacha.tutorialOpen(player, ctx.storyQuest);
   const banner = tutorialDraw ? gacha.TUTORIAL_BANNER : gachaData.bannerById(gachaCatalog().banners, body?.drawMedalTypeId);
-  let why = gacha.checkDraw(banner, player, body, { ...ctx, realMs, sizes: GACHA_SIZES, show: GACHA_SHOW, vip: vipActive(realMs) });
+  // I-334 (bench 27-11, the original draw popup): a draw may take the storage up to maxMedal + MEDAL_OVER; quests are blocked by the
+  // client while over capacity. Room counted as the client counts (medalCells).
+  const freeSlots = maxMedal() + MEDAL_OVER - medalCells();
+  let why = gacha.checkDraw(banner, player, body, { ...ctx, realMs, freeSlots, sizes: GACHA_SIZES, show: GACHA_SHOW, vip: vipActive(realMs) });
   if (!why && !GACHA_SHOW.has(banner.rowId) && !gachaShopList(ctx).includes(banner) && !gachaLastListed.has(banner.drawMedalTypeId)) why = `${banner.rowId} non e' nella lista dello Shop`;
   if (why) {
     console.log(`  [gacha] estrazione rifiutata: ${why} (corpo ${JSON.stringify(body)})`);
@@ -2104,19 +2107,8 @@ function respondGachaDraw(res, body) {
     const skillByName = new Map([...skills.values()].map((r) => [medalBoost.norm(r.name), r]));
     let bursts = null; // masterRows('burst') solo se serve (7 MB)
     const drawAt = gachaData.asOf(banner, ctx.storyDay); // data dell'estrazione per la regola 13-bis
-    const rewards = require('./raid-rewards');
     draw.medalIds.forEach((medalId, i) => {
-      // I-334: a medal that does not fit the medal storage goes to the Presents (raid-rewards.js deliverReward, as the raids and
-      // the Coliseum); a stackable one that joins an existing cell takes no room, so it is granted first and counted after
-      const cap = maxMedal();
-      const mayOverflow = rewards.deliverReward({ type: 3, num: 1 }, { medalCount: stackedMedalList().length, cap }) === 'present';
       grantItem(3, medalId, 1);
-      if (mayOverflow && stackedMedalList().length > cap) {
-        player.medals.pop(); // the copy just granted (a new id is never reused: medalState has none for it)
-        addPresent(3, medalId, 1, `Gacha draw «${banner.name}»: medal storage full`);
-        console.log(`  [gacha] ${banner.rowId}: medal ${medalId} to the Presents (storage full)`);
-        return;
-      }
       const newId = player.medals[player.medals.length - 1].userMedalId;
       // il client cerca ogni id in userMedals: per le impilabili la cella ha l'id della prima copia
       const cell = packed.has(medalId) ? stackedMedalList().find((c) => c.copies.includes(newId)) : null;
@@ -4040,6 +4032,13 @@ function userMedalList() {
 // userMedalId della prima copia (fino a 99 per cella, come negli screenshot originali).
 // Le copie col lucchetto fanno una cella a parte: il lucchetto e' della cella (userMedalId della prima
 // copia), e una copia bloccata in testa rendeva grigio tutto il mucchio negli Evolve (banco 19-10).
+// Medal cells as the client counts them against maxMedal: the starting deck medals (userMedalId 1-3, startingInventory) are not counted
+// (bench 27-11: the client showed 2995 where the server counted 2998)
+const MEDAL_OVER = 50; // «You can exceed your Medal storage capacity by 50 Medals» (draw popup of the original client)
+function medalCells() {
+  const start = new Set(startingInventory().medals.map((m) => m.userMedalId));
+  return stackedMedalList().filter((c) => !start.has(c.userMedalId)).length;
+}
 function stackedMedalList() {
   const pack = new Set(masterRows('medal').filter((r) => r.validPack).map((r) => r.medalId));
   const out = [], stacks = new Map();
@@ -5300,7 +5299,7 @@ function colosseum() {
     grantItem: grantRaidItem,
     addPresent: (r, text) => addPresent(r.type, r.id || 0, r.num, text, r.skillId || undefined, undefined, r.skillLv || undefined),
     // a reward medal that does not fit the medal storage goes to the Presents (as the raids and the Coliseum boards)
-    medalCount: () => stackedMedalList().length, medalCap: maxMedal,
+    medalCount: medalCells, medalCap: maxMedal,
     // ranking element (139/140/180): the client's full player-record parser (the one of the High Score ranking: userMedals, userSkills,
     // userKeyblade, petBaseSlotMedal, supportUser*, pet, emblemIds) + userColosseum + arrivalTime; with the short Lux record the
     // Ranking button answered «200 ERROR :139» (bench 25-11)
@@ -5586,7 +5585,7 @@ var colosseumBoardsMemo = null; // var: userSphereAll and nextUserSphereId can r
 function colosseumBoards() {
   return colosseumBoardsMemo ??= colosseumBoardRoutes({
     player, master: masterRows, colosseum, grantSphereReward, now: realNow, nextUserSphereId,
-    medalCount: () => stackedMedalList().length, medalCap: maxMedal,
+    medalCount: medalCells, medalCap: maxMedal,
     addPresent: (r, text) => addPresent(r.type, r.id || 0, r.num, text, r.skillId || undefined),
     log: (l) => console.log(l),
   });
@@ -5617,7 +5616,7 @@ function raid() {
     beginBattle: (userKeybladeId) => { player.currentUserKeybladeId = Number(userKeybladeId) || USER_KEYBLADE_ID; },
     grantItem: grantRaidItem,
     addPresent: (item) => addPresent(item.type, item.id, item.num, 'Raid Boss reward', item.skillId),
-    medalCount: () => stackedMedalList().length, medalCap: maxMedal,
+    medalCount: medalCells, medalCap: maxMedal,
     stageState: (id) => ({ score: player.stageScores?.[id] || 0, playStatus: id in (player.stageScores || {}) ? STAGE_CLEARED : 0, clearMissionIds: stageClearMissions(id) }),
     webBase: WEB_BASE,
   });
@@ -6712,5 +6711,5 @@ module.exports._test = {
   respondStageEvent, respondStageContinue, specialCtx, isSpecialStage, specialEvents: specialEventsNow, specialIndex, respondSpecialWeb, respondSpecialPost, ret, WEB_BASE,
   weekIndex: clock.weekIndex,
   // server/test-gacha-server.js
-  sessionRealMs, handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondPetDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, stackedMedalList, inventoryBlocks,
+  sessionRealMs, handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondPetDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, stackedMedalList, medalCells, inventoryBlocks,
 };
