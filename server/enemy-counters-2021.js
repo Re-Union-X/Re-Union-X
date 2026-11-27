@@ -72,35 +72,45 @@ const animOk = (displayId, a, anims) => { const n = needAnim(displayId, a); retu
 // servedHits: Set of served hit effects, motionOk: Set, anims: Set of "<displayId>/<anim>"}
 function applyDonorCounters(enemies, atts, donor, opts) {
   const fix = require('./enemy-attack-fix');
-  const { storyIds, origIds = new Set(), servedHits = fix.servedHitEffects(), motionOk = new Set(), anims = new Set() } = opts;
+  const { storyIds, origIds = new Set(), origRows = [], servedHits = fix.servedHitEffects(), motionOk = new Set(), anims = new Set() } = opts;
   const rep = { rows: 0, changed: 0, filled: 0, entries: 0, attacksAdded: [], attacksReplaced: [], suspendedAnim: [], noMove: [], inventedDropped: [] };
   if (!donor) return rep;
+  const origById = new Map(origRows.map((r) => [r.enemyAttackId, r]));
   const rows = enemies.filter((e) => storyIds.has(e.enemyId) && donor.enemies.has(e.enemyId));
   const plan = rows.map((e) => ({ e, entries: donorEntries(donor.enemies.get(e.enemyId)) }));
-  // the motion a move will be served with: ours when kept, the donor's otherwise (>= 3 falls back to 1, as applyEnemyAttacks)
-  const served = (id) => {
+  // the row a move will be served with: ours when it is there and original (or the donor has none); when it is missing, the
+  // original row if one exists (an id can be original yet absent from our table: e.g. 285021 Shadow, an event original row
+  // no served event enemy cites, 27-11 regen), else the donor's. Motion >= 3 falls back to 1, as applyEnemyAttacks
+  const source = (id) => {
     const a = atts.find((r) => r.enemyAttackId === id);
     const d = donor.attacks.get(id);
-    if (a && (origIds.has(id) || !d)) return a;
-    if (!d) return null;
-    return d.attackMotion >= 3 && !motionOk.has(id) ? { ...d, attackMotion: 1 } : d;
+    if (a) return origIds.has(id) || !d ? null : d; // null = keep ours
+    return origById.get(id) || d || null;
+  };
+  const served = (id) => {
+    const a = atts.find((r) => r.enemyAttackId === id);
+    const r = source(id) || a;
+    if (!r) return null;
+    return r.attackMotion >= 3 && !motionOk.has(id) ? { ...r, attackMotion: 1 } : r;
   };
 
-  // 1. move rows: missing ones created from the donor, template stubs replaced; original rows kept
+  // 1. move rows: missing ones created (original row, else donor row), template stubs replaced by the donor row; original
+  // rows already in our table kept
   const have = new Set(atts.map((a) => a.enemyAttackId));
   const tpl = atts.find((a) => a.enemyAttackId === 601) || atts[0];
   const want = new Map();
   for (const { e, entries } of plan) {
     for (const x of entries) {
-      const d = donor.attacks.get(x.skillId);
-      if (!x.skillId || !d || origIds.has(x.skillId) || want.has(x.skillId)) continue;
+      if (!x.skillId || want.has(x.skillId)) continue;
+      const src = source(x.skillId);
+      if (!src) continue;
       if (!animOk(e.displayId, served(x.skillId), anims)) continue; // stays suspended (step 2): no row to import for it
       if (!have.has(x.skillId)) {
         atts.push(Object.assign(JSON.parse(JSON.stringify(tpl)), { enemyAttackId: x.skillId }));
         have.add(x.skillId);
         rep.attacksAdded.push(x.skillId);
       }
-      want.set(x.skillId, d);
+      want.set(x.skillId, src);
     }
   }
   const before = new Map(atts.filter((a) => want.has(a.enemyAttackId)).map((a) => [a.enemyAttackId, JSON.stringify(a)]));
@@ -155,7 +165,7 @@ function defaultOptions(enemies, origRows) {
   const motion = require('./enemy-motion-fix');
   const oltre = require('./make-enemy-oltre');
   const src = fs.existsSync(oltre.SOURCES_PATH) ? JSON.parse(fs.readFileSync(oltre.SOURCES_PATH, 'utf8')).sources || {} : {};
-  return { storyIds: new Set(Object.keys(src).map(Number)), origIds: new Set((origRows || []).map((r) => r.enemyAttackId)),
+  return { storyIds: new Set(Object.keys(src).map(Number)), origIds: new Set((origRows || []).map((r) => r.enemyAttackId)), origRows: origRows || [],
     anims: motion.servedAnims(), motionOk: new Set() };
 }
 

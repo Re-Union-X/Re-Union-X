@@ -81,6 +81,23 @@ const atts2 = [att(992070001)], rows2 = [mk(77, 100, { skillId: [992070001, 0, 0
 c21.applyDonorCounters(rows2, atts2, donor, { ...opts, storyIds: new Set() });
 check(atts2.length === 1, 'cited 99207xxxx kept');
 
+// 2b. regression (27-11 regen, Shadow 285 / 285021): a move id that is an original row (origIds, e.g. an event attack) but
+// absent from our attack table is still imported, with the original row when we have it, else the donor's; never «no move»
+{
+  const donorB = { enemies: new Map([
+    [5, { enemyId: 5, validUrgency: 1, urgency: [4, 0, 9, 9, 9, 9], urgencyValue: [0, 0, 9, 9, 9, 9], urgencyFrequency: [0, 0, 9, 9, 9, 9], urgencySkillId: [504, 0, 9, 9, 9, 9] }],
+    [6, { enemyId: 6, validUrgency: 1, urgency: [2, 0, 0, 0, 0, 0], urgencyValue: [3, 0, 0, 0, 0, 0], urgencyFrequency: [0, 0, 0, 0, 0, 0], urgencySkillId: [505, 0, 0, 0, 0, 0] }],
+  ]), attacks: new Map([[504, att(504, { attackMotion: 2, hitCount: 4, power: 12500 })], [505, att(505, { power: 3000 })]]) };
+  const rowsB = [mk(5, 100), mk(6, 100)];
+  const attsB = [att(601, { name: 'Powerful Attack', power: 17500, hitEffect: 1004 })];
+  const repB = c21.applyDonorCounters(rowsB, attsB, donorB, { storyIds: new Set([5, 6]), origIds: new Set([601, 504, 505]),
+    origRows: [att(504, { attackMotion: 2, hitCount: 4, power: 12600 })], servedHits: new Set([1001]), anims: new Set(['100/atkSp']) });
+  const AB = new Map(attsB.map((a) => [a.enemyAttackId, a]));
+  check(repB.noMove.length === 0 && rowsB.every((e) => e.validUrgency === 1), `original-but-missing move: ${JSON.stringify(repB)}`);
+  check(AB.get(504) && AB.get(504).power === 12600 && AB.get(504).hitCount === 4, `504 from the original row ${JSON.stringify(AB.get(504))}`);
+  check(AB.get(505) && AB.get(505).power === 3000, `505 (original id, no original row at hand) from the donor ${JSON.stringify(AB.get(505))}`);
+}
+
 // 3. the real donor: the 3 counters that differed from the wiki tables, and a suspended move restored
 const real = c21.readDonor();
 if (!real) console.log('(donor master not found: donor and master parts skipped)');
