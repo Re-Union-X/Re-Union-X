@@ -92,8 +92,10 @@ test('SEASONS and SEASON_BOARDS', () => {
     ['2018-12', 4000, 'relux', false], ['2019-01', 4100, 'relux', false], ['2019-02', 4200, 'relux', false], ['2019-03', 4300, 'relux', false],
     ['2019-04', 4400, 'relux', false],
     // Part 4 (2019-05 .. 2021-06): the revamp rows 4500 .. 7000, step 100
-    ...Array.from({ length: 26 }, (_, i) => [`${2019 + Math.floor((4 + i) / 12)}-${String(((4 + i) % 12) + 1).padStart(2, '0')}`, 4500 + 100 * i, 'relux', false])]);
-  assert.deepStrictEqual(mc.SEASONS.filter((s) => s.pending).map((s) => [s.month, s.colosseumStageId, s.pending]), [['2019-07', 4700, 'enemies']], 'only 2019-07 is pending');
+    ...Array.from({ length: 26 }, (_, i) => [`${2019 + Math.floor((4 + i) / 12)}-${String(((4 + i) % 12) + 1).padStart(2, '0')}`, 4500 + 100 * i, 'relux', 4500 + 100 * i === 4700])]);
+  assert.deepStrictEqual(mc.SEASONS.filter((s) => s.pending), [], 'no season is pending any more (2019-07 is a generated set)');
+  assert.deepStrictEqual(mc.GEN_STAGE_IDS('2019-07'), Array.from({ length: 10 }, (_, i) => 21190701 + i), '2019-07 = 21190701 .. 10');
+  assert.ok(mc.SEASONS.find((s) => s.colosseumStageId === 4700).genStages, '2019-07 serves the generated set');
   assert.strictEqual(mc.REVAMP_FIRST, 4500);
   assert.strictEqual(mc.SEASONS.length, 63, 'Part 4 adds the 26 revamp seasons 2019-05 .. 2021-06');
   assert.strictEqual(mc.SEASONS.filter((s) => s.colosseumStageId <= 4400).length, 37);
@@ -164,7 +166,7 @@ test('part3 seasons list exactly their ReLux boards', () => {
   assert.deepStrictEqual(Object.values(P3_BOARDS).flat(), Array.from({ length: 40 }, (_, i) => 2210067 + i), 'the contiguous ids 2210067 .. 2210106');
 });
 
-test('GEN_STAGE_IDS: 2116MMNN / 2117MMNN, never a JP id, the two years disjoint', () => {
+test('GEN_STAGE_IDS: 2116MMNN / 2117MMNN / 2119MMNN, never a JP id, the two years disjoint', () => {
   assert.deepStrictEqual(mc.GEN_STAGE_IDS('2016-08'), Array.from({ length: 10 }, (_, i) => 21160801 + i));
   assert.deepStrictEqual(mc.GEN_STAGE_IDS('2016-11'), Array.from({ length: 10 }, (_, i) => 21161101 + i));
   assert.deepStrictEqual(mc.GEN_STAGE_IDS('2017-06'), Array.from({ length: 10 }, (_, i) => 21170601 + i));
@@ -172,10 +174,11 @@ test('GEN_STAGE_IDS: 2116MMNN / 2117MMNN, never a JP id, the two years disjoint'
   for (const m of ['2016-12', '2017-05', '2018-01', '2017-13']) assert.throws(() => mc.GEN_STAGE_IDS(m), new RegExp(m), `${m}: no generated set`);
   // every genStages season has a set; 2016 and 2017 sets never share an id (2017-08 .. 11 = the months of the served 2016-08 .. 11)
   const gen = mc.SEASONS.filter((s) => s.genStages).map((s) => s.month);
-  assert.deepStrictEqual(gen, ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12']);
+  assert.deepStrictEqual(gen, ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12', '2019-07']);
+  assert.deepStrictEqual(mc.GEN_STAGE_IDS('2019-07'), Array.from({ length: 10 }, (_, i) => 21190701 + i));
   const ids = gen.flatMap(mc.GEN_STAGE_IDS);
   assert.strictEqual(new Set(ids).size, ids.length, 'no id twice');
-  assert.ok(ids.every((id) => /^211[67](0[1-9]|1[0-2])(0[1-9]|10)$/.test(String(id))), 'YYMMNN after 21');
+  assert.ok(ids.every((id) => /^211[679](0[1-9]|1[0-2])(0[1-9]|10)$/.test(String(id))), 'YYMMNN after 21');
 });
 
 test('colosseumStage row 800', () => {
@@ -2104,7 +2107,7 @@ test('real_part3b_ranking (all 37 seasons in the default build, no warning; the 
     // Part 4 until its ranking task: the 26 revamp seasons are left out with a warning (never one of the 37 before them)
     const left = said.filter((m) => /not built yet|left out/.test(m));
     assert.ok(left.every((m) => /2019-05/.test(m) && !/2019-04|2018-/.test(m)), `only the revamp seasons are left out: ${said.join(' | ')}`);
-    assert.ok(said.some((m) => /2019-07 \(enemies\) pending/.test(m)), `2019-07 is reported pending: ${said.join(' | ')}`);
+    assert.ok(!said.some((m) => /pending/.test(m)), `no season is reported pending: ${said.join(' | ')}`);
     P3B_IDS.forEach((id, i) => {
       const r = out.ranked[id], rk = out.ranking.find((x) => x.rankingId === 4033 + i);
       assert.strictEqual(r.brackets.length, rk.endRank - rk.startRank + 1, `${id} ranking row = its brackets`);
@@ -2125,7 +2128,7 @@ test('pending season: seasonRows skips it whole and lists it in out.pending', ()
 });
 
 // Coliseum Part 4 Task 1: the 26 revamp seasons 2019-05 .. 2021-06 (ReLux rows 4500 .. 7000) on the real extract
-test('real_part4 (2019-05 .. 2021-06: 18 tiers, 4,000 rounds, no AP, Tier 10 title, 9 stages from 2020-01; 2019-07 pending)', () => {
+test('real_part4 (2019-05 .. 2021-06: 18 tiers, 4,000 rounds, no AP, Tier 10 title, 9 stages from 2020-01; 2019-07 generated)', () => {
   const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
   const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
   if (!src || !relux) { results.push('skip real_part4: 1.1.3 master or ReLux extract not on disk (private sources)'); return; }
@@ -2135,11 +2138,12 @@ test('real_part4 (2019-05 .. 2021-06: 18 tiers, 4,000 rounds, no AP, Tier 10 tit
   const REV = mc.SEASONS.filter((s) => s.colosseumStageId >= 4500), OLD = mc.SEASONS.filter((s) => s.colosseumStageId <= 4400);
   assert.deepStrictEqual(REV.map((s) => s.colosseumStageId), Array.from({ length: 26 }, (_, i) => 4500 + 100 * i));
   const served = REV.filter((s) => !s.pending);
-  assert.strictEqual(served.length, 25);
+  assert.strictEqual(served.length, 26);
   const out = withRanking(served.map((s) => s.colosseumStageId), () => mc.seasonRows(src, mc.SEASONS));
-  assert.strictEqual(out.colosseumStage.length, 62, '62 served seasons');
-  assert.deepStrictEqual(out.pending.map((p) => [p.month, p.colosseumStageId, p.pending]), [['2019-07', 4700, 'enemies']]);
-  assert.ok(!out.colosseumStage.some((r) => r.colosseumStageId === 4700) && !out.colosseum.some((r) => r.colosseumStageId === 4700) && !out.ranked[4700], '2019-07 has no rows');
+  assert.strictEqual(out.colosseumStage.length, 63, '63 served seasons');
+  assert.deepStrictEqual(out.pending, []);
+  assert.deepStrictEqual(out.colosseumStage.find((r) => r.colosseumStageId === 4700).stageId.slice(0, 10), mc.GEN_STAGE_IDS('2019-07'), '2019-07 serves 21190701 .. 10');
+  assert.ok(out.colosseum.some((r) => r.colosseumStageId === 4700) && out.ranked[4700], '2019-07 has its tiers and ranking');
   const ROUNDS = [200, 400, 400, 400, 400, 400, 400, 300, 200, ...Array(9).fill(100)];
   const SKIP = [199, 199, 199, 149, 99, 99, 99, 99, 99, ...Array(9).fill(49)];
   const TIERCOIN = [100, 300, 300, 300, 500, 500, 500, 700, 700];
@@ -2276,19 +2280,21 @@ test('era shapes: no source stops the build (corrupt row, 2019 row for a pre-rev
 });
 
 
-// the 86 ids of the revamp sets missing from the master (Part 4 Task 2 real run; tmp\p4t2_missing.json) and the 14 ids with 1.1.3 rows
+// the 97 ids of the revamp sets missing from the master (Part 4 Task 2 real run; tmp\p4t2_missing.json) and the 14 ids with 1.1.3 rows
 const P4_SHARED_113 = [20007, 20011, 20012, 20015, 20016, 20017, 20035, 20059, 20071, 20110, 20131, 20136, 20137, 20144];
-test('PART4_ENEMY_IDS = the 86 ids of the revamp sets, disjoint from Parts 3 / 3b', () => {
-  assert.strictEqual(mc.PART4_ENEMY_IDS.size, 86);
+test('PART4_ENEMY_IDS = the 97 ids of the revamp sets, disjoint from Parts 3 / 3b', () => {
+  assert.strictEqual(mc.PART4_ENEMY_IDS.size, 97);
+  for (const id of [61024, 61525, 61530, 61026, 61548, 61540, 60266, 60126, 60095, 61020, 60249, 61032, 60137]) assert.ok(mc.PART4_ENEMY_IDS.has(id), `2019-07 enemy ${id}`);
   assert.ok([...mc.PART4_ENEMY_IDS].every((id) => !mc.PART3_ENEMY_IDS.has(id) && !mc.PART3B_ENEMY_IDS.has(id)));
-  assert.strictEqual([...mc.PART4_ENEMY_IDS].filter((id) => id >= 60000 && id <= 62999).length, 52);
+  assert.strictEqual([...mc.PART4_ENEMY_IDS].filter((id) => id >= 60000 && id <= 62999).length, 63);
 });
-test('real_part4_enemies: every enemy of every served revamp stage is in the master after patch(); the 86 new rows are raw ReLux 2019 rows', () => {
+test('real_part4_enemies: every enemy of every served revamp stage is in the master after patch(); the 97 new rows are raw ReLux 2019 rows', () => {
   const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
   const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
   const raw = mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY);
   const reportFile = process.env.KHUX_COLOSSEUM_P4_REPORT || 'D:\\Progetto_Restauro_KH_UX\\tmp\\p4t2_report_all.json';
-  const stageEnemies = fs.existsSync(reportFile) ? mc.readStageEnemies([reportFile, ...mc.stageEnemyFiles()]) : null;
+  const genReport = process.env.KHUX_COLOSSEUM_P4_GEN_REPORT || 'D:/Progetto_Restauro_KH_UX/tmp/p4t3/gen/report.json'; // the generated 2019-07 set (Task 3)
+  const stageEnemies = fs.existsSync(reportFile) && fs.existsSync(genReport) ? mc.readStageEnemies([reportFile, genReport, ...mc.stageEnemyFiles()]) : null;
   if (!src || !relux || !raw || !stageEnemies || !mc.SEASONS.filter((s) => s.colosseumStageId >= 4500).every((s) => s.pending || Object.keys(stageEnemies).some((k) => +k >= 20190000))) {
     results.push('skip real_part4_enemies: 1.1.3 master, ReLux extracts or the stage enemy lists of the revamp sets not on disk'); return;
   }
@@ -2299,7 +2305,7 @@ test('real_part4_enemies: every enemy of every served revamp stage is in the mas
   try {
     fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
     const out = withRanking(REV, () => mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: raw }));
-    assert.strictEqual(out.colosseumStage.length, 62);
+    assert.strictEqual(out.colosseumStage.length, 63);
     const after = new Map(JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => [r.enemyId, r]));
     const need = new Set(out.colosseumStage.filter((r) => REV.includes(r.colosseumStageId)).flatMap((r) => r.stageId.slice(0, r.validStage)).flatMap((sid) => stageEnemies[sid] || []));
     for (const id of need) assert.ok(after.has(id), `enemy ${id} in the master`);
@@ -2399,7 +2405,7 @@ test('Part 4 BOARD_ART = the user-approved private list board_art_all.json for a
   }
 });
 
-test('real_part4_boards (2019-05 .. 2021-06: 125 served boards; START, empty corner, totals, cell ids in the masters)', () => {
+test('real_part4_boards (2019-05 .. 2021-06: 130 served boards; START, empty corner, totals, cell ids in the masters)', () => {
   const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
   const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
   if (!src || !relux) { results.push('skip real_part4_boards: 1.1.3 master or ReLux extract not on disk (private sources)'); return; }
@@ -2411,9 +2417,8 @@ test('real_part4_boards (2019-05 .. 2021-06: 125 served boards; START, empty cor
   const parts = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'petParts.json'), 'utf8')).map((r) => r.petPartsId || r.id || r.partsId));
   const titles = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'title.json'), 'utf8')).map((r) => r.titleId || r.id));
   const sum = (a) => a.reduce((x, y) => x + y, 0);
-  assert.strictEqual(out.sphere.filter((r) => r.sphereBoardId >= 2210151).length, 125, '25 served seasons x 5 boards');
-  assert.ok(!out.sphere.some((r) => P4_BOARDS[4700].includes(r.sphereBoardId)), 'the pending 2019-07 serves none of its boards');
-  assert.ok(P4_BOARDS[4700].every((b) => mc.SEASON_BOARDS[4700].includes(b)), 'but keeps its SEASON_BOARDS entry');
+  assert.strictEqual(out.sphere.filter((r) => r.sphereBoardId >= 2210151).length, 130, '26 served seasons x 5 boards');
+  assert.ok(P4_BOARDS[4700].every((b) => out.sphere.some((r) => r.sphereBoardId === b)), '2019-07 serves its five boards');
   const NAMES = ['Coliseum Board', 'Huey & Dewey & Louie', 'Chip', 'Dale', 'Coliseum Board'];
   const PAID = { 33: 0, 7: 0 };
   for (const s of served) {

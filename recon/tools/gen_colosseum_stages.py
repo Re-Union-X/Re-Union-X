@@ -7,7 +7,7 @@ WW 2016-08 .. 2016-11 and 2017-06 .. 2017-12 have no original stage set on any d
 the 1.1.3 / ReLux rows point to JP sets WW did not play or that are absent from JP 4.3.1). Their rounds are rebuilt from the
 khuxwiki lineups (--wiki: month -> round -> waves [{enemies: [[name, count]], buffs: [...]}]; one wiki row = one wave, proven
 exact on 180 rounds; 10/10 rounds in every 2017 month) as the stage ids of server/make-colosseum.js GEN_STAGE_IDS(month) =
-21YYMMNN (YY = 16 / 17, NN = round 01..10; the 2017 ids never those of 2016-08 .. 11): cl_stg<id>.bin + cl_stg<id>_00.bin,
+21YYMMNN (YY = 16 / 17 / 19, NN = round 01..10; the 2017 ids never those of 2016-08 .. 11): cl_stg<id>.bin + cl_stg<id>_00.bin,
 room OC_0001_00_00, one part, one team per wave, every enemy level = round number (1..10; the client adds the tier levels).
 The default --months is every generated month (MONTHS); the 2016 files do not depend on the 2017 months.
 
@@ -51,7 +51,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 D = os.path.dirname(os.path.dirname(REPO))
 SRC = os.path.join(D, 'private', 'events', 'sources', 'coliseum')
-MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12']
+MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12', '2019-07']
 ROOM = 'OC_0001_00_00'
 SET_MATCH = 0.7     # WW month -> JP set match of ww_to_jp_stage_sets.json taken as the original set (the served ones: 0.7 .. 1.0)
 EXTRA_DX = 120      # x step of the extra positions of a wave longer than its template team
@@ -60,6 +60,13 @@ UNRESOLVED = {}
 # names no rule below resolves, by ruling (Coliseum Part 3, PART3_AUDIT §3: no Coliseum variant id in any source; the rows of
 # these ids are the variant rule rows of the bases 97 / 184, server/make-colosseum.js); consulted before every other rule
 NAMED = {'Ringmaster': 20097, 'Enraged Elk': 20184}
+# 2019-07 (Coliseum Part 4 Task 3, user 27-11): no stage file exists anywhere; every enemy is a full raw ReLux row of the 2019 shape
+# (ids 60000-62999, private ENEMIES_2019_07.md, 13 of 13 verified against the khuxwiki lineup and its round rules). The month
+# resolves its names ONLY by this table (rule `named19`), never by another source: no name may resolve to another id.
+MONTH_NAMED = {'2019-07': {'Behemoth Ω': 61024, 'Ogre': 61530, 'Heat Saber': 61525, 'Queen Bee Ω': 61026,
+                           'Gear Golem': 61548, 'Volcanic Lord': 61540, 'Gummi Hound': 60266, 'Gummi Hammer': 60126,
+                           'Circus Balloon': 60095, 'Mega-Shadow': 61020, 'Eliminator': 60249, 'Scourge Spider': 61032,
+                           'Wyvern': 60137}}
 # WW month -> JP 4.3.1 set proven by other evidence where the wiki-row match is below SET_MATCH: 2017-05 = JP 20161001..10
 # (match 0.48; footage + JP wiki, coliseum COLISEUM.md 1g / PART3_AUDIT §3; ReLux row 2100 agrees)
 SET_OVERRIDES = {'2017-05': '2016-10'}
@@ -107,6 +114,9 @@ class Resolver:
     def resolve(self, name, month):
         """-> (enemyId, rule, detail) or None"""
         k = norm(name)
+        if month in MONTH_NAMED:
+            table = {norm(n): i for n, i in MONTH_NAMED[month].items()}
+            return (table[k], 'named19', 'ruling 27-11 (ReLux 6xxxx row)') if k in table else None
         named = {norm(n): i for n, i in NAMED.items()}
         if k in named:
             return named[k], 'named', 'ruling (PART3_AUDIT §3)'

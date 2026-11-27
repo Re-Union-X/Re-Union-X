@@ -161,8 +161,9 @@
 // all); the ReLux T19 (1,000 rounds, AP 99) is a designer wall and is NOT served (user 27-11; the rule: from REVAMP_FIRST a tier row with
 // ap > 0 is cut), so the last tier is FINITE and the season ends after round 4,000 (colosseum-rules.js total). AP 0 everywhere, per-round
 // coins from Tier 5 (10) and Tier 8 (30), tier coins 100 / 300 / 500 / 700, the T10 reward a title (type 7, id 17079 + the months since
-// 2019-05, title.json «<Month YYYY> Victor»). From 2020-01 a season has 9 stages (validStage 9). 2019-07 carries pending: 'enemies' (its
-// stage set is generated only after every enemy is settled): seasonRows skips a pending season whole and lists it in out.pending.
+// 2019-05, title.json «<Month YYYY> Victor»). From 2020-01 a season has 9 stages (validStage 9). 2019-07 is a generated stage set (GEN_STAGE_IDS
+// 21190701 .. 10 from the khuxwiki lineup; its 13 enemies are raw ReLux 6xxxx rows). A season with `pending` is skipped whole by seasonRows
+// and listed in out.pending (no season carries it any more).
 // Until their ranking prizes (RELUX_RANKING) exist the default build leaves the new seasons out with a warning, as in Part 3b.
 //
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
@@ -224,10 +225,10 @@ const SEASONS = [
   { month: '2019-02', colosseumStageId: 4200, source: 'relux' },
   { month: '2019-03', colosseumStageId: 4300, source: 'relux' },
   { month: '2019-04', colosseumStageId: 4400, source: 'relux' },
-  // Coliseum Part 4 (ReLux rows 4500 .. 7000, rankingId 4046 .. 4071): the revamp seasons; 2019-07 is pending until its enemies are settled
+  // Coliseum Part 4 (ReLux rows 4500 .. 7000, rankingId 4046 .. 4071): the revamp seasons
   { month: '2019-05', colosseumStageId: 4500, source: 'relux' },
   { month: '2019-06', colosseumStageId: 4600, source: 'relux' },
-  { month: '2019-07', colosseumStageId: 4700, source: 'relux', pending: 'enemies' },
+  { month: '2019-07', colosseumStageId: 4700, source: 'relux', genStages: true },
   { month: '2019-08', colosseumStageId: 4800, source: 'relux' },
   { month: '2019-09', colosseumStageId: 4900, source: 'relux' },
   { month: '2019-10', colosseumStageId: 5000, source: 'relux' },
@@ -258,9 +259,9 @@ const REVAMP_FIRST = require('./colosseum-rules').REVAMP_FIRST;
 // 90136 = Fantasia Mickey B. Every other ReLux medal id must be in our medal master (the build stops otherwise). Both medals exist
 // in the master only when it is built with KHUX_MEDALS_ALL=1 (the regen recipe).
 const RELUX_MEDAL = { 90135: 300948, 90136: 300913 };
-// generated stage sets (Task 2 writes cl_stg<id>.bin): 21YYMMNN, YY = 16 / 17 the year of the WW month, MM its month, NN = 01..10;
+// generated stage sets (Task 2 writes cl_stg<id>.bin): 21YYMMNN, YY = 16 / 17 / 19 the year of the WW month, MM its month, NN = 01..10;
 // never a JP id, and the 2017 ids never those of the served 2016 sets (2017-08 .. 11 share their months with 2016-08 .. 11)
-const GEN_MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12'];
+const GEN_MONTHS = ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12', '2019-07'];
 function GEN_STAGE_IDS(month) {
   if (!GEN_MONTHS.includes(month)) throw new Error(`colosseum: ${month} has no generated stage set`);
   return Array.from({ length: 10 }, (_, i) => 21000000 + Number(month.slice(2, 4)) * 10000 + Number(month.slice(5, 7)) * 100 + i + 1);
@@ -919,14 +920,14 @@ const PART3B_ENEMY_IDS = new Set([20020, 20095, 20096, 20129, 20199, 20227, 2024
 // an explicit month copy whose source id is not the monthBase of the target (user decision 26-11): 21546 Jewel Sorceress (WW 2018-06 and
 // 2019-04; its base 1546 exists nowhere and its own raw ReLux row is 2019 shape) = the JP Coliseum row 180911546 (September 2018, old
 // shape) under the id 21546, label colosseumEnemyMonthCopy; the source row must be of the old shape, else the build stops
-// the enemy rows the Part 4 revamp seasons add (2019-05 .. 2021-06 less 2019-07: the 86 ids missing from the master, all raw ReLux rows of
-// the 2019 shape: 52 of 60000-62999, 32 of 20000-29999, 121565 / 121566); the same reason for the explicit list as PART3_ENEMY_IDS
+// the enemy rows the Part 4 revamp seasons add (2019-05 .. 2021-06: the 97 ids missing from the master, all raw ReLux rows of the 2019
+// shape: 63 of 60000-62999, 32 of 20000-29999, 121565 / 121566; 11 of the 63 are the generated 2019-07 set, Task 3); the same reason for the explicit list as PART3_ENEMY_IDS
 const PART4_ENEMY_IDS = new Set([
   20233, 20242, 20257, 20261, 21025, 21027, 21028, 21034, 21543, 21547, 21548, 21562, 21565, 21566, 21568, 21569, 21570, 21576, 21577, 21587, 21588,
   21590, 21591, 21617, 21621, 21627, 21630, 21639, 21640, 21643, 21644, 22509, 60007, 60010, 60029, 60033, 60094, 60095, 60097, 60109, 60111, 60116,
-  60118, 60129, 60137, 60138, 60170, 60175, 60176, 60227, 60233, 60242, 60251, 60255, 60261, 61025, 61027, 61028, 61033, 61034, 61503, 61520, 61523,
-  61524, 61527, 61529, 61535, 61536, 61537, 61538, 61539, 61541, 61542, 61545, 61546, 61549, 61552, 61562, 61588, 61590, 61592, 62503, 62505, 62510,
-  121565, 121566]);
+  60118, 60126, 60129, 60137, 60138, 60170, 60175, 60176, 60227, 60233, 60242, 60249, 60251, 60255, 60261, 60266, 61020, 61024, 61025, 61026, 61027,
+  61028, 61032, 61033, 61034, 61503, 61520, 61523, 61524, 61525, 61527, 61529, 61530, 61535, 61536, 61537, 61538, 61539, 61540, 61541, 61542, 61545,
+  61546, 61548, 61549, 61552, 61562, 61588, 61590, 61592, 62503, 62505, 62510, 121565, 121566]);
 const MONTH_COPY_OF = { 21546: 180911546 };
 const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', monthCopy: 'colosseumEnemyMonthCopy',
   estimate: 'colosseumEnemyEstimate' };

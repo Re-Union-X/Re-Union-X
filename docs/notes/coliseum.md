@@ -591,3 +591,15 @@ Resources 190, master revision 401.
 - The private ReLux path default in `make-colosseum.js` names a donor folder: resolve it through the private path helper / environment in the planned legal sweep.
 - The HP-scale check in `reluxShape` was done in Part 3b (measured band, boundary tests).
 - 21557 (JP 20180106 / 20180406 sets) is in no stage served so far: keep it open for Part 4.
+
+## Part 4 Task 3: generated 2019-07 (27-11)
+
+- 2019-07 (`colosseumStageId` 4700) has no stage file anywhere; its maps are generated from the khuxwiki lineup like 2016-08 .. 11 and
+  2017-06 .. 12 (`gen_colosseum_stages.py`, ids `21190701` .. `21190710`, one wiki row = one wave, enemy level = round, round 6 three
+  waves). `pending` is gone: the season, its ten stages and its five boards are served.
+- Enemies are the 13 raw ReLux 6xxxx rows of the 2019 shape (no 2xxxx stand-in): the month resolves names ONLY through
+  `MONTH_NAMED['2019-07']` (rule `named19`): Behemoth Omega 61024, Ogre 61530, Heat Saber 61525, Queen Bee Omega 61026, Gear Golem
+  61548, Volcanic Lord 61540, Gummi Hound 60266, Gummi Hammer 60126, Circus Balloon 60095, Mega-Shadow 61020, Eliminator 60249,
+  Scourge Spider 61032, Wyvern 60137. The round rules (buffs, counters) are in those enemy rows, so this month keeps them; the
+  maps themselves carry no buff. `PART4_ENEMY_IDS` grows from 86 to 97 (60095 and 60137 were already there).
+- The 2016 / 2017 generated files are byte-identical (220 files compared with the served set).

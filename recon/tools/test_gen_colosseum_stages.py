@@ -73,14 +73,15 @@ def load(folder, sid):
 # ---- gen ids disjoint: the ids of server/make-colosseum.js GEN_STAGE_IDS (node) = the Python ones for every generated month;
 # 2016 = 2116MMNN, 2017 = 2117MMNN, the two sets disjoint (2017-08 .. 11 share their month numbers with 2016-08 .. 11)
 check(gcs.MONTHS == ['2016-08', '2016-09', '2016-10', '2016-11', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10',
-                     '2017-11', '2017-12'], 'MONTHS %s' % gcs.MONTHS)
+                     '2017-11', '2017-12', '2019-07'], 'MONTHS %s' % gcs.MONTHS)
 node = subprocess.run(['node', '-e', 'const c = require(process.argv[1]); console.log(JSON.stringify(JSON.parse(process.argv[2])'
                        '.map(c.GEN_STAGE_IDS)))', os.path.join(REPO, 'server', 'make-colosseum.js'), json.dumps(gcs.MONTHS)],
                       capture_output=True, text=True)
 check(node.returncode == 0 and json.loads(node.stdout) == [gcs.gen_stage_ids(m) for m in gcs.MONTHS],
       'GEN_STAGE_IDS of make-colosseum.js: %s %s' % (node.stdout.strip()[:80], node.stderr.strip()[:200]))
 ids16 = {i for m in gcs.MONTHS if m < '2017' for i in gcs.gen_stage_ids(m)}
-ids17 = {i for m in gcs.MONTHS if m > '2017' for i in gcs.gen_stage_ids(m)}
+ids17 = {i for m in gcs.MONTHS if m > '2017' for i in gcs.gen_stage_ids(m)}  # 2017 and 2019
+ids17 = {i for i in ids17 if i // 10000 == 2117}  # the 2019 set is 2119MMNN
 check(len(ids16) == 40 and len(ids17) == 70 and not ids16 & ids17, 'gen ids disjoint: %d / %d / %s' % (len(ids16), len(ids17), ids16 & ids17))
 check(all(i // 10000 == 2116 for i in ids16) and all(i // 10000 == 2117 for i in ids17), 'gen ids 2116MMNN / 2117MMNN')
 check(gcs.gen_stage_ids('2017-08')[:2] == [21170801, 21170802], '2017-08 ids %s' % gcs.gen_stage_ids('2017-08')[:2])
@@ -240,6 +241,41 @@ try:
     check(gcs.UNRESOLVED == {}, 'UNRESOLVED starts empty')
 finally:
     shutil.rmtree(t)
+
+# ---- Part 4 Task 3: 2019-07 = 21190701 .. 10, the 13 raw ReLux 6xxxx ids by an explicit name table (never another id)
+check(gcs.gen_stage_ids('2019-07') == [21190700 + i for i in range(1, 11)], '2019-07 ids %s' % gcs.gen_stage_ids('2019-07'))
+check(not set(gcs.gen_stage_ids('2019-07')) & (ids16 | set(ids17)), '2019-07 ids disjoint from 2016 / 2017')
+W19 = {'Behemoth Ω': 61024, 'Ogre': 61530, 'Heat Saber': 61525, 'Queen Bee Ω': 61026, 'Gear Golem': 61548,
+       'Volcanic Lord': 61540, 'Gummi Hound': 60266, 'Gummi Hammer': 60126, 'Circus Balloon': 60095, 'Mega-Shadow': 61020,
+       'Eliminator': 60249, 'Scourge Spider': 61032, 'Wyvern': 60137}
+check(gcs.MONTH_NAMED == {'2019-07': W19}, 'MONTH_NAMED %s' % gcs.MONTH_NAMED)
+res19 = gcs.Resolver(cl_sets, ww2jp, {**names113, 20530: 'Ogre', 21020: 'Mega-Shadow'}, gap)
+check(all(res19.resolve(n, '2019-07')[:2] == (i, 'named19') for n, i in W19.items()), '2019-07 names resolve to the table')
+check(res19.resolve('Ogre', '2016-08')[0] != 61530, 'the table is for 2019-07 only')
+check(res19.resolve('Shadow', '2019-07') is None, '2019-07: a name outside the table is unresolved (no other rule)')
+wiki19 = {'2019-07': {'1': [{'enemies': [['Behemoth Ω', 1]], 'buffs': []}],
+                      '6': [{'enemies': [['Gummi Hammer', 1], ['Circus Balloon', 2]], 'buffs': []},
+                            {'enemies': [['Circus Balloon', 4]], 'buffs': []},
+                            {'enemies': [['Mega-Shadow', 3]], 'buffs': [['-def', 'm', '1']]}]}}
+t19 = tempfile.mkdtemp()
+try:
+    tp = os.path.join(t19, 'tpl')
+    os.makedirs(tp)
+    write_template(tp, 20150701, [[(2740, 874)]])
+    write_template(tp, 20150702, [[(2740, 874), (2600, 870), (2500, 860)], [(1928, 894), (1660, 876), (1500, 870), (1400, 880)], [(1460, 878), (1300, 878), (1200, 878)]])
+    o19 = os.path.join(t19, 'o')
+    r19 = gcs.generate(wiki19, ['2016-08', '2019-07'] if False else ['2019-07'], res19, gcs.template_pool(tp), o19)
+    s19 = {s['stageId']: s for s in r19['stages']}
+    check(sorted(s19) == [21190701, 21190706], 'stage ids %s' % sorted(s19))
+    check(r19['summary']['enemyIds'] == {'2019-07': [60095, 60126, 61020, 61024]}, 'ids %s' % r19['summary']['enemyIds'])
+    stg, parts = load(o19, 21190706)
+    p = parts[0]
+    got = [[e['enemyId'] for e in p['enemies'][tm['first']:tm['first'] + tm['count']]] for tm in p['teams']]
+    check(got == [[60126, 60095, 60095], [60095] * 4, [61020] * 3], 'R6 three waves %s' % got)
+    check({e['level'] for e in p['enemies']} == {6}, 'level = round')
+    check(r19['summary']['rules'] == {'named19': sorted(['Behemoth Ω = 61024', 'Gummi Hammer = 60126', 'Circus Balloon = 60095', 'Mega-Shadow = 61020'])}, 'rules %s' % r19['summary']['rules'])
+finally:
+    shutil.rmtree(t19)
 
 print('FAIL: ' + '; '.join(fails) if fails else 'OK: gen_colosseum_stages')
 sys.exit(1 if fails else 0)
