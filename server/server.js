@@ -750,7 +750,7 @@ function servedMasterRows(name, realMs) {
   if (name === 'emblem') {
     const off = clockOffset();
     const idx = boosterIndex().byId || {};
-    return makeEmblems.servedRows(rows, playerBoosters().activeUntil(realMs), (ms) => clock.fakeString(ms, off), realMs, (id) => (idx[id] || {}).spanDays);
+    return makeEmblems.servedRows(rows, playerBoosters().activeUntil(realMs), (ms) => clock.fakeUntilString(ms, off), realMs, (id) => (idx[id] || {}).spanDays); // I-129: no upper clamp
   }
   // sphere: the type-2 avatar boards count down to the end of the story week (the Shop's rotation, fake time) and show the price of
   // the window they are listed in (avatar-boards.js servedRow)

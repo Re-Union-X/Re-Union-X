@@ -38,6 +38,10 @@ function twinOffset(realMs) {
 }
 const fake = (realMs, offset) => Math.min(Math.max(realMs + offset, SAFE_FROM), SAFE_TO);
 const fakeString = (realMs, offset) => new Date(fake(realMs, offset)).toISOString().slice(0, 19).replace('T', ' ');
+// I-129: a future deadline (Booster expiry, 29-32 days) in fake time without the upper clamp: near the end of a May-2021 twin
+// month fake() would cut it to SAFE_TO (the client accepts dates after 2021, as the Presents show)
+const fakeUntil = (realMs, offset) => Math.max(realMs + offset, SAFE_FROM);
+const fakeUntilString = (realMs, offset) => new Date(fakeUntil(realMs, offset)).toISOString().slice(0, 19).replace('T', ' ');
 const dayIndex = (r) => Math.floor((r - DAY0) / DAY);
 const weekIndex = (r) => Math.floor((r - DAY0) / (7 * DAY));
 const monthIndex = (r) => { const { y, m } = monthKey(r); return y * 12 + m; };
@@ -52,5 +56,5 @@ function masterRevision(base, realMs) {
   return base * 100000 + (weekIndex(realMs) - weekIndex(REV0)) + (monthIndex(realMs) - monthIndex(REV0));
 }
 
-module.exports = { DAY, SAFE_FROM, SAFE_TO, twinOffset, fake, fakeString, dayIndex, weekIndex, monthIndex,
+module.exports = { DAY, SAFE_FROM, SAFE_TO, twinOffset, fake, fakeString, fakeUntil, fakeUntilString, dayIndex, weekIndex, monthIndex,
   dayEnd, weekEnd, monthEnd, weekStartOf, monthEndOf, masterRevision };

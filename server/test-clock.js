@@ -47,6 +47,20 @@ const o10 = c.twinOffset(U(2026, 10, 2));
 check(c.fake(U(2026, 10, 31, 23), o10) > c.fake(U(2026, 10, 2), o10), 'monotona');
 // limite di sicurezza
 check(c.fake(U(2026, 10, 1), Date.UTC(2021, 5, 30) - U(2026, 10, 1)) === c.SAFE_TO, 'tetto al 28/6/2021');
+// I-129: fakeUntil (future deadlines) keeps the lower clamp only: a 32-day Booster from 30/5/2021 (twin of 2027-05) is not cut
+const r27 = U(2027, 5, 30, 12), o27 = c.twinOffset(r27);
+check(c.fakeString(r27, o27) === '2021-05-30 12:00:00', `2027-05 twin: ${c.fakeString(r27, o27)}`);
+check(c.fakeUntilString(r27 + 32 * c.DAY, o27) === '2021-07-01 12:00:00', `fakeUntil +32 days: ${c.fakeUntilString(r27 + 32 * c.DAY, o27)}`);
+check(c.fakeUntil(U(2010, 1, 1), 0) === c.SAFE_FROM, 'fakeUntil: lower clamp kept');
+// I-129: month and week deadlines of 2026-2035 stay below SAFE_TO with fake() (no clamp needed)
+for (let y = 2026; y <= 2035; y++) {
+  for (let m = 1; m <= 12; m++) {
+    for (const d of [1, 15, 28]) {
+      const r = U(y, m, d, 9), o = c.twinOffset(r);
+      check(c.monthEnd(r) + o <= c.SAFE_TO && c.weekEnd(r) + 14 * c.DAY + o <= c.SAFE_TO, `${y}-${m}-${d}: deadline past SAFE_TO`);
+    }
+  }
+}
 // revisione: cambia solo alle scadenze, e insieme allo scostamento al confine mensile
 const rv = (r) => c.masterRevision(117, r);
 check(rv(U(2026, 10, 13, 9)) === rv(U(2026, 10, 19, 7, 59)), 'revisione stabile nella settimana');
