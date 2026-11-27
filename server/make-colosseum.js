@@ -550,7 +550,8 @@ const RANGES = {
   ranking: ['rankingId', 4000, 4099], rankingReward: ['rankingRewardId', 30000, 39999],
   sphere: ['sphereBoardId', 2200001, 2299999], sphereArray: ['arryId', 2200001, 2299999], sphereMasu: ['masuId', 2200001, 2299999],
 };
-const ENEMY_RANGE = [20000, 29999]; // Coliseum enemy variants (20000 + base id, later 21xxx/22xxx)
+// Coliseum enemy ids: the variants (20000 + base id, later 21xxx/22xxx) and the revamp's own 6xxxx ids (Part 4: 60000-62999)
+const ENEMY_RANGES = [[20000, 29999], [60000, 62999]];
 const TABLES = ['colosseumStage', 'colosseum', 'stage', 'enemy', 'ranking', 'rankingReward', 'sphere', 'sphereArray', 'sphereMasu'];
 
 // threshold curve (see the comment block above)
@@ -899,10 +900,21 @@ const PART3B_ENEMY_IDS = new Set([20020, 20095, 20096, 20129, 20199, 20227, 2024
 // an explicit month copy whose source id is not the monthBase of the target (user decision 26-11): 21546 Jewel Sorceress (WW 2018-06 and
 // 2019-04; its base 1546 exists nowhere and its own raw ReLux row is 2019 shape) = the JP Coliseum row 180911546 (September 2018, old
 // shape) under the id 21546, label colosseumEnemyMonthCopy; the source row must be of the old shape, else the build stops
+// the enemy rows the Part 4 revamp seasons add (2019-05 .. 2021-06 less 2019-07: the 86 ids missing from the master, all raw ReLux rows of
+// the 2019 shape: 52 of 60000-62999, 32 of 20000-29999, 121565 / 121566); the same reason for the explicit list as PART3_ENEMY_IDS
+const PART4_ENEMY_IDS = new Set([
+  20233, 20242, 20257, 20261, 21025, 21027, 21028, 21034, 21543, 21547, 21548, 21562, 21565, 21566, 21568, 21569, 21570, 21576, 21577, 21587, 21588,
+  21590, 21591, 21617, 21621, 21627, 21630, 21639, 21640, 21643, 21644, 22509, 60007, 60010, 60029, 60033, 60094, 60095, 60097, 60109, 60111, 60116,
+  60118, 60129, 60137, 60138, 60170, 60175, 60176, 60227, 60233, 60242, 60251, 60255, 60261, 61025, 61027, 61028, 61033, 61034, 61503, 61520, 61523,
+  61524, 61527, 61529, 61535, 61536, 61537, 61538, 61539, 61541, 61542, 61545, 61546, 61549, 61552, 61562, 61588, 61590, 61592, 62503, 62505, 62510,
+  121565, 121566]);
 const MONTH_COPY_OF = { 21546: 180911546 };
 const ENEMY_LABEL = { 113: 'colosseumEnemy113', rule: 'colosseumEnemyRule', relux: 'colosseumEnemyRelux', monthCopy: 'colosseumEnemyMonthCopy',
   estimate: 'colosseumEnemyEstimate' };
-const variantId = (id) => id >= ENEMY_RANGE[0] && id <= ENEMY_RANGE[1];
+const variantId = (id) => ENEMY_RANGES.some(([lo, hi]) => id >= lo && id <= hi);
+// the raw ReLux shape an id may take from the seasons that need it (Part 4): the 2019 revamp shape only when EVERY needing season is a
+// revamp one (>= REVAMP_FIRST); an id of both eras (or of none) takes the old rule, the pre-revamp sources only
+const acceptedShape = (seasonIds) => (seasonIds.length && seasonIds.every((id) => id >= REVAMP_FIRST) ? '2019' : 'old');
 // the base Coliseum id of a month id (YYMM + 20xxx, 1 + 20xxx), null for any other id
 function monthBase(id) {
   if (!Number.isSafeInteger(id) || id < 100000) return null;
@@ -956,38 +968,48 @@ function enemyRows(src, out) {
   }
   const served = out.colosseumStage.flatMap((cs) => cs.stageId.slice(0, cs.validStage));
   out.enemyCheck = { checked: false, reason: 'no stage enemy lists', unchecked: served };
+  out.sharedOldRows = [];
   if (src.stageEnemies) {
     const need = new Map(); // enemyId -> [stageId]
+    const needBy = new Map(); // enemyId -> [colosseumStageId] (the seasons that need it: the shape its raw row may have)
     const unchecked = [];
     for (const cs of out.colosseumStage) {
       for (const sid of cs.stageId.slice(0, cs.validStage)) {
         const ids = src.stageEnemies[sid];
         if (!ids || !ids.length) { unchecked.push(sid); continue; }
-        for (const id of ids) { if (!need.has(id)) need.set(id, []); if (!need.get(id).includes(sid)) need.get(id).push(sid); }
+        for (const id of ids) {
+          if (!need.has(id)) { need.set(id, []); needBy.set(id, []); }
+          if (!need.get(id).includes(sid)) need.get(id).push(sid);
+          if (!needBy.get(id).includes(cs.colosseumStageId)) needBy.get(id).push(cs.colosseumStageId);
+        }
       }
     }
     const master = new Map(masterRows.map((r) => [r.enemyId, r]));
     const relux = new Map((src.reluxEnemies || []).map((r) => [r.enemyId, r]));
     const rows = new Map(out.enemy.map((r) => [r.enemyId, r])); // the rows of this run, by id
     // the row of a base: our master's, else one this run derived (resolved on demand, also when no stage needs the base itself)
-    const derived = new Map(); // id -> {row, source, extra} or null
+    const rev19 = new Set(); // the ids this run took in the 2019 shape
+    const derived = new Map(); // `${id}:${shape}` -> {row, source, extra} or null
     // a variant-rule row needs an ORIGINAL base (1.1.3 or an old-shape raw row); our master's row may be one of our own clones: stop
-    const resolve = (id) => {
-      if (derived.has(id)) return derived.get(id);
-      derived.set(id, null); // a loop has no source
+    // `want` = the raw shape the needing seasons accept (acceptedShape); a row taken in the 2019 shape reports reluxShape '2019'
+    const resolve = (id, want = 'old') => {
+      const key = `${id}:${want}`;
+      if (derived.has(key)) return derived.get(key);
+      derived.set(key, null); // a loop has no source
       const e113 = row113.get(id), rx = relux.get(id), shape = rx ? reluxShape(rx) : undefined, mb = monthBase(id);
-      const refused = rx && shape !== 'old' ? { reluxShape: shape } : {};
+      const refused = rx && shape !== want ? { reluxShape: shape } : {};
+      const taken = want === '2019' ? { reluxShape: '2019' } : {};
       const named = rx || e113 ? {} : { nameInferred: true };
       let res = null;
       if (e113) res = { row: enemySchemaRow(e113), source: '113', extra: {} };
-      else if (rx && shape === 'old') res = { row: enemySchemaRow(rx), source: 'relux', extra: {} };
+      else if (rx && shape === want) res = { row: enemySchemaRow(rx), source: 'relux', extra: taken };
       else if (MONTH_COPY_OF[id] !== undefined) {
         const sid = MONTH_COPY_OF[id], srx = relux.get(sid);
-        if (srx && reluxShape(srx) === 'old') res = { row: { ...enemySchemaRow(srx), enemyId: id }, source: 'monthCopy', extra: { base: sid, baseSource: 'relux', ...refused, ...named } };
+        if (srx && reluxShape(srx) === want) res = { row: { ...enemySchemaRow(srx), enemyId: id }, source: 'monthCopy', extra: { base: sid, baseSource: 'relux', ...refused, ...named } };
       } else if (mb !== null) {
-        const b = baseRow(mb);
-        if (b) res = { row: { ...enemySchemaRow(b), enemyId: id }, source: 'monthCopy', extra: { base: mb, ...refused, ...named } };
-      } else if (variantId(id)) {
+        const b = baseRow(mb, want);
+        if (b) res = { row: { ...enemySchemaRow(b), enemyId: id }, source: 'monthCopy', extra: { base: mb, ...refused, ...named, ...(want === '2019' && !master.get(mb) ? taken : {}) } };
+      } else if (variantId(id) && want === 'old') { // never the variant rule for a revamp row
         const bid = id - 20000, b113 = row113.get(bid), brx = relux.get(bid), bm = master.get(bid);
         const [b, baseSource] = b113 ? [b113, '113'] : brx && reluxShape(brx) === 'old' ? [enemySchemaRow(brx), 'relux'] : bm && MASTER_BASE_APPROVED.includes(bid) ? [bm, 'master'] : [null, null];
         const rule = b && ruleRow(id, b);
@@ -995,24 +1017,33 @@ function enemyRows(src, out) {
           + 'approve it by adding the base id to MASTER_BASE_APPROVED (user decision) or find an original row');
         if (rule) res = { row: rule, source: 'rule', extra: { base: bid, baseSource, ...refused, ...named } };
       }
-      derived.set(id, res);
+      derived.set(key, res);
       return res;
     };
-    const baseRow = (id) => master.get(id) || rows.get(id) || (resolve(id) || {}).row || null;
+    const baseRow = (id, want) => master.get(id) || rows.get(id) || (resolve(id, want) || {}).row || null;
     for (const [id, stages] of [...need].sort((a, b) => a[0] - b[0])) {
       if (added.has(id)) { added.get(id).stages = stages; continue; }
       if (have.has(id)) continue;
       const where = `enemy ${id} of stage ${stages.join(', ')}`;
       if (!variantId(id) && monthBase(id) === null) throw new Error(`colosseum: ${where} is missing from the master and is not a Coliseum variant id (20000-29999) nor a month id (YYMM / 1 + one)`);
-      const res = resolve(id);
+      const want = acceptedShape(needBy.get(id));
+      const res = resolve(id, want);
       if (!res) {
-        const base = MONTH_COPY_OF[id] !== undefined ? `no old-shape row ${MONTH_COPY_OF[id]} to copy` : monthBase(id) !== null ? `no row for its base ${monthBase(id)}` : `no base ${id - 20000} for the variant rule`;
-        throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no ReLux row of the old shape, ${base}): `
+        const base = want === '2019' ? `no 2019-shape row of its own or of its base${monthBase(id) !== null ? ` ${monthBase(id)}` : ''} (the variant rule is never used for a revamp row)`
+          : MONTH_COPY_OF[id] !== undefined ? `no old-shape row ${MONTH_COPY_OF[id]} to copy` : monthBase(id) !== null ? `no row for its base ${monthBase(id)}` : `no base ${id - 20000} for the variant rule`;
+        throw new Error(`colosseum: ${where} has no source (no 1.1.3 row, no ReLux row of the ${want} shape, ${base}): `
           + 'its stats are decided per enemy as for the raids (label colosseumEnemyEstimate), see docs/notes/coliseum.md «Enemy rows of the served stages»');
       }
       add(id, res.row, res.source, stages, res.extra);
       rows.set(id, res.row);
+      if (want === '2019') rev19.add(id);
     }
+    // the ids a revamp season needs that keep a pre-revamp row (our master's, or this run's old-shape row of an id of both eras): the
+    // user's rule «ids already in the master keep their row» (27-11), declared in the notice
+    const rev = (id) => (needBy.get(id) || []).some((s) => s >= REVAMP_FIRST);
+    out.sharedOldRows = [...need.keys()].filter((id) => rev(id) && (variantId(id) || monthBase(id) !== null)
+      && !rev19.has(id) && !(master.has(id) && reluxShape(master.get(id)) === '2019'))
+      .sort((a, b) => a - b);
     out.enemyCheck = unchecked.length ? { checked: false, reason: `${unchecked.length} served stages without an enemy list`, unchecked } : { checked: true, reason: '', unchecked: [] };
   }
   out.enemy.sort(byKey('enemyId'));
@@ -1167,4 +1198,4 @@ function patch(masterDir, opts = {}) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
 module.exports = { REVAMP_FIRST, MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, COPY_STAGES, COPY_STAGE_IDS, copyPairs, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
-  PART3_ENEMY_IDS, PART3B_ENEMY_IDS, MONTH_COPY_OF, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, BRACKETS9, BRACKETS12, RELUX_RANKING, rankItem, ENDLESS, ERA17, ERA18, reluxRewardRows, REWARD_BASE, REWARD_BLOCK, REWARD_FIRST_RANKING };
+  PART3_ENEMY_IDS, PART3B_ENEMY_IDS, PART4_ENEMY_IDS, MONTH_COPY_OF, ENEMY_RANGES, acceptedShape, enemyRows, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, BRACKETS9, BRACKETS12, RELUX_RANKING, rankItem, ENDLESS, ERA17, ERA18, reluxRewardRows, REWARD_BASE, REWARD_BLOCK, REWARD_FIRST_RANKING };

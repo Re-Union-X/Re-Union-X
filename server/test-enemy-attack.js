@@ -29,7 +29,7 @@ const evIds = require('./make-event-enemies').eventIds();
 const donorAtt = new Set(Object.keys(require('./enemy-motion-fix').readOriginalMoves()?.attacks || {}).map(Number));
 // the Part 3 Coliseum rows (make-colosseum.js PART3_ENEMY_IDS: raw ReLux / rule rows) bring the status attacks of their original
 // row, as the event rows; every other Coliseum row is checked as before
-const P3 = new Set([...require('./make-colosseum').PART3_ENEMY_IDS, ...require('./make-colosseum').PART3B_ENEMY_IDS]); // Part 3 and 3b
+const P3 = new Set([...require('./make-colosseum').PART3_ENEMY_IDS, ...require('./make-colosseum').PART3B_ENEMY_IDS, ...require('./make-colosseum').PART4_ENEMY_IDS]); // Part 3, 3b and 4
 const coli = (id) => P3.has(id);
 const storyCited = new Set(enemies.filter((e) => !evIds.has(e.enemyId) && !coli(e.enemyId)).flatMap((e) => [...(e.skillId || []), ...(e.urgencySkillId || [])]));
 const storyStatus = atts.filter((a) => storyCited.has(a.enemyAttackId) && !donorAtt.has(a.enemyAttackId)

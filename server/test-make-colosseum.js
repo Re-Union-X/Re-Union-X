@@ -2212,5 +2212,117 @@ test('COPY_STAGES: 2020-01 = 20200501 .. 09, 2020-10 = the nine per-round copies
   assert.deepStrictEqual(out.stage.map((r) => r.stageId).sort(), [...mc.COPY_STAGE_IDS('2020-01'), ...mc.COPY_STAGE_IDS('2020-10')].sort());
 });
 
+// ---- Coliseum Part 4 Task 4: enemy rows of the revamp sets (era shapes, 6xxxx ids) ----
+// enemyRows is driven with a minimal `out` (colosseumStage + stage lists) so a season id >= 4500 needs no ReLux tier fixture
+function eraFixture() {
+  const m = (id, name, displayId) => ({ ...knotRow(id, name, OLD6.slice(0, 5), [100, 200, 300, 1000, 5000], OLD6.slice(0, 5)), displayId });
+  const masterEnemies = [m(20007, 'Large Body', 7), m(21530, 'Old Shared', 1530)];
+  const r19 = (id, name, displayId) => rawRow(id, name, NEW19, [12750, 2942545725, 11250909078, 13414547850, 14280000000, 427082287500], [2922, 1, 2, 3, 4, 2100000000], { displayId });
+  const oldRaw = (id, name, displayId) => rawRow(id, name, OLD6, [20000, 51000, 70000, 176000, 766260, 114656559], [1650, 2160, 3120, 6300, 18434, 8531902], { displayId });
+  const raw = [r19(21548, 'Revamp Only', 1548), r19(60033, 'Six Only', 33), r19(21565, 'Month Base', 1565), r19(21549, 'Old Needs It', 1549), r19(21530, 'Old Shared', 1530),
+    oldRaw(1549, 'Old Needs It', 1549), oldRaw(1600, 'Rule Base', 1600), oldRaw(21570, 'Old Only Row', 1570),
+    rawRow(60034, 'Six Corrupt', [1, 200, 9999], [16000, 10000000, 9999999999], [1500, 15000, 99999999], { displayId: 34 })];
+  const out = { enemy: [], colosseumStage: [
+    { colosseumStageId: 4400, validStage: 3, stageId: [1, 2, 3] },
+    { colosseumStageId: 4500, validStage: 3, stageId: [4, 5, 6] },
+    { colosseumStageId: 4600, validStage: 3, stageId: [7, 8, 9] }] };
+  return { masterEnemies, raw, out };
+}
+const runEra = (stageEnemies, drop = []) => {
+  const f = eraFixture();
+  const out = JSON.parse(JSON.stringify(f.out));
+  mc.enemyRows({ masterEnemies: f.masterEnemies, reluxEnemies: f.raw.filter((r) => !drop.includes(r.enemyId)), stageEnemies }, out);
+  return out;
+};
+test('era shapes: acceptedShape, ENEMY_RANGES (20000-29999 + 60000-62999), PART4_ENEMY_IDS exported', () => {
+  assert.deepStrictEqual(mc.ENEMY_RANGES, [[20000, 29999], [60000, 62999]]);
+  assert.strictEqual(mc.acceptedShape([4400]), 'old');
+  assert.strictEqual(mc.acceptedShape([4400, 4500]), 'old');
+  assert.strictEqual(mc.acceptedShape([4500, 7000]), '2019');
+  assert.strictEqual(mc.acceptedShape([]), 'old');
+  assert.ok(mc.PART4_ENEMY_IDS instanceof Set);
+  assert.strictEqual(mc.monthBase(160033), 60033);
+  assert.strictEqual(mc.monthBase(121565), 21565);
+  assert.strictEqual(mc.monthBase(63000), null);
+});
+test('era shapes: a revamp-only id takes its 2019 raw row, an id of both eras the old rule, corrupt never, the rule never for a revamp row', () => {
+  const out = runEra({ 1: [21530], 2: [21549], 3: [20007], 4: [21548, 60033, 21530, 20007], 5: [121565, 21565], 6: [21548], 7: [21549], 8: [60033], 9: [] });
+  const rep = new Map(out.colosseumEnemies.map((e) => [e.enemyId, e]));
+  const row = (id) => out.enemy.find((r) => r.enemyId === id);
+  // revamp-only: the raw 2019 row as it is, label Relux, reluxShape 2019
+  assert.deepStrictEqual([rep.get(21548).source, rep.get(21548).label, rep.get(21548).reluxShape], ['relux', 'colosseumEnemyRelux', '2019']);
+  assert.deepStrictEqual([rep.get(60033).source, rep.get(60033).reluxShape], ['relux', '2019']);
+  assert.strictEqual(row(60033).baseLv[1], 1400);
+  assert.deepStrictEqual(row(21548).hp.slice(0, 6), [12750, 2942545725, 11250909078, 13414547850, 14280000000, 427082287500]);
+  // month copy of a 2019 row (121565 = 21565, revamp only)
+  assert.deepStrictEqual([rep.get(121565).source, rep.get(121565).base], ['monthCopy', 21565]);
+  assert.deepStrictEqual({ ...row(121565), enemyId: 21565 }, row(21565));
+  assert.strictEqual(row(21565).baseLv[1], 1400, 'the base 21565 is the 2019 row');
+  // 21549 needed by 4400 and 4600: the old rule (never its 2019 raw row): the variant rule from the old base 1549
+  assert.strictEqual(rep.get(21549).source, 'rule');
+  assert.ok(row(21549).baseLv.every((l) => l <= 999));
+  // master rows are never rewritten or reported
+  assert.ok(!row(20007) && !row(21530) && !rep.has(21530));
+  // shared old rows: needed by a revamp season, pre-revamp row (master rows; 21549 of both eras with the old rule)
+  assert.deepStrictEqual(out.sharedOldRows, [20007, 21530, 21549]);
+});
+test('era shapes: no source stops the build (corrupt row, 2019 row for a pre-revamp id, no rule for a revamp id)', () => {
+  const stop = (se, re, drop) => assert.throws(() => runEra(se, drop), re);
+  stop({ 4: [60034] }, /60034.*no source/s);
+  stop({ 1: [21548] }, /21548.*no source/s); // pre-revamp only: its 2019-shape row is refused, no base 1548
+  stop({ 4: [21600] }, /21600.*no source/s); // revamp only: the variant rule is never used for a revamp row
+  stop({ 4: [121566] }, /121566.*no source/s); // no row of the base 21566
+  assert.doesNotThrow(() => runEra({ 1: [21570] })); // an old-shape raw row for a pre-revamp id
+});
+
+
+// the 86 ids of the revamp sets missing from the master (Part 4 Task 2 real run; tmp\p4t2_missing.json) and the 14 ids with 1.1.3 rows
+const P4_SHARED_113 = [20007, 20011, 20012, 20015, 20016, 20017, 20035, 20059, 20071, 20110, 20131, 20136, 20137, 20144];
+test('PART4_ENEMY_IDS = the 86 ids of the revamp sets, disjoint from Parts 3 / 3b', () => {
+  assert.strictEqual(mc.PART4_ENEMY_IDS.size, 86);
+  assert.ok([...mc.PART4_ENEMY_IDS].every((id) => !mc.PART3_ENEMY_IDS.has(id) && !mc.PART3B_ENEMY_IDS.has(id)));
+  assert.strictEqual([...mc.PART4_ENEMY_IDS].filter((id) => id >= 60000 && id <= 62999).length, 52);
+});
+test('real_part4_enemies: every enemy of every served revamp stage is in the master after patch(); the 86 new rows are raw ReLux 2019 rows', () => {
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
+  const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
+  const raw = mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY);
+  const reportFile = process.env.KHUX_COLOSSEUM_P4_REPORT || 'D:\\Progetto_Restauro_KH_UX\\tmp\\p4t2_report_all.json';
+  const stageEnemies = fs.existsSync(reportFile) ? mc.readStageEnemies([reportFile, ...mc.stageEnemyFiles()]) : null;
+  if (!src || !relux || !raw || !stageEnemies || !mc.SEASONS.filter((s) => s.colosseumStageId >= 4500).every((s) => s.pending || Object.keys(stageEnemies).some((k) => +k >= 20190000))) {
+    results.push('skip real_part4_enemies: 1.1.3 master, ReLux extracts or the stage enemy lists of the revamp sets not on disk'); return;
+  }
+  const masterRows = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).filter((r) => !mc.PART4_ENEMY_IDS.has(r.enemyId));
+  const REV = mc.SEASONS.filter((s) => s.colosseumStageId >= 4500 && !s.pending).map((s) => s.colosseumStageId);
+  const heavy = 'D:\\Progetto_Restauro_KH_UX\\tmp';
+  const dir = fs.mkdtempSync(path.join(fs.existsSync(heavy) ? heavy : os.tmpdir(), 'khux-p4-enemy-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
+    const out = withRanking(REV, () => mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: raw }));
+    assert.strictEqual(out.colosseumStage.length, 62);
+    const after = new Map(JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).map((r) => [r.enemyId, r]));
+    const need = new Set(out.colosseumStage.filter((r) => REV.includes(r.colosseumStageId)).flatMap((r) => r.stageId.slice(0, r.validStage)).flatMap((sid) => stageEnemies[sid] || []));
+    for (const id of need) assert.ok(after.has(id), `enemy ${id} in the master`);
+    assert.deepStrictEqual(out.enemyCheck, { checked: true, reason: '', unchecked: [] });
+    for (const r of masterRows) assert.deepStrictEqual(after.get(r.enemyId), r, `master row ${r.enemyId} kept as it was`);
+    assert.deepStrictEqual(out.enemy.map((r) => r.enemyId), [...mc.PART4_ENEMY_IDS].sort((a, b) => a - b), 'exactly the Part 4 rows added');
+    const rawById = new Map(raw.map((r) => [r.enemyId, r]));
+    for (const e of out.colosseumEnemies) {
+      assert.strictEqual(e.label, 'colosseumEnemyRelux', `${e.enemyId} label`);
+      assert.strictEqual(e.reluxShape, '2019', `${e.enemyId} shape`);
+      assert.strictEqual(mc.reluxShape(rawById.get(e.enemyId)), '2019');
+      assert.deepStrictEqual(after.get(e.enemyId), mc.schemaRowOf('enemy', rawById.get(e.enemyId)), `${e.enemyId} = its raw row`);
+    }
+    // 121565 / 121566 have their own raw 2019 rows (they differ from 21565 / 21566): original rows are served, not copies
+    for (const id of [121565, 121566]) assert.strictEqual(out.colosseumEnemies.find((e) => e.enemyId === id).source, 'relux');
+    // the ids that keep a pre-revamp row (1.1.3 rows, Part 3 / 3b rows)
+    for (const id of P4_SHARED_113) assert.ok(out.sharedOldRows.includes(id), `${id} shared old row`);
+    assert.ok(out.sharedOldRows.every((id) => !mc.PART4_ENEMY_IDS.has(id) && after.has(id)));
+    assert.deepStrictEqual(out.sharedOldRows, [...out.sharedOldRows].sort((a, b) => a - b));
+    results.push(`info real_part4_enemies: ${need.size} ids over ${out.colosseumStage.filter((r) => REV.includes(r.colosseumStageId)).length} seasons; new rows ${out.enemy.length}; sharedOldRows ${out.sharedOldRows.length}`);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+
 console.log(results.join('\n'));
 if (process.exitCode) console.log('test-make-colosseum: FAIL'); else console.log('test-make-colosseum: OK');
