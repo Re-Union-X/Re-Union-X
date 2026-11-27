@@ -652,7 +652,7 @@ are byte-identical to JP 4.3.1 (1140501 is 2016 only); 1060601 (Quest 183 openin
 other layers and character 30551 instead of 30271: the 2016 one is served (its English texts match it). 1040501 (Quest 130
 closing) cites BG 2014, absent in 2016 and JP alike (original typo): imported with `--allow`, bench check. Id 1 (Quest 3 closing,
 also in the 2021 row) has no file anywhere: a client special id, still dropped. I-333 holds for the restored openings
-(`moveClosingAfter`); the 2021 closing lists of 34/200/350 are merged with ours (`mergeAfter`), so restored closings stay.
+(`moveClosingAfter`); the 2021 closing lists of 34/200/350 are merged with ours (`mergeAfter`), so restored closings stay. User 27-11: Quests 34, 200, 201 take the 2021 split of the overlay (`applySplit2021`, only when all its ids are served): Q34 after 1011601, 2999920, 2101101, 1120101; Q200 after 2061101, 1061146, 2999910; Q201 before 1070101. 2101101 is after Q34 only in 2021 (dropped from Q200). 2999910 (after 54/102/200, no longer the 201 opening) and 2999950 (after 250, before 426/476/526) are shared chapter cutscenes the 2021 rows use both ways: left as they are.
 
 **Opening vs closing cutscenes** (tester report 16-11). The client plays `beforeDramaId[]` before the map and `afterDramaId[]`
 after the clear (`dramaType 10` = a `stageDrama` bundle of up to 10 cutscenes; nothing plays inside the map). The `theater`

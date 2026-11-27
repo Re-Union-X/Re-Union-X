@@ -101,4 +101,25 @@ function mergeAfter(s, r) {
   s.validAfterDrama = keep.length;
 }
 
-module.exports = { closingByStage, theaterOpenings, addClosing, packDramas, moveClosingAfter, mergeAfter };
+// User 27-11 (I-014): Quests 34, 200, 201 take the 2021 before/after split of the overlay instead of the older 2016 rows
+// (2016: Q201 opened with 1061146 + 2999910, the 2021 closing of Q200; Q200 closed with 2101101 + 1120101, the 2021 closings
+// of Q34). Applied only when every overlay id is served and the overlay stageId is the row's; returns true when applied.
+const SPLIT_2021_QUESTS = [34, 200, 201];
+function applySplit2021(s, overlay, dramas) {
+  if (!SPLIT_2021_QUESTS.includes(s.id)) return false;
+  let ov = overlay;
+  if (typeof ov === 'string' || ov === undefined) {
+    try { ov = JSON.parse(fs.readFileSync(ov || OVERLAY, 'utf8')); } catch { return false; }
+  }
+  const q = ov && ov.quests && ov.quests[s.id];
+  if (!q || q.stageId !== s.stageId) return false;
+  const before = (q.before || []).filter(([id]) => id);
+  const after = (q.after || []).filter(([id]) => id);
+  if (![...before, ...after].every(([id]) => dramas.has(id))) return false;
+  Object.assign(s, { validBeforeDrama: before.length, beforeDramaId: before.map((d) => d[0]), beforeDramaType: before.map((d) => d[1] || 0),
+    validAfterDrama: after.length, afterDramaId: after.map((d) => d[0]), afterDramaType: after.map((d) => d[1] || 0) });
+  return true;
+}
+
+module.exports = { closingByStage, theaterOpenings, addClosing, packDramas, moveClosingAfter, mergeAfter,
+  SPLIT_2021_QUESTS, applySplit2021 };

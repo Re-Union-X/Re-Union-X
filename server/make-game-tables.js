@@ -773,6 +773,7 @@ if (!burstById.has(0)) {
 // 1010201/1010301): si disattivano. Base intatta in stage_base.json (copiata al primo giro).
 const stagePath = path.join(OUT, 'stage.json');
 const stageBasePath = path.join(OUT, 'stage_base.json');
+let servedDramas = new Set(); // dramas the resources serve (WW names + generated pack), for the 2021 split below
 let stagesOut = null, dramasOff = 0, dramasTheater = 0, storyAdded = 0, submissionsFixed = 0;
 const namesPath = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
 if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
@@ -788,6 +789,7 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
   const packIds = GEN_PACK === '0' ? new Set() : require('./story-drama-closing').packDramas(GEN_PACK);
   const packNew = [...packIds].filter((id) => !dramas.has(id)).length;
   for (const id of packIds) dramas.add(id);
+  servedDramas = dramas;
   console.log(`stage: ${packNew} dramas served by the generated pack ${GEN_PACK === '0' ? '(off)' : GEN_PACK}`);
   stagesOut = JSON.parse(fs.readFileSync(stageBasePath, 'utf8'));
   // Missioni di storia di thethiny (stageBinId 1..525 = numero della missione) che la
@@ -1113,6 +1115,7 @@ require('./make-story-oltre').patch(OUT);
     const p = path.join(OUT, 'stage.json');
     const stages = JSON.parse(fs.readFileSync(p, 'utf8'));
     let n = 0;
+    const split = [];
     for (const s of stages) {
       const r = s.stageKind === 1 && by.get(s.stageId);
       if (!r || r.id !== s.id) continue;
@@ -1121,6 +1124,8 @@ require('./make-story-oltre').patch(OUT);
       }
       // closing lists (34, 200, 350) merged with ours: the dialogues restored by I-014 stay (story-drama-closing.js)
       if (r.afterDramaId) require('./story-drama-closing').mergeAfter(s, r);
+      // user 27-11: Quests 34, 200, 201 take the 2021 scene split of the overlay (drama_per_quest.json) when all its ids are served
+      if (require('./story-drama-closing').applySplit2021(s, undefined, servedDramas)) split.push(s.id);
       n++;
     }
     fs.writeFileSync(p, JSON.stringify(stages));
@@ -1129,7 +1134,7 @@ require('./make-story-oltre').patch(OUT);
     const cs = worlds.find((w) => w.worldId === 13);
     for (const id of [9, 109]) if (cs && !worlds.some((w) => w.worldId === id)) worlds.push({ ...JSON.parse(JSON.stringify(cs)), worldId: id });
     fs.writeFileSync(wp, JSON.stringify(worlds));
-    console.log(`stage: 2021 story fields on ${n} of ${by.size} quests (${JSON.stringify(src.stats)}); world rows ${worlds.map((w) => w.worldId).join(',')}`);
+    console.log(`stage: 2021 story fields on ${n} of ${by.size} quests (${JSON.stringify(src.stats)}); world rows ${worlds.map((w) => w.worldId).join(',')}; 2021 scene split on quests ${split.join(', ') || 'none'}`);
   } catch (e) { console.warn(`stage: ${STAGE_STORY_2021} not applied (${e.message})`); }
 }
 // Proud Mode (I-200): righe stageKind 4 1 000 000 + stageId della storia 1-979, dopo la storia completa (make-proud.js);

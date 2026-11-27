@@ -1,7 +1,8 @@
 // Test of the I-333 rule (story-drama-closing.js): node server/test-story-drama-closing.js
 'use strict';
 const assert = require('assert');
-const { closingByStage, theaterOpenings, addClosing, packDramas, moveClosingAfter, mergeAfter } = require('./story-drama-closing');
+const { closingByStage, theaterOpenings, addClosing, packDramas, moveClosingAfter, mergeAfter,
+  SPLIT_2021_QUESTS, applySplit2021 } = require('./story-drama-closing');
 
 const overlay = { quests: {
   34: { stageId: 1310, before: [[1011531, 0]], after: [[1011601, 0], [2999920, 0], [2101101, 0], [1120101, 0]] },
@@ -73,4 +74,32 @@ assert.deepStrictEqual([s40.validAfterDrama, s40.afterDramaId, s40.afterDramaTyp
 const s39 = { validAfterDrama: 5, afterDramaId: [1, 2, 3, 4, 5], afterDramaType: [0, 0, 0, 0, 0] };
 mergeAfter(s39, { validAfterDrama: 1, afterDramaId: [6], afterDramaType: [0] });
 assert.strictEqual(s39.validAfterDrama, 5, 'max 5 per side');
+
+// user 27-11: Quests 34, 200, 201 take the 2021 split of the overlay (2016 rows were an older version)
+assert.deepStrictEqual(SPLIT_2021_QUESTS, [34, 200, 201]);
+const ov2021 = { quests: {
+  34: { stageId: 1310, before: [[1011531, 0]], after: [[1011601, 0], [2999920, 0], [2101101, 0], [1120101, 0]] },
+  200: { stageId: 6400, before: [], after: [[2061101, 0], [1061146, 0], [2999910, 0]] },
+  201: { stageId: 7010, before: [[1070101, 0]], after: [] } } };
+const served = new Set([1011531, 1011601, 2999920, 2101101, 1120101, 2061101, 1061146, 2999910, 1070101]);
+const q200 = { id: 200, stageId: 6400, validBeforeDrama: 0, beforeDramaId: [], beforeDramaType: [], validAfterDrama: 4,
+  afterDramaId: [2061101, 2999910, 2101101, 1120101], afterDramaType: [0, 0, 0, 0] };
+assert.strictEqual(applySplit2021(q200, ov2021, served), true);
+assert.deepStrictEqual([q200.validBeforeDrama, q200.validAfterDrama, q200.afterDramaId, q200.afterDramaType],
+  [0, 3, [2061101, 1061146, 2999910], [0, 0, 0]]);
+const q201 = { id: 201, stageId: 7010, validBeforeDrama: 3, beforeDramaId: [1061146, 2999910, 1070101], beforeDramaType: [0, 0, 0],
+  validAfterDrama: 0, afterDramaId: [], afterDramaType: [] };
+applySplit2021(q201, ov2021, served);
+assert.deepStrictEqual([q201.validBeforeDrama, q201.beforeDramaId], [1, [1070101]]);
+const q34 = { id: 34, stageId: 1310, validBeforeDrama: 1, beforeDramaId: [1011531], beforeDramaType: [0], validAfterDrama: 3,
+  afterDramaId: [1011601, 2999920, 2101101], afterDramaType: [0, 0, 0] };
+applySplit2021(q34, ov2021, served);
+assert.deepStrictEqual([q34.beforeDramaId, q34.afterDramaId], [[1011531], [1011601, 2999920, 2101101, 1120101]]);
+// one overlay id not served -> the row stays as it is (a missing drama crashes the client); other quests untouched
+const q34b = { id: 34, stageId: 1310, validBeforeDrama: 1, beforeDramaId: [1011531], beforeDramaType: [0], validAfterDrama: 1,
+  afterDramaId: [2999920], afterDramaType: [0] };
+assert.strictEqual(applySplit2021(q34b, ov2021, new Set([1011531, 2999920])), false);
+assert.deepStrictEqual(q34b.afterDramaId, [2999920]);
+assert.strictEqual(applySplit2021({ id: 35, stageId: 2010 }, ov2021, served), false);
+assert.strictEqual(applySplit2021({ id: 200, stageId: 9999 }, ov2021, served), false, 'stageId must match the overlay');
 console.log('test-story-drama-closing: OK');
