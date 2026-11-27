@@ -2742,7 +2742,11 @@ function grantItem(type, id, num, ctx = {}) {
   else if (type === 28) player.superSkipTicket = (player.superSkipTicket || 0) + num; // Skip Ticket+ (102600065, «Force Skip»)
   else if (type === 17) colosseum().addCoins(num); // Coliseum Coins: the live season (routes-colosseum.js); none live: logged, not paid
   // 11 Lux (testo 100200001)
-  else if (type === 11) player.lux = (player.lux || 0) + num;
+  else if (type === 11) { // the level-ups of a Lux item pay their Avatar Coins too (I-325)
+    const rankBefore = luxRankFor(player.lux || 0);
+    player.lux = (player.lux || 0) + num;
+    payLevelUpCoins(rankBefore);
+  }
   else if (type === 5 && id) {
     player.materials = player.materials || {};
     player.materials[id] = (player.materials[id] || 0) + num;
@@ -2929,6 +2933,21 @@ function addBattleLux(lux) {
     player.ap = apBefore + maxAp();
     player.apTime = realNow();
     console.log(`[ap] level up ${rankBefore} -> ${luxRankFor(player.lux)}: AP ${apBefore} -> ${player.ap}/${maxAp()}`);
+    payLevelUpCoins(rankBefore);
+  }
+}
+
+// I-325: Avatar Coins of the levels in (before, after]: luxMedal of the master `player` rows (lv 2: 5 ... lv 301+: 55), the
+// amount the level-up popup shows
+function luxLevelUpCoins(before, after) {
+  return masterRows('player').reduce((t, r) => t + (r.lv > before && r.lv <= after ? Number(r.luxMedal) || 0 : 0), 0);
+}
+// pays them to userPoint.spherePoint after player.lux grew from the level rankBefore
+function payLevelUpCoins(rankBefore) {
+  const rank = luxRankFor(player.lux), coins = luxLevelUpCoins(rankBefore, rank);
+  if (coins) {
+    player.spherePoint = (player.spherePoint || 0) + coins;
+    console.log(`[lux] level up ${rankBefore} -> ${rank}: +${coins} Avatar Coin`);
   }
 }
 
@@ -3143,6 +3162,17 @@ if (player.created && !player.clearTitlesGranted) {
       player.titles = [...(player.titles || []), ...new Set(add.map((r) => r.clearGetTitle))];
       console.log(`[save] titoli di fine quest gia' guadagnati: ${add.length}`);
     }
+  }
+}
+
+// I-325: saves of before the level-up Avatar Coins get those of the levels already reached once, in the Presents (user
+// 27-11). Here and not at load time: before masterCache masterRows gives []. A new player only gets the flag.
+if (!player.levelCoinsPaid && masterRows('player').length) {
+  player.levelCoinsPaid = 1;
+  const coins = player.created ? luxLevelUpCoins(1, luxRankFor(player.lux || 0)) : 0;
+  if (coins) {
+    addPresent(14, 0, coins, 'Avatar Coins for your past level-ups');
+    console.log(`[save] Avatar Coin dei level up gia' raggiunti (lv ${luxRankFor(player.lux || 0)}): ${coins}, nei regali`);
   }
 }
 
@@ -6660,6 +6690,7 @@ module.exports = { SESSION, parseBody, start, route, multi };
 module.exports._test = {
   checkCampaignGifts, respondUserPresent, respondPresentReceive, livePresents, // server/test-campaign-gifts.js (I-234)
   respondCoppa, // server/test-coppa.js (I-322)
+  addBattleLux, luxRankFor, // server/test-level-coins.js (I-325)
   respondMedalSell, drawPointsUnlocked, // server/test-draw-points.js
   userTitlesData, // server/test-title-popup.js (I-220)
   raid, respondRaidWeb, respondRaidPost, // server/test-raid-routes.js
