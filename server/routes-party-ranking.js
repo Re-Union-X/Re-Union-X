@@ -62,17 +62,13 @@ function routePartyRanking(p) {
   return null;
 }
 
-// periodo della classifica: settimana o mese in corso (ora del server, "YYYY-MM-DD HH:MM:SS")
-function term(now, monthly) {
-  const d = new Date(now.replace(' ', 'T') + 'Z');
-  const start = monthly
-    ? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1))
-    : new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)));
-  const end = monthly
-    ? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) - 1000)
-    : new Date(start.getTime() + 7 * 86400000 - 1000);
-  const fmt = (x) => x.toISOString().slice(0, 19).replace('T', ' ');
-  return { start: fmt(start), end: fmt(end) };
+// periodo della classifica: settimana o mese in corso (ora del server, "YYYY-MM-DD HH:MM:SS"). I-131: with the 08:00 UTC
+// resets of the Weeklies and of the month (clock.weekStartOf/weekEnd, monthEndOf/monthEnd), shown in fake time (serverTimeAt)
+function term({ realNow, serverTimeAt, clock }, monthly) {
+  const r = realNow();
+  const start = monthly ? clock.monthEndOf(clock.monthIndex(r) - 1) : clock.weekStartOf(clock.weekIndex(r));
+  const end = monthly ? clock.monthEnd(r) : clock.weekEnd(r);
+  return { start: serverTimeAt(start), end: serverTimeAt(end - 1000) };
 }
 
 const PARTY_ID = 1;
@@ -87,7 +83,7 @@ const PARTY_EMPTY_LISTS = {
   '/party/offer/list': { partyOffers: [], partyList: [] },
 };
 
-// deps: send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer,
+// deps: send, ret, serverTime, serverTimeAt, realNow, clock, player, userObject, userDetailData, userAvatarData, savePlayer,
 // selfElement(now, partyId), keyblade()
 function respondPartyRanking(deps, res, kind, p, body) {
   const { send, ret, serverTime, player } = deps;
@@ -146,7 +142,7 @@ function respondPartyRanking(deps, res, kind, p, body) {
       : { ret: ret(), userParty, isAbsenceLeader: 0 });
   }
   if (kind === 'partysearch') return send(res, 200, { ret: ret(), partyList: [] });
-  const t = term(now, /monthly/.test(p));
+  const t = term(deps, /monthly/.test(p));
   const base = { rankingStatus: 2, rankingTermStart: t.start, rankingTermEnd: t.end, lastRank: 0,
     updateTime: now, nextUpdateTime: t.end };
   if (LUX_KEYS[p]) {

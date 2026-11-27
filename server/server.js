@@ -6315,7 +6315,7 @@ function handler(scheme) {
       }
       // Party (82, 87) e classifiche (129-140, 178-184): server/routes-party-ranking.js
       if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail', 'partyupdate', 'partyleave', 'partyemptylist'].includes(kind)) {
-        return respondPartyRanking({ send, ret, serverTime, realNow, outTime, player, chatUrl: chatRoutes.CHAT_URL({ publicUrl: PUBLIC_URL }), userObject, userDetailData, userAvatarData, savePlayer, addPresent,
+        return respondPartyRanking({ send, ret, serverTime, serverTimeAt, clock, realNow, outTime, player, chatUrl: chatRoutes.CHAT_URL({ publicUrl: PUBLIC_URL }), userObject, userDetailData, userAvatarData, savePlayer, addPresent,
           selfElement: (now, partyId) => selfPlayerElement(now, sharedMedalData(now), partyId),
           keyblade: () => userKeybladeData(favoriteKeyblade()), lastStoryQuest: () => stageNumber(lastStoryStageId()), weeklyLux: () => weeklyLux() },
           res, kind, req.url.split('?')[0].toLowerCase(), entry.bodyDecoded);
