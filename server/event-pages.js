@@ -479,7 +479,9 @@ function catalogOf(index, ctx, m) {
 // their boards) and the kept one's name
 function catalogFacts(index, ctx = {}, board = false) {
   const entries = board ? boardEntriesOf(index) : eventEntriesOf(index), kept = keptOf(entries, ctx);
-  return { entries: entries.length, boards: board ? entries.reduce((n, e) => n + boardsOf(e).length, 0) : 0, kept: kept ? catName(kept) : null, keptId: kept ? kept.evStageId : null };
+  // keptBoard (Avatar Board Catalog): the first served board of the kept entry that has a card, its picture in the hub's «Kept now» (the entry has no banner of its own)
+  const keptBoard = board && kept ? (servedBoards(kept).find((b) => hasCard(ctx, b.sphereBoardId)) || {}).sphereBoardId || null : null;
+  return { entries: entries.length, boards: board ? entries.reduce((n, e) => n + boardsOf(e).length, 0) : 0, kept: kept ? catName(kept) : null, keptId: kept ? kept.evStageId : null, keptBoard };
 }
 // GET /web/event/catalog: the Event Catalog (events only)
 const catalogPage = (index, ctx = {}) => catalogOf(index, ctx, MODES.event);

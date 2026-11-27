@@ -265,6 +265,8 @@ function wiring() {
     const raidId = keepFirst(t.respondRaidPost, (id) => `/web/raid/keep/${id}`, [...new Set((t.raidIndex().entries || []).map((e) => e.evStageId))].slice(0, 300));
     const evId = keepFirst(t.respondEventPost, (id) => `/web/event/keep/${id}`, [...new Set((t.eventIndex().entries || []).map((e) => e.evStageId))].slice(0, 600));
     const spId = keepFirst(t.respondSpecialPost, (id) => `/web/special/pin/${id}`, t.specialIndex().entries.map((e) => e.evStageId).slice(0, 300));
+    // a kept Avatar Board shows the card of its first board (/web/avatar/img), never an event banner
+    const avId = t.eventIndex().avatarCatalog ? keepFirst(t.respondAvatarPost, (id) => `/web/avatar/keep/${id}`, [...new Set((t.eventIndex().entries || []).filter((e) => (e.boards || []).length).map((e) => e.evStageId))].slice(0, 600)) : null;
     const shopId = keepFirst(t.respondGachaPost, (id) => `/web/gacha/pin/${id}`, t.gachaCatalog().banners.map((b) => b.drawMedalTypeId).slice(0, 300));
     const html = hub();
     const row = (kind) => (new RegExp(`<div class="kr" id="k-${kind}">[^]*?</div></div>`).exec(html) || [''])[0];
@@ -273,6 +275,7 @@ function wiring() {
     if (raidId) assert.ok(row('raid').includes(`href="/web/raid/raid/${raidId}?from=catalog"`) && row('raid').includes(`/web/raid/img/v`) && row('raid').includes('data-pin="/web/raid/unkeep"'), 'raid row');
     if (evId) assert.ok(row('event').includes(`href="/web/event/event/${evId}?from=catalog"`) && row('event').includes('data-pin="/web/event/unkeep"'), 'event row');
     if (spId) assert.ok(row('special').includes(`href="/web/special/quest/${spId}?from=catalog"`) && row('special').includes('data-pin="/web/special/unpin"'), 'special row');
+    if (t.eventIndex().avatarCatalog) assert.ok(avId && row("avatar").includes(`href="/web/avatar/board/${avId}?from=catalog"`) && /<img src="\/web\/avatar\/img\/v\d+\/\d+\.png"/.test(row('avatar')) && !row('avatar').includes('/web/event/img/'), `avatar row ${row('avatar')}`);
     // a banner kept in the Shop (Banner Catalog) is never listed: only the five hub catalogues (user 26-11)
     assert.ok(shopId && !html.includes('id="k-shop"') && !html.includes('/web/gacha/unpin') && !/<span class="kc">Banner Catalog<\/span>/.test(html), `kept Shop banner ${shopId} not in the hub section`);
     assert.ok(raidId && evId && spId && shopId, `something kept in each: raid ${raidId} event ${evId} special ${spId} shop ${shopId}`);
@@ -283,7 +286,7 @@ function wiring() {
     assert.strictEqual(post(t.respondRaidPost, '/web/raid/unkeep'), 200);
     const after = hub();
     assert.ok(!after.includes('id="k-colosseum"') && !after.includes('id="k-raid"') && after.includes('id="k-event"'), 'removed rows gone, the others stay');
-    for (const [fn, u] of [[t.respondEventPost, '/web/event/unkeep'], [t.respondSpecialPost, '/web/special/unpin'], [t.respondGachaPost, '/web/gacha/unpin']]) post(fn, u);
+    for (const [fn, u] of [[t.respondEventPost, '/web/event/unkeep'], [t.respondAvatarPost, '/web/avatar/unkeep'], [t.respondSpecialPost, '/web/special/unpin'], [t.respondGachaPost, '/web/gacha/unpin']]) post(fn, u);
   });
   run('wiring_banner_image', () => {
     assert.strictEqual(web(t.respondGameCatalogWeb, '/web/catalog/img/v1/5000.png').code, 404, 'no picture yet: 404');

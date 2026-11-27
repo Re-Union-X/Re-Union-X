@@ -5358,7 +5358,8 @@ function gameCatalogKept(cards) {
   add('event', () => { const c = ev('event'); return c && { catalog: 'Event Catalog', name: c.kept, where: 'Events', remove: '/web/event/unkeep',
     img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${c.keptId}.png`, href: `/web/event/event/${c.keptId}?from=catalog` }; });
   add('avatar', () => { const c = ev('avatar'); return c && { catalog: 'Avatar Board Catalog', name: c.kept, where: 'Avatar Boards', remove: '/web/avatar/unkeep',
-    img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${c.keptId}.png`, href: `/web/avatar/board/${c.keptId}?from=catalog` }; });
+    // the card of the kept entry's first board (/web/avatar/img, as the Avatar Board Catalog rows); no card: the catalogue banner
+    img: c.keptBoard ? `/web/avatar/img/v${avatarCards().version}/${c.keptBoard}.png` : c.img, href: `/web/avatar/board/${c.keptId}?from=catalog` }; });
   add('special', () => { const c = ev('special'); return c && { catalog: 'Special Catalog', name: c.kept, where: 'Special', remove: '/web/special/unpin',
     img: special.imgPath(c.keptId), href: `/web/special/quest/${c.keptId}?from=catalog` }; });
   return out;
@@ -5392,7 +5393,7 @@ function gameCatalogCards() {
     const f = eventPages.catalogFacts(index, eventRoutes().boardCatalogCtx(), true);
     return { title: 'Avatar Board Catalog', href: '/web/avatar/catalog', img: `/web/event/img/v${routesEvents.EVENT_IMG_VERSION}/${index.avatarCatalog.evStageId}.png`,
       line: 'Every past limited Avatar Board, with its dates, price and card.', count: `${countOf(f.entries, 'entry', 'entries')} · ${countOf(f.boards, 'board')}`,
-      kept: f.kept, keptId: f.keptId, keptNone: 'No board kept', wallet: avatarWallet() };
+      kept: f.kept, keptId: f.keptId, keptBoard: f.keptBoard, keptNone: 'No board kept', wallet: avatarWallet() };
   });
   add('special', () => {
     const index = specialIndex();

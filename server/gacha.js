@@ -791,7 +791,10 @@ const HERE_CSS = '.tab{position:relative;overflow:visible}.tabs.hr{padding-top:1
   + '.tab .here{position:absolute;left:0;top:0;right:0;bottom:0;box-shadow:inset 0 -3px 0 #f07800;pointer-events:none}'
   + '.tab .here .hc{position:absolute;left:50%;bottom:100%;-webkit-transform:translateX(-50%);transform:translateX(-50%);display:block;box-sizing:border-box;height:15px;line-height:15px;padding:0 9px 0 5px;white-space:nowrap;'
   + 'background:linear-gradient(#ffb02e,#f07800);color:#fff;font-size:11px;font-weight:bold;letter-spacing:0;text-shadow:0 1px 1px #8a3c00;border-radius:6px 6px 0 0;box-shadow:0 -1px 3px rgba(0,0,0,.5);pointer-events:auto}'
-  + '.tab .here .ic{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin:0 3px 0 0}';
+  + '.tab .here .ic{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin:0 3px 0 0}'
+  // phones (user 27-11): the tag of the last two tabs is anchored to the right edge of its tab (it grows to the left), so it never leaves
+  // the screen; the other tabs and large screens keep it centred over the tab
+  + '@media (max-width:900px) and (max-height:480px),(max-width:900px) and (min-height:481px){.tab:nth-last-child(-n+2) .here .hc{left:auto;right:0;-webkit-transform:none;transform:none}}';
 // PAID WITH (spec 7.2, revisione del 20-10): Jewels = payType 1, Platinum = 7, Draw Ticket = 8 con valuta draw, Seasonal =
 // 8 con spooky/holiday/moogle, Other = 4/5/6/9 (e ogni payType sconosciuto). VIP e' a parte (flag del banner, qualunque moneta).
 const SEASONAL_CURRENCIES = new Set(['spooky', 'holiday', 'moogle']);
