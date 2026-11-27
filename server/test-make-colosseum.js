@@ -2185,5 +2185,32 @@ test('real_part4 (2019-05 .. 2021-06: 18 tiers, 4,000 rounds, no AP, Tier 10 tit
   } else results.push('skip real_part4 byte check: no served master with the 37 seasons');
 });
 
+// Coliseum Part 4 Task 2: 2020-01 / 2020-10 are whole copies of JP stages under 21YYMMNN ids
+test('COPY_STAGES: 2020-01 = 20200501 .. 09, 2020-10 = the nine per-round copies, served as 21YYMMNN', () => {
+  assert.deepStrictEqual(mc.COPY_STAGES['2020-01'], Array.from({ length: 9 }, (_, i) => 20200501 + i));
+  assert.deepStrictEqual(mc.COPY_STAGES['2020-10'], [20200501, 20210102, 20200703, 20200504, 20210105, 20200506, 20200507, 20200405, 20200409]);
+  assert.deepStrictEqual(Object.keys(mc.COPY_STAGES), ['2020-01', '2020-10']);
+  assert.deepStrictEqual(mc.COPY_STAGE_IDS('2020-01'), Array.from({ length: 9 }, (_, i) => 21200101 + i));
+  assert.deepStrictEqual(mc.COPY_STAGE_IDS('2020-10'), Array.from({ length: 9 }, (_, i) => 21201001 + i));
+  assert.throws(() => mc.COPY_STAGE_IDS('2020-02'), /2020-02/);
+  const pairs = mc.copyPairs();
+  assert.strictEqual(pairs.length, 18);
+  assert.deepStrictEqual(pairs.slice(0, 2), ['21200101=20200501', '21200102=20200502']);
+  assert.deepStrictEqual(pairs.slice(9, 11), ['21201001=20200501', '21201002=20210102']);
+  for (const m of Object.keys(mc.COPY_STAGES)) assert.ok(!mc.SEASONS.find((s) => s.month === m).genStages, `${m}: copies, not generated`);
+  // the season rows carry the served ids (stage rows too)
+  const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
+  const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
+  if (!src || !relux) { results.push('skip COPY_STAGES rows: private sources not on disk'); return; }
+  src.relux = relux;
+  src.masterEnemyIds = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8')).map((r) => r.enemyId);
+  const two = mc.SEASONS.filter((s) => s.month === '2020-01' || s.month === '2020-10');
+  const out = withRanking([5300, 6200], () => mc.seasonRows(src, two));
+  const cs = (id) => out.colosseumStage.find((r) => r.colosseumStageId === id);
+  assert.deepStrictEqual(cs(5300).stageId.slice(0, 9), mc.COPY_STAGE_IDS('2020-01'));
+  assert.deepStrictEqual(cs(6200).stageId.slice(0, 9), mc.COPY_STAGE_IDS('2020-10'));
+  assert.deepStrictEqual(out.stage.map((r) => r.stageId).sort(), [...mc.COPY_STAGE_IDS('2020-01'), ...mc.COPY_STAGE_IDS('2020-10')].sort());
+});
+
 console.log(results.join('\n'));
 if (process.exitCode) console.log('test-make-colosseum: FAIL'); else console.log('test-make-colosseum: OK');

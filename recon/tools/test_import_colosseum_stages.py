@@ -165,5 +165,80 @@ try:
 finally:
     shutil.rmtree(t)
 
+# ---- Part 4: the 28 rebuilt headers, whole copies ----
+H28 = {201909: (4,), 201910: (3, 5), 201911: (1,), 201912: (4, 7), 202002: (6,), 202003: (3,), 202004: (2, 4), 202006: (6,),
+       202007: (2,), 202008: (1, 2), 202011: (2, 8), 202012: (1,), 202102: (3,), 202103: (3,), 202104: (1, 3, 5, 7),
+       202105: (5, 8), 202106: (2, 3, 7)}
+P4 = sorted(m * 100 + n for m, ns in H28.items() for n in ns)
+t = tempfile.mkdtemp()
+try:
+    class AllIds4(object):
+        def __contains__(self, i):
+            return True
+    check(len(P4) == 28, 'the PART4_AUDIT table lists 28 headerless stages')
+    # exactly these stages lack their header in the JP folder (months 2019-05 .. 2021-06 on disk)
+    months = [m for m in range(201905, 201913) if m != 201907] + [m for m in range(202002, 202010)] + \
+             [m for m in range(202011, 202013)] + [m for m in range(202101, 202107)]
+    nohdr = sorted(m * 100 + n for m in months for n in range(1, 11) if (m * 100 + n, 0) in JPH and (m * 100 + n, None) not in JPH)
+    check(nohdr == P4, 'headerless JP stages = the 28 of PART4_AUDIT §2: %s' % sorted(set(nohdr) ^ set(P4)))
+    o4 = os.path.join(t, 'o4')
+    rep4 = ics.run([(4500, s) for s in P4], [('jp431', JPF)], {'OC_0001_00_00'}, AllIds4(), o4)
+    st4 = {s['stageId']: s for s in rep4['stages']}
+    for sid in P4:
+        s = st4[sid]
+        check(s['status'] == 'imported' and s.get('headerRebuilt') is True and s.get('headerSibling', 0) // 100 == sid // 100,
+              'header rebuilt part4 %s: %s' % (sid, s.get('status')))
+        if s['status'] != 'imported':
+            continue
+        stg_b = open(os.path.join(o4, 'cl_stg%08d.bin' % sid), 'rb').read()
+        stg, parts = mapfile.load_stage({(sid, None): stg_b, (sid, 0): os.path.join(o4, 'cl_stg%08d_00.bin' % sid)}, sid)
+        bad, _ = mapfile.check_stage(stg, parts)
+        check(not bad and len(stg_b) == 64 and stg['parts'] == 1 and stg['teams_total'] == len(parts[0]['teams']) and
+              stg['enemies_total'] == len(parts[0]['enemies']), 'header rebuilt part4 %s: check_stage + counts equal the part: %s' % (sid, bad))
+
+    # first sibling broken (a FormatError while rebuilding): the next same-month sibling is used, a later one too
+    bs = os.path.join(t, 'bs')
+    os.makedirs(bs)
+    open(os.path.join(bs, 'cl_stg20190900.bin'), 'wb').write(b'x' * 64)
+    open(os.path.join(bs, 'cl_stg20190901.bin'), 'wb').write(b'')
+    for sfx in ('', '_00'):
+        shutil.copyfile(JPH[(20190902, None if not sfx else 0)], os.path.join(bs, 'cl_stg20190902%s.bin' % sfx))
+    shutil.copyfile(JPH[(20190904, 0)], os.path.join(bs, 'cl_stg20190904_00.bin'))
+    got = ics.rebuild_from_sibling(20190904, 'jp431', ics.iter_cl_files(bs))
+    check(got is not None and got[0] == 20190902, 'first sibling broken: rebuilt from the second: %s' % (got and got[0]))
+    # a source that is not a REBUILD_SOURCE, or a month with no usable sibling, rebuilds nothing
+    check(ics.rebuild_from_sibling(20190904, 'bundle2016', ics.iter_cl_files(bs)) is None, 'no rebuild outside REBUILD_SOURCES')
+    os.remove(os.path.join(bs, 'cl_stg20190902.bin'))
+    check(ics.rebuild_from_sibling(20190904, 'jp431', ics.iter_cl_files(bs)) is None, 'every sibling broken: None')
+
+    # whole copy: 21200101 = the bytes of 20200501 (header and part) under the new id's names; the report says copiedFrom
+    oc = os.path.join(t, 'oc')
+    pairs = {21200101: 20200501, 21201002: 20210102, 21201007: 20200507}
+    repc = ics.run([(5300, 21200101), (6200, 21201002), (6200, 21201007), (6200, 20200501)], [('jp431', JPF)], {'OC_0001_00_00'},
+                   AllIds4(), oc, pairs)
+    sc = {s['stageId']: s for s in repc['stages']}
+    for new, jp in pairs.items():
+        check(sc[new]['status'] == 'imported' and sc[new]['copiedFrom'] == jp, 'whole copy %s: copiedFrom %s' % (new, sc[new]))
+        check(sc[new]['files'] == ['cl_stg%08d.bin' % new, 'cl_stg%08d_00.bin' % new], 'whole copy %s: the new id\'s file names' % new)
+        check(open(os.path.join(oc, 'cl_stg%08d.bin' % new), 'rb').read() == open(JPF[(jp, None)], 'rb').read() and
+              open(os.path.join(oc, 'cl_stg%08d_00.bin' % new), 'rb').read() == open(JPF[(jp, 0)], 'rb').read(), 'whole copy %s: bytes of %s' % (new, jp))
+    check('copiedFrom' not in sc[20200501] and sc[20200501]['status'] == 'imported', 'a plain stage is not flagged copiedFrom')
+    # a copy of a JP id that is not on disk: skipped, and main exits 1
+    repm = ics.run([(5300, 21200101)], [('jp431', JPF)], {'OC_0001_00_00'}, AllIds4(), os.path.join(t, 'om'), {21200101: 29990101})
+    check(repm['stages'][0]['status'] == 'skipped' and not os.path.exists(os.path.join(t, 'om', 'cl_stg21200101.bin')), 'copy of a missing JP id skipped')
+    master = os.path.join(t, 'm4')
+    os.makedirs(master)
+    json.dump([{'colosseumStageId': 5300, 'validStage': 1, 'stageId': [21200101]}], open(os.path.join(master, 'colosseumStage.json'), 'w'))
+    json.dump([{'enemyId': i} for i in range(1, 70000)], open(os.path.join(master, 'enemy.json'), 'w'))
+    def cli(*extra):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return ics.main(['--master', master, '--b2016', os.path.join(t, 'none'), '--jp', JP, '--gen', os.path.join(t, 'none'),
+                             '--out', os.path.join(t, 'o_cli'), '--report', os.path.join(t, 'cli.json')] + list(extra))
+    check(cli('--copy', '21200101=29990101') == 1, 'copy of a JP id not on disk: exit 1')
+    check(cli('--copy', '21200101=20200501') == 0 and os.path.exists(os.path.join(t, 'o_cli', 'cl_stg21200101_00.bin')), 'copy via --copy: exit 0')
+    check(json.load(open(os.path.join(t, 'cli.json')))['stages'][0].get('copiedFrom') == 20200501, 'report copiedFrom via --copy')
+finally:
+    shutil.rmtree(t)
+
 print('FAIL: ' + '; '.join(fails) if fails else 'OK: import_colosseum_stages')
 sys.exit(1 if fails else 0)

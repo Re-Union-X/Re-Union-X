@@ -265,6 +265,20 @@ function GEN_STAGE_IDS(month) {
   if (!GEN_MONTHS.includes(month)) throw new Error(`colosseum: ${month} has no generated stage set`);
   return Array.from({ length: 10 }, (_, i) => 21000000 + Number(month.slice(2, 4)) * 10000 + Number(month.slice(5, 7)) * 100 + i + 1);
 }
+// whole-stage copies (Coliseum Part 4): the JP stage set of 2020-01 is the JP 2020-05 set (20200501 .. 09) and the 2020-10 rounds are nine
+// whole JP stages (user 27-11): served under 21YYMMNN ids (never a JP id), recon/tools/import_colosseum_stages.py --copy <served>=<jp>
+const COPY_STAGES = {
+  '2020-01': Array.from({ length: 9 }, (_, i) => 20200501 + i),
+  '2020-10': [20200501, 20210102, 20200703, 20200504, 20210105, 20200506, 20200507, 20200405, 20200409],
+};
+function COPY_STAGE_IDS(month) {
+  if (!COPY_STAGES[month]) throw new Error(`colosseum: ${month} has no copied stage set`);
+  return COPY_STAGES[month].map((_, i) => 21000000 + Number(month.slice(2, 4)) * 10000 + Number(month.slice(5, 7)) * 100 + i + 1);
+}
+// ['21200101=20200501', ...]: the --copy arguments of the stage import, in season order
+function copyPairs() {
+  return Object.keys(COPY_STAGES).flatMap((m) => COPY_STAGE_IDS(m).map((id, i) => `${id}=${COPY_STAGES[m][i]}`));
+}
 const ENDLESS = 999; // rounds of the endless tier
 const COIN_MAX = 10000; // a type-17 tier reward above it is the ReLux x100 artefact
 // reward ids of the relux seasons (see the comment block): REWARD_BASE + (rankingId - 4016) x REWARD_BLOCK
@@ -759,6 +773,11 @@ function seasonRows(src, seasons = SEASONS) {
       if (cs.validStage !== gen.length) throw new Error(`colosseum: ${s.month}: ${cs.validStage} stages, the generated set has ${gen.length}`);
       row.stageId = row.stageId.map((v, i) => (i < gen.length ? gen[i] : v));
     }
+    if (COPY_STAGES[s.month]) {
+      const cp = COPY_STAGE_IDS(s.month);
+      if (cs.validStage !== cp.length) throw new Error(`colosseum: ${s.month}: ${cs.validStage} stages, the copied set has ${cp.length}`);
+      row.stageId = row.stageId.map((v, i) => (i < cp.length ? cp[i] : v));
+    }
     out.colosseumStage.push(row);
     const tierRows = tiers.map((t) => tierRow(relux ? reluxMedals(t, src.masterMedalIds, s.month) : t));
     out.colosseum.push(...tierRows);
@@ -1147,5 +1166,5 @@ function patch(masterDir, opts = {}) {
 // node make-colosseum.js [master_dir] [1.1.3 data folder]
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
-module.exports = { REVAMP_FIRST, MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
+module.exports = { REVAMP_FIRST, MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, COPY_STAGES, COPY_STAGE_IDS, copyPairs, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
   PART3_ENEMY_IDS, PART3B_ENEMY_IDS, MONTH_COPY_OF, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, BRACKETS9, BRACKETS12, RELUX_RANKING, rankItem, ENDLESS, ERA17, ERA18, reluxRewardRows, REWARD_BASE, REWARD_BLOCK, REWARD_FIRST_RANKING };
