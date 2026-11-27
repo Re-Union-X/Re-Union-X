@@ -634,6 +634,23 @@ all. Implemented, committed and reviewed task by task; master regen, resources a
 - **Thresholds:** era registry `ERAS` 17 / 18 / 19 / 20 with the semi-log form; ERA19 (2019-05 .. 2020-04) and ERA20 (2020-05 ..
   2021-06) fitted on the few season-end points of `CUTOFFS_2019.md`, everything else «interpolated»; the low end is 1 round at the player
   count of the month (32k in 2019 down to 9k in 2021): 2021-04 8,001-10,000 = 1 round.
-- **Notice** «Coliseum»: 63 seasons, all of the above; a placeholder sentence for the LV > 999 bench result is replaced after the walk.
-- **Open:** regen x2, resources, bench walk (LV > 999 probe, 2019-05, round 400, T10 title, 2020-01 / 2020-10, round 4,000, 16- and
-  2-bracket Rewards, a 2021 board, Catalog) and the Task 3 / Task 6 minors for the final review.
+- **Notice** «Coliseum»: 63 seasons, all of the above, the LV > 999 line (not measured), the one-turn banner (I-331) and the empty scree- **Master regen** (27-11, HANDOFF recipe, run four times because of a fresh-build deadlock fixed in b79deb54: the stage-enemy lists now
+  include the import entries the import skipped, so 61590 of map 20190506 gets its row): master revision **402**, diff against a backup =
+  additions only (colosseum +468, colosseumStage +26, enemy +97, enemyAttack +29, ranking +26, rankingReward +316, skill +1, sphere /
+  sphereArray / sphereMasu +130, stage +242); 612 stages imported. Resources **191**.
+
+### Bench walk 27-11 (Part 4)
+
+Resources 191, master revision 402; saves `p4*` (copies of `colip3b_mar` with `colosseum.kept` and `seasons[sid].last` set).
+
+- October 2019 round 3,102 (Tier 10 round 2): Ogre 21530 (pre-revamp row) at LV 3102, four-digit level, round cleared; clamp vs growth
+  past LV 999 not measurable with the bench deck (as in Part 3), declared in the notice.
+- May 2019: round 1 (Fortuneteller 61549) won in one turn opens rounds 2 .. 200 (199 skips; the banner says «99 ROUNDS», I-331);
+  «Round 400/400» on Tier 2; round 3,200 clears Tier 10 and grants «May 2019 Victor»; round 4,000 (LV 4,000, revamp rows) beat the
+  bench deck; after round 4,000 the Coliseum screen shows no round (I-332), the Catalog page says «Season complete».
+- January and October 2020 (whole copies): round 1 plays.
+- Rewards dialogs: December 2020 (16 brackets: 30,001-80,000 medal + Avatar Coins x10) and May 2021 (2 brackets) open.
+- May 2021 board (sun card): Unlock All for 4,900 coins, board complete, EXP medal granted.
+- Coliseum Catalog: 63 seasons, the new detail pages open.
+- Final whole-branch review: 4 Important + 6 Minor fixed in acaf2d4e (notice wording, copied maps labelled NOT ORIGINAL, Tier Bonus
+  sentence only where such a board exists, nine-map wording, test paths). minors for the final review.
