@@ -466,6 +466,15 @@ if ($LASTEXITCODE) { throw 'jp_sound_effects fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py @btfState "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
+# guard (I-279): the client reads only BTF; a plain PNG left in img/ui or cocostudio/publish (e.g. a copied JP file that btf_fix
+# skipped) silently fails to load. Header check only (4 bytes per file)
+$notBtf = foreach ($d in 'img\ui', 'cocostudio\publish') {
+    foreach ($f in [IO.Directory]::EnumerateFiles("$sg\files\$d", '*.png')) {
+        $fs = [IO.File]::OpenRead($f); $b = New-Object byte[] 4; [void]$fs.Read($b, 0, 4); $fs.Dispose()
+        if ($b[0] -ne 0x89 -or $b[1] -ne 0x42 -or $b[2] -ne 0x54 -or $b[3] -ne 0x46) { $f }
+    }
+}
+if ($notBtf) { throw ("not BTF after btf_fix: " + (($notBtf | Select-Object -First 10) -join ', ')) }
 # Raid boss models (I-221, Raids Part 2): lwf/character/raid and lwf/raid/demo (~210 MB) leave the generated pack for the
 # static pack raid_gen, built once with --cache (later versions do not rebuild it). A -Quick run takes them out of the
 # generated pack only if the installed version carries raid_gen; without it they stay where the installed version has them.
