@@ -4,9 +4,9 @@
   "I-013": {
    "thread": "1569614642962235445",
    "msg": "1569614642962235445",
-   "group": "OPEN",
-   "hash": "36e55e966d6e9cb3",
-   "name": "I-013 · Balance"
+   "group": "CLOSED",
+   "hash": "085d04ad227d1004",
+   "name": "I-013 · Balance: Bandit + Red Nocturne wiped out 3040 HP at LV3"
   },
   "I-014": {
    "thread": "1569614646388850712",
@@ -26,8 +26,8 @@
    "thread": "1569614654169153538",
    "msg": "1569614654169153538",
    "group": "OPEN",
-   "hash": "b301a31b1e02b00b",
-   "name": "I-018 · Buttons never tested"
+   "hash": "f02e69a2db99e8b8",
+   "name": "I-018 · Title screen buttons never tested: Restore Resources and Save User Data"
   },
   "I-022": {
    "thread": "1569614659340992534",
@@ -53,15 +53,15 @@
   "I-029": {
    "thread": "1569614669843402783",
    "msg": "1569614669843402783",
-   "group": "OPEN",
-   "hash": "f72ac47271470413",
+   "group": "CLOSED",
+   "hash": "03bc10e036ce2435",
    "name": "I-029 · Community requests for information"
   },
   "I-031": {
    "thread": "1569614674088169543",
    "msg": "1569614674088169543",
-   "group": "OPEN",
-   "hash": "249789c1b2c8a969",
+   "group": "CLOSED",
+   "hash": "9f3306331bc83908",
    "name": "I-031 · Death notice in the tutorial never captured"
   },
   "I-033": {
@@ -109,8 +109,8 @@
   "I-117": {
    "thread": "1569614699786534926",
    "msg": "1569614699786534926",
-   "group": "OPEN",
-   "hash": "099fd03a1a086f75",
+   "group": "CLOSED",
+   "hash": "e6fe8d42975b9f88",
    "name": "I-117 · Original layouts and textures from the JP 4.3.1 data"
   },
   "I-120": {
@@ -158,9 +158,9 @@
   "I-132": {
    "thread": "1569614735274680383",
    "msg": "1569614735274680383",
-   "group": "OPEN",
-   "hash": "03f74797492b330f",
-   "name": "I-132 · Fake clock with KHUX_SERVER_TIME"
+   "group": "CLOSED",
+   "hash": "d4a4c14a016a5dd4",
+   "name": "I-132 · Fake clock with KHUX_SERVER_TIME: Weekly/Limited endDates follow the twin month of the…"
   },
   "I-139": {
    "thread": "1569614738172678175",
@@ -172,9 +172,9 @@
   "I-140": {
    "thread": "1569614740878135297",
    "msg": "1569614740878135297",
-   "group": "OPEN",
-   "hash": "1a73450558410d26",
-   "name": "I-140 · «Only draws Epic Medals» filter"
+   "group": "CLOSED",
+   "hash": "6b3a6ecfcd38a313",
+   "name": "I-140 · «Only draws Epic Medals» filter (~30 banners 2016-17) not reproduced"
   },
   "I-141": {
    "thread": "1569614743784783965",
@@ -193,16 +193,16 @@
   "I-143": {
    "thread": "1569614750130643096",
    "msg": "1569614750130643096",
-   "group": "OPEN",
-   "hash": "61839c1981cb613e",
-   "name": "I-143 · Home"
+   "group": "CLOSED",
+   "hash": "7cd705615a6934ea",
+   "name": "I-143 · Home: a Shop tap within ~3 s of closing the login Notices is lost"
   },
   "I-145": {
    "thread": "1569614753062457412",
    "msg": "1569614753062457412",
-   "group": "OPEN",
-   "hash": "e195f8051ad1bebf",
-   "name": "I-145 · Shop minor doubts"
+   "group": "CLOSED",
+   "hash": "abacc72750a38041",
+   "name": "I-145 · Shop minor doubts: totalLimit plates show «Chances left today: 1»"
   },
   "I-146": {
    "thread": "1569614755696611399",
@@ -256,8 +256,8 @@
   "I-168": {
    "thread": "1569614792078135327",
    "msg": "1569614792078135327",
-   "group": "TO VERIFY",
-   "hash": "f0f734d2ff8bffd6",
+   "group": "CLOSED",
+   "hash": "20de391a8fa25c07",
    "name": "I-168 · Limited campaign with SN++ - FF7R Aerith 7★ to a new player"
   },
   "I-169": {
@@ -270,8 +270,8 @@
   "I-170": {
    "thread": "1569614797228482571",
    "msg": "1569614797228482571",
-   "group": "OPEN",
-   "hash": "0a146a115762d06c",
+   "group": "CLOSED",
+   "hash": "41dbc1a014579472",
    "name": "I-170 · Replace with the originals what we generated"
   },
   "I-191": {
@@ -292,7 +292,7 @@
    "thread": "1569614827037524039",
    "msg": "1569614827037524039",
    "group": "OPEN",
-   "hash": "4ead7814c7b9e666",
+   "hash": "69caafed9134aad9",
    "name": "I-207 · Enemy special mechanics missing"
   },
   "I-227": {
@@ -305,15 +305,15 @@
   "I-238": {
    "thread": "1569614832498507817",
    "msg": "1569614832498507817",
-   "group": "ON HOLD",
-   "hash": "9ce09613b8b1e4e3",
+   "group": "CLOSED",
+   "hash": "51b75a2698fd9db0",
    "name": "I-238 · JP raid boards from the evidence, not generic"
   },
   "I-239": {
    "thread": "1569614835199647815",
    "msg": "1569614835199647815",
-   "group": "ON HOLD",
-   "hash": "2a0842b22220085e",
+   "group": "CLOSED",
+   "hash": "bd482ffaa8a4e0f7",
    "name": "I-239 · JP raid banners without Details"
   },
   "I-242": {
@@ -327,21 +327,21 @@
    "thread": "1569615903711039489",
    "msg": "1569615903711039489",
    "group": "ON HOLD",
-   "hash": "034a9eddb374c3b2",
-   "name": "I-243 · JP raids that repeat a WW raid"
+   "hash": "47acc50ebea39d70",
+   "name": "I-243 · Japan-only raids (boards, banners/Details, repeats, Catalog section)"
   },
   "I-244": {
    "thread": "1569615906575749203",
    "msg": "1569615906575749203",
-   "group": "ON HOLD",
-   "hash": "467cfa41a3b6b524",
+   "group": "CLOSED",
+   "hash": "31c26949b5db8879",
    "name": "I-244 · Raid Catalog: Japan only as a section"
   },
   "I-245": {
    "thread": "1569615909541249058",
    "msg": "1569615909541249058",
-   "group": "OPEN",
-   "hash": "f3f100336949fcca",
+   "group": "CLOSED",
+   "hash": "6024e9b2bac4afed",
    "name": "I-245 · Events: non-raid event quests"
   },
   "I-246": {
@@ -438,8 +438,8 @@
   "I-261": {
    "thread": "1569824440190246916",
    "msg": "1569824440190246916",
-   "group": "OPEN",
-   "hash": "bcc03bea24e35785",
+   "group": "CLOSED",
+   "hash": "2b358d9057a91306",
    "name": "I-261 · Enemy special attacks: copied moves and missing atkSp animations"
   },
   "I-262": {
@@ -515,8 +515,8 @@
   "I-272": {
    "thread": "1570719415039696967",
    "msg": "1570719415039696967",
-   "group": "TO VERIFY",
-   "hash": "fbf9962d72d3c503",
+   "group": "CLOSED",
+   "hash": "f2c1c79eee853a99",
    "name": "I-272 · Keyblade: cannot be raised to +10"
   },
   "I-277": {
@@ -641,8 +641,8 @@
   "I-301": {
    "thread": "1574671826255224855",
    "msg": "1574671826255224855",
-   "group": "OPEN",
-   "hash": "7a395d7e9ed8ac63",
+   "group": "CLOSED",
+   "hash": "56b323435b4c0877",
    "name": "I-301 · Upright / Reversed slots without their gold / purple backgrounds"
   },
   "I-302": {
@@ -788,8 +788,8 @@
   "I-323": {
    "thread": "1575423520379371555",
    "msg": "1575423520379371555",
-   "group": "OPEN",
-   "hash": "6221b04de53f5d0c",
+   "group": "CLOSED",
+   "hash": "4e2b9c6bc5a51713",
    "name": "I-323 · Zootopia Raid Boards «don't look right»"
   },
   "I-324": {
@@ -809,16 +809,16 @@
   "I-326": {
    "thread": "1575423529891926057",
    "msg": "1575423529891926057",
-   "group": "OPEN",
-   "hash": "0ed71fa5be81719c",
+   "group": "CLOSED",
+   "hash": "7950e67b7415ae2a",
    "name": "I-326 · Special Attack gauge kept after dying / quitting a quest"
   },
   "I-327": {
    "thread": "1575424304676348026",
    "msg": "1575424304676348026",
    "group": "OPEN",
-   "hash": "91f4a92b348aae18",
-   "name": "I-327 · KHDR START (Dark Road) on the title screen: «Unable to locate necessary files. Files will…"
+   "hash": "a6dcef0c9ddd945b",
+   "name": "I-327 · Future project: Dark Road and x3"
   },
   "I-328": {
    "thread": "1575442363940208773",
@@ -875,6 +875,41 @@
    "group": "CLOSED",
    "hash": "502ee70534cc8c64",
    "name": "I-335 · Quest 275 «Complete within 4 turns» cannot be done"
+  },
+  "I-336": {
+   "thread": "1575909755191562312",
+   "msg": "1575909755191562312",
+   "group": "OPEN",
+   "hash": "33fe96f02231d86d",
+   "name": "I-336 · Event leftovers: pet Steal on Event Coins, Riku & Moogle 6★ sale"
+  },
+  "I-337": {
+   "thread": "1575909758081441833",
+   "msg": "1575909758081441833",
+   "group": "OPEN",
+   "hash": "a066056be0291789",
+   "name": "I-337 · AdventureTop2_Raid_Button: JP original vs generated, bench comparison"
+  },
+  "I-338": {
+   "thread": "1575909760929243171",
+   "msg": "1575909760929243171",
+   "group": "OPEN",
+   "hash": "562c44824272ca23",
+   "name": "I-338 · Keyblade series 12000-16000 take Starlight's pose (keyblade_rule.bin)"
+  },
+  "I-339": {
+   "thread": "1575909764569894953",
+   "msg": "1575909764569894953",
+   "group": "ON HOLD",
+   "hash": "853852c1f6d95ca4",
+   "name": "I-339 · Generated stand-ins with no original source"
+  },
+  "I-340": {
+   "thread": "1575909767396724793",
+   "msg": "1575909767396724793",
+   "group": "OPEN",
+   "hash": "b49e21b412d7cabb",
+   "name": "I-340 · Raid board cell layouts and Male/Female variants from the khuxwiki screenshots"
   }
  }
 }
