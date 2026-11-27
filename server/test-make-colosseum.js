@@ -2306,10 +2306,10 @@ test('real_part4_enemies: every enemy of every served revamp stage is in the mas
   const src = mc.readSource(process.env.KHUX_COLOSSEUM_SRC || mc.DEFAULT_2016);
   const relux = mc.readRelux(process.env.KHUX_COLOSSEUM_RELUX || mc.DEFAULT_RELUX);
   const raw = mc.readReluxEnemies(process.env.KHUX_COLOSSEUM_RELUX_ENEMY || mc.DEFAULT_RELUX_ENEMY);
-  const reportFile = process.env.KHUX_COLOSSEUM_P4_REPORT || 'D:\\Progetto_Restauro_KH_UX\\tmp\\p4t2_report_all.json';
+  const reportFile = process.env.KHUX_COLOSSEUM_P4_REPORT || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\colosseum_stages.json';
   // the generated 2019-07 set (Task 3): regenerated here in the test's own temp dir from the private sources (never a scratch path)
   let genDir = null, genWhy = '';
-  const heavy0 = 'D:\Progetto_Restauro_KH_UX\tmp';
+  const heavy0 = 'D:\\Progetto_Restauro_KH_UX\\tmp';
   if (fs.existsSync(reportFile)) {
     genDir = fs.mkdtempSync(path.join(fs.existsSync(heavy0) ? heavy0 : os.tmpdir(), 'khux-p4-gen-'));
     try { require('child_process').execFileSync('python', ['-I', path.join(__dirname, '..', 'recon', 'tools', 'gen_colosseum_stages.py'), '--months', '2019-07', '--out', genDir], { stdio: 'pipe' }); }

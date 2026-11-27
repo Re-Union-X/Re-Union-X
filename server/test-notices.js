@@ -718,5 +718,14 @@ for (const web of [false, true]) {
   const rules = n.NOTICES.find((x) => x.pinned === 1).body.join(' ');
   check(/Game Catalog\*\*, the first banner of \*\*Events\*\*/.test(rules) && !/each have a \*\*Catalog\*\* as their first banner/.test(rules), 'rules: the Game Catalog');
 }
+// no leftover placeholder token (ALL-CAPS words joined by underscores) in any notice text (the Coliseum notice once showed LV999_PROBE_RESULT)
+for (const x of n.NOTICES) {
+  const bad = x.body.join('\n').match(/\b[A-Z0-9]+_[A-Z0-9_]{4,}\b/g);
+  check(!bad, `notice «${x.title}»: placeholder token ${bad}`);
+}
+{ const c = n.NOTICES.find((x) => x.title === 'Coliseum'), t = c ? c.body.join(' ') : '';
+  check(c && /Tiers 2 to 7 have 400/.test(t) && !/Season complete» and no round/.test(t) && /shows no round/.test(t) && /Catalog says «Season complete»/.test(t), 'Coliseum notice: Tier sizes and the end-of-season wording');
+  check(c && /99 ROUNDS UNLOCKED/.test(t) && /to be fixed later/.test(t), 'Coliseum notice: the one-turn banner digit is declared');
+  check(c && !/no picture of it survives/.test(t) && /hand-made card \{not original\}/.test(t), 'Coliseum notice: hand-made card wording'); }
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: notices');

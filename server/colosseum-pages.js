@@ -215,6 +215,7 @@ const WHY = { pinned: 'The Coliseum plays this season until you remove it, whate
 const MAPS = {
   worldwide: 'The maps of this season are the original ones, from the 2016 worldwide game files.',
   japanese: 'This season uses the original maps of the Japanese version, which the worldwide game most likely reused (its round lists match them).',
+  copied: '<span class="ng">NOT ORIGINAL</span> No map of this season survives: each round is a whole copy of an original map of another month (see the notice).',
   generated: '<span class="ng">NOT ORIGINAL</span> No map of this season survives. Its rounds are played on generated maps, built from the round lists of the community '
     + 'wiki (khuxwiki) with the original enemies of the season, in the original arena.' };
 const COIN = 17;
@@ -270,7 +271,7 @@ function detailPage(rows, id, det, ctx = {}) {
     served: b.served, nodes: b.nodes, unlocked: b.unlocked, coinsLeft: b.coinsLeft, coinsTotal: b.coinsTotal }));
   const boards = det.boards.length
     ? cards.boardTable(boardRows, { currency: 'Coliseum Coins', cls: 'cb' })
-      + '<p class="n">The nodes of a board are bought with the Coliseum Coins of this season, in the Coliseum Boards of the Coliseum while the season plays. A Tier Bonus board appears when you reach its tier.</p>'
+      + '<p class="n">The nodes of a board are bought with the Coliseum Coins of this season, in the Coliseum Boards of the Coliseum while the season plays.' + (det.boards.some((b) => b.bonusTier) ? ' A Tier Bonus board appears when you reach its tier.' : '') + '</p>'
     : `<p class="n">${MU('No Coliseum Board this season.')}</p>`;
   // Tiers
   const tierRows = det.tiers.map((t) => {
@@ -293,7 +294,7 @@ function detailPage(rows, id, det, ctx = {}) {
     ? `<p class="n">Your best: ${rounds(det.best || 0)} cleared.</p><p class="n">Each original ranking bracket is a score threshold on this server. Clear that many rounds and its prizes go to your Present Box, once.</p>`
       + `<table class="tt"><tr><th>Original rank</th><th>Rounds needed</th><th>Prizes</th><th>Status</th></tr>${rk}</table>`
     : `<p class="n">${MU('No ranking rewards are known for this season.')}</p>`;
-  const maps = `<p class="mp">${MAPS[det.maps] || MAPS.worldwide} The ten maps of a season repeat in every tier. See the <a href="${NOTICE_LINK}">«Coliseum» notice ›</a></p>`;
+  const maps = `<p class="mp">${MAPS[det.maps] || MAPS.worldwide}${det.maps === 'copied' && det.mapsFrom && det.mapsFrom.length ? ` Copied from: ${det.mapsFrom.join(', ')}.` : ''} The maps of a season (ten; nine from January 2020) repeat round after round. See the <a href="${NOTICE_LINK}">«Coliseum» notice ›</a></p>`;
   const back = ctx.fromCatalog ? backBar(`${BASE}/catalog#q${row.colosseumStageId}`) : '';
   return PAGE_HEAD(title, CSS + DETAIL_CSS + RULE_CSS + SRV_CSS + FOLD_CSS + COLI_DETAIL_CSS) + `<body${back ? ' class="hb"' : ''}>`
     + `<script>${BOARD_NC_JS}</script><h1>${esc(title)}</h1><img class="banner" width="640" height="140" src="${imgOf(ctx, row.colosseumStageId)}" alt="">${box}`

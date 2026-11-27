@@ -259,9 +259,9 @@ From **May 2017** a season has **22 Tiers**, as in the original: Tiers 11, 12 an
 
 From **June 2018** a season has **23 Tiers**: Tiers 1 to 15 have 20, 15, 15, 10 (seven times), 50, 100, 300, 500 and 500 rounds, then 999-round Tiers, the last one endless. April and May 2018 have 22 Tiers.
 
-From **May 2019** the Coliseum was **revamped**, and so are its seasons here: **eighteen Tiers**, 4,000 rounds in all. Tier 1 has 200 rounds, Tiers 2 and 3 have 400, Tiers 4 to 7 have 400, Tier 8 has 300, Tier 9 has 200, then Tier 10 to Tier 18 have 100 rounds each. There is **no endless Tier**: when you clear **round 4,000** the season is **complete** (the Coliseum says «Season complete» and no round 4,001 exists) (not original). The original had one more Tier, **Tier 19** (1,000 rounds at 99 AP): it is **not served**, as a wall made for the designers (not original).
+From **May 2019** the Coliseum was **revamped**, and so are its seasons here: **eighteen Tiers**, 4,000 rounds in all. Tier 1 has 200 rounds, Tiers 2 to 7 have 400, Tier 8 has 300, Tier 9 has 200, then Tier 10 to Tier 18 have 100 rounds each. There is **no endless Tier**: when you clear **round 4,000** the season is **complete**: the Coliseum screen then shows no round, and no round 4,001 exists (the season page of the Coliseum Catalog says «Season complete») (not original). Showing a cue on the Coliseum screen itself is still open. The original had one more Tier, **Tier 19** (1,000 rounds at 99 AP): it is **not served**, as a wall made for the designers (not original).
 
-In these seasons the enemy level is the **round number** (up to 4,000) and a month has **ten maps** until December 2019 and **nine maps from January 2020**: round 10 plays map 1 again in a nine-map month. The one-turn shortcut unlocks up to **199 rounds** at once in Tiers 1 to 3, then 149, 99 and 49 in the later Tiers.
+In these seasons the enemy level is the **round number** (up to 4,000) and a month has **ten maps** until December 2019 and **nine maps from January 2020**: round 10 plays map 1 again in a nine-map month. The one-turn shortcut unlocks up to **199 rounds** at once in Tiers 1 to 3, then 149, 99 and 49 in the later Tiers. After such a clear in Tiers 1 to 4 the banner can show «99 ROUNDS UNLOCKED» (or 49 for 149) although 199 (149) rounds are opened: the banner never draws the hundreds digit (not original), to be fixed later.
 
 Clearing **Tier 10** (round 3,200 of the season) gives the Tier title of the month, one for each season, for example **May 2019 Victor**; Tier 11 to Tier 18 pay no reward of their own.
 
@@ -329,7 +329,7 @@ No map of **August to November 2016** and **June to December 2017** survives: th
 
 The wiki lists enemy buffs (higher Strength or Defense) on some waves of the maps 1, 2, 3, 5, 6 and 10 of **August 2016**, 1 and 7 of **September 2016**, and on most maps of **June to December 2017**.
 
-The ten maps of a season repeat in every tier: rounds 1, 11, 21 … of a tier play map 1, rounds 2, 12, 22 … map 2, and so on.
+Until April 2019 the ten maps of a season repeat in every tier: rounds 1, 11, 21 … of a tier play map 1, rounds 2, 12, 22 … map 2, and so on. From May 2019 the maps repeat round after round across the whole season (nine maps from January 2020).
 
 A map cannot carry those buffs, so these enemies fight **without them** (not original); the counter of the June 2017 Ringmaster is dropped too.
 
@@ -347,7 +347,7 @@ The rows of the Japanese version that survive only in the 2019 shape are not use
 
 The seasons from **May 2019** use the original enemy rows of the revamp (ReLux Team donation), among them the **6xxxx** rows made for the new Coliseum. The thirteen enemies of **July 2019** are those original rows, recovered from the same data; the round rules of the month (buffs, counters) are kept inside them.
 
-The 14 enemies of the older game that are in the new seasons too (20007, 20011, 20012, 20015, 20016, 20017, 20035, 20059, 20071, 20110, 20131, 20136, 20137 and 20144), and the 25 that earlier seasons added, keep their **earlier row**: they fight at levels 1,000 to 4,000 with the stats they had before the revamp (not original). LV999_PROBE_RESULT
+The 14 enemies of the older game that are in the new seasons too (20007, 20011, 20012, 20015, 20016, 20017, 20035, 20059, 20071, 20110, 20131, 20136, 20137 and 20144), and the 25 that earlier seasons added, keep their **earlier row**: they fight at the level of their round, up to **LV 4,000**, with the stats they had before the revamp (not original). They appear and play normally at those levels; whether their strength keeps growing past LV 999 or stops there was not measured.
 
 ### Graphics — board cards, one button icon stands in
 
@@ -355,7 +355,7 @@ The card pictures of the Coliseum Boards are original art: from the 2016 worldwi
 
 The cards of the **Mango Sweetie** (July 2017) and **Illusionist** (September 2017) boards are (rebuilt) from the small picture of the community wiki, the only one that survives.
 
-From **May 2019** each month has five boards: the avatar board, **Chip**, **Dale**, **Huey, Dewey & Louie** (as in the original, no board needs a Tier to be bought) and the **Coliseum Board** with the Scrooge Special Attack, 30,900 coins in all. Their rewards include Gems, titles, avatar parts and Spirit parts. The cards of the avatar boards come from the original files of the Japanese version; the Huey, Dewey & Louie cards and those of **July 2019** and **October 2020** are the board previews of the community wiki; the card of the **January 2020** avatar board is a hand-made card (not original), since no picture of it survives; the cards of **March to June 2021** were (rebuilt) to fit the layout. The season cards of the Catalog are our own design.
+From **May 2019** each month has five boards: the avatar board, **Chip**, **Dale**, **Huey, Dewey & Louie** (as in the original, no board needs a Tier to be bought) and the **Coliseum Board** with the Scrooge Special Attack, 30,900 coins in all. Their rewards include Gems, titles, avatar parts and Spirit parts. The cards of the avatar boards come from the original files of the Japanese version; the Huey, Dewey & Louie cards and those of **July 2019** and **October 2020** are the board previews of the community wiki; the card of the **January 2020** avatar board is a hand-made card (not original); the cards of **March to June 2021** were (rebuilt) to fit the layout. The season cards of the Catalog are our own design.
 
 The **Puppy Medium** and **Puppy Bob** boards were in the Japanese version only: they are not here.
 

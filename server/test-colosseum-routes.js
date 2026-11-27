@@ -538,6 +538,8 @@ const tests = {
     // maps of the other kinds (make-colosseum.js SEASONS: genStages = generated, relux without them = the JP 4.3.1 sets)
     const kinds = Object.fromEntries(require('./make-colosseum').SEASONS.map((s) => [s.month, routesColosseum.mapsOf(s)]));
     assert.deepStrictEqual([kinds['2016-07'], kinds['2016-08'], kinds['2016-11'], kinds['2016-12'], kinds['2017-04']], ['worldwide', 'generated', 'generated', 'japanese', 'japanese']);
+    assert.deepStrictEqual([kinds['2020-01'], kinds['2020-10']], ['copied', 'copied'], 'whole-copy seasons are not original maps');
+    assert.deepStrictEqual(routesColosseum.copiedFrom(require('./make-colosseum').SEASONS.find((s) => s.month === '2020-10')), ['May 2020', 'January 2021', 'July 2020', 'April 2020']);
   },
   // Part 2 (Task 5): the 13 seasons 2016-04 .. 2017-04 in month order; a story clock in 2016-12: December now, April .. November can
   // be kept, January .. April 2017 later

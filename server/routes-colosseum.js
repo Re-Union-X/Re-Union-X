@@ -29,7 +29,7 @@ const rules = require('./colosseum-rules');
 const ranked = require('./ranked-rewards');
 const calendar = require('./calendar-util');
 const core = require('./sphere-board-core');
-const { SEASONS, SEASON_BOARDS, BONUS_TIER, CATALOG_EV, COLOSSEUM_IMG_VERSION, rankedOf } = require('./make-colosseum');
+const { SEASONS, COPY_STAGES, SEASON_BOARDS, BONUS_TIER, CATALOG_EV, COLOSSEUM_IMG_VERSION, rankedOf } = require('./make-colosseum');
 const { bracketText } = require('./routes-hsc');
 const { deliverReward } = require('./raid-rewards');
 
@@ -44,7 +44,9 @@ const monthName = (m) => `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`
 const avatarType = (t) => t === 19 || t === 20 || t === 23;
 // the maps of a season (make-colosseum.js SEASONS; the «Coliseum» notice, routes-info-album.js «Maps»): generated (genStages, 2016-08 ..
 // 2016-11), worldwide (the 1.1.3 seasons with the 2016 worldwide maps, 2016-04 .. 2016-07), japanese (the JP 4.3.1 sets, 2016-12 ..)
-const mapsOf = (s) => (s.genStages ? 'generated' : s.source === '113' ? 'worldwide' : 'japanese');
+const mapsOf = (s) => (s.genStages ? 'generated' : s.source === '113' ? 'worldwide' : COPY_STAGES[s.month] ? 'copied' : 'japanese');
+// the months a copied season takes its maps from (JP stage ids 20YYMMNN)
+const copiedFrom = (s) => (COPY_STAGES[s.month] ? [...new Set(COPY_STAGES[s.month].map((id) => monthName(`20${String(id).slice(2, 4)}-${String(id).slice(4, 6)}`)))] : []);
 
 // deps: player, savePlayer, masterRows, storyWeek () -> {storyQuest, shopFrom, shopTo}, shopFromAtWeek (realWeekIndex) -> shopFrom (no side
 // effect), realNow, serverTime, serverTimeAt, clock {weekIndex, weekEnd, weekStartOf}, userPointData, userDetailData,
@@ -396,7 +398,7 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
     const r = rankedOfSeason(s);
     const ranked = r ? r.brackets.map((b, i) => ({ startRank: b.startRank, endRank: b.endRank, rounds: r.thresholds[i].score, reached: st.last > 0 && st.last >= r.thresholds[i].score,
       rewards: b.rewards.map((x) => ({ type: x.type, id: x.id, num: x.num, skillId: x.skillId || 0 })) })).reverse() : [];
-    return { boards, tiers, best: st.last, complete: !open && st.last >= rules.total(s.tiers), ranked, maps: mapsOf(SEASONS.find((x) => x.colosseumStageId === s.id)) };
+    return { boards, tiers, best: st.last, complete: !open && st.last >= rules.total(s.tiers), ranked, maps: mapsOf(SEASONS.find((x) => x.colosseumStageId === s.id)), mapsFrom: copiedFrom(SEASONS.find((x) => x.colosseumStageId === s.id)) };
   }
   // POST /web/colosseum/keep/<colosseumStageId> and /web/colosseum/unkeep: {code, body {ok, why?}}. Only a past season ('can') of an
   // open Coliseum can be kept (else why: locked, now, other, later); keeping one replaces the previous. Neither touches any
@@ -450,5 +452,6 @@ function routesColosseum({ player, savePlayer, masterRows, storyWeek, shopFromAt
 module.exports = routesColosseum;
 module.exports.RANKING_KEYS = KEYS;
 module.exports.mapsOf = mapsOf;
+module.exports.copiedFrom = copiedFrom;
 module.exports.UNLOCK_QUEST = UNLOCK_QUEST;
 module.exports.COLOSSEUM_IMG_VERSION = COLOSSEUM_IMG_VERSION;

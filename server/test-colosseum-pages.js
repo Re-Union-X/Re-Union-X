@@ -365,6 +365,7 @@ const tests = {
     assert.ok(!open.includes('Season complete'), 'not complete before the last round');
     // without a name the title falls back to its type, never the id
     assert.ok(!pages.detailPage([row(4500, '2019-05', 'can')], 4500, det, { ...CTX, itemName: () => '' }).includes('17079'));
+    assert.ok(!html.includes('A Tier Bonus board appears') && pages.detailPage([row(4500, '2019-05', 'can')], 4500, { ...det, boards: [{ id: 1, name: 'B', bonusTier: 10, served: true, nodes: 1, unlocked: 0, coinsLeft: 1, coinsTotal: 1 }] }, { ...CTX, itemName }).includes('A Tier Bonus board appears'), 'bonus sentence only with a bonus board');
   },
   // Season detail page (26-11, as the Raid Catalog detail page)
   detail_page() {
@@ -400,6 +401,9 @@ const tests = {
     assert.ok(maps.includes('original') && maps.includes('2016 worldwide game files') && maps.includes('href="/web/notices#coliseum"'));
     assert.ok(pages.detailPage(rows, 900, { ...det, maps: 'japanese' }, ctx).includes('Japanese version'));
     assert.ok(pages.detailPage(rows, 900, { ...det, maps: 'generated' }, ctx).includes('generated maps'));
+    const cp = pages.detailPage(rows, 900, { ...det, maps: 'copied', mapsFrom: ['May 2020', 'July 2020'] }, ctx);
+    assert.ok(cp.includes('NOT ORIGINAL</span> No map of this season survives: each round is a whole copy') && cp.includes('Copied from: May 2020, July 2020.') && !cp.includes('original maps of the Japanese version'), 'copied maps are declared');
+    assert.ok(maps.includes('repeat round after round') && !maps.includes('in every tier'), 'maps line');
     // Keep / Remove: the same button as the row; BACK to the row of the catalog
     assert.ok(html.includes('data-pin="/web/colosseum/keep/900"') && html.includes('Replaces: Coliseum · April 2016'));
     assert.ok(pages.detailPage(rows, 800, det, ctx).includes('data-pin="/web/colosseum/unkeep"'));
