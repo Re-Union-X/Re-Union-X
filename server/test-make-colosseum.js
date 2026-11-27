@@ -933,8 +933,12 @@ test('readStageEnemies: the import report, then the generated report, then the J
     const jp = f('jp.json', { 20151108: { parts: { '00': { enemies: [{ enemyId: 1510228138 }, { enemyId: 20001 }] } } },
       20151109: { parts: { '00': { enemies: [{ enemyId: 20003 }] }, '01': { enemies: [{ enemyId: 20004 }] } } } });
     assert.deepStrictEqual(mc.readStageEnemies([imp, gen, jp, path.join(dir, 'none.json')]),
-      { 20151108: [20001, 20092], 20151109: [20003, 20004], 21160801: [20001, 20007] });
+      { 20151108: [20001, 20092], 20151109: [1], 21160801: [20001, 20007] });
     assert.strictEqual(mc.readStageEnemies([path.join(dir, 'none.json')]), null);
+    // a skipped entry (enemy not in the master yet) keeps the list read from the served file over the parse's different list
+    const imp2 = f('imp2.json', { stages: [{ stageId: 20190506, status: 'skipped', why: 'enemy not in the master: [61590]', enemies: [60033, 61590] }] });
+    const jp2 = f('jp2.json', { 20190506: { parts: { '00': { enemies: [{ enemyId: 60010 }, { enemyId: 60033 }] } } } });
+    assert.deepStrictEqual(mc.readStageEnemies([imp2, jp2]), { 20190506: [60033, 61590] });
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 

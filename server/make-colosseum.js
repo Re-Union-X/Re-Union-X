@@ -1245,8 +1245,10 @@ function readReluxEnemies(file) {
   return rows || null;
 }
 // The enemy lists of the stages, local files outside the repo (env names them, else the local defaults), the first one holding a
-// stage wins: the stage import report (import_colosseum_stages.py: the files actually served, status «imported»), the generated
-// stages report (gen_colosseum_stages.py), the JP 4.3.1 stage parse (cl_stages_jp431.json).
+// stage wins: the stage import report (import_colosseum_stages.py: the files actually served; an entry's enemy list is read from the
+// served file, so it counts whatever its status, also «skipped» for an enemy not yet in the master, else that enemy would never be
+// added and the import would keep skipping the stage), the generated stages report (gen_colosseum_stages.py), the JP 4.3.1 stage
+// parse (cl_stages_jp431.json).
 const ROOT = 'D:\\Progetto_Restauro_KH_UX';
 const stageEnemyFiles = () => [
   process.env.KHUX_COLOSSEUM_STAGE_REPORT || path.join(ROOT, 'stage_gen', 'colosseum_stages.json'),
@@ -1265,7 +1267,7 @@ function readStageEnemies(files) {
     if (Array.isArray(j && j.stages)) {
       for (const s of j.stages) {
         if (Array.isArray(s.enemyIds)) put(s.stageId, s.enemyIds); // generated report
-        else if (s.status === 'imported' && Array.isArray(s.enemies)) put(s.stageId, s.enemies); // import report
+        else if (Array.isArray(s.enemies)) put(s.stageId, s.enemies); // import report (any status)
       }
     } else {
       for (const [sid, st] of Object.entries(j || {})) {
