@@ -245,6 +245,7 @@ if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
 # - Prize_Treasure02-04 («Prize_Treasure%02d» dal premio; WW solo 01)
 # - Topinfo_BarBut1,3-7 _Off/_On («Button_%d», indice+1; WW solo 2)
 # - Deck_Arrow_U/R1-3 (frecce del bonus di attributo del deck; WW solo publish/Deck_Arrow_U1)
+#   (the plain Deck_Arrow1-3, used for slots with no Upright/Reversed match, come from JP 4.3.1 below, I-279)
 # - tutorial_N («tutorial_%d», id 1-65 costanti dei chiamanti): le 19 del 2016
 #   in inglese; quelle dei soli dati JP (48-65) hanno il testo giapponese e restano assenti (ISSUES I-159)
 # - light/NPC/39994,39996,39997 (immagini dei SEQ light novel 1010151/1989901, comando 4002)
@@ -269,6 +270,10 @@ foreach ($n in $img16) {
 $jpImg = "$jpData\img"
 $imgJp = @(30, 31, 32, 35, 36, 37, 38, 39, 40, 41) | ForEach-Object { 'incentive\IncentiveIcon_{0:D2}' -f $_ }
 $imgJp += @('ui\AvtInfo_CrownIcon1', 'ui\AvtInfo_CrownIcon2', 'ui\AvtInfo_CrownIcon3', 'ui\AvtInfo_trophyIcon1', 'ui\AvtInfo_trophyIcon2')
+# - plain Deck_Arrow1-3 (red/green/blue, 33x35; I-279): slots without an Upright/Reversed match load them by attribute; WW has
+#   only publish/Deck_Arrow3, so Speed (2) kept the layout default (red U1). The 2016 BTF of these is not readable, so the
+#   JP 4.3.1 PNG instead (btf_fix premultiplies); served in img/ui (1 from JP publish/) and, as WW keeps the arrows there, also in cocostudio/publish (1, 2)
+$imgJp += @(2, 3) | ForEach-Object { "ui\Deck_Arrow$_" }   # JP has Deck_Arrow1 only under cocostudio/publish, copied below
 foreach ($k in 'GuardBreak', 'Reflection') { $imgJp += @(0..9 | ForEach-Object { "damage\dmg${k}_num$_" }) + "damage\dmg${k}_comma" }
 # - arco dell'HP in battaglia (PlayerStatusIndicator, I-032): oltre 3000 HP il client carica Avatar_Circle_06 e
 #   Avatar_Side_02-04, assenti dalle risorse WW (prima: HP del giocatore fermo a 3000)
@@ -281,6 +286,13 @@ foreach ($n in $imgJp) {
     New-Item -ItemType Directory -Force (Split-Path "$sg\files\img\$n.png") | Out-Null
     Copy-Item $cand[-1].FullName "$sg\files\img\$n.png" -Force
 }
+# Deck_Arrow1/2 also under cocostudio/publish (I-279; Deck_Arrow3 is already there in WW, left as is): same pictures as img/ui
+$jpArrow1 = "$jpData\cocostudio\publish\Deck_Arrow1.png"
+if (-not (Test-Path $jpArrow1)) { throw "manca $jpArrow1" }
+New-Item -ItemType Directory -Force "$sg\files\cocostudio\publish" | Out-Null
+Copy-Item $jpArrow1 "$sg\files\img\ui\Deck_Arrow1.png" -Force
+Copy-Item $jpArrow1 "$sg\files\cocostudio\publish\Deck_Arrow1.png" -Force
+Copy-Item "$sg\files\img\ui\Deck_Arrow2.png" "$sg\files\cocostudio\publish\Deck_Arrow2.png" -Force
 # Serviti solo sotto cocostudio/publish (non valgono per img/...): stesso file anche in img/ (WW localizzate:
 # CrownIcon4, trophyIcon3/4; IncentiveIcon_42 now from JP in originals.tsv). Estratti una volta in catalog\img_alias
 $alias = @{ 'ui\AvtInfo_CrownIcon4' = 'cocostudio/publish/AvtInfo_CrownIcon4.png'; 'ui\AvtInfo_trophyIcon3' = 'cocostudio/publish/AvtInfo_trophyIcon3.png'
