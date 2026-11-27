@@ -254,6 +254,10 @@ const tests = {
     assert.strictEqual(bd(html, 8180), 'done');
     assert.strictEqual(bd(catalog(ix, ctx({ index: ix })), 8071), 'todo', 'no lookup: nothing completed');
     assert(/<h4>RAID BOARDS<\/h4><div class="opts" data-g="bd">/.test(html), 'RAID BOARDS group');
+    // user 27-11: the «Boards not completed» icon after the name (and after the crown), only on the rows the filter calls 'todo'
+    const tag = special.BOARD_TODO, nm = (id) => (/<a class="nm"[^>]*>[\s\S]*?<\/a>/.exec(rowOf(html, id)) || [''])[0];
+    assert(tag.includes('btodo.png') && tag.includes('alt="Boards not completed"') && tag.includes('title="Boards not completed"'));
+    assert(nm(8100).endsWith(`${tag}</a>`) && !nm(8071).includes('btodo.png') && !nm(8101).includes('btodo.png') && !nm(8180).includes('btodo.png'), 'icon on todo only');
     assert(/data-v="done"><img[^>]*bdone\.png[^>]*>Completed</.test(html) && /data-v="todo"><img[^>]*btodo\.png[^>]*>Not completed</.test(html), 'chips with the board icons (completed board with a check, partly lit board), not padlocks');
     assert(html.includes('Raid Boards: '), 'summary tag label');
     assert.strictEqual(count(rowOf(html, 8071), 'class="s s-'), 1, 'still one status line');

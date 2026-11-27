@@ -165,6 +165,14 @@ const tests = {
   },
   // Catalog filters (I-328, user 26-11): the FILTER sheet of catalog-pages.js as the Raid / Event Catalogs; SHOW (state), COLISEUM
   // BOARDS (every node of the season's boards unlocked) and TIER REWARDS (the last rewarded tier cleared), each hiding the right rows
+  // user 27-11: the «Boards not completed» icon after the name of the rows the COLISEUM BOARDS filter calls 'todo'
+  board_todo_icon() {
+    const html = pages.catalogPage(FILTER_ROWS, CTX), sp = require('./special-pages');
+    const nm = (id) => (/<a class="nm"[^>]*>([\s\S]*?)<\/a>/.exec(rowHtml(html, id)) || [])[1];
+    assert.ok(sp.BOARD_TODO.includes('btodo.png') && sp.BOARD_TODO.includes('alt="Boards not completed"') && sp.BOARD_TODO.includes('title="Boards not completed"'));
+    assert.ok(nm(900).endsWith(sp.BOARD_TODO) && nm(1000).endsWith(sp.BOARD_TODO), 'todo rows');
+    assert.ok(!nm(800).includes('btodo.png') && !nm(1100).includes('btodo.png'), 'done and no-board rows have none');
+  },
   filters_sheet() {
     const html = pages.catalogPage(FILTER_ROWS, CTX);
     assert.ok(html.includes('<div class="hdr chd"><h1><img class="ic" src="/web/special/icon/tleg.png" alt=""><span>Coliseum Catalog</span><span class="ng">NOT ORIGINAL</span></h1><button type="button" class="fbtn" id="fbtn">'), 'the ⚙ Filters button in the header');

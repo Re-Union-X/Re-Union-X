@@ -13,7 +13,7 @@ const special = require('./special-pages');
 const calendar = require('./raid-calendar');
 const windows = require('./raid-windows');
 
-const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, MATCH_JS, khuxMatch, CROWN, PROG_OPTS, progCls, gameYearOf, GAME_YEARS, YEAR_SPAN } = special;
+const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, MATCH_JS, khuxMatch, CROWN, PROG_OPTS, progCls, gameYearOf, GAME_YEARS, YEAR_SPAN, boardMark } = special;
 // the parts shared with the Event Catalog (event-pages.js): head, pill, Keep button and script, «On this server» box, notice card
 const parts = require('./catalog-pages');
 const { PAGE_HEAD, pill, keepJs, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues, srvFrame, noticeCard, parseNotice, noticeBlocks } = parts;
@@ -232,7 +232,7 @@ function catalogPage(index, ctx = {}) {
     packed.push({ label, fields: { s: search, d: line, n: name, e: String(row.evStageId), y, t: typeOf(row) }, html: `<div class="row ${st.cls}" id="q${row.evStageId}" data-y="${y}" data-href="${href}" data-name="${esc(titleOf(row))}" data-eid="${row.evStageId}" data-show="${st.show}" data-sec="${secOf(row)}"`
       + ` data-periods="${gameYearOf(row.start)}" data-type="${typeOf(row)}" data-tier="${esc(tiers.map((t) => t.toLowerCase()).join(' '))}" data-search="${search}" data-done="${done ? 1 : 0}" data-boards="${bd}">`
       + `<a class="im" href="${href}"><img width="320" height="70" data-src="${imgOf(ctx, row.evStageId)}" alt=""></a>`
-      + `<div class="info"><a class="nm" href="${href}">${name}${done ? CROWN : ''}</a><div class="d">${line}</div>${st.pill}`
+      + `<div class="info"><a class="nm" href="${href}">${name}${done ? CROWN : ''}${boardMark(bd)}</a><div class="d">${line}</div>${st.pill}`
       + `${replacesLine(st, kept)}${st.button === null ? '' : `<div>${keepButton(row.evStageId, st.button, ' onclick="var b=this;return kxKeep(b,function(on){kxRow(b.getAttribute(\'data-id\'),on);})"', row.jp ? ' jk' : '')}</div>`}`
       + '<div class="mt"></div></div><a class="go" href="' + href + '" aria-label="Details">›</a></div>\n' });
   });

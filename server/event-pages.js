@@ -23,7 +23,7 @@ const { rowState, informative } = require('./calendar-util');
 const parts = require('./catalog-pages');
 const { shownRank } = require('./ranked-rewards');
 
-const { CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, CROWN, gameYearOf, GAME_YEARS, YEAR_SPAN, MATCH_JS, PROG_OPTS, progCls } = special;
+const { CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, CROWN, gameYearOf, GAME_YEARS, YEAR_SPAN, MATCH_JS, PROG_OPTS, progCls, boardMark } = special;
 const { PAGE_HEAD, pill, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues, srvFrame, noticeCard, parseNotice, noticeBlocks, backBar, packCatalog, expandCatalog, UNPACK_JS,
   FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet } = parts;
 
@@ -435,7 +435,7 @@ function catalogOf(index, ctx, m) {
       html: `<div class="row ${st.cls}" id="q${e.evStageId}" data-eid="${e.evStageId}" data-show="${st.show}" data-y="${y}" data-p="${gameYearOf(e.start)}"`
       + ` data-type="${t}" data-done="${done ? 1 : 0}"${marks} data-search="${search}">`
       + card
-      + `<div class="info"><a class="nm" href="${href}">${name}${done ? CROWN : ''}</a><div class="d">${line}</div>${st.pill}`
+      + `<div class="info"><a class="nm" href="${href}">${name}${done ? CROWN : ''}${boardMark(bd)}</a><div class="d">${line}</div>${st.pill}`
       + `${replacesLine(st, kept)}${st.button === null ? '' : `<div>${m.button(e.evStageId, st.button, ' onclick="return kxK(this)"')}</div>`}`
       + '<div class="mt"></div></div><span class="go">›</span></div>\n' });
   }

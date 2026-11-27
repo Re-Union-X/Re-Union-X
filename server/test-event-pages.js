@@ -505,6 +505,12 @@ const tests = {
     const raw = pages.catalogPage(ix, ctx({ eventBoard: (id) => boards[id] || null }));
     const html = pages.expandCatalog(raw), bd = (id) => (/data-boards="(\w+)"/.exec(rowOf(html, id)) || [])[1];
     assert.deepStrictEqual([29900, 29901, 29903, 29909].map(bd), ['done', 'todo', 'none', 'none']);
+    // user 27-11: the «Boards not completed» icon closes the name of a 'todo' row (after the crown when it has one), no other row has it
+    const sp = require('./special-pages'), tag = sp.BOARD_TODO, nm = (id) => (/<a class="nm"[^>]*>[\s\S]*?<\/a>/.exec(rowOf(html, id)) || [''])[0];
+    assert.ok(tag.includes('btodo.png') && tag.includes('alt="Boards not completed"') && tag.includes('title="Boards not completed"'));
+    assert.ok(nm(29901).endsWith(`${tag}</a>`), 'todo row: icon after the name');
+    for (const id of [29900, 29903, 29909]) assert.ok(!nm(id).includes('btodo.png'), `no icon on ${id}`);
+    assert.ok(!nm(29901).includes(sp.CROWN) || nm(29901).indexOf(sp.CROWN) < nm(29901).indexOf(tag), 'after the crown');
     assert.ok(/<h4>EVENT BOARDS<\/h4><div class="opts" data-g="bd">/.test(raw), 'the EVENT BOARDS group of the sheet');
     const fp = fakePage(raw);
     fp.tab('all');

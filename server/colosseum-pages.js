@@ -17,7 +17,7 @@ const parts = require('./catalog-pages');
 const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const cards = require('./detail-cards'); // section cards and colour roles of the detail pages
 
-const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN, CROWN } = special;
+const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN, CROWN, boardMark } = special;
 const { PAGE_HEAD, pill, keepJs, FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet, backBar, srvFrame, RULE_CSS, SRV_CSS, FOLD_CSS } = parts;
 const BASE = '/web/colosseum', WHERE = 'the Coliseum';
 const UNLOCK_QUEST = 130; // routes-colosseum.js UNLOCK_QUEST (not required here: the page module stays free of the routes)
@@ -168,7 +168,7 @@ function catalogPage(rows, ctx = {}) {
       + ` data-p="${yearsOf(row).join(' ')}" data-boards="${esc(row.boards || 'none')}" data-tiers="${row.tiersDone ? 'done' : 'todo'}" data-search="${esc(searchOf(row, boards))}">`
       // the left column (user 26-11): the season card with its board cards under it, so a row is no taller than its text
       + `<div class="lc"><a class="im" href="${href}"><img width="320" height="70" src="${imgOf(ctx, row.colosseumStageId)}" alt=""></a>${boardStrip(row, ctx)}</div>`
-      + `<div class="info"><a class="nm" href="${href}">${name}</a><div class="d">${line}</div><div class="pg">${esc(progressOf(row))}</div>${st.pill}${replaces}${button}</div>`
+      + `<div class="info"><a class="nm" href="${href}">${name}${boardMark(row.boards)}</a><div class="d">${line}</div><div class="pg">${esc(progressOf(row))}</div>${st.pill}${replaces}${button}</div>`
       + `<a class="go" href="${href}" aria-label="Details">›</a></div>\n`;
   }).join('');
   const locked = ctx.unlocked === false
