@@ -611,10 +611,13 @@ function remapItems(q, resolve, payable = null) {
 // quests audit 23-11, EV-0529 / EV-1237 on EV-0783's maps): two quests sharing a map compare what is paid, never a note
 const DROP_NOTES = new Set(['inOurMaster']);
 const dropsOf = (drops) => (drops ? JSON.parse(JSON.stringify(drops, (k, v) => (DROP_NOTES.has(k) ? undefined : v))) : null);
-const questSig = (q, mapKey) => JSON.stringify([mapKey, q.worldId, q.level, q.ap, q.addLevel || 0, (q.targets || []).map((t) => t.id),
+// boosters: the unbuilt Boosters remapItems took out of q (I-253): a rerun paying one is not the twin of a row without it (the
+// pending Booster would never be recorded). Left out of the list when there are none, so every other signature is unchanged
+const questSig = (q, mapKey, boosters = []) => JSON.stringify([mapKey, q.worldId, q.level, q.ap, q.addLevel || 0, (q.targets || []).map((t) => t.id),
   (q.objectives || []).map((o) => [o.code, o.dataType, o.idType, o.id, o.num, (o.reward || {}).type || 0, (o.reward || {}).id || 0, (o.reward || {}).num || 0]),
   (q.firstClear || []).map((x) => [x.type, x.id || 0, x.num || 1]), (q.enemies || []).map((e) => [e.id, e.level, e.count]), q.restrictions || {}, dropsOf(q.drops),
-  [(q.drama || {}).beforeIds || [], (q.drama || {}).afterIds || []], q.combined ? 1 : 0]);
+  [(q.drama || {}).beforeIds || [], (q.drama || {}).afterIds || []], q.combined ? 1 : 0,
+  ...(boosters.length ? [boosters.map((b) => [b.objective, b.slot === undefined ? -1 : b.slot, b.emblemName])] : [])]);
 // quizDramas entry of a quest key: {ids, reconstructed, label} | null (a bare list: ids). dramas: the drama ids available in our
 // resources (buildEvents opts.dramas); a listed id not among them, or no such list, stops the run (fix round 1, M2). label: the
 // board's label (QUIZ_BOARD_LABELS; default quizBoard when reconstructed, none for a bare list), another one stops the run
@@ -1440,7 +1443,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       };
       // the same quest in an earlier record (a rerun: same donor stage, same values): served by that stage row (sharedWith); its
       // objectives are paid once, as any quest's
-      const sig = questSig(q, mapKey);
+      const sig = questSig(q, mapKey, paid.boosters);
       const twin = hasStage(q0) ? builtQuests.get(q0.stageId) : null;
       // a quest paying Event Coins is shared only between entries of the same board set (fix round 1, I2: its coins go to the set
       // of the entry that built it); otherwise the later one waits (mapKeyUsed below)
@@ -2029,4 +2032,4 @@ function patch(masterDir, opts = {}) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
 module.exports = { buildEvents, informativeEntry, questMusic, ordinalName, patch, readRecords, anchorsPathOf, REASONS, allocateIds, allocateRows, labelIds, mapRestoreLabels, daysOf, swapEnemies, dropRows, GENERATED_LABELS, NOT_SERVED,
-  applyDatesOf, aliasRewardTypes, genMapOf, mergeCompletion, loadMaps, playedThumb, UNION_IDS };
+  applyDatesOf, aliasRewardTypes, genMapOf, mergeCompletion, loadMaps, playedThumb, UNION_IDS, questSig };

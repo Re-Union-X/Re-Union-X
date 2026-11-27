@@ -2355,6 +2355,16 @@ const tests = {
     const lab = hscRecord('H-7'); lab.hsc.thresholds[0].label = 'guess';
     assert.throws(() => build([lab]), /H-7.*label/);
   },
+  // I-253 (1): an unbuilt Booster (taken out of the quest by remapItems) is part of the twin signature
+  quest_sig_boosters() {
+    const q = { worldId: 1, level: 5, ap: 10, objectives: [{ code: 1, num: 1, reward: null }], firstClear: [] };
+    const plain = me.questSig(q, 'm1');
+    assert.strictEqual(me.questSig(q, 'm1', []), plain, 'no Booster: same signature as before');
+    const one = me.questSig(q, 'm1', [{ objective: 1, emblemName: 'Speed Booster' }]);
+    assert.notStrictEqual(one, plain, 'a rerun with a pending Booster is not the twin of the row without it');
+    assert.strictEqual(me.questSig(q, 'm1', [{ objective: 1, emblemName: 'Speed Booster' }]), one, 'same Booster: still twins');
+    assert.notStrictEqual(me.questSig(q, 'm1', [{ objective: 1, emblemName: 'Power Booster' }]), one);
+  },
 };
 
 // a High Score Challenge record (Part 8 Task 2 shape; brackets top first as the private records list them, thresholds lowest -> top

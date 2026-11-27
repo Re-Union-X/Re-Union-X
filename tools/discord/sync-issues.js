@@ -9,6 +9,7 @@
 //   DISCORD_BOT_TOKEN=... node tools/discord/sync-issues.js
 //   node tools/discord/sync-issues.js --dry-run      (prints the plan, no network)
 // Post and message ids live in docs/discord/issues-state.json (committed back by the GitHub Action).
+// A post deleted by hand (404) is posted again, a deleted first message is sent again in its post: the run goes on.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -114,28 +115,39 @@ function actions(rows, have) {
   return out;
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Network and timer hooks: the tests replace them with a fake Discord (test-sync-issues.js).
+const io = { fetch: (...a) => fetch(...a), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) };
 async function api(token, method, route, body) {
   for (let attempt = 0; attempt < 8; attempt++) {
-    const res = await fetch(API + route, {
+    const res = await io.fetch(API + route, {
       method, headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
     });
-    if (res.status === 429) { const j = await res.json().catch(() => ({})); await sleep(Math.ceil((j.retry_after || 2) * 1000) + 250); continue; }
-    if (!res.ok) throw new Error(`${method} ${route}: ${res.status} ${(await res.text()).slice(0, 300)}`);
-    await sleep(400);
+    if (res.status === 429) { const j = await res.json().catch(() => ({})); await io.sleep(Math.ceil((j.retry_after || 2) * 1000) + 250); continue; }
+    if (!res.ok) {
+      const err = new Error(`${method} ${route}: ${res.status} ${(await res.text()).slice(0, 300)}`);
+      err.status = res.status;
+      throw err;
+    }
+    await io.sleep(400);
     return res.status === 204 ? {} : res.json();
   }
   throw new Error('rate limited too long');
 }
 
-async function main() {
-  const dry = process.argv.includes('--dry-run');
-  const rows = parseIssues(fs.readFileSync(ISSUES, 'utf8'));
-  const state = fs.existsSync(STATE) ? JSON.parse(fs.readFileSync(STATE, 'utf8')) : { issues: {} };
+// 404 (post or message deleted by hand) -> null, any other error is thrown.
+const gone = (e) => { if (e.status === 404) return null; throw e; };
+
+// opts (tests only): paths, argv, env.
+async function main(opts = {}) {
+  const P = { issues: ISSUES, state: STATE, config: CONFIG, ...(opts.paths || {}) };
+  const env = opts.env || process.env;
+  const dry = (opts.argv || process.argv).includes('--dry-run');
+  const rows = parseIssues(fs.readFileSync(P.issues, 'utf8'));
+  const state = fs.existsSync(P.state) ? JSON.parse(fs.readFileSync(P.state, 'utf8')) : { issues: {} };
   const have = state.issues || {};
   const todo = actions(rows, have);
-  let sha = process.env.GITHUB_SHA || '';
+  let sha = env.GITHUB_SHA || '';
   if (!sha) { try { sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { sha = 'main'; } }
 
   if (dry) {
@@ -143,9 +155,9 @@ async function main() {
     console.log(`${rows.size} issues, ${todo.length} action(s)`);
     return;
   }
-  const token = String(process.env.DISCORD_BOT_TOKEN || '').trim();
+  const token = String(env.DISCORD_BOT_TOKEN || '').trim();
   if (!token) { console.log('discord: no bot token configured, nothing sent'); return; }
-  const forum = JSON.parse(fs.readFileSync(CONFIG, 'utf8')).channel;
+  const forum = JSON.parse(fs.readFileSync(P.config, 'utf8')).channel;
 
   const channel = await api(token, 'GET', `/channels/${forum}`);
   const tagIds = {};
@@ -157,22 +169,29 @@ async function main() {
   if (missing.length) console.log(`discord: forum tags not found: ${missing.join(', ')}`);
   const tags = (g) => (tagIds[g] ? [tagIds[g]] : []);
 
-  fs.mkdirSync(path.dirname(STATE), { recursive: true });
-  const save = () => fs.writeFileSync(STATE, JSON.stringify({ forum, issues: have }, null, 1) + '\n');
+  fs.mkdirSync(path.dirname(P.state), { recursive: true });
+  const save = () => fs.writeFileSync(P.state, JSON.stringify({ forum, issues: have }, null, 1) + '\n');
   const today = new Date().toISOString().slice(0, 10);
 
   for (const t of todo) {
     const { r } = t;
     const msg = postMessage(r, sha);
-    if (t.act === 'post') {
+    const newPost = async () => {
       const th = await api(token, 'POST', `/channels/${forum}/threads`, { name: threadName(r), applied_tags: tags(r.group), message: msg });
       have[r.id] = { thread: th.id, msg: th.id, group: r.group, hash: t.h, name: threadName(r) };
-      save(); continue;
+      save();
+    };
+    if (t.act === 'post') { await newPost(); continue; }
+    let rec = t.old;
+    // an archived post must be reopened before it can be changed; a post deleted by hand is posted again (I-253)
+    if (!(await api(token, 'PATCH', `/channels/${rec.thread}`, { archived: false, name: threadName(r), applied_tags: tags(r.group) }).catch(gone))) {
+      console.log(`discord: the post of ${r.id} is gone, posting it again`);
+      await newPost(); continue;
     }
-    const rec = t.old;
-    // an archived post must be reopened before it can be changed
-    await api(token, 'PATCH', `/channels/${rec.thread}`, { archived: false, name: threadName(r), applied_tags: tags(r.group) });
-    await api(token, 'PATCH', `/channels/${rec.thread}/messages/${rec.msg}`, msg);
+    if (!(await api(token, 'PATCH', `/channels/${rec.thread}/messages/${rec.msg}`, msg).catch(gone))) {
+      console.log(`discord: the first message of ${r.id} is gone, sending it again in its post`);
+      rec = { ...rec, msg: (await api(token, 'POST', `/channels/${rec.thread}/messages`, msg)).id };
+    }
     if (t.act === 'tag') {
       await api(token, 'POST', `/channels/${rec.thread}/messages`, {
         content: `${ICONS[rec.group]} **${rec.group}** → ${ICONS[r.group]} **${r.group}** · ${today} · commit ${sha.slice(0, 7)}`,
@@ -187,4 +206,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { console.error(e.message); process.exit(1); });
-module.exports = { parseIssues, group, postMessage, actions };
+module.exports = { parseIssues, group, postMessage, actions, main, io };

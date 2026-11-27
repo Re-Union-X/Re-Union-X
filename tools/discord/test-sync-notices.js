@@ -73,3 +73,56 @@ console.log('test-sync-notices: OK');
   assert2.ok(m.content.includes('11/10') && m.content.includes('#raid-bosses'));
   console.log('bump OK');
 }
+
+// main() against a fake Discord: a post deleted by hand (PATCH 404) is posted again and its stale ids dropped (I-253)
+(async () => {
+  const os = require('os');
+  const sn = require('./sync-notices.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-notices-'));
+  const paths = { notices: path.join(dir, 'NOTICES.md'), state: path.join(dir, 'state.json'), tags: path.join(dir, 'tags.json') };
+  fs.writeFileSync(paths.notices, md);
+  fs.writeFileSync(paths.tags, '{}');
+  const writeState = () => fs.writeFileSync(paths.state, JSON.stringify({ mode: 'forum', notices: [
+    { title: 'A', hash: 'old', date: '10/01', thread: 'T1', ids: ['M1'] },
+    { title: 'B', hash: plan(ns).find((w) => w.title === 'B').hash, date: '11/10', thread: 'T2', ids: ['M2'] }] }));
+  const SECRET = 'https://discord.com/api/webhooks/123/SeCrEtToKeN';
+  const env = { DISCORD_WEBHOOK_URL: SECRET };
+  const fake = (failPatch) => {
+    const calls = [];
+    let n = 0;
+    sn.io.sleep = async () => {};
+    sn.io.fetch = async (url, init) => {
+      const suffix = url.slice(SECRET.length);
+      calls.push(`${init.method} ${suffix}`);
+      const reply = (status, body) => ({ status, ok: status < 300, json: async () => body, text: async () => JSON.stringify(body) });
+      if (init.method === 'PATCH') return failPatch ? reply(failPatch, { message: 'Unknown Message', code: 10008 }) : reply(200, {});
+      if (init.method === 'DELETE') return reply(404, { message: 'Unknown Channel', code: 10003 });
+      if (init.method === 'POST') { n++; return reply(200, { id: 'N' + n, channel_id: 'T9' }); }
+      return reply(500, {});
+    };
+    return calls;
+  };
+  const log = console.log; console.log = () => {};
+  try {
+    writeState();
+    const calls = fake(404);
+    await sn.main({ paths, argv: [], env });
+    assert.deepStrictEqual(calls, ['PATCH /messages/M1?thread_id=T1', 'DELETE /messages/M1?thread_id=T1', 'POST ?wait=true']);
+    const st = JSON.parse(fs.readFileSync(paths.state, 'utf8'));
+    const a = st.notices.find((x) => x.title === 'A');
+    assert.deepStrictEqual([a.thread, a.ids, a.hash], ['T9', ['N1'], plan(ns).find((w) => w.title === 'A').hash]);
+    assert.deepStrictEqual(st.notices.find((x) => x.title === 'B').ids, ['M2']);   // untouched
+    assert.ok(!fs.readFileSync(paths.state, 'utf8').includes('SeCrEt'));
+
+    // a second run has nothing left to do
+    const again = fake(404);
+    await sn.main({ paths, argv: [], env });
+    assert.deepStrictEqual(again, []);
+
+    // any other error still stops the run, and its message never carries the webhook
+    writeState();
+    fake(500);
+    await assert.rejects(sn.main({ paths, argv: [], env }), (e) => !e.message.includes('SeCrEt') && /PATCH \/messages\/M1: 500/.test(e.message));
+  } finally { console.log = log; fs.rmSync(dir, { recursive: true, force: true }); }
+  console.log('main 404 recovery OK');
+})().catch((e) => { console.error(e); process.exit(1); });

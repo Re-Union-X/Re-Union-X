@@ -4,6 +4,7 @@
 // sub-section of the notice its own block (embed), so people read one notice at a time, like the in-game list.
 // The post and message ids live in docs/notices/discord-state.json: a changed notice is edited in place (extra
 // messages are added to or removed from its post), a new notice becomes a new post, a removed one is emptied.
+// A post deleted by hand (404) is posted again and its stale ids dropped, so the run does not fail.
 //   DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/<id>/<token> node tools/discord/sync-notices.js
 //   node tools/discord/sync-notices.js --dry-run      (prints the plan, no network)
 // The webhook URL is a secret: it comes only from the environment (a GitHub Actions secret), never from the repo.
@@ -141,27 +142,32 @@ function bumpMessage(w) {
     allowed_mentions: { parse: [] } };
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Network and timer hooks: the tests replace them with a fake Discord (test-sync-notices.js).
+const io = { fetch: (...a) => fetch(...a), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) };
 async function api(base, method, suffix, body) {
   for (let attempt = 0; attempt < 8; attempt++) {
-    const res = await fetch(base + suffix, {
+    const res = await io.fetch(base + suffix, {
       method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
     });
     if (res.status === 429) {
       const j = await res.json().catch(() => ({}));
-      await sleep(Math.ceil((j.retry_after || 2) * 1000) + 250);
+      await io.sleep(Math.ceil((j.retry_after || 2) * 1000) + 250);
       continue;
     }
     if (res.status === 404 && method === 'DELETE') return {};   // already deleted by hand
-    if (!res.ok) throw new Error(`${method} ${suffix.replace(/\?.*/, '')}: ${res.status} ${await res.text()}`);
-    await sleep(800);
+    if (!res.ok) {   // the error names only the route after the webhook (message/thread ids), never the webhook itself
+      const err = new Error(`${method} ${suffix.replace(/\?.*/, '')}: ${res.status} ${(await res.text()).slice(0, 300)}`);
+      err.status = res.status;
+      throw err;
+    }
+    await io.sleep(800);
     return res.status === 204 ? {} : res.json();
   }
   throw new Error('rate limited too long');
 }
 
-function webhookUrl() {
-  const raw = String(process.env.DISCORD_WEBHOOK_URL || '').trim().replace(/^["'<]+|["'>]+$/g, '');
+function webhookUrl(env = process.env) {
+  const raw = String(env.DISCORD_WEBHOOK_URL || '').trim().replace(/^["'<]+|["'>]+$/g, '');
   if (!raw) return null;
   const m = raw.match(/^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api\/(?:v\d+\/)?webhooks\/(\d+)\/([\w-]+)/);
   if (!m) {
@@ -171,12 +177,27 @@ function webhookUrl() {
   return `https://discord.com/api/webhooks/${m[1]}/${m[2]}`;   // drops a trailing /github, /slack or ?query
 }
 
-async function main() {
-  const dry = process.argv.includes('--dry-run');
-  const want = plan(parseNotices(fs.readFileSync(NOTICES, 'utf8')));
-  const state = fs.existsSync(STATE) ? JSON.parse(fs.readFileSync(STATE, 'utf8')) : {};
+// A new forum post for notice w (its first message opens the post, the others follow inside it).
+async function createPost(hook, w, tags, done, save) {
+  const first = { ...w.messages[0], thread_name: w.title.slice(0, 100) };
+  if (tags[w.kind]) first.applied_tags = [String(tags[w.kind])];
+  const msg = await api(hook, 'POST', '?wait=true', first);
+  const rec = { title: w.title, hash: '', date: w.date, thread: msg.channel_id, ids: [msg.id] };
+  done.set(w.title, rec); save();
+  for (const m of w.messages.slice(1)) { rec.ids.push((await api(hook, 'POST', `?wait=true&thread_id=${rec.thread}`, m)).id); save(); }
+  rec.hash = w.hash; save();
+  return rec;
+}
+
+// Posts are keyed by notice title: a renamed notice is a new post, and the old one is emptied ('gone'), because a
+// webhook can neither rename nor delete a forum post. opts (tests only): paths, argv, env.
+async function main(opts = {}) {
+  const P = { notices: NOTICES, state: STATE, tags: TAGS, ...(opts.paths || {}) };
+  const dry = (opts.argv || process.argv).includes('--dry-run');
+  const want = plan(parseNotices(fs.readFileSync(P.notices, 'utf8')));
+  const state = fs.existsSync(P.state) ? JSON.parse(fs.readFileSync(P.state, 'utf8')) : {};
   const have = state.mode === 'forum' ? (state.notices || []) : [];   // an older channel copy is not reused
-  const tags = fs.existsSync(TAGS) ? JSON.parse(fs.readFileSync(TAGS, 'utf8')) : {};
+  const tags = fs.existsSync(P.tags) ? JSON.parse(fs.readFileSync(P.tags, 'utf8')) : {};
   const todo = actions(want, have);
 
   if (dry) {
@@ -188,12 +209,12 @@ async function main() {
     return;
   }
 
-  const hook = webhookUrl();
+  const hook = webhookUrl(opts.env || process.env);
   if (!hook) { console.log('discord: no webhook configured, nothing sent'); return; }
 
   // The state is saved after every step, so a run that fails half way never leaves posts nobody tracks.
   const done = new Map(have.map((h) => [h.title, h]));
-  const save = () => fs.writeFileSync(STATE, JSON.stringify({ mode: 'forum', portal: PORTAL,
+  const save = () => fs.writeFileSync(P.state, JSON.stringify({ mode: 'forum', portal: PORTAL,
     notices: [...want.map((w) => done.get(w.title)).filter(Boolean), ...have.filter((h) => !want.find((w) => w.title === h.title) && done.has(h.title))] }, null, 1) + '\n');
 
   for (const t of todo) {
@@ -208,36 +229,41 @@ async function main() {
       done.delete(t.old.title); save(); continue;
     }
     const { w } = t;
-    if (t.act === 'post') {
-      const first = { ...w.messages[0], thread_name: w.title.slice(0, 100) };
-      if (tags[w.kind]) first.applied_tags = [String(tags[w.kind])];
-      const msg = await api(hook, 'POST', '?wait=true', first);
-      const rec = { title: w.title, hash: '', date: w.date, thread: msg.channel_id, ids: [msg.id] };
-      done.set(w.title, rec); save();
-      for (const m of w.messages.slice(1)) { rec.ids.push((await api(hook, 'POST', `?wait=true&thread_id=${rec.thread}`, m)).id); save(); }
-      rec.hash = w.hash; save();
-      continue;
+    if (t.act === 'post') { await createPost(hook, w, tags, done, save); continue; }
+    try {
+      await editPost(hook, t, done, save);
+    } catch (e) {
+      // A post (or one of its messages) deleted by hand answers 404: the notice is posted again as a new post and the
+      // stale ids are dropped, instead of failing this run and every later one (I-253).
+      if (e.status !== 404) throw e;
+      console.log(`discord: the post of "${w.title}" is gone (${e.message.split(':')[0]}), posting it again`);
+      for (const id of t.old.ids) await api(hook, 'DELETE', `/messages/${id}?thread_id=${t.old.thread}`).catch(() => {});
+      await createPost(hook, w, tags, done, save);
     }
-    const rec = { ...t.old, ids: t.old.ids.slice() };
-    for (let i = 0; i < w.messages.length; i++) {
-      if (i < rec.ids.length) await api(hook, 'PATCH', `/messages/${rec.ids[i]}?thread_id=${rec.thread}`, w.messages[i]);
-      else rec.ids.push((await api(hook, 'POST', `?wait=true&thread_id=${rec.thread}`, w.messages[i])).id);
-      done.set(w.title, rec); save();
-    }
-    while (rec.ids.length > w.messages.length) {
-      await api(hook, 'DELETE', `/messages/${rec.ids.pop()}?thread_id=${rec.thread}`);
-      done.set(w.title, rec); save();
-    }
-    // A notice that became more recent (its date changed) gets a short reply: edits alone do not move a forum post,
-    // a new message does, so the post goes back on top and its followers are notified. Typo fixes keep the date and stay quiet.
-    if (bumped(t.old, w)) {
-      await api(hook, 'POST', `?wait=true&thread_id=${rec.thread}`, bumpMessage(w));
-    }
-    rec.hash = w.hash; rec.date = w.date; done.set(w.title, rec); save();
   }
   save();
   console.log(`discord: synced ${want.length} notices (${todo.filter((t) => t.act !== 'keep').length} changed)`);
 }
 
+async function editPost(hook, t, done, save) {
+  const { w } = t;
+  const rec = { ...t.old, ids: t.old.ids.slice() };
+  for (let i = 0; i < w.messages.length; i++) {
+    if (i < rec.ids.length) await api(hook, 'PATCH', `/messages/${rec.ids[i]}?thread_id=${rec.thread}`, w.messages[i]);
+    else rec.ids.push((await api(hook, 'POST', `?wait=true&thread_id=${rec.thread}`, w.messages[i])).id);
+    done.set(w.title, rec); save();
+  }
+  while (rec.ids.length > w.messages.length) {
+    await api(hook, 'DELETE', `/messages/${rec.ids.pop()}?thread_id=${rec.thread}`);
+    done.set(w.title, rec); save();
+  }
+  // A notice that became more recent (its date changed) gets a short reply: edits alone do not move a forum post,
+  // a new message does, so the post goes back on top and its followers are notified. Typo fixes keep the date and stay quiet.
+  if (bumped(t.old, w)) {
+    await api(hook, 'POST', `?wait=true&thread_id=${rec.thread}`, bumpMessage(w));
+  }
+  rec.hash = w.hash; rec.date = w.date; done.set(w.title, rec); save();
+}
+
 if (require.main === module) main().catch((e) => { console.error(e.message); process.exit(1); });
-module.exports = { parseNotices, sections, chunk, noticeMessages, plan, actions, bumped, bumpMessage };
+module.exports = { parseNotices, sections, chunk, noticeMessages, plan, actions, bumped, bumpMessage, main, io };
