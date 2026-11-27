@@ -44,6 +44,7 @@ ENV = {'wiki': 'KHUX_WIKI_JSON', 'banners': 'KHUX_BANNERS_TSV', 'story': 'KHUX_S
 norm = bsrc.norm
 D = dt.date.fromisoformat
 FIRST_DAY = '2016-04-07'
+INHERIT_SOURCE_EXCLUDED = {'B0125'}  # excluded duplicates whose «Draws from sets» pool the kept twin inherits (B0126)
 SKILL72415_FROM = '2020-12-17'  # data del notice 72415 (prima tabella delle abilita' SN+/SN++/7★ in notices.json)
 DRAW_CLS = {'', 'SR', 'L-SR', 'L'}
 NUM = {'a': 1, 'an': 1, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8,
@@ -1105,7 +1106,9 @@ def build_catalog(inputs):
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
     out, docs, skipped = [], [], []
-    for r0 in sorted(incl, key=lambda r: (r['start_pt'] or '9999', r['row_id'])):
+    # an excluded duplicate still feeds the «inherit» chain (B0125 sets -> B0126), but is not output
+    keep_docs = [r for r in rows if r['row_id'] in excl and not types[r['row_id']].startswith('X_') and r['row_id'] in INHERIT_SOURCE_EXCLUDED]
+    for r0 in sorted(incl + keep_docs, key=lambda r: (r['start_pt'] or '9999', r['row_id'])):
         rid = r0['row_id']
         notes, nsrc = notes_of[rid]
         typ = types[rid]
@@ -1154,6 +1157,8 @@ def build_catalog(inputs):
                 pool['featured'].append(n)
         if refs:
             docs.append((r['start_pt'] or FIRST_DAY, pool['sets'], pool['names'], typ))
+        if rid in excl:
+            continue
         # riserve degli slot, pity e Tier (sotto-progetto 2b): guarantee.list/count/slot = prima riserva a lista
         g = bg.guarantee_v3(r, notes, rarity_mix(r['rarity_mix']), pool['featured'], M, rares_of=lambda n: None, keep_prefix=True)
         if g['every'] and not g['list']:  # l'elenco sta solo nel testo del notice (B0742, B0765)

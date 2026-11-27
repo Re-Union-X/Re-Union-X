@@ -313,12 +313,12 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     TIER_BANNERS = 187  # 24-11: +5 Top-Drawer «three times per day» variants of B0242 (Tier 6+ slot), drawable now; + B0267 (D3); audit delle garanzie, appendice A (178) + 5 frasi SAB del 2016 - 3 a lista dal notice (2c/G4) + B0204 (2c/G9)
     cat = m.build_catalog(m.default_inputs())
     bs = cat['banners']
-    check(len(bs) == 793, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 (campo exclude); B0009 campagna di avatar board (user 23-11); 24-11: 13 notice rows of complete banners (exclude)
+    check(len(bs) == 792, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 e B0125 di B0126 (campo exclude); B0009 campagna di avatar board (user 23-11); 24-11: 13 notice rows of complete banners (exclude)
     check(not any(b['rowId'] == 'B0009' for b in bs), 'B0009 Zootopia: avatar boards a 3000 Jewel, non un banner (exclude)')
     from collections import Counter
     t = Counter(b['type'] for b in bs)
     check(t == Counter({'SN': 213, 'FEATURED': 163, 'FALLING': 129, 'SKILL': 69, 'DAILY': 64, 'SEVEN': 44, 'FREE': 33,
-                        'STANDARD': 21, 'T_TICKET': 21, 'ITEM': 19, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
+                        'STANDARD': 21, 'T_TICKET': 21, 'ITEM': 18, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
     # 85 = 78 della regola vecchia + i 7 banner della tranche 526-540 (12-01-2017 .. 08-02-2017, B0079-B0085),
     # che ora si sbloccano a 525; i 6 del lancio (B0001-B0006) passano da 200 a 0
     ub = sum(1 for b in bs if b['unlockQuest'] <= 525)
@@ -669,6 +669,10 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     # --- 2c, casi singoli (19-10): campi pity, max_skill, exclude e selettore «pity» dei preset
     B = {b['rowId']: b for b in bs}
     check('B0507' not in B and B['B0500']['dayLimit'] == 1, 'B0507 doppione escluso, B0500 col limite giornaliero')
+    # 27-11: B0125 = B0126 (notice 28251): B0125 excluded, B0126 keeps its complete pool and its price/lot
+    check('B0125' not in B, 'B0125 duplicate of B0126, excluded')
+    check(B['B0126']['pool']['sets'][:3] == ['2.1', '2.2', '3.1'] and len(B['B0126']['pool']['sets']) == 32 and B['B0126']['pool']['inheritAfter'] == '2017-05-22'
+          and B['B0126']['prices'] == [3000] and B['B0126']['lotCount'] == 10 and B['B0126']['dayLimit'] == 3 and not B['B0126']['catalogOnly'], 'B0126: same pool as the excluded B0125, price and lot kept')
     for r in ('B0353', 'B0374'):
         g = B[r]['guarantee']
         check(g['pity'] == 5 and g['pityStar'] == 6 and g['pitySlot'] == 2, f'{r} pity 6★ sullo slot 2')
