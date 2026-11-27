@@ -39,8 +39,8 @@
   "I-025": {
    "thread": "1569614663908335627",
    "msg": "1569614663908335627",
-   "group": "OPEN",
-   "hash": "b017c63ba4efbf35",
+   "group": "CLOSED",
+   "hash": "1c7f5adb6e5a455c",
    "name": "I-025 · COMPLETE ribbon of the card simpler than the painted original"
   },
   "I-026": {
@@ -291,8 +291,8 @@
   "I-207": {
    "thread": "1569614827037524039",
    "msg": "1569614827037524039",
-   "group": "OPEN",
-   "hash": "69caafed9134aad9",
+   "group": "CLOSED",
+   "hash": "1a9df0780e5d7753",
    "name": "I-207 · Enemy special mechanics missing"
   },
   "I-227": {
@@ -893,8 +893,8 @@
   "I-338": {
    "thread": "1575909760929243171",
    "msg": "1575909760929243171",
-   "group": "OPEN",
-   "hash": "562c44824272ca23",
+   "group": "CLOSED",
+   "hash": "966501a37e3da978",
    "name": "I-338 · Keyblade series 12000-16000 take Starlight's pose (keyblade_rule.bin)"
   },
   "I-339": {
