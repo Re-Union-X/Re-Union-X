@@ -365,7 +365,7 @@ function checkDraw(banner, player, body, { realMs, freeSlots, sizes, storyQuest,
   if (!isFreeDaily(banner) && banner.dayLimit && dayLeft(player, banner, realMs) < 1) return 'limite giornaliero raggiunto';
   const price = priceFor(banner, player);
   if (balance(player, banner) < price) return `${walletName(banner)} ${balance(player, banner)} < ${price}`;
-  if (freeSlots < banner.lotCount) return `box: ${freeSlots} posti per ${banner.lotCount} medaglie`;
+  // I-334: no refusal for a full medal storage; respondGachaDraw sends the medals that do not fit to the Present Box
   return null;
 }
 

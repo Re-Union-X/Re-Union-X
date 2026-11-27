@@ -179,7 +179,7 @@ check(g.checkDraw({ ...cheap, unlockQuest: 540 }, pc, { count: 3 }, { ...dopt, s
 for (const pt of [4, 5, 6]) check(g.checkDraw({ ...cheap, payType: pt }, pc, { count: 3 }, dopt) === `payType ${pt} non estraibile`, `payType ${pt}`);
 check(g.checkDraw(mk({ prices: [3000] }), pc, { count: 10 }, dopt) !== null, 'jewel insufficienti');
 check(g.checkDraw(first, { freeStone: 0 }, { count: 10 }, dopt) === null, 'FIRST_FREE: gratuita anche senza Jewel');
-check(g.checkDraw(cheap, pc, { count: 3 }, { ...dopt, freeSlots: 2 }) !== null, 'box senza posti per 3');
+check(g.checkDraw(cheap, pc, { count: 3 }, { ...dopt, freeSlots: 2 }) === null, 'I-334: no room in the box is not a refusal (the rest goes to the Presents)');
 check(g.checkDraw(mk({ prices: [10] }), pc, { count: 10 }, { ...dopt, sizes: new Set([1, 3]) }) !== null, 'dimensione senza animazione');
 check(g.checkDraw(tSpooky, { drawTickets: { draw: 5, spooky: 0 } }, { count: 10 }, dopt) !== null, 'spooky: senza cookie');
 check(g.checkDraw(tSpooky, { drawTickets: { draw: 0, spooky: 1 } }, { count: 10 }, dopt) === null, 'spooky: con cookie');

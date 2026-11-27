@@ -511,6 +511,7 @@ const DIFFERENCES_BODY = [
   '## Shop and draws',
   'Shop draw rates are reconstructed where the original game did not publish them (Medal rarities, guarantees and Skill rates are original): Draw Odds and each banner\'s Details say so.',
   'Bonus items of a draw (Magic Mirror, Gems...) arrive in your Presents.',
+  'A draw is never refused for a full Medal storage: the Medals that do not fit go to your Presents with the text "medal storage full" {not original}.',
   'All Free Deals share one draw a day, and VIP Free Deals need the VIP benefit (see the Free Deals and VIP Draws notices).',
   'Free deals that could be drawn only once (or once per day) keep that limit.',
   'Seasonal draw currencies (Spooky Cookies, Moogle Points, Holiday Draw Tickets) are kept separately; the Shop shows one of them at a time. When you earn one of them, the reward message calls it a Draw Ticket, but it goes to its own currency.',

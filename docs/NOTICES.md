@@ -173,6 +173,8 @@ Shop draw rates are reconstructed where the original game did not publish them (
 
 Bonus items of a draw (Magic Mirror, Gems...) arrive in your Presents.
 
+A draw is never refused for a full Medal storage: the Medals that do not fit go to your Presents with the text "medal storage full" (not original).
+
 All Free Deals share one draw a day, and VIP Free Deals need the VIP benefit (see the Free Deals and VIP Draws notices).
 
 Free deals that could be drawn only once (or once per day) keep that limit.

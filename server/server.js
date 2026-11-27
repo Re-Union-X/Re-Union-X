@@ -2074,8 +2074,7 @@ function respondGachaDraw(res, body) {
   // the tutorial draw (I-266): its own banner, outside the catalogue, while the tutorial window is open
   const tutorialDraw = Number(body?.drawMedalTypeId) === gacha.TUTORIAL_BANNER.drawMedalTypeId && gacha.tutorialOpen(player, ctx.storyQuest);
   const banner = tutorialDraw ? gacha.TUTORIAL_BANNER : gachaData.bannerById(gachaCatalog().banners, body?.drawMedalTypeId);
-  const freeSlots = maxMedal() - stackedMedalList().length;
-  let why = gacha.checkDraw(banner, player, body, { ...ctx, realMs, freeSlots, sizes: GACHA_SIZES, show: GACHA_SHOW, vip: vipActive(realMs) });
+  let why = gacha.checkDraw(banner, player, body, { ...ctx, realMs, sizes: GACHA_SIZES, show: GACHA_SHOW, vip: vipActive(realMs) });
   if (!why && !GACHA_SHOW.has(banner.rowId) && !gachaShopList(ctx).includes(banner) && !gachaLastListed.has(banner.drawMedalTypeId)) why = `${banner.rowId} non e' nella lista dello Shop`;
   if (why) {
     console.log(`  [gacha] estrazione rifiutata: ${why} (corpo ${JSON.stringify(body)})`);
@@ -2105,8 +2104,19 @@ function respondGachaDraw(res, body) {
     const skillByName = new Map([...skills.values()].map((r) => [medalBoost.norm(r.name), r]));
     let bursts = null; // masterRows('burst') solo se serve (7 MB)
     const drawAt = gachaData.asOf(banner, ctx.storyDay); // data dell'estrazione per la regola 13-bis
+    const rewards = require('./raid-rewards');
     draw.medalIds.forEach((medalId, i) => {
+      // I-334: a medal that does not fit the medal storage goes to the Presents (raid-rewards.js deliverReward, as the raids and
+      // the Coliseum); a stackable one that joins an existing cell takes no room, so it is granted first and counted after
+      const cap = maxMedal();
+      const mayOverflow = rewards.deliverReward({ type: 3, num: 1 }, { medalCount: stackedMedalList().length, cap }) === 'present';
       grantItem(3, medalId, 1);
+      if (mayOverflow && stackedMedalList().length > cap) {
+        player.medals.pop(); // the copy just granted (a new id is never reused: medalState has none for it)
+        addPresent(3, medalId, 1, `Gacha draw «${banner.name}»: medal storage full`);
+        console.log(`  [gacha] ${banner.rowId}: medal ${medalId} to the Presents (storage full)`);
+        return;
+      }
       const newId = player.medals[player.medals.length - 1].userMedalId;
       // il client cerca ogni id in userMedals: per le impilabili la cella ha l'id della prima copia
       const cell = packed.has(medalId) ? stackedMedalList().find((c) => c.copies.includes(newId)) : null;
@@ -2127,7 +2137,7 @@ function respondGachaDraw(res, body) {
       // medaglie del pool) da quel giorno, boosted comprese, arriva con pallini e guilt al massimo. Prima, e per le
       // altre, solo col preset.
       const rule = !!row && gachaData.maxGuiltRule(row.rare, tier, drawAt);
-      effects[i] = gacha.drawEffect({ rare: row?.rare || 0, boosted: !!x?.boostedFrom, topRare,
+      effects[userMedalIds.length - 1] = gacha.drawEffect({ rare: row?.rare || 0, boosted: !!x?.boostedFrom, topRare,
         guiltMax: !!row && !packed.has(medalId) && (rule || x?.preset?.guilt === 'max') && medalGuilt.guiltRange(masterRows('guiltProb'), tier).max > 0 });
       if ((x?.preset || rule) && row && !packed.has(medalId)) {
         bursts ??= new Map(masterRows('burst').map((b) => [b.burstId, b]));
@@ -6701,5 +6711,5 @@ module.exports._test = {
   respondStageEvent, respondStageContinue, specialCtx, isSpecialStage, specialEvents: specialEventsNow, specialIndex, respondSpecialWeb, respondSpecialPost, ret, WEB_BASE,
   weekIndex: clock.weekIndex,
   // server/test-gacha-server.js
-  sessionRealMs, handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondPetDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
+  sessionRealMs, handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondPetDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, stackedMedalList, inventoryBlocks,
 };
