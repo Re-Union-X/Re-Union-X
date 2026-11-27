@@ -29,6 +29,7 @@ check(!html.includes('class="now"') && html.includes('data-p="all"><b>All years<
 // user 27-11: «All years» selected on opening; the pin on the tab of the Story week's game year (shopFrom 2016-01-11 = Launch year), none without a position
 check(/<button type="button" class="tab on" data-p="all">/.test(html) && (html.match(/class="tab on"/g) || []).length === 1, 'All years is the selected tab on opening');
 check((html.match(/class="here"/g) || []).length === 1 && /data-p="0"><span class="here" title="Your Story is in this year" aria-label="Your Story is in this year"><svg/.test(html) && !/data-p="all"><span class="here"/.test(html), 'the pin on Launch year only');
+check(/<\/svg><span class="hc">You are here<\/span><\/span><b>Launch year<\/b>/.test(html) && (html.match(/class="hc"/g) || []).length === 1 && !/data-p="all"><span class="here"/.test(html), 'caption You are here inline before Launch year');
 check(!pages.catalogPage(index, { period: 4, pinnedKey: 'kb', vip: false, periods: PERIODS, names, weekday: 'Mon' }).includes('class="here"'), 'no position: no pin');
 const row = (id) => itemOf(html, id);
 check(row(7105) && !row(7105).includes('data-pin') && row(7105).includes('Reached later in the Story'), 'later: no pin, text');

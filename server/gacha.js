@@ -781,8 +781,14 @@ const GAME_YEARS = [0, 1, 2, 3, 4, 5].map((i) => ({
 // week of storyCtx()) carries a location pin, never «All years»; no known position (no shopFrom) = no pin, and a year without a tab has none
 const HERE_TITLE = 'Your Story is in this year';
 const hereYear = (ctx) => (ctx && /^\d{4}-\d\d-\d\d/.test(ctx.shopFrom || '') ? gameYearOf(ctx.shopFrom) : null);
-const hereMark = (ctx, i) => (hereYear(ctx) === Number(i) ? `<span class="here" title="${HERE_TITLE}" aria-label="${HERE_TITLE}">${cards.LOCATION_ICON}</span>` : '');
-const HERE_CSS = '.tab{position:relative}.tab .here{position:absolute;top:1px;right:2px;line-height:0}.tab .here .ic{width:13px;height:13px}';
+const HERE_CAPTION = 'You are here';
+const hereMark = (ctx, i) => (hereYear(ctx) === Number(i) ? `<span class="here" title="${HERE_TITLE}" aria-label="${HERE_TITLE}">${cards.LOCATION_ICON}<span class="hc">${HERE_CAPTION}</span></span>` : '');
+// the tab of the story year: gold frame (an overlay, so it shows on the selected cyan tab too and survives the className rewrites of the
+// pages), the pin inline before the title (the title turns inline-block next to it), the caption at the bottom (the last line gets room)
+const HERE_CSS = '.tab{position:relative}.tab .here{display:inline;line-height:0}.tab .here .ic{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin:0 2px 0 0}'
+  + '.tab .here+b{display:inline-block;white-space:nowrap}.tab .here ~ :last-child{padding-bottom:11px}'
+  + '.tab .here:before{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border:2px solid #ffa500;border-radius:7px 7px 0 0;pointer-events:none}'
+  + '.tab .here .hc{position:absolute;left:0;right:0;bottom:1px;font-size:8px;line-height:10px;font-weight:bold;color:#ffa500;letter-spacing:0}';
 // PAID WITH (spec 7.2, revisione del 20-10): Jewels = payType 1, Platinum = 7, Draw Ticket = 8 con valuta draw, Seasonal =
 // 8 con spooky/holiday/moogle, Other = 4/5/6/9 (e ogni payType sconosciuto). VIP e' a parte (flag del banner, qualunque moneta).
 const SEASONAL_CURRENCIES = new Set(['spooky', 'holiday', 'moogle']);
