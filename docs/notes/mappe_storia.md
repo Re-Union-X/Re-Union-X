@@ -638,7 +638,21 @@ D:\Progetto_Restauro_KH_UX\wiki\medals.json`. Start: `server/save/smoke.json` `{
 
 Before/after cutscenes without `img/light/SEQ/<id>.l` or `lwf/drama/<id>/` disabled (base in
 `stage_base.json`). Of the 116 lwf cutscenes (2xxxxxx) 5 are missing (all 2999951); the 175 dialogues
-(SEQ scripts 1xxxxxx) almost all missing: the missing ids are removed (ISSUES I-014).
+(SEQ scripts 1xxxxxx) almost all missing: the missing ids are removed (ISSUES I-014).
+
+**Restored 1-525 dialogues** (I-014, 27-11). The 1-525 rows cite 276 dramas; 100 are in the WW resources. The other 176:
+174 SEQ dialogue scripts and the lwf cutscene 2999951 (after Quests 47, 66, 81, 96, 510) are in the 2016 package, and
+`recon/tools/import_story_dramas.py` (in `build-resources.ps1`, after the NPC texts) copies them into `stage_gen\files` with
+every file they cite that WW lacks (texts, speaker names, BG/NPC pictures; 1,276 files, report `stage_gen\story_dramas.json`).
+`make-game-tables.js` counts the dramas of the generated pack as served (`KHUX_GEN_PACK`, default `stage_gen\files`, `0` = off),
+so the master must be regenerated after the resource build. SEQ format: records of 5 int32 (command, slot, a, b, c); 4002 loads b
+into slot 5001 music `audio/<b>.akb`, 5003 `img/light/BG/<b>`, 5004 `img/light/NARRATION/<b>`, 5008-5012 `img/light/NPC/<b>`;
+4004 shows line `text/drama/<200000000+c>.txt` said by `text/drama/<200000000+b>.txt` (0 = narration). 173 of the 174 scripts
+are byte-identical to JP 4.3.1 (1140501 is 2016 only); 1060601 (Quest 183 opening) has a later JP revision (.00264361) with
+other layers and character 30551 instead of 30271: the 2016 one is served (its English texts match it). 1040501 (Quest 130
+closing) cites BG 2014, absent in 2016 and JP alike (original typo): imported with `--allow`, bench check. Id 1 (Quest 3 closing,
+also in the 2021 row) has no file anywhere: a client special id, still dropped. I-333 holds for the restored openings
+(`moveClosingAfter`); the 2021 closing lists of 34/200/350 are merged with ours (`mergeAfter`), so restored closings stay.
 
 **Opening vs closing cutscenes** (tester report 16-11). The client plays `beforeDramaId[]` before the map and `afterDramaId[]`
 after the clear (`dramaType 10` = a `stageDrama` bundle of up to 10 cutscenes; nothing plays inside the map). The `theater`

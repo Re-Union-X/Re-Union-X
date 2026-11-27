@@ -1117,7 +1117,7 @@ require('./make-story-oltre').patch(OUT);
       const r = s.stageKind === 1 && by.get(s.stageId);
       if (!r || r.id !== s.id) continue;
       for (const [k, v] of Object.entries(r)) {
-        if (k !== 'stageId' && k !== 'id' && !/AfterDrama/.test(k)) s[k] = Array.isArray(v) ? [...v] : v;
+        if (k !== 'stageId' && k !== 'id' && !/afterDrama/i.test(k)) s[k] = Array.isArray(v) ? [...v] : v;
       }
       // closing lists (34, 200, 350) merged with ours: the dialogues restored by I-014 stay (story-drama-closing.js)
       if (r.afterDramaId) require('./story-drama-closing').mergeAfter(s, r);

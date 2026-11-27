@@ -234,6 +234,13 @@ python -I recon\tools\import_npc_talk.py "$D\resource_data\names_v4.tsv" "$refWo
   "$jpData\text\drama" `
   "$sg\files\stage" "$sg\files" --report "$sg\npc_talk.json" @npcTalkEn
 if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
+# I-014: story dialogues (SEQ scripts img/light/SEQ/1xxxxxx.l with their text/drama texts, speaker names, BG/NPC pictures)
+# and the lwf cutscene 2999951 cited by the story rows 1-525 and missing from the WW resources: from the 2016 package
+# (current revision of files.tsv). make-game-tables.js reads $sg\files (KHUX_GEN_PACK) and serves them at the next master run.
+# --allow 1040501 (Quest 130 closing): it cites BG 2014, absent from the 2016 package and JP 4.3.1 alike (original typo)
+python -I recon\tools\import_story_dramas.py "$D\resource_data\names_v4.tsv" "$refWork\bundle2016" `
+  "$D\external\thethiny\stage_dec.json" "$sg\files" --report "$sg\story_dramas.json" --allow 1040501
+if ($LASTEXITCODE) { throw 'import_story_dramas failed' }
 # pulsante «Overwrite Skill» del Level Up acceso (I-157): il client carica skill_mix_button_On/_Disable e,
 # acceso, le cornici Medal_Syn_Select_Panel02 in img/ui; WW serve solo _Off (acceso restava grigio). BTF del 2016
 # Icona skill 3 (thumbId 3: Lux Plus e le combo «& Lux Plus»): WW serve img/skill/Skill_Icon1,2,4-9 ma non la 3;
