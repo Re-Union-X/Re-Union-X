@@ -361,8 +361,8 @@
   "I-248": {
    "thread": "1569615917976125491",
    "msg": "1569615917976125491",
-   "group": "OPEN",
-   "hash": "048759ce3f4bb768",
+   "group": "CLOSED",
+   "hash": "7acd9b917fb72ef9",
    "name": "I-248 · «Genie Jafar» quests of the WW 5th-anniversary event"
   },
   "I-249": {
@@ -910,6 +910,13 @@
    "group": "OPEN",
    "hash": "b49e21b412d7cabb",
    "name": "I-340 · Raid board cell layouts and Male/Female variants from the khuxwiki screenshots"
+  },
+  "I-343": {
+   "thread": "1575972820385529970",
+   "msg": "1575972820385529970",
+   "group": "OPEN",
+   "hash": "f26d451e133220e8",
+   "name": "I-343 · Event leftovers found by I-248: three unserved WW celebration events and the original…"
   }
  }
 }
