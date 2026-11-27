@@ -844,8 +844,8 @@
   "I-331": {
    "thread": "1575805102546092056",
    "msg": "1575805102546092056",
-   "group": "OPEN",
-   "hash": "7302237f7457be07",
+   "group": "CLOSED",
+   "hash": "5dcae80ebe50d331",
    "name": "I-331 · One-turn banner never draws the hundreds digit"
   },
   "I-332": {
