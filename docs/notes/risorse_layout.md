@@ -428,7 +428,7 @@ the client keeps the previous texture (wrong icon, no crash: case
 | `img/ui/AvtInfo_CrownIcon%d`, `AvtInfo_trophyIcon%d` | Profile: `(mvpCount-1)/50+1`, `(pvpMvpCount-1)/50+1` unsigned, max 4; with our 0: Crown1 and trophy4 | 1-4 | all | 1-3/1-2 JP, Crown4 and trophy3/4 from `cocostudio/publish/` (WW) |
 | `img/ui/Topinfo_BarBut%d_Off/_On` | tab index + 1 (`Button_%d`, Missions window) | 1-7 | 1, 3-7 | 2016 (byte-for-byte equal to `publish/Topinfo_BarBut*_Off`) |
 | `img/ui/Deck_Arrow_U%d` / `R%d` | attribute 1-3 (deck) | 1-3 | all | 2016 |
-| `img/ui/Deck_Arrow%d` (+ `cocostudio/publish/Deck_Arrow1,2`) | attribute 1-3 for deck slots with no Upright/Reversed match (I-279: WW has only `publish/Deck_Arrow3`, so Speed fell back to the red layout default) | 1-3 | 3 (publish only) | JP 4.3.1 PNG (2016 BTF unreadable) |
+| `img/ui/Minfo_Def04A/B/C` | attribute 1-3 for deck slots with no Upright/Reversed match (I-279: slot icon; WW has only A in `publish/` and C in `img/ui`, so Speed fell back to the red layout default) | A-C | A, C | B from JP 4.3.1 (rev .00307035, same art as A/C), also in `cocostudio/publish/` |
 | `img/tutorial/tutorial_%d` | constant ids 1-65 (12/41 -> 40, 44 -> 6; 100-120 elsewhere) | 34 from the constants | 25 | 19 from 2016 (English, 2016 graphics: the served 5 is different); 49-55, 57-59, 61, 65 only Japanese JP (I-159) |
 | `img/damage/dmgGuardBreak_num%d`, `dmgReflection_num%d` (+ `_comma`) | damage type 5 and 6 | 0-9 | all | JP |
 | `img/download_background/image_%02d` | constant 9 | 9 | 09 | none (I-159) |
