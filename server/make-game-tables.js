@@ -782,6 +782,13 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
     const m = /^(?:img\/light\/SEQ\/(\d+)\.l|lwf\/drama\/(\d+)\/)/.exec(line);
     if (m) dramas.add(Number(m[1] || m[2]));
   }
+  // I-014: plus the generated pack (build-resources.ps1 -> stage_gen\files): the 1-525 SEQ dialogues and lwf cutscenes
+  // import_story_dramas.py takes from the 2016 package. KHUX_GEN_PACK=<folder>, or 0 = WW names only
+  const GEN_PACK = process.env.KHUX_GEN_PACK || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\files';
+  const packIds = GEN_PACK === '0' ? new Set() : require('./story-drama-closing').packDramas(GEN_PACK);
+  const packNew = [...packIds].filter((id) => !dramas.has(id)).length;
+  for (const id of packIds) dramas.add(id);
+  console.log(`stage: ${packNew} dramas served by the generated pack ${GEN_PACK === '0' ? '(off)' : GEN_PACK}`);
   stagesOut = JSON.parse(fs.readFileSync(stageBasePath, 'utf8'));
   // Missioni di storia di thethiny (stageBinId 1..525 = numero della missione) che la
   // 5.0.1 non ha. Campi assenti dal formato vecchio: id = numero, stageKind 1, gli altri
@@ -926,6 +933,8 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
         }
       }
     }
+    // I-333 on the openings kept (the restored I-014 dialogues too): never one the overlay lists as the quest's closing
+    storyClosing.moveClosingAfter(s, overlayClosing.get(s.stageId));
   }
 }
 
@@ -1107,7 +1116,11 @@ require('./make-story-oltre').patch(OUT);
     for (const s of stages) {
       const r = s.stageKind === 1 && by.get(s.stageId);
       if (!r || r.id !== s.id) continue;
-      for (const [k, v] of Object.entries(r)) if (k !== 'stageId' && k !== 'id') s[k] = Array.isArray(v) ? [...v] : v;
+      for (const [k, v] of Object.entries(r)) {
+        if (k !== 'stageId' && k !== 'id' && !/AfterDrama/.test(k)) s[k] = Array.isArray(v) ? [...v] : v;
+      }
+      // closing lists (34, 200, 350) merged with ours: the dialogues restored by I-014 stay (story-drama-closing.js)
+      if (r.afterDramaId) require('./story-drama-closing').mergeAfter(s, r);
       n++;
     }
     fs.writeFileSync(p, JSON.stringify(stages));
