@@ -236,7 +236,7 @@ const tests = {
     const tabsOf = (html) => [...html.matchAll(/<button type="button" class="tab[^"]*" data-p="(\w+)"><b>([^<]+)<\/b><small>[^<]*<\/small><span class="c" id="tc\w+">(\d+)<\/span>/g)].map((m) => [m[1], m[2], Number(m[3])]);
     const html = pages.catalogPage(SEASONS13, CTX);
     assert.deepStrictEqual(tabsOf(html), [['all', 'All years', 13], ['0', 'Launch year', 13]], 'the 13 seasons: Launch year only');
-    assert.ok(/<div class="tabs" id="tabs">[\s\S]*?<\/div><div class="tabline"><\/div>/.test(html), 'tabs + tab line as the other catalogs');
+    assert.ok(/<div class="tabs(?: hr)?" id="tabs">[\s\S]*?<\/div><div class="tabline"><\/div>/.test(html), 'tabs + tab line as the other catalogs');
     assert.ok(rowHtml(html, 2000).includes('data-p="0"') && rowHtml(html, 1500).includes('data-p="0"'), 'April 2017: the year of its start');
     // a later season (2017-05, Year 2) gets its own tab; switching tabs hides the other year's rows
     const more = [...SEASONS13, row(2100, '2017-05', 'later', { base: 'later', boards: 'todo' })];
@@ -264,8 +264,8 @@ const tests = {
     const more = [...SEASONS13, row(2100, '2017-05', 'later', { base: 'later', boards: 'todo' })];
     const html = pages.catalogPage(more, { ...CTX, shopFrom: '2017-05-08' });
     assert.ok(/<button type="button" class="tab on" data-p="all"/.test(html) && (html.match(/class="tab on"/g) || []).length === 1, 'All years selected on opening');
-    assert.ok(/class="tab" data-p="1"><span class="here" title="Your Story is in this year" aria-label="Your Story is in this year"><svg/.test(html) && (html.match(/class="here"/g) || []).length === 1, 'the pin on Year 2 only');
-    assert.ok(html.includes('<svg class="ic"') && /<\/svg><span class="hc">You are here<\/span><\/span><b>Year 2<\/b>/.test(html) && (html.match(/class="hc"/g) || []).length === 1, 'pin inline before the title, caption You are here');
+    assert.ok(/class="tab" data-p="1"><span class="here"><span class="hc" title="Your Story is in this year" aria-label="Your Story is in this year"><svg[^>]*>.*<\/svg>Your Story progress is here<\/span><\/span><b>Year 2<\/b>/.test(html) && (html.match(/class="here"/g) || []).length === 1, 'the tag on Year 2 only, exact text');
+    assert.ok(!html.includes('You are here') && !html.includes('class="hc">You') && /class="tabs hr"/.test(html), 'old caption gone, tab row with room for the tag');
     assert.ok(!/data-p="all"><span class="here"/.test(html), 'never on All years');
     assert.ok(!pages.catalogPage(more, CTX).includes('class="here"'), 'no position: no pin');
     assert.ok(!pages.catalogPage(more, { ...CTX, shopFrom: '2019-01-01' }).includes('class="here"'), 'a year without a tab: no pin');

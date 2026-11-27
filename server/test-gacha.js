@@ -664,8 +664,8 @@ try {
   const yp = g.catalogPage(yb, { ...sctx, storyQuest: 525 });
   check(/<button type="button" class="tab on" data-y="all">/.test(yp) && (yp.match(/class="tab on"/g) || []).length === 1 && !yp.includes('class="here"'), 'catalogo: All years aperto, nessun segnaposto senza posizione');
   const yh = g.catalogPage(yb, { ...sctx, storyQuest: 525, shopFrom: '2019-06-03', shopTo: '2019-06-09' });
-  check((yh.match(/class="here"/g) || []).length === 1 && /data-y="3"><span class="here" title="Your Story is in this year"/.test(yh) && !/data-y="all"><span class="here"/.test(yh), 'catalogo: segnaposto «Your Story is in this year» sull anno 4 soltanto');
-  check((yh.match(/<span class="hc">You are here<\/span>/g) || []).length === 1 && /<\/svg><span class="hc">You are here<\/span><\/span><b>/.test(yh) && /\.tab \.here:before\{[^}]*#ffa500/.test(yh), 'catalogo: didascalia You are here + cornice oro');
+  check((yh.match(/class="here"/g) || []).length === 1 && /data-y="3"><span class="here"><span class="hc" title="Your Story is in this year"/.test(yh) && !/data-y="all"><span class="here"/.test(yh), 'catalogo: tag «Your Story is in this year» sull anno 4 soltanto');
+  check((yh.match(/Your Story progress is here<\/span><\/span><b>/g) || []).length === 1 && !yh.includes('You are here') && !yh.includes('.here:before') && /\.tab \.here\{[^}]*inset 0 -3px 0 #f07800/.test(yh) && /\.hc\{[^}]*linear-gradient\(#ffb02e,#f07800\)/.test(yh), 'catalogo: testo esatto del tag + riga arancione, vecchia cornice/didascalia assenti');
   for (const t of ['All years', 'Launch year', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Final months']) check(yp.includes(`<b>${t}</b>`), `catalogo: scheda ${t}`);
   check(yp.includes('GAME YEAR <span>— each year runs from one anniversary (April 7) to the next</span>'), 'catalogo: titolo GAME YEAR');
   for (const t of ['⚙ Filters', 'FIND A MEDAL', 'Shows the banners where this Medal can be drawn.', 'PAID WITH', 'alt="">Jewels<', 'alt="">Platinum Ticket<', 'alt="">Draw Ticket<',

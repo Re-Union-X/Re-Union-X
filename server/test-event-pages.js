@@ -92,7 +92,7 @@ function fakePage(raw, hash = '') {
   byId.rows = mk('<div id="rows">');
   byId.rows.children = kids;
   for (const k of kids) if (k.attrs.id) byId[k.attrs.id] = k;
-  byId.tabs = mk(/<div class="tabs"[^>]*>/.exec(html)[0]);
+  byId.tabs = mk(/<div class="tabs[^"]*"[^>]*>/.exec(html)[0]);
   byId.tabs.qa['.tab'] = [...html.matchAll(/<button type="button" class="tab[^"]*" data-p="\w+">/g)].map((m) => { const t = mk(m[0]); t.q['.c'] = mk(); t.parentNode = byId.tabs; return t; });
   const boxes = [...html.matchAll(/<div class="opts" data-g="(\w+)">([\s\S]*?)<\/div>/g)].map((m) => {
     const box = mk(`<div class="opts" data-g="${m[1]}">`);
@@ -362,9 +362,9 @@ const tests = {
     // user 27-11: every catalog opens on «All years» (selected, data-def); shopFrom 2019-04-08 is game year 3 (Apr 7, 2019 -> Apr 6,
     // 2020): its tab carries the «you are here» pin; 2019-03 and 2019-04-02 are game year 2
     assert.deepStrictEqual(tabs, [['all', 'All years', 6, true, false], ['2', 'Year 3', 5, false, false], ['3', 'Year 4', 1, false, true]]);
-    assert.ok(/<div class="tabs" id="tabs" data-def="all">/.test(raw), 'default tab = All years');
-    assert.ok(raw.includes('title="Your Story is in this year"') && raw.split('class="here"').length === 2, 'exactly one pin');
-    assert.ok(raw.split('<span class="hc">You are here</span></span><b>').length === 2 && !raw.includes('Your Story</span>'), 'caption You are here, once, before the title');
+    assert.ok(/<div class="tabs(?: hr)?" id="tabs" data-def="all">/.test(raw), 'default tab = All years');
+    assert.ok(raw.includes('title="Your Story is in this year"') && raw.split('class="here"').length === 2, 'exactly one tag');
+    assert.ok(raw.split('Your Story progress is here</span></span><b>').length === 2 && !raw.includes('You are here') && /class="tabs hr" id="tabs"/.test(raw), 'tag text once, before the title; old caption gone');
     assert.ok(!/class="tab[^"]*" data-p="\w+"><span class="here"/.test(raw.replace(/data-p="3"/, 'x')), 'only the tab of the Story year');
     const noPos = pages.catalogPage(ix, ctx({ shopFrom: undefined }));
     assert.ok(!noPos.includes('class="here"') && /<div class="tabs" id="tabs" data-def="all">/.test(noPos), 'no position: no pin');
@@ -585,7 +585,7 @@ const tests = {
   // user 27-11: the Avatar Board Catalog opens on «All years» and carries the pin on the year of the Story week as the Event Catalog
   board_catalog_year_tabs() {
     const raw = pages.boardCatalogPage(BOARD_INDEX(), ctx());
-    assert.ok(/<div class="tabs" id="tabs" data-def="all">/.test(raw) && /<button type="button" class="tab on" data-p="all">/.test(raw) && (raw.match(/class="tab on"/g) || []).length === 1, 'All years selected');
+    assert.ok(/<div class="tabs(?: hr)?" id="tabs" data-def="all">/.test(raw) && /<button type="button" class="tab on" data-p="all">/.test(raw) && (raw.match(/class="tab on"/g) || []).length === 1, 'All years selected');
     assert.strictEqual((raw.match(/class="here"/g) || []).length, 1, 'one pin');
     assert.ok(!/data-p="all"><span class="here"/.test(raw), 'never on All years');
     assert.ok(!pages.boardCatalogPage(BOARD_INDEX(), ctx({ shopFrom: undefined })).includes('class="here"'), 'no position: no pin');

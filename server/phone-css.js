@@ -22,8 +22,8 @@ const PHONE_CSS = `@media ${PHONE_MQ}{`
   + 'table{table-layout:auto!important}.ntb th,.ntb td{font-size:13px}'
   // tap floor (30 CSS px of the reduced page)
   + '.fbtn,.tab,.yc,.pk,.o,button{min-height:30px}'
-  // the «You are here» year tab stays in the one row: smaller pin and caption
-  + '.tab .here .ic{width:10px;height:10px}.tab .here .hc{font-size:7px;line-height:9px}'
+  // the «Your Story progress is here» tag of the year tab stays inside the tab width (4 tabs in one row): 10 px text, tighter padding
+  + '.tab .here .hc{font-size:10px;padding:0 7px 0 4px}.tab .here .ic{width:11px;height:11px}'
   // catalogs: a 3-column grid of cards; an empty-list message spans the row
   + `${GRIDS.join(',')}{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}`
   + '#rows>p,#quests>p{grid-column:1/-1}'

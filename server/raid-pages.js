@@ -13,7 +13,7 @@ const special = require('./special-pages');
 const calendar = require('./raid-calendar');
 const windows = require('./raid-windows');
 
-const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, MATCH_JS, khuxMatch, CROWN, PROG_OPTS, progCls, gameYearOf, GAME_YEARS, YEAR_SPAN, boardMark, hereMark } = special;
+const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, niceDay, monthYear, icon, MATCH_JS, khuxMatch, CROWN, PROG_OPTS, progCls, gameYearOf, GAME_YEARS, YEAR_SPAN, boardMark, hereMark, hereRow } = special;
 // the parts shared with the Event Catalog (event-pages.js): head, pill, Keep button and script, «On this server» box, notice card
 const parts = require('./catalog-pages');
 const { PAGE_HEAD, pill, keepJs, RULE_CSS, SRV_CSS, FOLD_CSS, NOTICE_CSS, rebuiltValues, srvFrame, noticeCard, parseNotice, noticeBlocks } = parts;
@@ -274,7 +274,7 @@ function catalogPage(index, ctx = {}) {
       ['pin', `${cards.val('Keep a past raid')} in the Events tab, ${cards.cyan('one at a time')}.`]] })
     // no Japan-only raid served (raid_config.json jpRaids.served false, user 06-11): the section tabs and the intro stay in the DOM, hidden
     + `<div class="secs${bySec.jp.length ? '' : ' hide'}" id="secs">${SECTIONS.map(secTab).join('')}</div>${jpIntro}`
-    + `<div class="tabs" id="tabs">${tab('all', 'All years', YEAR_SPAN, ww.length, ww.length, bySec.jp.length, ` id="span" data-ww="${YEAR_SPAN}" data-jp="${spanOf(bySec.jp)}"`)}`
+    + `<div class="tabs${hereRow(ctx)}" id="tabs">${tab('all', 'All years', YEAR_SPAN, ww.length, ww.length, bySec.jp.length, ` id="span" data-ww="${YEAR_SPAN}" data-jp="${spanOf(bySec.jp)}"`)}`
     + `${GAME_YEARS.map((g, i) => (perYear[i] ? tab(i, g.name, g.sub, perSec.ww[i], perSec.ww[i], perSec.jp[i]) : '')).join('')}</div><div class="tabline"></div>`
     + `<div class="sum" id="sum"><span class="n1">${plural(ww.length, 'raid')}</span> · no filters</div>`
     + '<div id="none" class="none" style="display:none"></div>'

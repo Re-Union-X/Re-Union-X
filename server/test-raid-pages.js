@@ -26,7 +26,7 @@ function index() {
   ] };
 }
 // the player's Shop week holds 2019-10-14: 2018-09-03 and 2019-10-07 are past, 2020 rows later
-const HERE = '<span class="here" title="Your Story is in this year" aria-label="Your Story is in this year">' + require('./detail-cards').LOCATION_ICON + '<span class="hc">You are here</span></span>';
+const HERE = '<span class="here"><span class="hc" title="Your Story is in this year" aria-label="Your Story is in this year">' + require('./detail-cards').LOCATION_ICON + 'Your Story progress is here</span></span>';
 function ctx(extra = {}) {
   const ix = extra.index || index();
   const week = { shopFrom: '2019-10-17', shopTo: '2019-10-23' };
@@ -389,7 +389,7 @@ const tests = {
   year_tabs_here() {
     const html = catalog(index(), ctx());
     assert(/<button type="button" class="tab on" data-p="all"/.test(html) && count(html, 'class="tab on"') === 1, 'All years selected on opening');
-    assert(count(html, 'class="here"') === 1 && html.includes('data-nww="2" data-njp="0">' + HERE + '<b>Year 4</b>'), 'the pin on Year 4 only');
+    assert(count(html, 'class="here"') === 1 && html.includes('data-nww="2" data-njp="0">' + HERE + '<b>Year 4</b>'), 'the tag on Year 4 only');
     assert(!html.includes(HERE + '<b>All years</b>'), 'never on All years');
     assert(!catalog(index(), ctx({ shopFrom: undefined, shopTo: undefined })).includes('class="here"'), 'no position: no pin');
     assert(/<div id="rows" data-defy="all" data-defy-jp="all">/.test(html), 'the page script starts on All years');

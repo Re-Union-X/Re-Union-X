@@ -17,7 +17,7 @@ const parts = require('./catalog-pages');
 const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const cards = require('./detail-cards'); // section cards and colour roles of the detail pages
 
-const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN, CROWN, boardMark, hereMark } = special;
+const { CSS: SPECIAL_CSS, DETAIL_CSS, esc, monthYear, icon, MATCH_JS, gameYearOf, GAME_YEARS, YEAR_SPAN, CROWN, boardMark, hereMark, hereRow } = special;
 const { PAGE_HEAD, pill, keepJs, FILTER_BUTTON, filterOpts, optLabel, optLabels, filterSheet, backBar, srvFrame, RULE_CSS, SRV_CSS, FOLD_CSS } = parts;
 const BASE = '/web/colosseum', WHERE = 'the Coliseum';
 const UNLOCK_QUEST = 130; // routes-colosseum.js UNLOCK_QUEST (not required here: the page module stays free of the routes)
@@ -180,7 +180,7 @@ function catalogPage(rows, ctx = {}) {
   // the year tabs (raid-pages.js / special-pages.js markup): «All years», then one tab per game year with a season
   const perYear = GAME_YEARS.map((g, i) => rows.filter((r) => yearsOf(r).includes(i)).length);
   const tab = (p, name, sub, n) => `<button type="button" class="tab${p === 'all' ? ' on' : ''}" data-p="${p}">${hereMark(ctx, p)}<b>${esc(name)}</b><small>${esc(sub)}</small><span class="c" id="tc${p}">${n}</span></button>`;
-  const tabs = rows.length ? `<div class="tabs" id="tabs">${tab('all', 'All years', YEAR_SPAN, rows.length)}${GAME_YEARS.map((g, i) => (perYear[i] ? tab(i, g.name, g.sub, perYear[i]) : '')).join('')}</div><div class="tabline"></div>` : '';
+  const tabs = rows.length ? `<div class="tabs${hereRow(ctx)}" id="tabs">${tab('all', 'All years', YEAR_SPAN, rows.length)}${GAME_YEARS.map((g, i) => (perYear[i] ? tab(i, g.name, g.sub, perYear[i]) : '')).join('')}</div><div class="tabline"></div>` : '';
   const cls = (p) => (v) => (v === 'all' ? '' : ` ${p}-${v}`);
   const sheet = rows.length ? filterSheet({ placeholder: 'Month or board name', hint: 'Matches the start of words in the month and in the Coliseum Board names (e.g. June, Vampire, Bonus).', n: rows.length,
     groups: [['SHOW', `<div class="opts" data-g="show">${filterOpts(SHOW_OPTS, cls('st'))}</div>`], ['COLISEUM BOARDS', `<div class="opts" data-g="bd">${filterOpts(BOARD_OPTS, cls('bd'))}</div>`],

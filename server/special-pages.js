@@ -8,7 +8,7 @@ const special = require('./special');
 // Catalogue tabs = the game years of the Shop's Banner Catalog (gacha.js gameYearOf / GAME_YEARS: one anniversary, April 7, to the
 // next; Launch year .. Final months; user 06-11): same names, same boundaries, a tab only for a year with rows, no «Now» mark
 // (the Shop has none). Display grouping only: special.PERIODS (Launch .. Last) still drives the unlocks and the entries' periods.
-const { gameYearOf, GAME_YEARS, hereYear, hereMark, HERE_CSS } = require('./gacha'); // hereMark: the «you are here» pin of the year tabs (gacha.js)
+const { gameYearOf, GAME_YEARS, hereYear, hereMark, hereRow, HERE_CSS } = require('./gacha'); // hereMark: the «you are here» pin of the year tabs (gacha.js)
 const { DETAIL_KEEP } = require('./phone-css'); // the compact Keep / Remove of the detail pages on phones
 const cards = require('./detail-cards'), DC = cards; // section cards and colour roles of the detail pages
 const YEAR_SPAN = '2016–2021';
@@ -636,7 +636,7 @@ function catalogPage(index, ctx = {}) {
     + DC.catalogHead({ title: 'Special Catalog', ic: 'mog', side: '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>', lines: [
       ['medal', `Every Special quest of the game: tap a quest for its ${DC.val('versions, days and rewards')}.`],
       ['pin', `${DC.val('Keep an old quest')} in Special, ${DC.cyan('one at a time')}.`]], about: 'later' })
-    + `<div class="tabs" id="tabs">${tab('all', 'All years', YEAR_SPAN, cards.length)}${GAME_YEARS.map((g, i) => (count(i) ? tab(i, g.name, g.sub, count(i)) : '')).join('')}</div><div class="tabline"></div>`
+    + `<div class="tabs${hereRow(ctx)}" id="tabs">${tab('all', 'All years', YEAR_SPAN, cards.length)}${GAME_YEARS.map((g, i) => (count(i) ? tab(i, g.name, g.sub, count(i)) : '')).join('')}</div><div class="tabline"></div>`
     + `<div class="sum" id="sum"><span class="n1">${plural(nQuest, 'quest')}</span> · ${plural(nCamp, 'campaign')} · all years, no filters</div>`
     + '<div id="none" class="none" style="display:none"></div>'
     + `<div id="quests">${cards.map((c) => c.html).join('') || '<p class="n">No quests.</p>'}</div>`
@@ -785,5 +785,5 @@ function detailPage(index, evStageId, ctx = {}) {
 }
 
 // CSS, DETAIL_CSS, esc, niceDay, monthYear, icon: shared with the Raid Catalog pages (server/raid-pages.js), which follow this style
-module.exports = { gameYearOf, GAME_YEARS, hereYear, hereMark, YEAR_SPAN, entryYears, SHOW_SETS, catalogPage, catalogFacts, detailPage, familiesOf, buildNames, typesOf, SPECIAL_ICON_KEYS, RANK_JS, khuxRank, MATCH_JS, khuxMatch,
+module.exports = { gameYearOf, GAME_YEARS, hereYear, hereMark, hereRow, YEAR_SPAN, entryYears, SHOW_SETS, catalogPage, catalogFacts, detailPage, familiesOf, buildNames, typesOf, SPECIAL_ICON_KEYS, RANK_JS, khuxRank, MATCH_JS, khuxMatch,
   CSS, DETAIL_CSS, NARROW_CSS, esc, niceDay, monthYear, icon, CROWN, BOARD_TODO, BOARD_DONE, boardMark, PROG_OPTS, progCls };

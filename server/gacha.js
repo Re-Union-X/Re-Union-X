@@ -777,18 +777,21 @@ const GAME_YEARS = [0, 1, 2, 3, 4, 5].map((i) => ({
   phrase: i === 0 ? 'the launch year' : i === 5 ? 'the final months' : `Year ${i + 1}`,
   dates: i === 5 ? 'Apr 7, 2021 – end' : `Apr 7, ${2016 + i} – Apr 6, ${2017 + i}`,
 }));
-// «You are here» on the year tabs of every catalog (user 27-11): the game year of the player's Story week (ctx.shopFrom, the Shop
-// week of storyCtx()) carries a location pin, never «All years»; no known position (no shopFrom) = no pin, and a year without a tab has none
+// «Your Story progress is here» on the year tabs of every catalog (user 27-11, design A4): the game year of the player's Story week
+// (ctx.shopFrom, the Shop week of storyCtx()) carries an orange tag sticking out above the tab and an orange line under it, never
+// «All years»; no known position (no shopFrom) = no marker, and a year without a tab has none
 const HERE_TITLE = 'Your Story is in this year';
+const HERE_TEXT = 'Your Story progress is here';
 const hereYear = (ctx) => (ctx && /^\d{4}-\d\d-\d\d/.test(ctx.shopFrom || '') ? gameYearOf(ctx.shopFrom) : null);
-const HERE_CAPTION = 'You are here';
-const hereMark = (ctx, i) => (hereYear(ctx) === Number(i) ? `<span class="here" title="${HERE_TITLE}" aria-label="${HERE_TITLE}">${cards.LOCATION_ICON}<span class="hc">${HERE_CAPTION}</span></span>` : '');
-// the tab of the story year: gold frame (an overlay, so it shows on the selected cyan tab too and survives the className rewrites of the
-// pages), the pin inline before the title (the title turns inline-block next to it), the caption at the bottom (the last line gets room)
-const HERE_CSS = '.tab{position:relative}.tab .here{display:inline;line-height:0}.tab .here .ic{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin:0 2px 0 0}'
-  + '.tab .here+b{display:inline-block;white-space:nowrap}.tab .here ~ :last-child{padding-bottom:11px}'
-  + '.tab .here:before{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border:2px solid #ffa500;border-radius:7px 7px 0 0;pointer-events:none}'
-  + '.tab .here .hc{position:absolute;left:0;right:0;bottom:1px;font-size:8px;line-height:10px;font-weight:bold;color:#ffa500;letter-spacing:0}';
+// the tab row of a catalog with a marker gets room above for the tag (class « hr» on .tabs)
+const hereRow = (ctx) => (hereYear(ctx) === null ? '' : ' hr');
+// the marker is a child overlay of the tab (the line = its inset shadow), so it survives the className rewrites of the pages
+const hereMark = (ctx, i) => (hereYear(ctx) === Number(i) ? `<span class="here"><span class="hc" title="${HERE_TITLE}" aria-label="${HERE_TITLE}">${cards.LOCATION_ICON}${HERE_TEXT}</span></span>` : '');
+const HERE_CSS = '.tab{position:relative;overflow:visible}.tabs.hr{padding-top:19px}'
+  + '.tab .here{position:absolute;left:0;top:0;right:0;bottom:0;box-shadow:inset 0 -3px 0 #f07800;pointer-events:none}'
+  + '.tab .here .hc{position:absolute;left:50%;bottom:100%;-webkit-transform:translateX(-50%);transform:translateX(-50%);display:block;box-sizing:border-box;height:15px;line-height:15px;padding:0 9px 0 5px;white-space:nowrap;'
+  + 'background:linear-gradient(#ffb02e,#f07800);color:#fff;font-size:11px;font-weight:bold;letter-spacing:0;text-shadow:0 1px 1px #8a3c00;border-radius:6px 6px 0 0;box-shadow:0 -1px 3px rgba(0,0,0,.5);pointer-events:auto}'
+  + '.tab .here .ic{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin:0 3px 0 0}';
 // PAID WITH (spec 7.2, revisione del 20-10): Jewels = payType 1, Platinum = 7, Draw Ticket = 8 con valuta draw, Seasonal =
 // 8 con spooky/holiday/moogle, Other = 4/5/6/9 (e ogni payType sconosciuto). VIP e' a parte (flag del banner, qualunque moneta).
 const SEASONAL_CURRENCIES = new Set(['spooky', 'holiday', 'moogle']);
@@ -979,7 +982,7 @@ function catalogPage(banners, ctx) {
     // reach without a client change (Shop > Banner Catalog > Details); BACK of the gallery comes back here
     + `<style>${medalGallery().ENTRY_CSS}</style>${medalGallery().entryHtml()}`
     + '<div class="gy">GAME YEAR <span>— each year runs from one anniversary (April 7) to the next</span></div>'
-    + `<div class="tabs">${tab('all', 'All years', '2016–2021', n)}${GAME_YEARS.map((g, i) => (perYear[i] ? tab(i, g.name, g.sub, perYear[i]) : '')).join('')}</div><div class="tabline"></div>`
+    + `<div class="tabs${hereRow(ctx)}">${tab('all', 'All years', '2016–2021', n)}${GAME_YEARS.map((g, i) => (perYear[i] ? tab(i, g.name, g.sub, perYear[i]) : '')).join('')}</div><div class="tabline"></div>`
     + `<div class="sum" id="sum"><span class="n1">${nb}</span> · all years, no filters</div>`
     + `<div class="cat">${rows.join('')}</div>`
     + '<div class="dim" id="dim"></div><div class="sheet" id="sheet" role="dialog" aria-label="Filters">'
@@ -998,5 +1001,5 @@ module.exports = { spanDays,
   KIND_OPTS, niceRange, PAY_ICON, MEDAL_GALLERY_HREF,
   KEPT_STYLE, CATALOG_PLATE_STYLE, CATALOG_PAY_TYPE, PAY_ICON_KEYS, page, PIN_JS, esc,
   TUTORIAL_BANNER, tutorialOpen, tutorialRow, SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketCurrency, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, listedCurrency, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawEffect, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, GAME_YEARS, hereYear, hereMark, HERE_CSS, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, isFreeDaily, pinnable, pinnedBanner,
+  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawEffect, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, GAME_YEARS, hereYear, hereMark, hereRow, HERE_CSS, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, isFreeDaily, pinnable, pinnedBanner,
 };
