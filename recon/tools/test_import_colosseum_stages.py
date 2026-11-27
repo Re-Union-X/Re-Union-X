@@ -240,5 +240,26 @@ try:
 finally:
     shutil.rmtree(t)
 
+# the build wiring: build-resources.ps1 passes --copy-from-make, which takes the 18 pairs of make-colosseum.js copyPairs()
+t = tempfile.mkdtemp()
+try:
+    ps1 = open(os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'ldplayer', 'session', 'build-resources.ps1'), encoding='utf-8').read()
+    line = [l for l in ps1.splitlines() if 'import_colosseum_stages.py' in l]
+    check(len(line) == 1 and '--copy-from-make' in line[0], 'build-resources.ps1 runs the import with --copy-from-make')
+    master = os.path.join(t, 'mw')
+    os.makedirs(master)
+    ids = [21200100 + n for n in range(1, 10)] + [21201000 + n for n in range(1, 10)]
+    json.dump([{'colosseumStageId': 5300, 'validStage': 9, 'stageId': ids[:9]}, {'colosseumStageId': 6200, 'validStage': 9, 'stageId': ids[9:]}],
+              open(os.path.join(master, 'colosseumStage.json'), 'w'))
+    json.dump([{'enemyId': i} for i in range(1, 70000)], open(os.path.join(master, 'enemy.json'), 'w'))
+    with contextlib.redirect_stdout(io.StringIO()):
+        rc = ics.main(['--master', master, '--b2016', os.path.join(t, 'none'), '--jp', JP, '--gen', os.path.join(t, 'none'),
+                       '--copy-from-make', '--out', os.path.join(t, 'ow'), '--report', os.path.join(t, 'w.json')])
+    rw = json.load(open(os.path.join(t, 'w.json')))
+    check(rc == 0 and len(rw['stages']) == 18 and all(s['status'] == 'imported' and s.get('copiedFrom') for s in rw['stages']),
+          '--copy-from-make: the 18 copies of make-colosseum.js: rc %s' % rc)
+finally:
+    shutil.rmtree(t)
+
 print('FAIL: ' + '; '.join(fails) if fails else 'OK: import_colosseum_stages')
 sys.exit(1 if fails else 0)

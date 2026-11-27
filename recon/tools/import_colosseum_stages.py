@@ -195,6 +195,8 @@ def run(seasons, sources, rooms, enemy_ids, out, copies=None):
                     f.write(data)
             keep.add(name)
         st.update(status='imported', files=names)
+    for served in sorted(set(copies) - {sid for _, sid in seasons}):
+        print('warning: --copy %d=%d: no served season uses %d (stale pair?)' % (served, copies[served], served))
     removed = []
     for f in os.listdir(out):
         if CL_RE.match(f) and f not in keep:
@@ -218,6 +220,8 @@ def main(argv=None):
     ap.add_argument('--out', default=os.path.join(D, 'stage_gen', 'files', 'stage'))
     ap.add_argument('--copy', action='append', default=[], metavar='SERVED=JP',
                     help='serve the whole stage JP under the stage id SERVED (repeatable; make-colosseum.js copyPairs())')
+    ap.add_argument('--copy-from-make', action='store_true',
+                    help='take the --copy pairs from server/make-colosseum.js copyPairs() (the single source; build-resources.ps1)')
     ap.add_argument('--report')
     a = ap.parse_args(argv)
     if not a.jp or not a.b2016:
@@ -226,6 +230,10 @@ def main(argv=None):
         a.b2016 = a.b2016 or private_tools.local_path('ref_work', 'bundle2016', 'files', 'stage')
     rows = lambda n: json.load(open(os.path.join(a.master, n + '.json'), encoding='utf-8'))
     copies = {}
+    if a.copy_from_make:
+        import subprocess
+        a.copy += subprocess.check_output(['node', '-e', "console.log(require('./server/make-colosseum').copyPairs().join(' '))"],
+                                          cwd=REPO, text=True).split()
     for c in a.copy:
         try:
             k, v = (int(x) for x in c.split('=', 1))

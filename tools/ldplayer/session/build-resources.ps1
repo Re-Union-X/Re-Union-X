@@ -164,7 +164,7 @@ foreach ($kind in 'raid', 'event') {
 # Coliseum round stages cl_stg<stageId>.bin + _00.bin of the served seasons (master colosseumStage rows), WW 2016 copy
 # first, then JP 4.3.1 (Coliseum Part 1 Task 4), then the generated ones; a stage that fails its checks stops the build.
 # Report $sg\colosseum_stages.json
-python -I recon\tools\import_colosseum_stages.py --gen "$sg\colosseum_gen" --out "$sg\files\stage" --report "$sg\colosseum_stages.json"
+python -I recon\tools\import_colosseum_stages.py --copy-from-make --gen "$sg\colosseum_gen" --out "$sg\files\stage" --report "$sg\colosseum_stages.json"
 if ($LASTEXITCODE) { throw 'import_colosseum_stages fallito' }
 # animazione move delle grafiche di Dark Road usate dai nemici (copia di wait)
 $env:BGAD_KEY = $key
