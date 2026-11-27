@@ -676,8 +676,9 @@ test('relux ranking: own rows of RELUX_RANKING, keyed off the season itself (no 
   f.relux.colosseumStage[0].headColosseumId = 1501;
   f.relux.colosseumStage[0] = { ...f.relux.colosseumStage[0], colosseumStageId: 4500 };
   f.relux.colosseum.forEach((t) => { if (t.colosseumStageId === 3200) t.colosseumStageId = 4500; });
-  assert.ok(!mc.RELUX_RANKING[4500], '4500 (2019-05, a later part) has no prizes');
-  assert.throws(() => mc.seasonRows(f, [{ month: '2019-05', colosseumStageId: 4500, source: 'relux' }]), /2019-05|4500/);
+  const saved = mc.RELUX_RANKING[4500]; // Part 4 Task 6 wrote the 2019-05 prizes: taken out for this check only
+  delete mc.RELUX_RANKING[4500];
+  try { assert.throws(() => mc.seasonRows(f, [{ month: '2019-05', colosseumStageId: 4500, source: 'relux' }]), /2019-05|4500/); } finally { mc.RELUX_RANKING[4500] = saved; }
 });
 
 test('RELUX_RANKING: every medal, skill level and avatar part exists in our master', () => {
@@ -685,15 +686,18 @@ test('RELUX_RANKING: every medal, skill level and avatar part exists in our mast
   const medals = new Set(M('medal').map((r) => r.medalId)), skills = new Map(M('skill').map((r) => [r.skillId, r])), parts = new Map(M('avatarParts').map((r) => [r.avatarPartsId, r]));
   const pets = new Set(M('petParts').map((r) => r.petPartsId)), mats = new Set(M('material').map((r) => r.materialId));
   for (const [k, id] of Object.entries(mc.MEDAL)) assert.ok(medals.has(id), `${k} ${id}`);
+  // Part 4: a ladder row of make-skill-table.js not yet in a served master built before it (regen pending) is checked on the generator
+  for (const r of require('./make-skill-table').ladderRows([...skills.values()])) skills.set(r.skillId, r);
   for (const [id, lv] of Object.entries(mc.SKILL_LV)) assert.strictEqual(skills.get(Number(id)).maxLv, lv, `skill ${id} maxLv`);
   for (const [sid, spec] of Object.entries(mc.RELUX_RANKING)) {
     assert.strictEqual(spec.brackets.length, spec.edges.length, `${sid} one prize list per bracket`);
-    assert.ok([8, 9, 12].includes(spec.edges.length), `${sid} 8 / 9 / 12 brackets`);
+    assert.ok([2, 8, 9, 12, 16].includes(spec.edges.length), `${sid} 2 / 8 / 9 / 12 / 16 brackets`);
     for (const items of spec.brackets) {
       for (const it of items.map(mc.rankItem)) {
         if (it.type === 3) assert.ok(medals.has(it.id), `${sid} medal ${it.id}`);
         else if (it.type === 5) assert.ok(mats.has(it.id), `${sid} material ${it.id}`);
         else if (it.type === 33) assert.ok(pets.has(it.id), `${sid} Spirit part ${it.id}`);
+        else if (it.type === 14) assert.ok(it.id === 0 && it.num > 0, `${sid} Avatar Coins`);
         else assert.ok(parts.has(it.id), `${sid} avatar part ${it.id}`);
         if (it.skillId) assert.strictEqual([90126, 90125, 90123].includes(it.id), true, `${sid} skill ${it.skillId} rides on a Scrooge medal`);
       }
@@ -1256,7 +1260,8 @@ test('spirit parts paid (a 2017-12 threshold Present with a Spirit part)', () =>
 // per-month calibration (lowest bracket first; f = fitted, i = interpolated): months with season-end points their own curve,
 // the others the era curve
 const I = 'interpolated', F = 'fitted';
-const ERA_T = [[1, 1, 1, 245, 811, 999, 1147, 1624], [I, I, I, I, F, F, F, F]];
+// the era curve of a month without points of its own: every label «interpolated» (Part 3b final review #11)
+const ERA_T = [[1, 1, 1, 245, 811, 999, 1147, 1624], [I, I, I, I, I, I, I, I]];
 const MONTH_T = {
   '2017-05': [[1, 1, 1, 95, 314, 417, 504, 810], [I, I, I, I, F, F, F, F]],
   '2017-06': [[1, 1, 1, 135, 446, 550, 631, 893], [I, I, I, I, I, I, F, I]],
@@ -1976,7 +1981,7 @@ test('ranking 2018: edges and prizes per season = the audit tables (skills by na
       for (let k = 0; k < r.validReward; k++) if (r.skillId[k]) assert.deepStrictEqual([r.type[k], r.id[k], r.skillType[k], r.skillLv[k]], [3, 90126, 3, mc.SKILL_LV[r.skillId[k]]], `${sid} skill on 6★ Scrooge at its maxLv`);
     });
   }
-  const skills = MD('skill');
+  const skills = skillTable(); // the served master + the ladder rows of make-skill-table.js (Part 4: 1271)
   for (const [id, lv] of Object.entries(mc.SKILL_LV)) assert.ok(skills.some((r) => r.skillId === Number(id) && r.maxLv === lv), `SKILL_LV ${id}`);
 });
 test('rankItem: gems / materials are type 5 (g:<materialId>x<n>), Dual Meow Wow medals; unknown stops', () => {
@@ -2077,7 +2082,7 @@ test('era18 thresholds: 1 .. served rounds, never down, 100,000+ = 1 round; the 
 });
 
 // the real sources: the recorded points of CUTOFFS_2018.md are reproduced; the full build includes all 37 seasons and prints no warning
-test('real_part3b_ranking (all 37 seasons in the default build, no warning; the border points = CUTOFFS_2018.md)', () => {
+test('real_part3b_ranking (all 63 seasons in the default build, no warning; the border points = CUTOFFS_2018.md)', () => {
   const file = 'D:\\Progetto_Restauro_KH_UX\\private\\events\\sources\\coliseum\\CUTOFFS_2018.md';
   if (fs.existsSync(file)) {
     const rows = fs.readFileSync(file, 'utf8').split(/\r?\n/).map((l) => l.split('|').map((c) => c.trim())).filter((c) => /^\d+$/.test(c[1] || ''));
@@ -2102,11 +2107,16 @@ test('real_part3b_ranking (all 37 seasons in the default build, no warning; the 
   try {
     fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(masterRows));
     const out = mc.patch(dir, { src: { ...src, relux }, stageEnemies, reluxEnemies: raw }); // the default SEASONS
-    assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId).filter((id) => id >= 3200), P3B_IDS, 'the default build includes 3200 .. 4400');
-    assert.strictEqual(out.colosseumStage.length, 37);
-    // Part 4 until its ranking task: the 26 revamp seasons are left out with a warning (never one of the 37 before them)
-    const left = said.filter((m) => /not built yet|left out/.test(m));
-    assert.ok(left.every((m) => /2019-05/.test(m) && !/2019-04|2018-/.test(m)), `only the revamp seasons are left out: ${said.join(' | ')}`);
+    assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId).filter((id) => id >= 3200 && id <= 4400), P3B_IDS, 'the default build includes 3200 .. 4400');
+    // Part 4 Task 6: every revamp season has its prizes, the default build serves all 63 seasons and leaves none out
+    assert.strictEqual(out.colosseumStage.length, 63);
+    assert.deepStrictEqual(out.colosseumStage.map((r) => r.colosseumStageId).filter((id) => id >= 4500), Array.from({ length: 26 }, (_, i) => 4500 + 100 * i));
+    assert.ok(!said.some((m) => /not built yet|left out/.test(m)), `no season left out: ${said.join(' | ')}`);
+    for (let id = 4500; id <= 7000; id += 100) {
+      const r = out.ranked[id], rk = out.ranking.find((x) => x.rankingId === 4046 + (id - 4500) / 100);
+      assert.strictEqual(r.brackets.length, rk.endRank - rk.startRank + 1, `${id} ranking row = its brackets`);
+      r.thresholds.forEach((x, k) => { assert.ok(x.score >= 1 && x.score <= 4000, `${id} ${x.score} in 1..4000`); if (k) assert.ok(x.score >= r.thresholds[k - 1].score); });
+    }
     assert.ok(!said.some((m) => /pending/.test(m)), `no season is reported pending: ${said.join(' | ')}`);
     P3B_IDS.forEach((id, i) => {
       const r = out.ranked[id], rk = out.ranking.find((x) => x.rankingId === 4033 + i);
@@ -2459,6 +2469,276 @@ test('real_part4_boards (2019-05 .. 2021-06: 130 served boards; START, empty cor
     assert.deepStrictEqual(out.sphere.filter((r) => ids.includes(r.sphereBoardId)).map((r) => mc.BONUS_TIER[r.sphereBoardId]), [undefined, undefined, undefined, undefined, undefined]);
   }
   assert.ok(PAID[33] >= 3, 'the three Spirit-part boards are served (401016, 401018, 407048)');
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// Coliseum Part 4 Task 6: the era registry, the ranking prizes of 2019-05 .. 2021-06 (12 / 16 / 2 brackets), ERA19 thresholds
+
+// the Part 2-3b reward rows and threshold scores of every season before the revamp, hashed before Task 6 (labels excepted: #11)
+test('era registry: Part 2-3b rankingReward rows and threshold scores byte-identical (hash)', () => {
+  const crypto = require('crypto'), hr = crypto.createHash('sha256'), ht = crypto.createHash('sha256');
+  const ids = Object.keys(mc.RELUX_RANKING).map(Number).filter((n) => n <= 4400).sort((a, b) => a - b);
+  assert.strictEqual(ids.length, 30);
+  for (const id of ids) {
+    const rk = 4016 + (id - 1500) / 100, rows = mc.reluxRewardRows(id, mc.REWARD_BASE + (rk - 4016) * mc.REWARD_BLOCK);
+    hr.update(JSON.stringify(rows));
+    ht.update(JSON.stringify(mc.thresholdsOf(mc.bracketsOf(rows), 120, id).map((x) => [x.startRank, x.endRank, x.score])));
+  }
+  assert.strictEqual(hr.digest('hex'), 'b19422483373322dcb075e3c050bb1151ae46b7f16985b868b632c39df1a921c', 'reward rows');
+  assert.strictEqual(ht.digest('hex'), '6e017b0a2c56a459fc8f8f685fdfaeac8378dfb6ffd04255f07e6c9ccb021f75', 'threshold scores');
+});
+test('era registry: ERAS = [ERA17, ERA18, ERA19, ERA20], eraOf(id) = the era of the season; makeEra takes an options object', () => {
+  assert.deepStrictEqual(mc.ERAS, [mc.ERA17, mc.ERA18, mc.ERA19, mc.ERA20]);
+  assert.strictEqual(mc.eraOf(2800), mc.ERA17.of(2800));
+  assert.strictEqual(mc.eraOf(3400), mc.ERA18.of(3400));
+  assert.strictEqual(mc.eraOf(5200), mc.ERA19.of(5200));
+  assert.strictEqual(mc.eraOf(6500), mc.ERA20.of(6500));
+  // every season >= 4500 in exactly one era, every older relux season from 2017-05 too
+  for (const s of mc.SEASONS.filter((x) => x.colosseumStageId >= 2100)) assert.strictEqual(mc.ERAS.filter((e) => e.of(s.colosseumStageId)).length, 1, `${s.month}: one era`);
+  assert.deepStrictEqual([mc.ERA17.form, mc.ERA18.form, mc.ERA19.form, mc.ERA20.form], ['loglog', 'loglog', 'semilog', 'semilog']);
+  assert.strictEqual(mc.eraOf(1500), undefined, '2016-11: no era (the August 2016 curve)');
+  for (const E of mc.ERAS) assert.deepStrictEqual(Object.keys(E).sort(), Object.keys(mc.ERA17).sort(), 'one interface');
+  // the options: fitRank / players / monthSpan move the curve; the defaults are the Part 3 values
+  const P = [['2017-05', 100, 1000, 'x'], ['2017-05', 10000, 100, 'x'], ['2017-06', 500, 400, 'x']];
+  const d = mc.makeEra(P, 2100, 2200, { tolerance: 2, monthTolerance: 1.15 });
+  const same = mc.makeEra(P, 2100, 2200, { tolerance: 2, monthTolerance: 1.15, fitRank: 10000, players: 100000, monthSpan: 1 });
+  for (const r of [100, 1000, 10000, 50000, 100000]) assert.strictEqual(d.of(2100).round(r), same.of(2100).round(r), `defaults at ${r}`);
+  assert.strictEqual(d.of(2100).round(100000), 1);
+  const p = mc.makeEra(P, 2100, 2200, { tolerance: 2, monthTolerance: 1.15, players: 80000 });
+  assert.strictEqual(p.of(2100).round(80000), 1, 'players: 1 round at the given rank');
+  assert.ok(p.of(2100).round(50000) < d.of(2100).round(50000), 'fewer players: a lower tail');
+  const f = mc.makeEra(P, 2100, 2200, { tolerance: 2, monthTolerance: 1.15, fitRank: 5000 });
+  assert.notStrictEqual(f.of(2100).round(7500), Math.round(f.of(2100).curve(7500)), 'fitRank: the tail starts at the given rank');
+  assert.strictEqual(d.of(2100).round(7500), Math.round(d.of(2100).curve(7500)), 'the default fitRank 10,000: still the curve');
+  const s = mc.makeEra(P, 2100, 2200, { tolerance: 2, monthTolerance: 1.15, monthSpan: 3 });
+  assert.strictEqual(s.months['2017-05'].method, 'era slope, own intercept', 'monthSpan: two decades are not three');
+  assert.strictEqual(d.months['2017-05'].method, 'own fit');
+  const m = mc.makeEra(P, 2100, 2200, { tolerance: 2, monthTolerance: 1.15, maxRound: 500 });
+  assert.strictEqual(m.of(2100).round(10), 500, 'maxRound caps the top');
+  // Part 4 options: the semi-log form, a stated slope, the era curve of one month, a floor, assumed month curves
+  const S = [['2017-05', 100, 3300, 'x'], ['2017-05', 1000, 3200, 'x'], ['2017-06', 1000, 3000, 'x']];
+  const sl = mc.makeEra(S, 2100, 2400, { tolerance: 2, monthTolerance: 1.15, form: 'semilog', eraMonth: '2017-05', fitRank: 2000, players: 30000,
+    floor: [1000, 3100], assumed: { '2017-07': { rank: 1000, round: 3500 }, '2017-08': { shift: 50 } } });
+  assert.deepStrictEqual([sl.a, sl.b].map((v) => Math.round(v)), [3500, -100], 'semilog fit of the era month: round = 3500 - 100 log10(rank)');
+  assert.strictEqual(sl.of(2100).round(500), Math.round(3500 - 100 * Math.log10(500)));
+  assert.strictEqual(sl.of(2200).round(1000), 3100, '2017-06 (3000 at rank 1000) lifted to the floor');
+  assert.strictEqual(sl.of(2200).round(2000), Math.round(3000 - 100 * Math.log10(2)), 'no floor past rank 1,000');
+  assert.strictEqual(sl.of(2300).round(100), 3600, 'assumed: the era slope through rank 1,000 / 3,500');
+  assert.strictEqual(sl.of(2400).round(100), 3350, 'assumed: the era curve + 50');
+  assert.ok([100, 1000, 2000].every((r) => sl.of(2300).label(r) === 'interpolated' && sl.of(2400).label(r) === 'interpolated'), 'assumed: never «fitted»');
+  assert.strictEqual(sl.of(2100).round(30000), 1);
+  const fx = mc.makeEra(S, 2100, 2400, { tolerance: 2, monthTolerance: 1.15, form: 'semilog', slope: -50 });
+  assert.strictEqual(fx.b, -50, 'a stated slope');
+});
+test('era registry: «fitted» only inside a month\'s own point span; the era curve of a month without points is «interpolated»', () => {
+  for (const E of [mc.ERA17, mc.ERA18]) {
+    for (const [sid, month] of E.seasons) {
+      const c = E.of(sid), own = E.months[month];
+      const lo = own ? Math.min(...own.points.map((p) => p[1])) : Infinity, hi = own ? Math.max(...own.points.map((p) => p[1])) : -Infinity;
+      for (const r of [100, 500, 1000, 2500, 4068, 10000, 50000, 100000]) assert.strictEqual(c.label(r), r >= lo && r <= hi ? 'fitted' : 'interpolated', `${month} rank ${r}`);
+    }
+  }
+  // re-pinned: 2018-06 own fit (230 .. 10,000), 2018-05 the era curve
+  const lab = (sid) => mc.thresholdsOf(mc.bracketsOf(rowsOf(sid).rows), 0, sid).map((x) => x.label[0]).join('');
+  assert.strictEqual(lab(3400), 'iiiifffi', '2018-06');
+  assert.strictEqual(lab(3300), 'iiiiiiii', '2018-05: the era curve');
+  assert.strictEqual(lab(4400), 'iiiiiiiiiiif', '2019-04: its one point at rank 100');
+});
+
+// the audit table (private PART4_AUDIT.md §5, khuxwiki = the RX rows): the six skills of each month BY NAME, featured first, then
+// the earlier rungs of the same line; Dual Meow Wow on top to 2020-10, the gems / Avatar Coins / SP Chip & Dale from 2020-11
+const LINE = (kind, from) => {
+  const R = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
+  return Array.from({ length: 6 }, (_, k) => kind(R[from - k], from - k));
+};
+const AB = (n) => `Attack Boost ${n}`, ABM = (n, i) => (i === 13 || i === 14 ? `ATK Boost ${n} Max` : `Attack Boost ${n} Max`); // our names
+const GA = (g) => (n) => `ATK B ${n} Max & GA ${g}`, LUXP = (n) => `ATK B ${n} Max & Lux+`, LUXPP = (n) => `ATK B ${n} Max & Lux++`;
+const P4_LADDER = {
+  4500: LINE(AB, 10), 4600: LINE(LUXP, 10), 4700: LINE(GA(2), 10), 4800: LINE(AB, 11), 4900: LINE(ABM, 11),
+  5000: LINE(GA(2), 11), 5100: LINE(GA(1), 11), 5200: LINE(GA(0), 11), 5300: LINE(ABM, 12), 5400: LINE(GA(2), 12), 5500: LINE(GA(1), 12),
+  5600: LINE(GA(0), 12), 5700: LINE(ABM, 13), 5800: LINE(GA(2), 13), 5900: LINE(GA(1), 13), 6000: LINE(GA(0), 13), 6100: LINE(ABM, 14),
+  6200: LINE(GA(2), 14), 6300: LINE(GA(1), 14), 6400: LINE(GA(0), 14), 6500: LINE(ABM, 15), 6600: LINE(GA(2), 15), 6700: LINE(LUXPP, 11),
+  6800: LINE(ABM, 15),
+};
+const P4_FEATURED = { 4500: 'Attack Boost X', 4600: 'ATK B X Max & Lux+', 4700: 'ATK B X Max & GA 2', 4800: 'Attack Boost XI', 4900: 'Attack Boost XI Max',
+  5000: 'ATK B XI Max & GA 2', 5100: 'ATK B XI Max & GA 1', 5200: 'ATK B XI Max & GA 0', 5300: 'Attack Boost XII Max', 5400: 'ATK B XII Max & GA 2',
+  5500: 'ATK B XII Max & GA 1', 5600: 'ATK B XII Max & GA 0', 5700: 'ATK Boost XIII Max', 5800: 'ATK B XIII Max & GA 2', 5900: 'ATK B XIII Max & GA 1',
+  6000: 'ATK B XIII Max & GA 0', 6100: 'ATK Boost XIV Max', 6200: 'ATK B XIV Max & GA 2', 6300: 'ATK B XIV Max & GA 1', 6400: 'ATK B XIV Max & GA 0',
+  6500: 'Attack Boost XV Max', 6600: 'ATK B XV Max & GA 2', 6700: 'ATK B XI Max & Lux++', 6800: 'Attack Boost XV Max' };
+const E12RX = [...E12.slice(0, 8), [10001, 15000], [15001, 20000], [20001, 35000], [35001, 80000]];
+const E16 = [[1, 100], [101, 250], [251, 500], [501, 750], [751, 1000], [1001, 2000], [2001, 3000], [3001, 4000], [4001, 5000], [5001, 6500], [6501, 8000],
+  [8001, 10000], [10001, 15000], [15001, 20000], [20001, 30000], [30001, 80000]];
+const P4_IDS = Array.from({ length: 26 }, (_, i) => 4500 + 100 * i);
+const p4Edges = (sid) => (sid <= 4900 ? E12 : sid <= 6200 ? E12RX : sid <= 6800 ? E16 : [[1, 40000], [40001, 80000]]);
+// our skill table by name: the served master, plus the ladder rows of make-skill-table.js when the master predates them (regen pending)
+function skillTable() {
+  const rows = MD('skill');
+  const extra = require('./make-skill-table').ladderRows(rows);
+  if (extra.length) results.push(`note: skills ${extra.map((r) => r.skillId).join(', ')} not yet in the served master (regen pending): checked on make-skill-table.js ladderRows`);
+  return [...rows, ...extra];
+}
+const ty = (type, id, n, skill) => `${type}:${tk(id, n, skill)}`;
+function p4Expected(sid, skills) {
+  const byName = (n) => { const r = skills.filter((x) => x.name === n); assert.strictEqual(r.length, 1, `skill «${n}»`); return r[0].skillId; };
+  if (sid >= 6900) return [[ty(3, 90013, 1)], [ty(3, 90011, 1)]];
+  const lad = P4_LADDER[sid].map(byName), x = (id, n) => (n ? [ty(3, id, n)] : []), sc = (k, n) => (n ? [ty(3, 90126, n, lad[k])] : []);
+  if (sid <= 6200) {
+    const top = sid <= 4600 ? [3, 2, 1] : [4, 3, 2], d9 = sid <= 4700 ? [3, 2] : [5, 3];
+    const T = [[[15, 25, 30], [[0, top[0]], [1, 1]]], [[13, 23, 25], [[0, top[1]], [1, 1]]], [[10, 20, 23], [[0, top[2]], [1, 2]]], [[8, 18, 20], [[0, 1], [1, 1], [2, 1]]],
+      [[d9[0], 15, 18], [[0, 1], [2, 2]]], [[d9[1], 13, 15], [[0, 1], [2, 1], [3, 1]]], [[1, 10, 13], [[0, 1], [3, 2]]], [[0, 8, 10], [[0, 1], [3, 1]]], [[0, 0, 8], [[3, 2]]],
+      [[0, 0, 0], [[3, 1], [4, 1]]], [[0, 0, 0], [[4, 1], [5, 1]]], [[0, 0, 0], [[5, 1]]]];
+    return T.map(([[a, b, c], sk]) => [...x(DMW[9], a), ...x(DMW[8], b), ...x(DMW[7], c), ...sk.flatMap(([k, n]) => sc(k, n))].sort());
+  }
+  // sixteen: Rainbow (odd months) / Brilliant (even) Gem to rank 500, P / S / M Gems, Sun / Moon Gem, SP Chip & Dale or 6★ Chip / Dale, Avatar Coins
+  const top = (sid / 100) % 2 ? 47 : 53;
+  const T16 = [ // [top gem, PSM, sun, moon, [[k, n]], spcd, chip/dale 6★, coins]
+    [1, 30, 1, 1, [[0, 4], [1, 1]], 3, 0, 100], [1, 30, 1, 1, [[0, 3], [1, 1]], 3, 0, 100], [1, 25, 1, 1, [[0, 3], [1, 1]], 3, 0, 100],
+    [0, 25, 1, 1, [[0, 2], [1, 2]], 2, 0, 90], [0, 20, 0, 1, [[0, 2], [1, 2]], 2, 0, 80], [0, 15, 0, 0, [[0, 1], [1, 1], [2, 1]], 1, 0, 70],
+    [0, 10, 0, 0, [[0, 1], [2, 2]], 1, 0, 60], [0, 5, 0, 0, [[0, 1], [2, 1], [3, 1]], 0, 5, 50], [0, 3, 0, 0, [[0, 1], [2, 1], [3, 1]], 0, 4, 40],
+    [0, 1, 0, 0, [[0, 1], [3, 2]], 0, 3, 30], [0, 0, 0, 0, [[0, 1], [3, 2]], 0, 2, 20], [0, 0, 0, 0, [[0, 1], [3, 1]], 0, 1, 10],
+    [0, 0, 0, 0, [[3, 2]], 0, 0, 10], [0, 0, 0, 0, [[3, 1], [4, 1]], 0, 0, 10], [0, 0, 0, 0, [[4, 1], [5, 1]], 0, 0, 10], [0, 0, 0, 0, [[5, 1]], 0, 0, 10]];
+  const g = (id, n) => (n ? [ty(5, id, n)] : []);
+  return T16.map(([t, psm, sun, moon, sk, sp, cd, ac]) => [...g(top, t), ...g(48, psm), ...g(49, psm), ...g(50, psm), ...g(51, sun), ...g(52, moon), ...sk.flatMap(([k, n]) => sc(k, n)),
+    ...x(90346, sp), ...x(90056, cd), ...x(90066, cd), ty(14, 0, ac)].sort());
+}
+const rowsOf4 = (sid) => {
+  const rk = 4046 + (sid - 4500) / 100, base = mc.REWARD_BASE + (rk - mc.REWARD_FIRST_RANKING) * mc.REWARD_BLOCK;
+  return { rk, base, rows: mc.reluxRewardRows(sid, base) };
+};
+test('ranking 2019-2021: edges and prizes per season = PART4_AUDIT §5 (skills by name, every SKILL_LV present)', () => {
+  const skills = skillTable();
+  assert.deepStrictEqual(Object.keys(P4_FEATURED).map(Number), P4_IDS.slice(0, 24));
+  for (const [sid, name] of Object.entries(P4_FEATURED)) assert.strictEqual(P4_LADDER[sid][0], name, `${sid}: the ladder starts with the featured skill`);
+  assert.deepStrictEqual(mc.BRACKETS12RX, E12RX);
+  assert.deepStrictEqual(mc.BRACKETS16, E16);
+  assert.deepStrictEqual(mc.BRACKETS2, [[1, 40000], [40001, 80000]]);
+  for (const sid of P4_IDS) {
+    assert.ok(mc.RELUX_RANKING[sid], `${sid} has its prizes`);
+    const edges = p4Edges(sid), { rows } = rowsOf4(sid), want = p4Expected(sid, skills);
+    assert.deepStrictEqual(mc.RELUX_RANKING[sid].edges, edges, `${sid} edges`);
+    assert.deepStrictEqual(rows.map((r) => [r.startRank, r.endRank]), edges, `${sid} row edges`);
+    rows.forEach((r, i) => {
+      const got = Array.from({ length: r.validReward }, (_, k) => ty(r.type[k], r.id[k], r.num[k], r.skillId[k])).sort();
+      assert.deepStrictEqual(got, want[i], `${sid} bracket ${edges[i].join('-')}`);
+      for (let k = 0; k < r.validReward; k++) if (r.skillId[k]) assert.deepStrictEqual([r.type[k], r.id[k], r.skillType[k], r.skillLv[k]], [3, 90126, 3, 20], `${sid} skill on 6★ Scrooge at its maxLv`);
+    });
+  }
+  for (const [id, lv] of Object.entries(mc.SKILL_LV)) assert.ok(skills.some((r) => r.skillId === Number(id) && r.maxLv === lv), `SKILL_LV ${id}`);
+  // the medals by name in our master
+  const medals = new Map(MD('medal').map((r) => [r.medalId, r]));
+  assert.deepStrictEqual([mc.MEDAL.spcd, mc.MEDAL.moogle3, mc.MEDAL.moogle1].map((id) => [medals.get(id).name, medals.get(id).rare]), [['SP Chip & Dale', 6], ['Moogle', 3], ['Moogle', 1]]);
+});
+test('rankItem: gems 47 .. 53 (type 5), Avatar Coins ac:<n> (type 14), SP Chip & Dale, Moogle 3★ / 1★', () => {
+  assert.deepStrictEqual(mc.rankItem('g:47'), { type: 5, id: 47, skillType: 1, skillId: 0, skillLv: 1, num: 1 });
+  assert.deepStrictEqual(mc.rankItem('g:53'), { type: 5, id: 53, skillType: 1, skillId: 0, skillLv: 1, num: 1 });
+  assert.deepStrictEqual(mc.rankItem('g:51x2'), { type: 5, id: 51, skillType: 1, skillId: 0, skillLv: 1, num: 2 });
+  assert.deepStrictEqual(mc.rankItem('ac:100'), { type: 14, id: 0, skillType: 1, skillId: 0, skillLv: 1, num: 100 });
+  assert.deepStrictEqual(mc.rankItem('spcdx3'), { type: 3, id: 90346, skillType: 1, skillId: 0, skillLv: 1, num: 3 });
+  assert.deepStrictEqual(mc.rankItem('moogle3'), { type: 3, id: 90013, skillType: 1, skillId: 0, skillLv: 1, num: 1 });
+  assert.deepStrictEqual(mc.rankItem('moogle1'), { type: 3, id: 90011, skillType: 1, skillId: 0, skillLv: 1, num: 1 });
+  assert.throws(() => mc.rankItem('g:46'), /unknown/);
+  assert.throws(() => mc.rankItem('ac:0'), /unknown/);
+});
+test('2021-05 / 06: two rows, Moogle 3★ to rank 40,000 and Moogle 1★ to 80,000; both 1 round (under 9,000 players, every one inside)', () => {
+  for (const sid of [6900, 7000]) {
+    const { rows, base } = rowsOf4(sid);
+    assert.deepStrictEqual(rows.map((r) => [r.rankingRewardId, r.startRank, r.endRank, r.validReward, r.id[0], r.num[0]]), [[base, 1, 40000, 1, 90013, 1], [base + 1, 40001, 80000, 1, 90011, 1]]);
+    assert.deepStrictEqual(mc.thresholdsOf(mc.bracketsOf(rows), 4000, sid).map((x) => x.score), [1, 1]);
+  }
+});
+// served tiers of a revamp season: T1 200, T2-T7 400, T8 300, T9 200, T10-T18 100 = 4,000 rounds, no endless tier
+const tiers19 = (sid) => [200, 400, 400, 400, 400, 400, 400, 300, 200, ...Array(9).fill(100)].map((n, i) => ({ colosseumStageId: sid, round: i + 1, arrivalStageCount: n }));
+test('sixteen brackets: 16 rankingReward rows inside the season block, thresholds 1 .. 4,000 never down, Avatar Coins and gems named on the detail page', () => {
+  for (const sid of [6300, 6400, 6500, 6600, 6700, 6800]) {
+    const { rows, base } = rowsOf4(sid);
+    assert.strictEqual(rows.length, 16, `${sid} rows`);
+    assert.ok(rows.every((r, i) => r.rankingRewardId === base + i && r.rankingRewardId < base + mc.REWARD_BLOCK && r.validReward <= 10), `${sid} ids inside the block`);
+    assert.ok(base + 15 <= mc.RANGES.rankingReward[2]);
+    const th = mc.rankedOf(tiers19(sid), rows).thresholds;
+    assert.strictEqual(th.length, 16);
+    th.forEach((x, i) => { assert.ok(Number.isInteger(x.score) && x.score >= 1 && x.score <= 4000, `${sid} ${x.score} in 1..4000`); if (i) assert.ok(x.score >= th[i - 1].score, `${sid} never down`); });
+    assert.strictEqual(th[0].score, 1, `${sid}: rank 80,000 = 1 round`);
+  }
+  // the detail page names every prize of 2020-11 (names as server.js: medals, materials by our master; Avatar Coins by type)
+  const medals = new Map(MD('medal').map((r) => [r.medalId, r.name])), mats = new Map(MD('material').map((r) => [r.materialId, r.name]));
+  const nameOf = (type, id) => (type === 3 ? medals.get(id) : type === 5 ? mats.get(id) : '') || '';
+  const { rows } = rowsOf4(6300), r = mc.rankedOf(tiers19(6300), rows);
+  const ranked = r.brackets.map((b, i) => ({ ...b, rounds: r.thresholds[i].score, reached: false }));
+  const det = { boards: [], tiers: [], best: 0, ranked, maps: 'japanese' };
+  const html = pages.detailPage([{ colosseumStageId: 6300, month: '2020-11', state: 'can', tiers: 18, apMin: 0, apMax: 0, boardIds: [], coins: 0, userRank: 1, userStageCount: 0, userStageTotalCount: 0, tierRewards: [] }], 6300, det,
+    { unlocked: true, imgVersion: 3, boardName: () => null, unlockQuestOf: () => null, itemName: nameOf, skillName: () => 'S' });
+  const sec = html.slice(html.indexOf('id="sec-ranked"'));
+  for (const n of ['Rainbow Gem', 'Power Gem', 'Speed Gem', 'Magic Gem', 'Sun Gem', 'Moon Gem', 'SP Chip &amp; Dale', 'Avatar Coins <b class="v">x100</b>', 'Avatar Coins <b class="v">x10</b>']) assert.ok(sec.includes(n), `«${n}» on the detail page`);
+  assert.ok(!/>Reward</.test(sec), 'no unnamed «Reward»');
+});
+test('ATK B XV Max & GA 2: the next rung of «ATK B XIV Max & GA 2» (make-skill-table.js ladderRows, id 1271)', () => {
+  const st = require('./make-skill-table'), rows = MD('skill').filter((r) => r.skillId !== 1271);
+  const [row, ...more] = st.ladderRows(rows);
+  assert.strictEqual(more.length, 0);
+  const xiv = rows.find((r) => r.name === 'ATK B XIV Max & GA 2'), xiii = rows.find((r) => r.name === 'ATK B XIII Max & GA 2');
+  assert.deepStrictEqual([row.skillId, row.sortId, row.name, row.attackUp, row.maxLv], [1271, 1271, 'ATK B XV Max & GA 2', 40000, 20]);
+  assert.strictEqual(row.attackUp - xiv.attackUp, xiv.attackUp - xiii.attackUp, 'the next ladder value (+0.2x)');
+  assert.ok(!rows.some((r) => r.categoryEvolve === row.categoryEvolve), 'its own evolve category');
+  const diff = Object.keys(xiv).filter((k) => JSON.stringify(xiv[k]) !== JSON.stringify(row[k])).sort();
+  assert.deepStrictEqual(diff, ['attackUp', 'categoryEvolve', 'description', 'name', 'skillId', 'sortId'], 'the XIV row otherwise');
+  assert.strictEqual(row.description, 'Deals 4x damage, and uses 2 SP gauges. Has a 100% trigger rate.');
+  assert.deepStrictEqual(st.ladderRows([...rows, row]), [], 'already in the table: nothing added');
+  assert.throws(() => st.ladderRows([...rows, { ...xiv, skillId: 1271, name: 'Other' }]), /1271/);
+});
+
+// ERA19 / ERA20 (private CUTOFFS_2019.md, controller rulings 27-11): every season of 2019-05 .. 2021-06 has a curve, 1 .. 4,000, never down,
+// 1 round at every edge at or past the month's ranked players N
+const T19_SEASONS = mc.SEASONS.filter((s) => s.colosseumStageId >= 4500);
+const P4_T = { // rank 100 / 1,000 / 2,000 / 10,000 (module comment)
+  '2019-12': [3295, 3256, 3244, 1361], '2019-07': [3250, 3210, 3198, 1342], '2019-05': [3295, 3256, 3244, 1361], '2020-04': [3295, 3256, 3244, 1361],
+  '2020-05': [3391, 3285, 3253, 1277], '2020-09': [3471, 3365, 3333, 1078], '2020-11': [3650, 3544, 3512, 924], '2020-12': [3650, 3544, 3512, 757],
+  '2021-01': [3900, 3794, 3762, 612], '2021-04': [3900, 3794, 3762, 1] };
+test('era19 / era20: the points reproduced within the stated tolerances; semi-log; thresholds 1 .. 4,000, never down, 1 round from N', () => {
+  const E19 = mc.ERA19, E20 = mc.ERA20;
+  assert.strictEqual(E19.seasons.size + E20.seasons.size, 26);
+  assert.strictEqual(E19.of(4400), null, '2019-04 stays ERA18');
+  assert.deepStrictEqual([...E19.seasons.values()].at(-1), '2020-04');
+  assert.deepStrictEqual([...E20.seasons.values()][0], '2020-05');
+  assert.deepStrictEqual([Math.round(E19.a * 10) / 10, Math.round(E19.b * 10) / 10], [3374.1, -39.4], 'ERA19 = the 2019-12 own fit (research: c 3,374.1, d -39.4)');
+  assert.deepStrictEqual([Math.round(E20.a), E20.b], [3862, -106], 'ERA20: slope -106 through 2020-12 rank 2,600 / 3,500');
+  assert.deepStrictEqual(Object.keys(E19.months), ['2019-07', '2019-12']);
+  assert.deepStrictEqual(Object.keys(E20.months), ['2020-12']);
+  assert.strictEqual(E19.months['2019-12'].method, 'own fit');
+  assert.strictEqual(E19.months['2019-07'].method, 'era slope, own intercept');
+  for (const E of [E19, E20]) {
+    assert.ok(E.tolerance > 1 && E.tolerance <= 1.05 && E.monthTolerance > 1 && E.monthTolerance <= 1.15, 'tolerances');
+    for (const [month, rank, round, src] of E.points) {
+      assert.ok(month >= '2019-05' && month <= '2021-06' && round >= 3201 && round <= 4000, `${month} rank ${rank}: round ${round}`);
+      const f = E.curve(rank), k = Math.max(round / f, f / round);
+      assert.ok(k <= E.tolerance, `${month} rank ${rank}: recorded ${round}, era curve ${f.toFixed(0)} (x ${k.toFixed(3)}) ${src}`);
+    }
+    for (const [m, c] of Object.entries(E.months)) {
+      for (const [, rank, round, src] of c.points) {
+        const f = c.curve(rank), k = Math.max(round / f, f / round);
+        assert.ok(k <= E.monthTolerance && Math.abs(f - round) <= 5, `${m} rank ${rank}: recorded ${round}, month curve ${f.toFixed(0)} ${src}`);
+      }
+    }
+    for (const c of Object.values(E.assumed)) assert.ok([100, 1000, 2000, 10000].every((r) => c.label(r) === 'interpolated'), 'assumed curves never «fitted»');
+  }
+  for (const s of T19_SEASONS) {
+    const sid = s.colosseumStageId, { rows } = rowsOf4(sid), th = mc.rankedOf(tiers19(sid), rows).thresholds, E = mc.eraOf(sid) === E19.of(sid) ? E19 : E20;
+    const N = sid <= 5600 ? 32000 : mc.ERA20_PLAYERS[s.month];
+    th.forEach((x, i) => { assert.ok(Number.isInteger(x.score) && x.score >= 1 && x.score <= 4000, `${s.month} ${x.score} in 1..4000`); if (i) assert.ok(x.score >= th[i - 1].score, `${s.month} never down`); });
+    th.forEach((x) => { if (x.endRank >= N) assert.strictEqual(x.score, 1, `${s.month} edge ${x.endRank} >= ${N}: 1 round`); });
+    if (sid <= 5600) th.forEach((x) => { if (x.endRank <= 1000) assert.ok(x.score >= 3201, `${s.month} edge ${x.endRank}: Tier 11 at least`); });
+    const own = E.months[s.month];
+    th.forEach((x) => assert.strictEqual(x.label, own && x.endRank >= Math.min(...own.points.map((p) => p[1])) && x.endRank <= Math.max(...own.points.map((p) => p[1])) ? 'fitted' : 'interpolated', `${s.month} ${x.endRank} label`));
+    if (P4_T[s.month]) assert.deepStrictEqual([100, 1000, 2000, 10000].map((r) => mc.eraOf(sid).round(r)), P4_T[s.month], `${s.month} named values`);
+  }
+  const file = 'D:\\Progetto_Restauro_KH_UX\\private\\events\\sources\\coliseum\\CUTOFFS_2019.md';
+  if (!fs.existsSync(file)) { results.push('skip era19 CUTOFFS_2019.md: private file not on disk'); return; }
+  const rows = fs.readFileSync(file, 'utf8').split(/\r?\n/).map((l) => l.split('|').map((c) => c.trim())).filter((c) => /^\d+$/.test(c[1] || ''));
+  for (const [month, rank, round, src] of [...E19.points, ...E20.points]) {
+    const hit = rows.find((c) => c[2] === month && c[9].includes(src));
+    assert.ok(hit, `${month} ${src} is a row of CUTOFFS_2019.md`);
+    assert.ok(/season-end|late/.test(hit[7]), `${month} ${src}: a season-end / late row (${hit[7]})`);
+    assert.ok(hit[3].replace(/,/g, '').includes(String(rank)) && hit[5].replace(/,/g, '').includes(String(round)), `${month} ${src}: rank ${rank} / round ${round} as recorded (${hit[3]} / ${hit[5]})`);
+  }
 });
 
 console.log(results.join('\n'));

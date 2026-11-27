@@ -86,7 +86,7 @@
 //   log10(round) = a + b x log10(rank),  a = 3.5122, b = -0.1509  (ERA17.a / .b, computed from ERA17.points)
 // every fit point within x / ÷ 2.85 of the curve (ERA17.tolerance; worst 2017-11 rank 1,000: 3,222 recorded, 1,147 on the curve).
 // The months differ a lot (10,000th: 313 in 2017-05, 2,158 in 2017-11: new medals and Boosters), the curve is the era's middle.
-//   100 -> 1,624 | 1,000 -> 1,147 | 2,500 -> 999 | 10,000 -> 811   (label «fitted»: inside the points' ranks 99 .. 10,200)
+//   100 -> 1,624 | 1,000 -> 1,147 | 2,500 -> 999 | 10,000 -> 811   (label «interpolated» since Part 4: a month on the era curve has no point of its own)
 //   50,000 -> 245   (label «interpolated»: log-linear in the rank from 10,000 / 811 to the era's player count 100,000 / 1 round)
 //   100,000 / 250,000 / 500,000 -> 1 round   (label «interpolated»: ~100,000 players a month (92,115 / 103,017 / 100,723 at the
 //   ends of 2017-10 / 11 / 12), so every ranked player was inside rank ~100,000)
@@ -164,7 +164,45 @@
 // 2019-05, title.json «<Month YYYY> Victor»). From 2020-01 a season has 9 stages (validStage 9). 2019-07 is a generated stage set (GEN_STAGE_IDS
 // 21190701 .. 10 from the khuxwiki lineup; its 13 enemies are raw ReLux 6xxxx rows). A season with `pending` is skipped whole by seasonRows
 // and listed in out.pending (no season carries it any more).
-// Until their ranking prizes (RELUX_RANKING) exist the default build leaves the new seasons out with a warning, as in Part 3b.
+// Part 4 Task 6: every revamp season has its RELUX_RANKING entry, the default build serves all 63 seasons (a relux season without its entry
+// stops the run, seasonRows). Ranking prizes (private PART4_AUDIT.md §5; khuxwiki = the ReLux rows = the notices where both exist; only the
+// item types and counts read from ReLux, every skill and medal BY NAME in our skill.json / medal.json, none taken by its ReLux id):
+// - 2019-05 .. 09: BRACKETS12 (to rank 100,000); 2019-10 .. 2020-10: BRACKETS12RX, the ReLux edges (user 27-11, Q7: the first eight of
+//   BRACKETS12, then 10,001-15,000 / 15,001-20,000 / 20,001-35,000 / 35,001-80,000; khuxwiki keeps the 2019-09 edges). Dual Meow Wow SAB 9 / 8 / 7
+//   on top, the featured skill on 6★ Scrooge (x3 / x2 / x1 in 2019-05 / 06, x4 / x3 / x2 from 2019-07) and the five earlier rungs of its line
+//   below (twelve(); from 2019-08 Dual Meow Wow 9 x5 / x3 in brackets 5 / 6).
+// - 2020-11 .. 2021-04: BRACKETS16 (sixteen(); notice «Ranking Rewards Renewal»): Rainbow Gem (odd months) / Brilliant Gem (even) to rank 500,
+//   P / S / M Gems 30 .. 1 to rank 6,500, Sun Gem to 750, Moon Gem to 1,000 (materials 47 .. 53, reward type 5), the skills, SP Chip & Dale
+//   (90346) to rank 3,000, 6★ Chip / Dale to 10,000, Avatar Coins (reward type 14, «ac:<n>») 100 .. 10 to rank 80,000.
+// - 2021-05 / 06: BRACKETS2, Moogle 3★ (90013) to rank 40,000, Moogle 1★ (90011) to 80,000.
+// Featured skills: 05 Attack Boost X, 06 ATK B X Max & Lux+, 07 ATK B X Max & GA 2, 08 Attack Boost XI, 09 Attack Boost XI Max, 10 / 11 / 12
+// ATK B XI Max & GA 2 / 1 / 0, 2020-01 Attack Boost XII Max, 02 .. 04 ATK B XII Max & GA 2 / 1 / 0, 05 ATK Boost XIII Max, 06 .. 08 ATK B XIII
+// Max & GA 2 / 1 / 0, 09 ATK Boost XIV Max, 10 .. 12 ATK B XIV Max & GA 2 / 1 / 0, 2021-01 Attack Boost XV Max, 02 ATK B XV Max & GA 2, 03 ATK B
+// XI Max & Lux++, 04 Attack Boost XV Max. «ATK B XV Max & GA 2» is not in the wiki list our skill table is built from: make-skill-table.js adds
+// it as a ladder row (skillLadderRow, id 1271: the donated row has the layout of «ATK B XIV Max & GA 2» with the next ladder value, attackUp
+// 40000), so the 2021-02 prizes need a master built after it.
+// Thresholds (Part 4 Task 6, private CUTOFFS_2019.md, controller rulings 27-11). Global round = enemy level = the rounds before the tier + the
+// round (T11 R1 = 3,201). After the revamp nearly every serious player walls inside Tier 11: rank 300 .. 1,885 span only T11 R74 .. R45 at the
+// end of 2019-12, so the log-log form of ERA17 / 18 degenerates (slope ~ -0.005); the revamp eras use the semi-log form round = a + b x
+// log10(rank) (makeEra form 'semilog'; ERA17 / ERA18 keep the log-log form, their scores byte-identical). Only season-end / late points
+// calibrate (r/KHUx; the early-month rows of the research are checks: lower bounds for the end of the month). Labels: «fitted» only inside a
+// month's own point span, every era-curve or assumed value «interpolated» (Part 3b final review #11, also re-pinned for ERA17 / ERA18).
+// - ERA19 = 2019-05 .. 2020-04. The era curve = the 2019-12 own fit on its four season-end points (ei0c5c: rank <300 at T11 R74 = 3,274
+//   (fcmvg24), ~500 at R72 = 3,272 (fcmsnlh), ~1,000 at R54 = 3,254 (fcnu3h5), 1,885 at R45 = 3,245 (fcnbxa9)): a 3,374.1, b -39.4, every
+//   point within 5 rounds (monthTolerance x / ÷ 1.01). 2019-07 (late: rank ~1,700 at T11 R1 = 3,201, cinl15/evch8n1): the era slope with its
+//   own intercept (a 3,328.4; the era curve misses it by x 1.014, tolerance 1.02). Every other month the era curve. No threshold of a rank
+//   <= 1,000 below 3,201 (everyone in the top 1,000 cleared into Tier 11 in every 2019 month with data). Values 100 / 1,000 / 2,000:
+//   3,295 / 3,256 / 3,244 (2019-07: 3,250 / 3,210 / 3,198).
+// - ERA20 = 2020-05 .. 2021-06 (thin: one late point). Slope -106 / decade (2020-11 rank 100 ~ 3,650, a day-2 forecast jm7pp4/gavody1, and
+//   2020-12 rank ~2,600 at level ~3,500, kmnckz, late), the era curve through the 2020-12 point (a 3,862): 100 / 1,000 / 2,000 -> 3,650 /
+//   3,544 / 3,512 (2020-11 and 2020-12). Assumed months (the research's wall evidence, never «fitted»): 2020-05 .. 08 rank 1,000 at 3,285
+//   (T11 R62 walls, gswg62; «100K STR to even get into tier 12»), 2020-09 / 10 at 3,365 (T12 walls ism9tc, first T14 j9swlc), 2021-01 .. 04
+//   the era curve + 250 (T17 R29 on day 2 of 2021-02, l9h5i6): 3,900 / 3,794 / 3,762.
+// - Low end: log-linear from the curve at rank 2,000 (ERA19) / 2,600 (ERA20, its point) down to 1 round at the month's ranked players N, and
+//   1 round for every edge >= N (those brackets held nobody): N = 32,000 in ERA19 (~28,400 on day 7 of 2019-08, cn6fwi; ~30,000 by 11-26,
+//   e20ls8), ERA20_PLAYERS for 2020-05 .. 2021-04 (assumed: 24,000 / 18,000 / 13,000 in 2020-05 / 10 / 2021-01, log-linear between), 9,000 in
+//   2021-05 / 06 (no3sn8: «less than 9,000 players»), so both of their brackets are 1 round. Rank 10,000: 1,361 (ERA19) .. 1 (2021-04).
+// Every threshold inside 1 .. 4,000 (maxRound), never down toward the top. Private sources named by their public post ids only.
 //
 // Wired in make-game-tables.js after make-events / make-campaigns, before the avatar boards. KHUX_COLOSSEUM=0 turns it off.
 //   node server/make-colosseum.js [master folder]
@@ -296,7 +334,8 @@ const RANKING_ROW = { category: 4, unionStartRank: [1, 1, 1, 1, 1], unionEndRank
 // the same) or «p33:<petPartsId>» (a Spirit part, Part 3: 2017-12). Names -> ids: medal.json, skill.json, avatarParts.json,
 // petParts.json (test-make-colosseum.js checks every id and level).
 const MEDAL = { scrooge3: 90123, scrooge5: 90125, scrooge6: 90126, chip5: 90055, chip6: 90056, dale5: 90065, dale6: 90066, cid: 90076, mirror: 90156,
-  dmw7: 301682, dmw8: 301683, dmw9: 301684 }; // Dual Meow Wow [SAB LV 7 / 8 / 9] (Part 3b: 2019-01 .. 2019-04)
+  dmw7: 301682, dmw8: 301683, dmw9: 301684, // Dual Meow Wow [SAB LV 7 / 8 / 9] (Part 3b: 2019-01 .. 2019-04)
+  spcd: 90346, moogle3: 90013, moogle1: 90011 }; // Part 4: SP Chip & Dale (2020-11 .. 2021-04), Moogle 3★ / 1★ (2021-05 / 06)
 const SKILL_LV = { 1112: 10, 1113: 15, 1114: 20, 1119: 20, 1124: 20, 1127: 20, 1180: 20, 1230: 20, // skill.json maxLv
   // Part 3: Second Chance II / III / IV, Attack Boost IV Max, ATK B IV Max & GA 2, ATK Boost IV & Lux+, Defense Boost II Max,
   // Defense Boost I Max, Attack Boost V, ATK B V & Lux+, Defense Boost III Max, ATK B V Max & Lux+
@@ -305,11 +344,23 @@ const SKILL_LV = { 1112: 10, 1113: 15, 1114: 20, 1119: 20, 1124: 20, 1127: 20, 1
   // VIII, ATK B VIII & Lux+, ATK B VIII Max & GA 2, ATK B VIII Max & Lux+, Attack Boost IX, ATK B IX & Lux+, ATK B IX Max & GA 2,
   // ATK B IX Max & Lux+; the 2019-03 / 04 ladder adds ATK B VI Max & GA 2, ATK B V Max & GA 2, ATK Boost IV Max & Lux+
   1190: 20, 1149: 20, 1200: 20, 1241: 20, 1202: 20, 1131: 20, 1192: 20, 1244: 20, 1204: 20, 1132: 20, 1193: 20, 1247: 20, 1206: 20,
-  1238: 20, 1235: 20, 1196: 20 };
+  1238: 20, 1235: 20, 1196: 20,
+  // Part 4, by name (PART4_AUDIT §5: the featured skills and their ladders 2019-05 .. 2021-04): Attack Boost VI .. VII / X .. XI, Attack Boost VI
+  // .. XII Max, ATK Boost XIII / XIV Max, Attack Boost XV Max, ATK B VI .. XI Max & Lux++, ATK B X Max & Lux+, ATK B VI .. XIV Max & GA 2 / 1 / 0,
+  // ATK B XV Max & GA 2 (1271, the make-skill-table.js ladder row)
+  1129: 20, 1130: 20, 1133: 20, 1134: 20, 1138: 20, 1139: 20, 1140: 20, 1141: 20, 1142: 20, 1143: 20, 1144: 20, 1145: 20, 1146: 20, 1147: 20,
+  1201: 20, 1203: 20, 1205: 20, 1207: 20, 1208: 20, 1209: 20, 1211: 20, 1239: 20, 1240: 20, 1242: 20, 1243: 20, 1245: 20, 1246: 20,
+  ...Object.fromEntries(Array.from({ length: 17 }, (_, i) => [1248 + i, 20])), 1271: 20 };
 const BRACKETS8 = [[1, 100], [101, 1000], [1001, 2500], [2501, 10000], [10001, 50000], [50001, 100000], [100001, 250000], [250001, 500000]];
 // 2018-12: nine brackets (2,501-7,000 / 7,001-15,000 instead of 2,501-10,000); 2019-03 / 04: twelve (Part 3b)
 const BRACKETS9 = [[1, 100], [101, 1000], [1001, 2500], [2501, 7000], [7001, 15000], [15001, 50000], [50001, 100000], [100001, 250000], [250001, 500000]];
 const BRACKETS12 = [[1, 100], [101, 500], [501, 1000], [1001, 2000], [2001, 3000], [3001, 5000], [5001, 7500], [7501, 10000], [10001, 17500], [17501, 25000], [25001, 45000], [45001, 100000]];
+// Part 4: 2019-10 .. 2020-10 the ReLux edges (user 27-11, Q7: the first eight of BRACKETS12, then to rank 80,000); 2020-11 .. 2021-04 sixteen;
+// 2021-05 / 06 two (khuxwiki = ReLux)
+const BRACKETS12RX = [...BRACKETS12.slice(0, 8), [10001, 15000], [15001, 20000], [20001, 35000], [35001, 80000]];
+const BRACKETS16 = [[1, 100], [101, 250], [251, 500], [501, 750], [751, 1000], [1001, 2000], [2001, 3000], [3001, 4000], [4001, 5000], [5001, 6500],
+  [6501, 8000], [8001, 10000], [10001, 15000], [15001, 20000], [20001, 30000], [30001, 80000]];
+const BRACKETS2 = [[1, 40000], [40001, 80000]];
 // 2017-01 .. 2017-04 (khuxwiki): one featured skill on 6★ Scrooge (x3 / x2 / x1 to rank 10,000), the month's avatar part ♂ / ♀ to
 // rank 100,000, Chip / Dale / Cid / Magic Mirror
 const wiki2017 = (skill, m, f) => [
@@ -324,8 +375,8 @@ const wiki2017 = (skill, m, f) => [
 ];
 // 2017-05 .. 2018-03 (Part 3): the same table, the avatar parts only in the months that have them
 const wikiP3 = (skill, m, f) => wiki2017(skill, m, f).map((b) => b.filter(Boolean));
-// 2018-12: P / S / M Gems (materials 48 / 49 / 50)
-const gems = (n) => [48, 49, 50].map((m) => `g:${m}x${n}`);
+// 2018-12: P / S / M Gems (materials 48 / 49 / 50); one of each without the «x1»
+const gems = (n) => [48, 49, 50].map((m) => `g:${m}${n > 1 ? `x${n}` : ''}`);
 // 2019-01 / 02: Dual Meow Wow SAB LV 9 / 8 / 7 on top (RX counts: 15 / 25 / 35, 10 / 20 / 30, 5 / 15 / 25, then 15 / 20 to rank 10,000)
 const dmw8 = (skill) => [
   ['dmw9x15', 'dmw8x25', 'dmw7x35', `scrooge6:${skill}x3`, 'chip6x5', 'dale6x5', 'cidx5', 'mirrorx5'],
@@ -333,13 +384,27 @@ const dmw8 = (skill) => [
   ['dmw9x5', 'dmw8x15', 'dmw7x25', `scrooge6:${skill}`, 'chip6x2', 'dale6x2', 'cidx3', 'mirrorx4'],
   ['dmw8x15', 'dmw7x20', `scrooge6:${skill}`, 'chip6x2', 'dale6x2', 'cidx2', 'mirrorx3'],
   ['chip6', 'dale6', 'cid', 'mirror'], ['chip5x3', 'dale5x3'], ['chip5x2', 'dale5x2'], ['chip5', 'dale5']];
-// 2019-03 / 04: twelve brackets; ladder[0] = the featured skill, ladder[k] the skill of k months before on the same line
-const twelve = (ladder) => {
+// 2019-03 / 04: twelve brackets; ladder[0] = the featured skill, ladder[k] the skill of k months before on the same line. Part 4 (the ReLux rows): from 2019-07
+// the featured skill x4 / x3 / x2 in the top three brackets (top), from 2019-08 Dual Meow Wow 9 x5 / x3 in brackets 5 / 6 (d9)
+const twelve = (ladder, { top = [3, 2, 1], d9 = [3, 2] } = {}) => {
   const sk = (k, n) => `scrooge6:${ladder[k]}${n > 1 ? `x${n}` : ''}`;
   return [
-    ['dmw9x15', 'dmw8x25', 'dmw7x30', sk(0, 3), sk(1, 1)], ['dmw9x13', 'dmw8x23', 'dmw7x25', sk(0, 2), sk(1, 1)], ['dmw9x10', 'dmw8x20', 'dmw7x23', sk(0, 1), sk(1, 2)],
-    ['dmw9x8', 'dmw8x18', 'dmw7x20', sk(0, 1), sk(1, 1), sk(2, 1)], ['dmw9x3', 'dmw8x15', 'dmw7x18', sk(0, 1), sk(2, 2)], ['dmw9x2', 'dmw8x13', 'dmw7x15', sk(0, 1), sk(2, 1), sk(3, 1)],
+    ['dmw9x15', 'dmw8x25', 'dmw7x30', sk(0, top[0]), sk(1, 1)], ['dmw9x13', 'dmw8x23', 'dmw7x25', sk(0, top[1]), sk(1, 1)], ['dmw9x10', 'dmw8x20', 'dmw7x23', sk(0, top[2]), sk(1, 2)],
+    ['dmw9x8', 'dmw8x18', 'dmw7x20', sk(0, 1), sk(1, 1), sk(2, 1)], [`dmw9x${d9[0]}`, 'dmw8x15', 'dmw7x18', sk(0, 1), sk(2, 2)], [`dmw9x${d9[1]}`, 'dmw8x13', 'dmw7x15', sk(0, 1), sk(2, 1), sk(3, 1)],
     ['dmw9x1', 'dmw8x10', 'dmw7x13', sk(0, 1), sk(3, 2)], ['dmw8x8', 'dmw7x10', sk(0, 1), sk(3, 1)], ['dmw7x8', sk(3, 2)], [sk(3, 1), sk(4, 1)], [sk(4, 1), sk(5, 1)], [sk(5, 1)]];
+};
+// Part 4 2020-11 .. 2021-04 (notice «Ranking Rewards Renewal», khuxwiki = ReLux): sixteen brackets; topGem = Rainbow 47 (odd months) / Brilliant 53
+// (even) to rank 500, P / S / M Gems 30 .. 1 to rank 6,500, Sun 51 to 750, Moon 52 to 1,000, the featured skill and its ladder on 6★ Scrooge,
+// SP Chip & Dale to rank 3,000, then 6★ Chip / Dale to 10,000, Avatar Coins (type 14) 100 .. 10 to rank 80,000
+const sixteen = (ladder, topGem) => {
+  const sk = (k, n) => `scrooge6:${ladder[k]}${n > 1 ? `x${n}` : ''}`, psm = (n) => (n ? gems(n) : []);
+  const cd = (n) => [`chip6${n > 1 ? `x${n}` : ''}`, `dale6${n > 1 ? `x${n}` : ''}`];
+  return [
+    [`g:${topGem}`, ...psm(30), 'g:51', 'g:52', sk(0, 4), sk(1, 1), 'spcdx3', 'ac:100'], [`g:${topGem}`, ...psm(30), 'g:51', 'g:52', sk(0, 3), sk(1, 1), 'spcdx3', 'ac:100'],
+    [`g:${topGem}`, ...psm(25), 'g:51', 'g:52', sk(0, 3), sk(1, 1), 'spcdx3', 'ac:100'], [...psm(25), 'g:51', 'g:52', sk(0, 2), sk(1, 2), 'spcdx2', 'ac:90'],
+    [...psm(20), 'g:52', sk(0, 2), sk(1, 2), 'spcdx2', 'ac:80'], [...psm(15), sk(0, 1), sk(1, 1), sk(2, 1), 'spcd', 'ac:70'], [...psm(10), sk(0, 1), sk(2, 2), 'spcd', 'ac:60'],
+    [...psm(5), sk(0, 1), sk(2, 1), sk(3, 1), ...cd(5), 'ac:50'], [...psm(3), sk(0, 1), sk(2, 1), sk(3, 1), ...cd(4), 'ac:40'], [...psm(1), sk(0, 1), sk(3, 2), ...cd(3), 'ac:30'],
+    [sk(0, 1), sk(3, 2), ...cd(2), 'ac:20'], [sk(0, 1), sk(3, 1), ...cd(1), 'ac:10'], [sk(3, 2), 'ac:10'], [sk(3, 1), sk(4, 1), 'ac:10'], [sk(4, 1), sk(5, 1), 'ac:10'], [sk(5, 1), 'ac:10']];
 };
 const RELUX_RANKING = {
   // 2016-11, notice 22105 «November Coliseum Update!» (the wiki table is the same): Defense Boost III / II / I on 6★ / 5★ / 3★
@@ -418,16 +483,55 @@ const RELUX_RANKING = {
   // brackets. khuxwiki lists the top bracket (featured x3 + the previous skill x1); the lower brackets are the ReLux rows (types / counts)
   4300: { source: 'khuxwiki + relux', edges: BRACKETS12, brackets: twelve([1247, 1244, 1241, 1238, 1235, 1232]) },
   4400: { source: 'khuxwiki + relux', edges: BRACKETS12, brackets: twelve([1206, 1204, 1202, 1200, 1198, 1196]) },
+  // Part 4 (PART4_AUDIT §5; ReLux = khuxwiki = the notices for the top prizes, the lower brackets the ReLux rows, item types and counts only;
+  // every skill BY NAME in skill.json, the six of a month = the featured skill and the five earlier rungs of its line)
+  4500: { source: 'khuxwiki + relux', edges: BRACKETS12, brackets: twelve([1133, 1132, 1131, 1130, 1129, 1128]) }, // 2019-05 Attack Boost X .. V
+  4600: { source: 'khuxwiki + relux', edges: BRACKETS12, brackets: twelve([1208, 1206, 1204, 1202, 1200, 1198]) }, // 2019-06 ATK B X .. V Max & Lux+
+  4700: { source: 'khuxwiki + relux', edges: BRACKETS12, brackets: twelve([1250, 1247, 1244, 1241, 1238, 1235], { top: [4, 3, 2] }) }, // 2019-07 ATK B X .. V Max & GA 2
+  ...Object.fromEntries([
+    [4800, [1134, 1133, 1132, 1131, 1130, 1129]], // 2019-08 Attack Boost XI .. VI
+    [4900, [1143, 1142, 1141, 1140, 1139, 1138]], // 2019-09 Attack Boost XI .. VI Max
+    [5000, [1253, 1250, 1247, 1244, 1241, 1238]], // 2019-10 ATK B XI .. VI Max & GA 2
+    [5100, [1254, 1251, 1248, 1245, 1242, 1239]], // 2019-11 ATK B XI .. VI Max & GA 1
+    [5200, [1255, 1252, 1249, 1246, 1243, 1240]], // 2019-12 ATK B XI .. VI Max & GA 0
+    [5300, [1144, 1143, 1142, 1141, 1140, 1139]], // 2020-01 Attack Boost XII .. VII Max
+    [5400, [1256, 1253, 1250, 1247, 1244, 1241]], // 2020-02 ATK B XII .. VII Max & GA 2
+    [5500, [1257, 1254, 1251, 1248, 1245, 1242]], // 2020-03 ATK B XII .. VII Max & GA 1
+    [5600, [1258, 1255, 1252, 1249, 1246, 1243]], // 2020-04 ATK B XII .. VII Max & GA 0
+    [5700, [1145, 1144, 1143, 1142, 1141, 1140]], // 2020-05 ATK Boost XIII Max, Attack Boost XII .. VIII Max
+    [5800, [1259, 1256, 1253, 1250, 1247, 1244]], // 2020-06 ATK B XIII .. VIII Max & GA 2
+    [5900, [1260, 1257, 1254, 1251, 1248, 1245]], // 2020-07 ATK B XIII .. VIII Max & GA 1
+    [6000, [1261, 1258, 1255, 1252, 1249, 1246]], // 2020-08 ATK B XIII .. VIII Max & GA 0
+    [6100, [1146, 1145, 1144, 1143, 1142, 1141]], // 2020-09 ATK Boost XIV / XIII Max, Attack Boost XII .. IX Max
+    [6200, [1262, 1259, 1256, 1253, 1250, 1247]], // 2020-10 ATK B XIV .. IX Max & GA 2
+  ].map(([sid, ladder]) => [sid, { source: 'khuxwiki + relux', edges: sid <= 4900 ? BRACKETS12 : BRACKETS12RX, brackets: twelve(ladder, { top: [4, 3, 2], d9: [5, 3] }) }])),
+  ...Object.fromEntries([
+    [6300, [1263, 1260, 1257, 1254, 1251, 1248], 47], // 2020-11 ATK B XIV .. IX Max & GA 1, Rainbow Gem
+    [6400, [1264, 1261, 1258, 1255, 1252, 1249], 53], // 2020-12 ATK B XIV .. IX Max & GA 0, Brilliant Gem
+    [6500, [1147, 1146, 1145, 1144, 1143, 1142], 47], // 2021-01 Attack Boost XV Max, ATK Boost XIV / XIII Max, Attack Boost XII .. X Max
+    [6600, [1271, 1262, 1259, 1256, 1253, 1250], 53], // 2021-02 ATK B XV (1271, the ladder row of make-skill-table.js) .. X Max & GA 2
+    [6700, [1211, 1209, 1207, 1205, 1203, 1201], 47], // 2021-03 ATK B XI .. VI Max & Lux++ (ReLux = khuxwiki)
+    [6800, [1147, 1146, 1145, 1144, 1143, 1142], 53], // 2021-04 Attack Boost XV Max again (ReLux = khuxwiki)
+  ].map(([sid, ladder, top]) => [sid, { source: 'khuxwiki + relux', edges: BRACKETS16, brackets: sixteen(ladder, top) }])),
+  // 2021-05 / 06: two brackets, Moogle 3★ to rank 40,000, Moogle 1★ to 80,000
+  6900: { source: 'khuxwiki + relux', edges: BRACKETS2, brackets: [['moogle3'], ['moogle1']] },
+  7000: { source: 'khuxwiki + relux', edges: BRACKETS2, brackets: [['moogle3'], ['moogle1']] },
 };
 for (const spec of Object.values(RELUX_RANKING)) spec.edges = spec.edges || BRACKETS8; // Part 2-3: the eight brackets
+const GEM_IDS = [47, 48, 49, 50, 51, 52, 53];
 // one item of RELUX_RANKING -> {type, id, skillType, skillId, skillLv, num}
 function rankItem(tok) {
-  // «g:<materialId>x<n>»: a material (type 5; 48 / 49 / 50 = Power / Speed / Magic Gem as in our master)
+  // «g:<materialId>x<n>»: a material (type 5; 48 / 49 / 50 = Power / Speed / Magic Gem as in our master; Part 4: 47 Rainbow, 51 Sun, 52 Moon,
+  // 53 Brilliant Gem)
   const g = /^g:(\d+)(?:x(\d+))?$/.exec(tok);
   if (g) {
-    if (![48, 49, 50].includes(Number(g[1]))) throw new Error(`colosseum: ranking reward item «${tok}» unknown (materials 48 / 49 / 50)`);
+    if (!GEM_IDS.includes(Number(g[1]))) throw new Error(`colosseum: ranking reward item «${tok}» unknown (materials ${GEM_IDS.join(' / ')})`);
     return { type: 5, id: Number(g[1]), skillType: 1, skillId: 0, skillLv: 1, num: g[2] ? Number(g[2]) : 1 };
   }
+  // «ac:<n>»: Avatar Coins (type 14, id 0 as the ReLux rows; server.js grantItem adds them to spherePoint), Part 4 2020-11 .. 2021-04
+  const ac = /^ac:([1-9]\d*)$/.exec(tok);
+  if (ac) return { type: 14, id: 0, skillType: 1, skillId: 0, skillLv: 1, num: Number(ac[1]) };
+  if (/^ac:/.test(tok)) throw new Error(`colosseum: ranking reward item «${tok}» unknown`);
   const p = /^p(19|20|33):(\d+)$/.exec(tok);
   if (p) return { type: Number(p[1]), id: Number(p[2]), skillType: 1, skillId: 0, skillLv: 1, num: 1 };
   const m = /^([a-z]+?\d?)(?::(\d+))?(?:x(\d+))?$/.exec(tok);
@@ -590,48 +694,72 @@ const ERA17_POINTS = [
   ['2017-11', 100, 4283, '7gtzkx'], ['2017-11', 1000, 3222, '7gtzkx'], ['2017-11', 2500, 2677, '7gtzkx'], ['2017-11', 10000, 2158, '7gtzkx'],
   ['2017-12', 100, 2716, '7p6gif'], ['2017-12', 1000, 2222, '7p6gif'], ['2017-12', 2500, 1953, '7p6gif'], ['2017-12', 10000, 1397, '7p6gif'],
 ];
-// least squares of log10(round) on log10(rank) over points; slope b fixed when given (then only the intercept: the mean)
-function logFit(points, fixedB) {
-  const xs = points.map((p) => Math.log10(p[1])), ys = points.map((p) => Math.log10(p[2])), n = xs.length;
+// least squares of log10(round) on log10(rank) over points (form 'semilog', Part 4: of round on log10(rank)); slope b fixed when given
+// (then only the intercept: the mean)
+function logFit(points, fixedB, form = 'loglog') {
+  const xs = points.map((p) => Math.log10(p[1])), ys = points.map((p) => (form === 'semilog' ? p[2] : Math.log10(p[2]))), n = xs.length;
   const mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
   const b = fixedB !== undefined ? fixedB : xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / xs.reduce((s, x) => s + (x - mx) ** 2, 0);
   return { a: my - b * mx, b };
 }
-// a threshold curve: round(rank) on the fit to FIT_RANK, log-linear from there to 1 round at PLAYERS (every ranked player inside);
-// label «fitted» for a rank inside [lo, hi] (the ranks of the points behind it), else «interpolated»
-// FIT_RANK = the last bracket edge of the fitted range (the era points reach 10,200); PLAYERS = ranked players a month
+// a threshold curve: round(rank) on the fit to fitRank, log-linear from there to 1 round at players (every ranked player inside), at most
+// maxRound (the revamp: 4,000 rounds served, no endless tier), at least floor[1] for a rank <= floor[0] (ERA19: everyone in the top 1,000
+// cleared into Tier 11); label «fitted» for a rank inside [lo, hi] (the ranks of the month's own points behind it), else «interpolated»; an
+// era curve given to a month without points, or an assumed month curve (fitted false), is «interpolated» everywhere (Part 3b final review #11)
+// ERA17_FIT_RANK = the last bracket edge of the fitted range (the era points reach 10,200); ERA17_PLAYERS = ranked players a month: the
+// defaults of makeEra
 const ERA17_FIT_RANK = 10000, ERA17_PLAYERS = 100000;
 // guardB (a month curve: the era slope): outside [lo, hi] the month's own fit is not extrapolated; the curve goes on with the era
 // slope from the fitted value at the nearest edge (re-review 26-11: 2017-07's own slope -0.28 from ranks 991 .. 10,000 gave 1,527
-// at rank 100, the guard gives ~1,130); inside [lo, hi] the own fit is unchanged
-function eraCurve(a, b, lo, hi, guardB) {
-  const fit = (rank) => 10 ** (a + b * Math.log10(rank));
-  const curve = guardB === undefined ? fit : (rank) => (rank < lo ? fit(lo) * (rank / lo) ** guardB : rank > hi ? fit(hi) * (rank / hi) ** guardB : fit(rank));
-  const top = Math.round(curve(ERA17_FIT_RANK));
-  const round = (rank) => (rank >= ERA17_PLAYERS ? 1 : rank <= ERA17_FIT_RANK ? Math.round(curve(rank))
-    : Math.max(1, Math.round(top - (top - 1) * Math.log10(rank / ERA17_FIT_RANK) / Math.log10(ERA17_PLAYERS / ERA17_FIT_RANK))));
-  return { a, b, curve, round, label: (rank) => (rank >= lo && rank <= hi ? 'fitted' : 'interpolated') };
+// at rank 100, the guard gives ~1,130); inside [lo, hi] the own fit is unchanged. form 'semilog': round = a + b x log10(rank)
+function eraCurve(a, b, lo, hi, guardB, { fitRank = ERA17_FIT_RANK, players = ERA17_PLAYERS, maxRound = Infinity, fitted = true, form = 'loglog', floor = null } = {}) {
+  const semi = form === 'semilog';
+  const fit = (rank) => (semi ? a + b * Math.log10(rank) : 10 ** (a + b * Math.log10(rank)));
+  const from = (edge, rank) => (semi ? fit(edge) + guardB * Math.log10(rank / edge) : fit(edge) * (rank / edge) ** guardB);
+  const curve = guardB === undefined ? fit : (rank) => (rank < lo ? from(lo, rank) : rank > hi ? from(hi, rank) : fit(rank));
+  const top = Math.round(curve(fitRank));
+  const raw = (rank) => (rank >= players ? 1 : rank <= fitRank ? Math.round(curve(rank))
+    : Math.max(1, Math.round(top - (top - 1) * Math.log10(rank / fitRank) / Math.log10(players / fitRank))));
+  const round = (rank) => Math.min(maxRound, floor && rank <= floor[0] ? Math.max(floor[1], raw(rank)) : raw(rank));
+  return { a, b, curve, round, label: (rank) => (fitted && rank >= lo && rank <= hi ? 'fitted' : 'interpolated') };
 }
 // per-month calibration (controller ruling 26-11): a month with its own season-end points gets its own curve; both parameters when
-// its points span at least one decade of rank (MONTH_SPAN), else the era slope and its own intercept; the other months the era curve
+// its points span at least monthSpan decades of rank (default 1), else the era slope and its own intercept; the other months the era curve
 const ERA17_MONTH_SPAN = 1;
 // the era object of a points table: the era curve (least squares over all points) and a month curve for every month that has points;
-// `of(colosseumStageId)` = the month's curve, else the era curve, null outside the era's seasons [lo, hi]
-function makeEra(points, lo, hi, tolerance, monthTolerance) {
-  const { a, b } = logFit(points);
-  const era = eraCurve(a, b, Math.min(...points.map((p) => p[1])), ERA17_FIT_RANK);
+// `of(colosseumStageId)` = the month's curve, else an assumed curve, else the era curve, null outside the era's seasons [lo, hi]. Options
+// (Part 3b final review #9): tolerance / monthTolerance (the stated fit tolerances, x / ÷), fitRank (the end of the fitted range, 10,000),
+// players (1 round at this rank: a number, or month -> number), monthSpan (decades of rank for an own slope, 1), maxRound (the most rounds a
+// season serves, no cap by default). Part 4: form ('loglog' default, 'semilog' round = a + b x log10(rank)), slope (a stated era slope instead of
+// the least-squares one), eraMonth (the era curve = that month's own fit instead of the fit over all points), floor ([rank, round]: no
+// threshold of a rank <= rank below round), assumed ({month: {rank, round} | {shift}}: a month without points of its own on the era slope
+// through an assumed value, or the era curve shifted by `shift` rounds; always «interpolated»)
+function makeEra(points, lo, hi, { tolerance, monthTolerance, fitRank = ERA17_FIT_RANK, players = ERA17_PLAYERS, monthSpan = ERA17_MONTH_SPAN, maxRound = Infinity,
+  form = 'loglog', slope, eraMonth, floor = null, assumed = {} } = {}) {
+  const seasons = new Map(SEASONS.filter((s) => s.colosseumStageId >= lo && s.colosseumStageId <= hi).map((s) => [s.colosseumStageId, s.month]));
+  const playersOf = typeof players === 'function' ? players : () => players;
+  const opts = (month) => ({ fitRank, players: playersOf(month), maxRound, form, floor });
+  const ofMonth = (m) => points.filter((p) => p[0] === m);
+  const { a, b } = eraMonth ? logFit(ofMonth(eraMonth), undefined, form) : logFit(points, slope, form);
+  const lo0 = Math.min(...points.map((p) => p[1]));
+  const eraFor = (month) => eraCurve(a, b, lo0, fitRank, undefined, { ...opts(month), fitted: false });
+  const first = [...seasons.values()][0], era = eraFor(first);
+  const eras = new Map([...seasons.values()].map((m) => [m, playersOf(m) === playersOf(first) ? era : eraFor(m)]));
   const months = {};
   for (const m of [...new Set(points.map((p) => p[0]))]) {
-    const pts = points.filter((p) => p[0] === m), ranks = pts.map((p) => p[1]);
-    const both = Math.log10(Math.max(...ranks) / Math.min(...ranks)) >= ERA17_MONTH_SPAN;
-    const f = logFit(pts, both ? undefined : b);
-    months[m] = { ...eraCurve(f.a, f.b, Math.min(...ranks), Math.max(...ranks), b), method: both ? 'own fit' : 'era slope, own intercept', points: pts };
+    const pts = ofMonth(m), ranks = pts.map((p) => p[1]);
+    const both = Math.log10(Math.max(...ranks) / Math.min(...ranks)) >= monthSpan;
+    const f = logFit(pts, both ? undefined : b, form);
+    months[m] = { ...eraCurve(f.a, f.b, Math.min(...ranks), Math.max(...ranks), b, opts(m)), method: both ? 'own fit' : 'era slope, own intercept', points: pts };
   }
-  const seasons = new Map(SEASONS.filter((s) => s.colosseumStageId >= lo && s.colosseumStageId <= hi).map((s) => [s.colosseumStageId, s.month]));
-  return { seasons, points, a, b, curve: era.curve, round: era.round, label: era.label, tolerance, months, monthTolerance,
-    of: (colosseumStageId) => (seasons.has(colosseumStageId) ? months[seasons.get(colosseumStageId)] || era : null) };
+  const assumedCurves = Object.fromEntries(Object.entries(assumed).map(([m, v]) => {
+    const ia = v.shift !== undefined ? a + v.shift : form === 'semilog' ? v.round - b * Math.log10(v.rank) : Math.log10(v.round) - b * Math.log10(v.rank);
+    return [m, { ...eraCurve(ia, b, lo0, fitRank, undefined, { ...opts(m), fitted: false }), method: v.shift !== undefined ? `era curve ${v.shift > 0 ? '+' : ''}${v.shift}` : `era slope through rank ${v.rank} / ${v.round}`, assumed: v }];
+  }));
+  return { seasons, points, a, b, form, curve: era.curve, round: era.round, label: era.label, tolerance, months, assumed: assumedCurves, monthTolerance,
+    of: (colosseumStageId) => (seasons.has(colosseumStageId) ? months[seasons.get(colosseumStageId)] || assumedCurves[seasons.get(colosseumStageId)] || eras.get(seasons.get(colosseumStageId)) : null) };
 }
-const ERA17 = makeEra(ERA17_POINTS, 2100, 3100, 2.85, 1.15);
+const ERA17 = makeEra(ERA17_POINTS, 2100, 3100, { tolerance: 2.85, monthTolerance: 1.15 });
 // the 2018-04 .. 2019-04 era (Part 3b Task 5, private CUTOFFS_2018.md): [month, rank, global round, reddit id]; only the season-end /
 // late-month points (the module comment lists which of the 34 recorded rows are fitted and why); global round = 1,570 + the round of
 // the 999-round tier stated (the rounds before T16)
@@ -640,7 +768,28 @@ const ERA18_POINTS = [
   ['2018-06', 10000, 2120, '8vj3yy'], ['2018-06', 10000, 2070, '8un0ma'], ['2018-06', 1395, 3396, '8uyc6n'], ['2018-06', 230, 4567, '8un0ma'],
   ['2019-04', 100, 4575, 'bhctoi'],
 ];
-const ERA18 = makeEra(ERA18_POINTS, 3200, 4400, 1.3, 1.15);
+const ERA18 = makeEra(ERA18_POINTS, 3200, 4400, { tolerance: 1.3, monthTolerance: 1.15 });
+// the revamp eras (Part 4 Task 6, private CUTOFFS_2019.md; see the module comment): [month, rank, global round, reddit post/comment id];
+// season-end / late points only, global round = enemy level = the rounds before the tier + the round (T11 R1 = 3,201)
+const ERA19_POINTS = [
+  ['2019-07', 1700, 3201, 'cinl15/evch8n1'],
+  ['2019-12', 300, 3274, 'ei0c5c/fcmvg24'], ['2019-12', 500, 3272, 'ei0c5c/fcmsnlh'], ['2019-12', 1000, 3254, 'ei0c5c/fcnu3h5'], ['2019-12', 1885, 3245, 'ei0c5c/fcnbxa9'],
+];
+const ERA19 = makeEra(ERA19_POINTS, 4500, 5600, { tolerance: 1.02, monthTolerance: 1.01, form: 'semilog', eraMonth: '2019-12', monthSpan: 0.5,
+  fitRank: 2000, players: 32000, maxRound: 4000, floor: [1000, 3201] });
+// 2020-05 .. 2021-06: ranked players a month, assumed (CUTOFFS_2019.md: 24,000 / 18,000 / 13,000 in 2020-05 / 10 / 2021-01, log-linear between,
+// the last step carried on to 2021-04, under 9,000 in 2021-05 / 06 (no3sn8)), rounded to 100
+const ERA20_PLAYERS = { '2020-05': 24000, '2020-06': 22700, '2020-07': 21400, '2020-08': 20200, '2020-09': 19100, '2020-10': 18000, '2020-11': 16200,
+  '2020-12': 14500, '2021-01': 13000, '2021-02': 11700, '2021-03': 10500, '2021-04': 9400, '2021-05': 9000, '2021-06': 9000 };
+const ERA20_POINTS = [['2020-12', 2600, 3500, 'kmnckz']];
+const ERA20 = makeEra(ERA20_POINTS, 5700, 7000, { tolerance: 1.01, monthTolerance: 1.01, form: 'semilog', slope: -106, fitRank: 2600,
+  players: (m) => ERA20_PLAYERS[m], maxRound: 4000, assumed: {
+    ...Object.fromEntries(['2020-05', '2020-06', '2020-07', '2020-08'].map((m) => [m, { rank: 1000, round: 3285 }])),
+    ...Object.fromEntries(['2020-09', '2020-10'].map((m) => [m, { rank: 1000, round: 3365 }])),
+    ...Object.fromEntries(['2021-01', '2021-02', '2021-03', '2021-04'].map((m) => [m, { shift: 250 }])) } });
+// the era registry (Part 3b final review #8): the curve of a season = the curve of the first era that holds it
+const ERAS = [ERA17, ERA18, ERA19, ERA20];
+const eraOf = (colosseumStageId) => ERAS.map((e) => e.of(colosseumStageId)).find(Boolean);
 
 let schemaCache = null;
 const schema = () => schemaCache || (schemaCache = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'recon', 'out', 'master_types_ww431.json'), 'utf8')));
@@ -727,8 +876,8 @@ function bracketsOf(rewardRows) {
 // thresholds of a season (finiteRounds = rounds before its first endless tier), one per bracket, lowest first
 // a bracket reaching EVERYONE (2016-05: ranks to 5,000,000 and 10,000,000) was open to every ranked player: one round
 const EVERYONE = 1000000;
-// colosseumStageId of an ERA17 / ERA18 season: its own curve (Part 3 Task 5, Part 3b Task 5), the finite-round shift does not apply
-const thresholdsOf = (brackets, finiteRounds, colosseumStageId, c = ERA17.of(colosseumStageId) || ERA18.of(colosseumStageId)) => brackets.map((b) => (c
+// colosseumStageId of an era season (ERAS): its own curve (Part 3 Task 5, Part 3b Task 5, Part 4 Task 6), the finite-round shift does not apply
+const thresholdsOf = (brackets, finiteRounds, colosseumStageId, c = eraOf(colosseumStageId)) => brackets.map((b) => (c
   ? { startRank: b.startRank, endRank: b.endRank, score: c.round(b.endRank), label: c.label(b.endRank) }
   : { startRank: b.startRank, endRank: b.endRank, score: b.endRank >= EVERYONE ? 1 : cutoffRound(b.endRank, finiteRounds), label: 'interpolated' }));
 // {brackets, thresholds} of a season from its tier rows and the rankingReward rows of its ranking (master or 1.1.3); the era from
@@ -1170,14 +1319,6 @@ function patch(masterDir, opts = {}) {
       seasons = seasons.filter((s) => s.source !== 'relux');
     }
   }
-  // Part 4 until its ranking task: of the default SEASONS a revamp season whose ranking prizes are not written yet (RELUX_RANKING) is left
-  // out whole with a warning, never served without its Rewards rows (a pending season is skipped by seasonRows itself); an explicit
-  // opts.seasons list stops on it (seasonRows)
-  const notBuilt = opts.seasons ? [] : seasons.filter((s) => s.source === 'relux' && s.colosseumStageId >= REVAMP_FIRST && !s.pending && !RELUX_RANKING[s.colosseumStageId]);
-  if (notBuilt.length) {
-    console.warn(`colosseum: WARNING ${notBuilt.map((s) => s.month).join(', ')} not built yet (no ranking prizes in RELUX_RANKING): left out`);
-    seasons = seasons.filter((s) => !notBuilt.includes(s));
-  }
   // the enemy lists of the served stages (opts.stageEnemies, else readStageEnemies) and the raw ReLux enemy table (opts.reluxEnemies,
   // else KHUX_COLOSSEUM_RELUX_ENEMY / DEFAULT_RELUX_ENEMY); without the lists only the 1.1.3 variants are checked (the stage import
   // still refuses a stage with an enemy missing from the master); without the table an id that needs it stops the run (enemyRows).
@@ -1218,4 +1359,4 @@ function patch(masterDir, opts = {}) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'), { dir: process.argv[3] || undefined });
 
 module.exports = { REVAMP_FIRST, MASTER_BASE_APPROVED, RELUX_MEDAL, SEASONS, GEN_STAGE_IDS, COPY_STAGES, COPY_STAGE_IDS, copyPairs, DEFAULT_RELUX, readRelux, DEFAULT_RELUX_ENEMY, readReluxEnemies, reluxShape, monthBase, schemaRowOf, stageEnemyFiles, readStageEnemies, ruleRow, SEASON_BOARDS, BONUS_TIER, BOARD_ART, PENDING_ART, artLines, CATALOG_EV, CATALOG_STAGE, CATALOG_URL, COLOSSEUM_IMG_VERSION, catalogEvStage, RANGES, DEFAULT_2016, START, END, seasonRows, patch, readSource, cutoffRound, bracketsOf, thresholdsOf, rankedOf,
-  PART3_ENEMY_IDS, PART3B_ENEMY_IDS, PART4_ENEMY_IDS, MONTH_COPY_OF, ENEMY_RANGES, acceptedShape, enemyRows, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, BRACKETS9, BRACKETS12, RELUX_RANKING, rankItem, ENDLESS, ERA17, ERA18, reluxRewardRows, REWARD_BASE, REWARD_BLOCK, REWARD_FIRST_RANKING };
+  PART3_ENEMY_IDS, PART3B_ENEMY_IDS, PART4_ENEMY_IDS, MONTH_COPY_OF, ENEMY_RANGES, acceptedShape, enemyRows, STAGE_TEMPLATE, MEDAL, SKILL_LV, BRACKETS8, BRACKETS9, BRACKETS12, BRACKETS12RX, BRACKETS16, BRACKETS2, RELUX_RANKING, rankItem, ENDLESS, ERA17, ERA18, ERA19, ERA20, ERA20_PLAYERS, ERAS, eraOf, makeEra, reluxRewardRows, REWARD_BASE, REWARD_BLOCK, REWARD_FIRST_RANKING };

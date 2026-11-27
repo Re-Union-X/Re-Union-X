@@ -220,7 +220,8 @@ const MAPS = {
 const COIN = 17;
 const num = (n) => Number(n || 0).toLocaleString('en-US');
 const ord = (n) => { const k = n % 100, s = k >= 11 && k <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'); return `${num(n)}${s}`; };
-const FALLBACK = { 3: 'Medal', 5: 'Material', 7: 'Title', 17: 'Coliseum Coins', 19: 'Avatar part', 20: 'Avatar part', 23: 'Avatar part' };
+// 14 = Avatar Coins (the 2020-11 .. 2021-04 ranking prizes, make-colosseum.js «ac:<n>»): no master name, the page names them
+const FALLBACK = { 3: 'Medal', 5: 'Material', 7: 'Title', 14: 'Avatar Coins', 17: 'Coliseum Coins', 19: 'Avatar part', 20: 'Avatar part', 23: 'Avatar part' };
 // the colours of the detail page (user 26-11: «colours in the text like the other detail pages and the notices»): .v a value (gold),
 // .cc Coliseum Coins (gold), .rd rounds (cyan), .yes taken / reached (green), .mu not yet / locked (muted), .tn a tier or board name
 function itemText(x, ctx) {

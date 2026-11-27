@@ -423,6 +423,30 @@ function reportMarkdown(rows, report, exp) {
   return L.join('\n') + '\n';
 }
 
+// Ladder rows (Coliseum Part 4 Task 6): skills a ranking prize needs that the wiki list lacks, built as the next rung of our row of the
+// same line. «ATK B XV Max & GA 2» (2021-02 Coliseum top prize): the donated master row has the same effect layout as its «ATK B XIV
+// Max & GA 2» with the next ladder value (attackUp 38000 -> 40000, +0.2x a rung as XII -> XIII -> XIV); so our XIV row with attackUp 40000,
+// its own name and text. Fixed numbers after every other skill of ours: 1271 / evolve category 175 (1265 .. 1270 / 169 .. 174 are the
+// donated avatar-board skills that avatar-boards.js appends later in the build, event_ids.json avatarSkills). Label: skillLadderRow.
+const LADDER_ROWS = [
+  { skillId: 1271, categoryEvolve: 175, name: 'ATK B XV Max & GA 2', from: 'ATK B XIV Max & GA 2', attackUp: 40000,
+    description: 'Deals 4x damage, and uses 2 SP gauges. Has a 100% trigger rate.' },
+];
+// -> the ladder rows missing from rows (a row already there by name: nothing); a fixed number used by another skill stops the run
+function ladderRows(rows) {
+  const out = [];
+  for (const l of LADDER_ROWS) {
+    const same = rows.find((r) => r.skillId === l.skillId);
+    if (same && same.name === l.name) continue;
+    if (same) throw new Error(`make-skill-table: skill ${l.skillId} is «${same.name}», not the ladder row «${l.name}»`);
+    if (rows.some((r) => r.categoryEvolve === l.categoryEvolve)) throw new Error(`make-skill-table: evolve category ${l.categoryEvolve} of «${l.name}» is taken`);
+    const base = rows.find((r) => r.name === l.from);
+    if (!base) throw new Error(`make-skill-table: «${l.from}» (the rung below «${l.name}») is not in the table`);
+    out.push({ ...base, skillId: l.skillId, sortId: l.skillId, categoryEvolve: l.categoryEvolve, name: l.name, description: l.description, attackUp: l.attackUp });
+  }
+  return out;
+}
+
 // scrive dir/skill.json, dir/skillExp.json e il report; sorgenti assenti: avviso, master invariato
 function patch(dir) {
   const files = [path.join(DATA, 'skill.json'), path.join(DATA, 'skillExp.json'), WIKI];
@@ -436,7 +460,9 @@ function patch(dir) {
   const masterFile = path.join(dir, 'skill.json');
   const master = fs.existsSync(masterFile) ? read(masterFile) : [];
   const real = realSkillRows(read(files[0]), master);
-  const { rows, report } = skillRows(real, parseWikiSkills(readWikiMedalPage(WIKI)), schema);
+  const built = skillRows(real, parseWikiSkills(readWikiMedalPage(WIKI)), schema), report = built.report;
+  const ladder = ladderRows(built.rows), rows = [...built.rows, ...ladder]; // Coliseum Part 4: the ladder rows (LADDER_ROWS)
+  for (const r of ladder) report.rows.push({ skillId: r.skillId, name: r.name, wikiName: '', triggerPct: 100, real: false, family: 'ladder', sister: null, note: 'skillLadderRow' });
   const exp = skillExpRows(read(files[1]));
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(masterFile, JSON.stringify(rows));
@@ -448,6 +474,6 @@ function patch(dir) {
   return { rows, report, exp };
 }
 
-module.exports = { ERA_431, readWikiMedalPage, parseWikiSkills, normName, shortText, features, family, baseProb, realSkillRows, skillRows, skillExpRows, patch };
+module.exports = { ERA_431, LADDER_ROWS, ladderRows, readWikiMedalPage, parseWikiSkills, normName, shortText, features, family, baseProb, realSkillRows, skillRows, skillExpRows, patch };
 
 if (require.main === module) patch(process.argv[2] || process.env.KHUX_MASTER_DIR || path.join(__dirname, 'master_data'));
