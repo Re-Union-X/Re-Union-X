@@ -100,7 +100,7 @@ const CREDITS_CSS = '<style>body{margin:0;background:#043654;color:#fff;font:17p
   + '.pill{display:inline-block;border-radius:12px;padding:0 12px;font-size:12px;font-weight:bold;letter-spacing:1.5px;line-height:1.8;color:#fff}'
   + '.p-gold{background:linear-gradient(#ffcf6b,#e0a43a);color:#3a2400}.p-blue{background:linear-gradient(#45a6e2,#2a7fbf)}'
   + '.p-purple{background:linear-gradient(#b57bd0,#9b59b6 55%,#7a3f94)}.p-pink{background:linear-gradient(#ff8fa8,#e0506f)}'
-  + '.row{padding:10px 0 10px 12px;border-left:5px solid #1a6fa8;border-bottom:1px solid #2f5d78}.row p{margin:4px 0 0}.row .rt{font-size:19px;font-weight:bold;margin:6px 0 0}'
+  + '.row{padding:10px 0 10px 12px;border-left:5px solid #1a6fa8;border-bottom:1px solid #2f5d78}.ptt{font-size:19px;font-weight:bold;margin:2px 0 0}.row p{margin:4px 0 0}.row .rt{font-size:19px;font-weight:bold;margin:6px 0 0}'
   + '.row.t{border-left-color:#9b59b6}.names{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}'
   + '.names span{border:1px solid #c79be0;background:#3b2152;color:#f1e2fb;border-radius:14px;padding:1px 12px;font-weight:bold;font-size:15px}'
   + '.heart{margin:18px 0 6px;padding:14px 16px;text-align:center;border:2px solid #ff8fa8;border-radius:14px;background:linear-gradient(#0d4a70,#06283e)}'
@@ -121,9 +121,9 @@ function creditsPage() {
   const member = (initial, name, role, text) => `<div class="member"><span class="mav">${esc(initial)}</span><div>`
     + `<span class="mname">${esc(name)}</span><span class="mrole">${esc(role)}</span><p>${k(text)}</p></div></div>`;
   const body = '<h1>Credits</h1><p class="sub">Re-Union X</p>'
+    + `<h2>Re-Union X Project</h2><p class="ptt">The restoration team</p><p>${k('The restoration server, its tools and these pages were made by the *Re-Union X Project* team.')}</p>`
     + `<div class="intro"><span class="st">&#10022;</span>${k('This restoration stands on the work of people who *preserved* and *documented* the game long before us.')}</div>`
     + `<div class="ded"><span class="pill p-gold">SPECIAL THANKS</span><div class="nm">thethiny</div><p>${k('Without thethiny this project would most likely never have got off the ground. His tools *opened the game\'s data*, his server showed that *bringing it back was possible*, and his public work gave us the map we have followed since the very first day. *We are deeply, truly grateful.*')}</p></div>`
-    + `<h2>Re-Union X Project</h2><p>${k('The restoration server, its tools and these pages were made by the *Re-Union X Project* team.')}</p>`
     + '<h2>With the help of</h2>'
     + row('Roboloid & Ultimadei', 'The KHUχ database: *Medal data, multipliers and special attack conditions*.')
     + row('KHUX Wiki & KH Wiki', '*Quests, Medals, special attacks and events* used as references.')
