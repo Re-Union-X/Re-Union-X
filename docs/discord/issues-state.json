@@ -854,6 +854,27 @@
    "group": "CLOSED",
    "hash": "bdf21b132ed0efdb",
    "name": "I-332 · What the Coliseum screen shows after round 4,000"
+  },
+  "I-333": {
+   "thread": "1575831532034326693",
+   "msg": "1575831532034326693",
+   "group": "OPEN",
+   "hash": "d8b7a47c539f1170",
+   "name": "I-333 · Quest 34 plays the same Power Bangle scene before and after the mission"
+  },
+  "I-334": {
+   "thread": "1575831543736180908",
+   "msg": "1575831543736180908",
+   "group": "OPEN",
+   "hash": "bed559aa4a7af1ae",
+   "name": "I-334 · Draw near the medal cap: «A server error has occurred. (200 ERROR :76)»"
+  },
+  "I-335": {
+   "thread": "1575831548790571079",
+   "msg": "1575831548790571079",
+   "group": "OPEN",
+   "hash": "acfb02e12d46e75d",
+   "name": "I-335 · Quest 275 «Complete within 4 turns» cannot be done"
   }
  }
 }
