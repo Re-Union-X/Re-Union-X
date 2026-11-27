@@ -1184,7 +1184,7 @@ board cell, whether reopening the list drops a Booster expired meanwhile, and th
 
 ## Boosters (Events Part 6, Tasks 2-7, 14 November 2026)
 
-- **Records** (private builder `tmp\eventsoostersuild_boosters.py`, user gate 14-11): 288 Boosters paid by served sources, 0 held:
+- **Records** (private builder `tmp\events\boosters\build_boosters.py`, user gate 14-11): 288 Boosters paid by served sources, 0 held:
   19 from event quests (EV-0556, EV-0624, EV-1217), 265 Event Board cells (2018-10, 2019-02, 2019-04, 2019-06, 2019-10,
   2019-12), 4 Raid Board cells (HD Vanitas (EX+) +5% x3, Final Form Sora +5%). Effects from the donor descriptions (label
   `boosterEffect`); expiry from the event's notice (260; always the end of the event's month) or the event's window (28, label
@@ -1349,7 +1349,7 @@ Plan `docs/superpowers/plans/2026-11-22-events-part10b-generated-maps.md`, ledge
 ## Event Board card pictures (14 November 2026)
 
 User 14-11: the Event Board cards were the plain lilac frame since Part 3 (no `img/sphere_incentive/<id>.png` for the event board
-ids; Roboloid has none of them; the worldwide resources we hold do not carry them). Search (private `tmp\eventsoards\wiki_cards`,
+ids; Roboloid has none of them; the worldwide resources we hold do not carry them). Search (private `tmp\events\boards\wiki_cards`,
 `wiki_shots`): the khuxwiki card pictures («Preview - …», 41 files) and the screenshots of the worldwide boards («Event Board - … KHUX»,
 70 files), downloaded with the user's go, matched against the 3,244 JP 4.3.1 cards on the opaque pixels.
 
@@ -1381,15 +1381,15 @@ tab / Traits row pictures of 905c5caf).
   Boosters, the Avatar Coin Booster boards = the cards of the December 2019 Event Boards), 34 Avatar Coin Boards with the
   khuxwiki card (the JP card carries a Japanese date banner), 4 Bad Guy Breaker Booster boards with the card cut in Part 6.
   41 of the 50 got a gold-background card later (user 15-11): the khuxwiki Power / Magic Gem (Premium) pictures (2017 and 2018
-  versions) and the Moon Gem Board, resized to 306x306 (`img\sphere_incentive_av`, review `screenshotsv_cards_gold_added.png`);
+  versions) and the Moon Gem Board, resized to 306x306 (`img\sphere_incentive_av`, review `screenshots\av_cards_gold_added.png`);
   then the 13 Speed Gem Premium boards and the Sun Gem Board, cut from the top-left corner of khuxwiki's board-layout screenshots
   (`Avatar Board - Speed Gem KHUX` for 2017, `... Speed Gem 2 KHUX` for 2018, `... Sun Gem Board KHUX`; review
-  `screenshotsv_cards_cropped.png`).
+  `screenshots\av_cards_cropped.png`).
   Prime - Halloween Sora is cut from the clean card in the purchase popup of a player video of 12 October 2018 (the list view
   draws «Offer ends» and the price over the card, the popup does not).
   8 boards keep the plain card: the 8 Skill Enhancement runs
   (2020-02-21, 2020-04-20, 2020-10-12, 2020-11-02): khuxwiki has no section for them and none of its board screenshots carries
-  their skills. Review sheets: `screenshotsv_cards_found_1.png`, `av_cards_found_2.png`, `av_cards_missing.png`.
+  their skills. Review sheets: `screenshots\av_cards_found_1.png`, `av_cards_found_2.png`, `av_cards_missing.png`.
 
 Bench (saves `avb19` = events2 with 30,000 test Jewels, story week of 18 April 2019; `avb20` = hol20g with 100 Jewels, week
 of 17 December 2020; both bench only):
@@ -1926,14 +1926,14 @@ User decision 10-11: the ten «Genie Jafar - n/10» quests of WW notice 68893 (�
 Sep. 3-15, 2020 PT) and the completion reward of that notice, 3,000 Jewels in full.
 - **Record.** Census EV-1266 is a CELEB row, outside the challenge selection (EQ, KEY, QUIZ): build_challenge.py read its donor
   evStage row 202665 under EV-1263 (same notice) and moved it to EV-1266 (`rowsMoved`, rule_window), where no record existed. The
-  private script `tmp\events\i248dd_ev1266.py` writes the record into `challenge_2020.json` after EV-1263 from the builder's own
-  quests of that row (`challenge\workuilt_all.json`): donor stage rows 743270..743279, JP 4.3.1 maps 743270 / 743273 / 743276 /
+  private script `tmp\events\i248\add_ev1266.py` writes the record into `challenge_2020.json` after EV-1263 from the builder's own
+  quests of that row (`challenge\work\built_all.json`): donor stage rows 743270..743279, JP 4.3.1 maps 743270 / 743273 / 743276 /
   743279 (three quests per map, as in the original), donor objectives (Draw Tickets 2-5 and Power / Speed / Magic Gems: «up to 30
   Draw Tickets, and 30 Gems» of the notice), drops and restrictions (no continue), card from the row's banner key 9BEENftQu (the
   notice banner). A rerun of build_challenge.py drops the record: rerun the script after it (like patch_surprise.py).
 - **Enemies.** The run's own rows 2009001554 / 2009101554 / 2009201554 / 2009301554 (Jafar, displayId 1554 = the genie form,
   already served; attacks 1554013..1554016 and 1554023 from the donated table), added in place to the private event enemy file by
-  `tmp\events\i248dd_jafar_rows.py` (as the Sept 2020 Dragon Maleficent / Ramuh rows). khuxwiki «KHUX & KHDR Campaign» is this
+  `tmp\events\i248\add_jafar_rows.py` (as the Sept 2020 Dragon Maleficent / Ramuh rows). khuxwiki «KHUX & KHDR Campaign» is this
   event's own series page (one run): «Jafar (Genie)» x1, Magic, every objective and reward equal to the donor's (wwCheck
   `confirmed`, khuxwiki name of displayId 1554). Nothing is reconstructed: entry label `original`.
 - **Completion reward.** `make_community_bonus.py` moved EV-1266 from `pending` to `events` (kind `completion`, prefix «Genie Jafar - »):
@@ -1945,3 +1945,18 @@ Sep. 3-15, 2020 PT) and the completion reward of that notice, 3,000 Jewels in fu
 - **Dry regen** (`tmp\i248`, copies): 4,270 of 4,270 quests (4,260 before); +10 stage (4004516..4004525), +1 evStage (23088), +4
   enemy, +5 enemyAttack rows, +4 POI keys, no other row or entry changed; event_ids.json +1 row, +10 entries, +1 check. The four
   maps must be imported by `import_event_stages.py` (all four import, room DG_0100_02_00 served).
+
+## Original music of every event quest (I-343, 27 November 2026)
+
+User decision 27-11: every event quest plays its original music (the donor stage row's bgmField / bgmBattle / bgmBoss, see «Music»
+in the make-events.js header). The private overlay `tmp\events\event_bgm.json` was last written on 13-11, before Events Parts 7-10,
+so their quests played the music of the copied story row. `tmp\event_bgm\scripts\make_event_bgm.py` was rerun on the records:
+4,148 stages with music (3,421 before; 86 inferred from the quest they were rebuilt from, none without); the ten Genie Jafar stages
+of I-248 come from their record and stay. The overlay must be rerun after any records change (it now also holds the 19 stages of the
+I-343 events below: 4,167).
+- **Dry regen** (`tmp\i343`, master copies, same environment as the recipe, current records): only the three music fields change,
+  on 299 event stage rows (stageKind 2); no other field, row or table. Of the 727 new overlay stages, 396 already had the same
+  music through their story row and 47 have no built quest.
+- **Sound files.** All 30 music ids of the overlay are served: 25 by the client, 501000630 / 501000730 / 501005002 by
+  `recon/tools/originals.tsv` (group 39), 501006041 / 501006042 copied from JP 4.3.1 by `import_jp_coco.py` (stage_bgm_plan).
+  None is missing.
