@@ -1,4 +1,5 @@
-// Contatori e assorbimento dei nemici 526-979 (enemy-mechanics.js, I-207): node server/test-enemy-mechanics.js
+// Contatori e assorbimento dei nemici 526-979 (enemy-mechanics.js, I-207): node server/test-enemy-mechanics.js [master folder]
+// Since 27-11 the story counters come from the donated 2021 master (enemy-counters-2021.js, checked by its own test)
 'use strict';
 const fs = require('fs'); const path = require('path');
 const mech = require('./enemy-mechanics');
@@ -28,11 +29,13 @@ mech.applyMechanics(rows, atts, table);
 check(JSON.stringify(rows) === snap, 'non idempotente');
 
 // master
-const master = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8'));
+const MASTER = path.resolve(process.argv[2] || path.join(__dirname, 'master_data'));
+const master = JSON.parse(fs.readFileSync(path.join(MASTER, 'enemy.json'), 'utf8'));
 const byId = new Map(master.map((e) => [e.enemyId, e]));
 const u = (id) => { const e = byId.get(id) || {}; return JSON.stringify([e.validUrgency, (e.urgency || [])[0], (e.urgencyValue || [])[0], (e.urgencyFrequency || [])[0], (e.urgencySkillId || [])[0]]); };
 // contrattacchi 526-979: solo quelli con la mossa verificata; l'assorbimento resta
-check(u(1912001620) === '[0,0,0,0,0]', `Chocolate Monster (q920) sospeso ${u(1912001620)}`);
+// 27-11: Chocolate Monster (q920) has its original 20-hit counter (2021 master)
+check(u(1912001620) === '[1,3,20,0,1620010]', `Chocolate Monster (q920) ${u(1912001620)}`);
 check(byId.get(2103001650)?.absorbAttribute === 16 && byId.get(2509)?.absorbAttribute === 4, 'assorbimento Darkness/Gargoyle Wizard');
 check(u(1501) === '[1,2,5,0,1501001]', `Gold Tricholoma originale toccato ${u(1501)}`);
 // event rows (make-event-enemies.js, Events Parts 1-10) keep the counters of their WW row: not ours, left out here
@@ -43,20 +46,14 @@ const P3 = new Set([...require('./make-colosseum').PART3_ENEMY_IDS, ...require('
 const coli = (id) => P3.has(id);
 const counted = master.filter((e) => e.validUrgency > 0 && e.enemyId !== 1501 && !(e.enemyId >= 160911501 && e.enemyId <= 160951501)
   && !evIds.has(e.enemyId) && !coli(e.enemyId));
-// mosse a 0 verificate (26-10): 44 nemici di 24 famiglie, ognuno con una riga d'attacco esistente; Chocolate Monster resta spento
-const attIds = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemyAttack.json'), 'utf8')).map((a) => a.enemyAttackId));
+// every counter has its attack row (story rows: 2021 master, enemy-counters-2021.js; the 44 verified moves of 26-10 stay in the
+// private table but the donor wins on story rows)
+const attIds = new Set(JSON.parse(fs.readFileSync(path.join(MASTER, 'enemyAttack.json'), 'utf8')).map((a) => a.enemyAttackId));
 const moves = JSON.parse(fs.readFileSync(mech.MOVES_PATH, 'utf8')).counters || {};
-check(Object.keys(moves).length === 44, `mosse a 0 verificate ${Object.keys(moves).length}, attese 44 (Green Requiem riacceso 27-10 con la sua atkSp)`);
-// plus the donor rows of enemy-motion-fix.js (I-261, 10-11): their original countdown wins (10271, 160110233 Dual
-// Durandal/Wandering Spook; 10249 is already one of the 44)
-const donor = Object.entries(require('./enemy-motion-fix').readOriginalMoves()?.enemies || {})
-  .filter(([, m]) => m.validUrgency > 0).map(([id]) => Number(id));
-const expected = new Set([...Object.keys(moves).map(Number), ...donor].filter((id) => byId.has(id)));
-const extra = counted.filter((e) => !expected.has(e.enemyId)).map((e) => e.enemyId);
-check(counted.length === expected.size && extra.length === 0,
-  `nemici con contatore ${counted.length}, attesi ${expected.size} (44 verificati + righe donate I-261); in piu': ${extra.slice(0, 5)}`);
-check(counted.every((e) => attIds.has(e.urgencySkillId[0]) && e.urgencyFrequency[0] === 0), 'mossa a 0 senza riga di attacco');
-check(u(1502) === '[1,2,2,0,992070010]', `Green Requiem: contatore con la sua atkSp (27-10) ${u(1502)}`);
+check(Object.keys(moves).length === 44, `mosse a 0 verificate ${Object.keys(moves).length}, attese 44`);
+check(counted.every((e) => e.urgencySkillId.slice(0, e.validUrgency).every((id) => attIds.has(id))), 'mossa a 0 senza riga di attacco');
+check(counted.length > 150, `nemici con contatore ${counted.length}`);
+check(u(1502) === '[1,2,2,1,1502020]', `Green Requiem: own 2021 heal 1502020 ${u(1502)}`);
 const src = JSON.parse(fs.readFileSync(require('./make-enemy-oltre').SOURCES_PATH, 'utf8')).sources;
 check(counted.every((e) => src[e.enemyId]), 'contatore su un nemico delle missioni 1-525');
 

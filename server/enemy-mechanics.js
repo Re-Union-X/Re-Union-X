@@ -11,6 +11,9 @@
 // Assorbimento: bit 0 Power, 1 Speed, 2 Magic, 3 Upright, 4 Reversed.
 // Grafica (ActMapSpEnmUI_*, Absorb_*): import_jp_coco.py. Notice «Story Quests 526-979».
 //
+// Since 27-11 (I-207, user) the story counters and their moves come from the donated 2021 WW master: enemy-counters-2021.js
+// runs after this step and wins on every story row the donor has (run it after this script when used alone).
+//
 // make-game-tables.js la applica dopo make-enemy-oltre.js addRows() e la creazione degli attacchi; da sola corregge
 // server/master_data sul posto (idempotente; poi revisione +1 e relogin.ps1):
 //   node server/enemy-mechanics.js [cartella master] [enemy_mechanics_oltre.json]

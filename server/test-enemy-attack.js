@@ -1,11 +1,12 @@
-// Attacchi originali dei nemici (enemy-attack-fix.js): node server/test-enemy-attack.js
+// Attacchi originali dei nemici (enemy-attack-fix.js): node server/test-enemy-attack.js [master folder]
 'use strict';
 const fs = require('fs'); const path = require('path');
 const fix = require('./enemy-attack-fix');
 const errors = []; const check = (ok, msg) => { if (!ok) errors.push(msg); };
-const atts = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemyAttack.json'), 'utf8'));
+const MASTER = path.resolve(process.argv[2] || path.join(__dirname, 'master_data'));
+const atts = JSON.parse(fs.readFileSync(path.join(MASTER, 'enemyAttack.json'), 'utf8'));
 // ogni attacco citato dai nemici esiste, anche i contrattacchi (urgencySkillId: 1501001 del Gold Tricholoma, I-207)
-const enemies = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'enemy.json'), 'utf8'));
+const enemies = JSON.parse(fs.readFileSync(path.join(MASTER, 'enemy.json'), 'utf8'));
 const haveAtt = new Set(atts.map((a) => a.enemyAttackId));
 const dangling = [...new Set(enemies.flatMap((e) => [...(e.skillId || []), ...(e.urgencySkillId || [])]).filter((s) => s && !haveAtt.has(s)))];
 check(dangling.length === 0, `attacchi citati ma assenti: ${dangling.slice(0, 5)} (${dangling.length})`);
@@ -31,7 +32,11 @@ const donorAtt = new Set(Object.keys(require('./enemy-motion-fix').readOriginalM
 // row, as the event rows; every other Coliseum row is checked as before
 const P3 = new Set([...require('./make-colosseum').PART3_ENEMY_IDS, ...require('./make-colosseum').PART3B_ENEMY_IDS, ...require('./make-colosseum').PART4_ENEMY_IDS]); // Part 3, 3b and 4
 const coli = (id) => P3.has(id);
-const storyCited = new Set(enemies.filter((e) => !evIds.has(e.enemyId) && !coli(e.enemyId)).flatMap((e) => [...(e.skillId || []), ...(e.urgencySkillId || [])]));
+// counter moves of the story rows that no skill list cites come from the donated 2021 master (enemy-counters-2021.js, I-207
+// 27-11): original rows outside the 39, like the donor moves
+const storyRows = enemies.filter((e) => !evIds.has(e.enemyId) && !coli(e.enemyId));
+const skillCited = new Set(storyRows.flatMap((e) => e.skillId || []));
+const storyCited = skillCited;
 const storyStatus = atts.filter((a) => storyCited.has(a.enemyAttackId) && !donorAtt.has(a.enemyAttackId)
   && !(a.enemyAttackId >= 992070000 && a.enemyAttackId < 992080000) && (a.poison || a.deepPoison || a.sleep || a.paralysis));
 check(storyStatus.length === 39, `attacchi originali con stato ${storyStatus.length} != 39 (le righe 9920700xx delle mosse a 0, gli eventi e le mosse donate a parte)`);

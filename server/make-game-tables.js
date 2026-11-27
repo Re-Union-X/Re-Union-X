@@ -452,15 +452,19 @@ if (enemies && fs.existsSync(namesFile)) {
     const atts = JSON.parse(fs.readFileSync(attBasePath, 'utf8'));
     attacksAdded += atkFix.addMissing(atts, enemies);
     // righe originali (stati alterati, potenza, buff) dai dati di thethiny: enemy-attack-fix.js
-    atkFix.applyEnemyAttacks(atts, atkFix.readOrig(undefined,
-      [...require('./make-event-enemies').attackRows(), ...motion.attackRows(movesSrc)]), undefined,
-      motion.motionOkAttacks(enemies, movesSrc));
+    const origAtt = atkFix.readOrig(undefined, [...require('./make-event-enemies').attackRows(), ...motion.attackRows(movesSrc)]);
+    atkFix.applyEnemyAttacks(atts, origAtt, undefined, motion.motionOkAttacks(enemies, movesSrc));
     fs.writeFileSync(attPath, JSON.stringify(atts));
     // contatori e assorbimento dei nemici 526-979 (enemy-mechanics.js, I-207), con gli attacchi gia' completi
     const mech = require('./enemy-mechanics');
     console.log('enemy-mechanics:', JSON.stringify(mech.applyMechanics(enemies, atts, mech.readTable())));
     // the original rows win over the counters rebuilt from the wiki (donor 10249/10271/160110233: same values, real moves)
     motion.applyOriginalMoves(enemies, movesSrc);
+    // story 526-979 counters and their moves from the donated 2021 WW master (enemy-counters-2021.js, I-207, user 27-11):
+    // leading elements only; a move whose animation is not served stays suspended; private donor folder, absent = no change
+    const c21 = require('./enemy-counters-2021');
+    console.log(c21.summary(c21.applyDonorCounters(enemies, atts, c21.readDonor(),
+      c21.defaultOptions(enemies, [...origAtt, ...(mech.readTable().rows || [])]))));
     // special-attack moves (attackMotion 2) of models without atkSp: own moves or plain copies (enemy-motion-fix.js, I-261)
     // safety net only on request (KHUX_ENEMY_PLAIN_SP=1): the real fix is the missing atkSp textures (I-261)
     const plainOn = /^(1|on|true|yes)$/i.test(String(process.env.KHUX_ENEMY_PLAIN_SP || ''));
