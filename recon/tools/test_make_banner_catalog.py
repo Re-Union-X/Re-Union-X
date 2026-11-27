@@ -310,14 +310,14 @@ check(n_md == 1 and MD['sn++ - axel b'] == {'date': '2021-01-01', 'ids': [[30207
 WIKI = os.environ.get('KHUX_WIKI_JSON', m.DEFAULTS['wiki'])
 TSV = os.environ.get('KHUX_BANNERS_TSV', m.DEFAULTS['banners'])
 if os.path.exists(WIKI) and os.path.exists(TSV):
-    TIER_BANNERS = 187  # 24-11: +5 Top-Drawer «three times per day» variants of B0242 (Tier 6+ slot), drawable now; + B0267 (D3); audit delle garanzie, appendice A (178) + 5 frasi SAB del 2016 - 3 a lista dal notice (2c/G4) + B0204 (2c/G9)
+    TIER_BANNERS = 186  # 27-11: -1 B0339 (excluded duplicate of B0340); 24-11: +5 Top-Drawer «three times per day» variants of B0242 (Tier 6+ slot), drawable now; + B0267 (D3); audit delle garanzie, appendice A (178) + 5 frasi SAB del 2016 - 3 a lista dal notice (2c/G4) + B0204 (2c/G9)
     cat = m.build_catalog(m.default_inputs())
     bs = cat['banners']
-    check(len(bs) == 792, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 e B0125 di B0126 (campo exclude); B0009 campagna di avatar board (user 23-11); 24-11: 13 notice rows of complete banners (exclude)
+    check(len(bs) == 790, f'banner {len(bs)}')  # 2c: B0507 doppione di B0500 e B0125 di B0126, B0155 di B0153, B0339 di B0340 (campo exclude); B0009 campagna di avatar board (user 23-11); 24-11: 13 notice rows of complete banners (exclude)
     check(not any(b['rowId'] == 'B0009' for b in bs), 'B0009 Zootopia: avatar boards a 3000 Jewel, non un banner (exclude)')
     from collections import Counter
     t = Counter(b['type'] for b in bs)
-    check(t == Counter({'SN': 213, 'FEATURED': 163, 'FALLING': 129, 'SKILL': 69, 'DAILY': 64, 'SEVEN': 44, 'FREE': 33,
+    check(t == Counter({'SN': 213, 'FEATURED': 163, 'FALLING': 128, 'SKILL': 69, 'DAILY': 64, 'SEVEN': 43, 'FREE': 33,
                         'STANDARD': 21, 'T_TICKET': 21, 'ITEM': 18, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
     # 85 = 78 della regola vecchia + i 7 banner della tranche 526-540 (12-01-2017 .. 08-02-2017, B0079-B0085),
     # che ora si sbloccano a 525; i 6 del lancio (B0001-B0006) passano da 200 a 0
@@ -471,10 +471,10 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(B['B0212']['bonus'] == [[3, 300948, 1]] and B['B0270']['bonus'] == [] and B['B0271']['bonus'] == [[3, 300948, 1]],
           'Magic Broom (G7)')
     # 2c/G8: limiti dal notice e «N times a day» / «Available N times» dalla wiki; B0242 resta 1 (le 3 sono le campagne)
-    lim = {r: (B[r]['dayLimit'], B[r]['totalLimit']) for r in ('B0035', 'B0080', 'B0242', 'B0255', 'B0304', 'B0334', 'B0339',
+    lim = {r: (B[r]['dayLimit'], B[r]['totalLimit']) for r in ('B0035', 'B0080', 'B0242', 'B0255', 'B0304', 'B0334', 'B0340',
                                                                'B0413', 'B0651', 'B0683')}
     check(lim == {'B0035': (3, 0), 'B0080': (3, 0), 'B0242': (1, 0), 'B0255': (3, 0), 'B0304': (1, 0), 'B0334': (3, 0),
-                  'B0339': (1, 0), 'B0413': (5, 0), 'B0651': (0, 3), 'B0683': (0, 3)}, f'limiti (G8) {lim}')
+                  'B0340': (1, 0), 'B0413': (5, 0), 'B0651': (0, 3), 'B0683': (0, 3)}, f'limiti (G8) {lim}')
     # 2c/G9: «If you receive the following Medals ... 3 dots» = preset per nome in testa (vince sullo slot 1-3)
     for r in ('B0145', 'B0157', 'B0184', 'B0190', 'B0195', 'B0199', 'B0203', 'B0207', 'B0212'):
         p0 = B[r]['enhance']['preset'][0]
@@ -673,6 +673,12 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check('B0125' not in B, 'B0125 duplicate of B0126, excluded')
     check(B['B0126']['pool']['sets'][:3] == ['2.1', '2.2', '3.1'] and len(B['B0126']['pool']['sets']) == 32 and B['B0126']['pool']['inheritAfter'] == '2017-05-22'
           and B['B0126']['prices'] == [3000] and B['B0126']['lotCount'] == 10 and B['B0126']['dayLimit'] == 3 and not B['B0126']['catalogOnly'], 'B0126: same pool as the excluded B0125, price and lot kept')
+    # 27-11: B0155 = B0153 (notice 31346) and B0339 = B0340 (notice 41617): the first of each pair excluded, the kept rows unchanged
+    check('B0155' not in B and 'B0339' not in B, 'B0155 and B0339 duplicates, excluded')
+    check(B['B0153']['prices'] == [3000, 2500, 2200, 2000, 1900] and B['B0153']['lotCount'] == 10 and B['B0153']['rarityMix'] == [[6, 1], [5, 9]]
+          and B['B0153']['pool']['inheritAfter'] == '2017-07-28' and len(B['B0153']['pool']['sets']) == 42 and B['B0153']['dayLimit'] == 0 and not B['B0153']['catalogOnly'], 'B0153: pool, falling ladder, lot and mix kept')
+    check(B['B0340']['prices'] == [1200] and B['B0340']['lotCount'] == 5 and B['B0340']['rarityMix'] == [[7, 5]] and B['B0340']['dayLimit'] == 1
+          and B['B0340']['pool']['inheritAfter'] == '2018-06-29' and len(B['B0340']['pool']['sets']) == 58 and not B['B0340']['catalogOnly'], 'B0340: pool, price, lot, mix and day limit kept')
     for r in ('B0353', 'B0374'):
         g = B[r]['guarantee']
         check(g['pity'] == 5 and g['pityStar'] == 6 and g['pitySlot'] == 2, f'{r} pity 6★ sullo slot 2')

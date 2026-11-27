@@ -96,7 +96,7 @@ const tests = {
     assert.strictEqual(d.notices[17978].title, '25% Off! Get the Big Deal for a Steal!');
     // user 23-11-2026: B0009 «Zootopia Medals & Avatars are Here!» was an avatar-board campaign, not a draw: out of the catalogue
     assert.ok(!d.rows.B0009, 'B0009 is not a banner');
-    assert.ok(Object.keys(d.rows).length >= 785, `banners with a notice (793 banners since 24-11: 13 duplicate notice rows excluded): ${Object.keys(d.rows).length}`);
+    assert.ok(Object.keys(d.rows).length >= 785, `banners with a notice (790 banners since 27-11: 13 duplicate notice rows excluded): ${Object.keys(d.rows).length}`);
     for (const id of ['B0002', 'B0003', 'B0004', 'B0077']) assert.ok(d.missing[id], `${id}: no notice recovered`);
     assert.deepStrictEqual([d.rows.B0001.noticeId, d.rows.B0001.confidence], [19382, 'low'], 'DAILY DEAL!: a related notice only');
   },

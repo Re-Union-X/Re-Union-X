@@ -234,3 +234,5 @@ B0288	featured	trait medal #3	notice 39402 (the notice row B0289, excluded as it
 B0125	exclude	duplicate	notice 28251 (Cloud & Magic Mirrors Deal, 22-25/05/2017, 3 per day) = B0126, which carries the notice details; B0125 is the wiki row with the same banner image and no notice data
 B0126	price	3000	notice 28251 (the price and the lot size were completed from the excluded twin B0125, same deal: 3,000 Jewels, 10 medals)
 B0126	draw_size	x10	notice 28251 (same as above)
+B0155	exclude	duplicate	notice 31346 (Falling Price Deal, 11-17/08/2017) = B0153, which carries the notice details; B0155 is the wiki row with the same banner image and the same price ladder, lot and rarity mix
+B0339	exclude	duplicate	notice 41617 (7★ Deal, 29/06-02/07/2018, once per day) = B0340, which carries the notice details; B0339 is the wiki row with the same banner image, price, lot and rarity mix
