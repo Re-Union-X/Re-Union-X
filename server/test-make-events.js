@@ -487,8 +487,9 @@ const tests = {
     // the 35 Org XIII / Keyblade War ids (Part 5), the High Score Challenges HSC (Part 8) and the 11 CELEB / SPEC / COLLAB quest events
     // of 2016-11..2018-03 (Part 10a), the 6 Booster Challenges of 2017-11..2018-03 (Part 10c), the CELEB row EV-1266 of the ten
     // «Genie Jafar - n/10» quests (I-248), the three CELEB rows EV-1305 / EV-1319 / EV-1414 of the 2020 Halloween, Coco and Year-End
-    // Countdown quests (I-343)
-    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6 + 1 + 3);
+    // Countdown quests (I-343), the eight records of I-344 Part A
+    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6 + 1 + 3 + 8);
+    for (const id of ['EV-1084', 'EV-1091', 'EV-1154', 'EV-1180', 'EV-1349', 'EV-1418', 'EV-1463', 'EV-1473']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     assert.ok(REAL_CONFIG.serve.censusIds.includes('EV-1266'));
     for (const id of ['EV-1305', 'EV-1319', 'EV-1414']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     for (const id of ['EV-0319', 'EV-0332', 'EV-0350', 'EV-0369', 'EV-0392', 'EV-0411']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
@@ -1328,6 +1329,39 @@ const tests = {
     assert.deepStrictEqual(y.quests.map((q) => q.window[0]), ['2020-12-28 08:00:00', '2020-12-29 08:00:00', '2020-12-30 08:00:00', '2020-12-31 08:00:00'],
       'one Pacific day per quest');
     assert.strictEqual(new Set(y.quests.map((q) => q.evStageId)).size, 4, 'one evStage row per day');
+  },
+  // I-344 Part A (28-11-2026): WW event records written from quests build_challenge.py had built under a neighbouring census id.
+  // Census BOARD rows with quests (EV-1084, EV-1349, EV-1463, EV-1473) are listed by id, not by type, and are event cards (they
+  // have quests, so routes-events.js / event-pages.js boardOnly is false); a weekly daily-coin row has no weekday; EV-1091 holds
+  // only its Event & Trait Medals row (the Pop Quiz / Hades Cup rows come in later parts)
+  i344_part_a() {
+    const medal = [objective(10, 'Complete without having to continue', { type: 3, id: 90011, num: 1, name: 'Quest Medal' })];
+    const week = ['2020-11-16 08:00:00', '2020-11-23 07:59:59'];
+    const ev = (id, s, e) => donorEv({ eventStageId: id, startTime: s, endTime: e, eventType: 3 });
+    const recs = [
+      record('EV-1084', [742140, 742141].map((id) => quest(id, 1, [501], { objectives: medal, window: ['2020-04-01 07:00:00', '2020-05-01 06:59:59'] })),
+        { name: 'Returning Org. XIII Avatar Parts Event', type: 'BOARD', start: '2020-04-01', end: '2020-05-01', notices: [64156],
+          evStage: [ev(201210, '2020-04-01 07:00:00', '2020-05-01 06:59:59')] }),
+      record('EV-1349', [quest(743680, 1, [501], { name: 'Daily Event: Avatar Coins', objectives: medal, window: week,
+        wwCheck: { status: 'ruled', ruling: 'A1' }, label: 'original; enemies confirmed by another run' })],
+      { name: 'Daily Avatar Coin Event', type: 'BOARD', start: '2020-11-16', end: '2020-11-23', notices: [71256], evStage: [ev(203094, ...week)] }),
+      record('EV-1091', [quest(742240, 1, [501], { name: 'Event & Trait Medals', objectives: medal, window: ['2020-04-07 07:00:00', '2020-05-01 06:59:59'] })],
+        { name: '[Updated 04/07] 4th Anniversary Event & Campaign!', type: 'CELEB', start: '2020-04-07', end: '2020-05-01', notices: [64990],
+          evStage: [ev(201223, '2020-04-07 07:00:00', '2020-05-01 06:59:59')] }),
+      record('EV-1083', [quest(742100, 1, [501], { objectives: medal })], { type: 'BOARD', evStage: [donorEv({ eventStageId: 201209 })] }),
+    ];
+    const out = me.buildEvents(recs, { ...CONFIG, serve: REAL_CONFIG.serve }, master());
+    assert.deepStrictEqual(out.skipped, [{ censusId: 'EV-1083', reason: 'notSelected' }], 'a BOARD row not listed is not built');
+    const o = entry(out, 'EV-1084'), d = entry(out, 'EV-1349'), t = entry(out, 'EV-1091');
+    for (const [e, n] of [[o, 2], [d, 1], [t, 1]]) {
+      assert.ok(e && e.available && e.quests.every((q) => q.served), JSON.stringify(e && e.quests.map((q) => q.why)));
+      assert.strictEqual(e.stageIds.length, n);
+      assert.ok(e.quests.length > 0, 'an event card, not a board-only entry');
+    }
+    assert.strictEqual(o.label, 'original');
+    assert.ok(!(d.days && d.days.length) && d.quests.every((q) => !(q.days && q.days.length)), 'daily coins: the whole week, no weekday');
+    assert.deepStrictEqual(d.quests.map((q) => q.window), [week]);
+    assert.deepStrictEqual((t.rows || [{ evStageId: t.evStageId }]).map((r) => r.evStageId), [t.evStageId], 'one row: Event & Trait Medals only');
   },
   // fix round 1 (M3): a record's own boardSetKey that the board sets do not have stops the run (when board sets are given)
   record_set_key_known() {
