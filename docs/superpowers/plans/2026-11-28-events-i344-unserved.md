@@ -186,3 +186,356 @@ when that record is in the file (EV-1080, EV-1089, EV-1150, EV-1350, EV-1417, EV
 - **Drops** (ruling 7): row 200565, the 91000xx template rows, EV-1514..1528: a `reasonText` line each in event_config.json so
   the Event Catalog does not list them as «Not built yet».
 - **Separate issue** (ruling 8): open it in ISSUES with §6 of the inventory.
+
+---
+
+## Part B: pilot builder for census types outside EQ / KEY / QUIZ (detailed, 28-11-2026)
+
+Draft researched on 28-11 (private evidence `tmp\i344\partb\`: scratch build, analyze1.txt, rows_per_record.txt). R5 was checked
+quest by quest (private `tmp\i3445\R5_FINDINGS.md`).
+
+### Part B rulings (user, 28-11-2026)
+
+- **R1:** yes. The «Find the Target» rerun row 201936 is served in EV-1161 on EV-0576's stages (`sharedWith`, as EV-0772).
+- **R2 (a):** G21 shows one card per Shop week: the latest day row, listing every quest unlocked so far (Task B5).
+- **R3:** three new Event Catalog chips (Task B6): MISSION «Monthly Missions», RANK «Damage Contests», CAMP-LOGIN «Campaign Quests».
+- **R4:** sibling ids EV-1040b, 1068b, 1101b, 1139b, 1222b, with the names and types of the R4 list below. Never type HSC.
+- **R6:** rulings A1 / A2 of 23-11 apply to the new records.
+- **R5, verified:**
+  - 725440 Agrabah Mission #2 (2020-06): served with the existing `mapEnemySwaps` Bag O' Coal -> Bag O' Jewels (same map file as
+    the served 2018 / 2019 runs). The driver clears the builder's hold.
+  - 739912 Sweet Valentine 3/7: served with the donor objective «Defeat Chocolate Gargoyle x 15». The JP map has 15; the khuxwiki
+    objective is copied from 2/7. This is the I-251 one-run donor rule.
+  - 732160 Incredibles 2 Challenge 6/10: served on the JP map as it is (Armored Knight x2). The khuxwiki «Armored Archer» line
+    contradicts the page's own enemy list. The user OK overrules it.
+  - 714790 Find the Keyblade Wielders #9 and 742104 Clarice Screen Debut 5/5 (2020): **option (a), follow khuxwiki**. The extra
+    JP team is removed: the lone Great Pretender (part 1, team 7) and the Pretender in the Shadow's room (part 4, team 11). This
+    needs Task B5b. Declare it in the Notices (map edited to match the original listing).
+  - Enemy rows still to add (in Task B4, never substituted): Chocolate Gargoyle 190210083 (also for 6/7), and the Clarice 2020
+    Pretender 2003001001 / Shadow 2003500001. All three are in the donor master.
+
+### Task B5b: `mapTeamRemovals` (R5 option (a)), TDD
+
+**Files:** Modify `recon/tools/import_event_stages.py`, `server/event_config.json` (`mapTeamRemovals`), `server/make-events.js`
+(quest enemy counts). Test `recon/tools/test_import_event_stages.py`, `server/test-make-events.js`.
+
+**Interfaces:** `event_config.json` `mapTeamRemovals`: `{"<mapKey>": [{"part": n, "team": t, "why": "..."}]}`.
+- The import tool drops that enemy team from its copy of the map part (never from the JP file) and fixes the part's counts.
+- make-events.js removes the team's enemies from the quest's counted enemies and labels the quest `mapTeamRemoved`.
+
+- [ ] **Step 1: failing tests.**
+  - `test_team_removed` (test_import_event_stages.py): a fixture part with 3 teams gives 2 teams after removal. The team count
+    and the enemy count drop, and the other teams' bytes are unchanged.
+  - `map_team_removed` (test-make-events.js): a quest whose map key lists a removal loses that team's enemy count and gets the
+    label.
+- [ ] **Step 2:** both fail.
+- [ ] **Step 3:** implement.
+- [ ] **Step 4:** both pass; the full suite passes.
+- [ ] **Step 5:** commit `I-344 Part B: mapTeamRemovals (R5 option a)`.
+- [ ] **Step 6:** fill `mapTeamRemovals` for the two maps from R5_FINDINGS.md, and add one Notices line.
+
+**Goal:** serve the 40 Part B records (35 census ids + 5 sibling ids), 87 donor evStage rows and 329 quests of inventory §3b:
+B1 plain lists, B2 one-quest-a-day countdowns, B3 day-row rotations (G21 cumulative), B4 HSC side rows (sibling ids), B5 the
+G48 reruns. G11 waits for Part C.
+
+**Architecture:** one builder, not a fork. `build_challenge.py` gets three env hooks (default behaviour unchanged, proven by a
+zero-drift rerun). A private driver `tmp\events\i344\build_i344b.py` runs it by census id into a work folder, then applies the
+Part B rules: a hand row table, sibling ids, rulings A1 / A2, record types, the `cumulativeRows` flag. It writes ONE new record
+file `tmp\events\records\celeb_2018_21.json`. The challenge files are not touched. One make-events.js rule (`cumulativeRows`)
+and one calendar rule are needed, for G21 only.
+
+**Evidence (scratch run, 28-11, read-only):** `tmp\i344\partb\scratch_build_partb.py` is a copy of build_challenge.py with the
+three changes below hard-wired, writing only to `tmp\i344\partb\scratch1`. It ran in 11 s: 40 records, 335 quests (329 without
+the HSC rows), 8 board-set lines. The per-record survey is in `analyze1.txt` (script `analyze.py`) and `rows_per_record.txt`.
+
+## Findings that change the inventory
+
+1. **G48 has 35 quests, not 25.** Notice 66111 has four donor rows: 201935 Lady Luck (10), **201936 «Find the Target Pt. 1-9» +
+   «Defeat an Iron Giant» (10)**, 201937 Agrabah / Daybreak (10) and 201938 Captain / Ferry Reaper (5). The audit counted 201936
+   as served because its donor stages 723110..723200 are the stages of EV-0576 (the audit test is «a stage is served», not «the row
+   is served»). The same blind spot can hide other rerun rows: see Task B0.
+2. **15 «no khuxwiki page» quests have pages under other titles.** EV-1099 «Huey, Dewey & Louie Screen Debut Celebration - n/5»,
+   EV-1226 «Alice Screen Debut Event - n/5», EV-1241 «Bambi Screen Debut Event - n/5». The donor names differ, so the run rules
+   never matched. A page pin fixes them. A rough check gives 12 equal, 3 to confirm with the builder's parser (742333, 743121,
+   743122).
+3. **The census types of Part B are RANK, SPEC, COLLAB, CAMP-LOGIN, STORY, CELEB, BOARD, MISSION and HSC.** RANK, MISSION and
+   CAMP-LOGIN have no Event Catalog TYPE chip (event-pages.js TYPE_OPTS shows the bare code), and SPEC shows «Daily Presents»
+   (EV-0505 is Critical Quests). Ruling R3.
+4. **Boosters not built:** the 30 «Get Yourself a Booster» Boosters 2004011..2004040 (EV-1101b: all 10 quests boosterOnly) and the
+   Incredibles 2 Boosters 1808007..1808009 (EV-0532: 3 quests boosterLater). The donor emblem rows exist
+   (`private\donations\relux_2026-11\verified\emblem_boosters.json`). `build_boosters.py` takes them in once the records exist
+   (scope «records ... served or held boosterOnly»), so this needs a second regen pass.
+5. **Builder holds that stay held** (as in the served records, 65 heldBack today): 732160 (EV-0532 Incredibles 2 Challenge 6/10:
+   khuxwiki Armored Archer x2, JP map Armored Knight), 714790 (EV-0600 Find the Keyblade Wielders #9: Great Pretender count),
+   742104 (EV-1069 Clarice 5/5: JP Pretender not in the WW sources), 725440 (EV-1161 Agrabah Mission #2: Bag O' Jewels vs Bag O'
+   Coal; EV-0576 holds the same quest too), 739912 (EV-0712 Sweet Valentine 3/7: objectiveMismatch). Ruling R5.
+6. **24 of the 25 G48 rerun quests** have only the khuxwiki page of another run, and it agrees with the map: ruling A1 (23-11),
+   as Part A. Agrabah Mission #2 differs and stays held.
+7. **No other record holds a Part B row** (scan of `evStage`, `rowsMoved` and `rowsUnclear` over every record file: none). The
+   exception is `challenge/work/built_all.json`, where EV-1109 held 201230 before its round-2 rebuild. The HSC rows 262..267 are in
+   hsc.json. If the builder is selected by id, it keeps them on the HSC census ids, so the driver must drop them (row table).
+8. **B2 and B3 (G34 / G35) need no code.** EV-1414 already serves 24 h one-quest rows: one card per donor row (allocateRows /
+   subRows), no `days` (24 h is above shortWindowHours 12), and the 06-11 daily rule lists every card of the Shop week. G21 needs
+   code: the 14 day rows list the stages cumulatively (2, 4, ... 26, then 28). After dedup («one quest per stage»), each quest
+   sits only on its first row. The last row (03-14..03-31) would then list just its own 2 quests, and the Shop weeks after
+   03-14 would show 2 of the 28.
+
+## Part B table (from the scratch run; HSC rows removed)
+
+| Sub | G | Record (type now) | Donor rows | Q | Run rows | Notes |
+|---|---|---|---|---|---|---|
+| B1 | G01 | EV-0460 (RANK) | 200453 | 9 | 0 | |
+| B1 | G05 | EV-0505 (SPEC) | 200492 | 3 | 0 | |
+| B1 | G06 | EV-0517 (COLLAB) | 200575 | 5 | 0 | |
+| B1 | G07 | EV-0530 (CAMP-LOGIN) | 200598 | 1 | 0 | |
+| B1 | G08 | EV-0532 (COLLAB) | 200594 | 10 | 0 | 732160 held; 3 boosterLater |
+| B1 | G12 | EV-0600 (STORY) | 200652 | 10 | 2 | 714790 held |
+| B1 | G13 | EV-0634 (CELEB) | 200668 | 10 | 7 | |
+| B1 | G14 | EV-0652 (CELEB) | 200681 | 15 | 6 | |
+| B1 | G18 | EV-0695 (CELEB) | 200702 | 1 | 0 | |
+| B1 | G19 | EV-0712 (CELEB) | 200706 | 7 | 4 | feeder of set 2019-02; 739912 objectiveMismatch |
+| B1 | G20 | EV-0715 (CELEB) | 200708 | 7 | 0 | feeder of set 2019-02 |
+| B1 | G23 | EV-0751 (BOARD) | 200735 | 5 | 0 | |
+| B1 | G24 | EV-0756 / EV-0792 (MISSION) | 209963 / 209962 | 5 + 5 | 2 | two records |
+| B1 | G25 | EV-0786 (BOARD) | 200759 | 1 | 2 | linked to 2019-04, no coins |
+| B1 | G26 | EV-0815 (CELEB) | 200767 | 5 | 0 | |
+| B1 | G27 | EV-0834 (CELEB) | 200774 | 5 | 1 | feeder of set 2019-06 |
+| B1 | G28 | EV-0849 (CELEB) | 200779 | 6 | 0 | feeder of set 2019-06 |
+| B1 | G39 | EV-1021 (MISSION) | 200886 | 10 | 12 | |
+| B1 | G43 | EV-1069 / 1072 / 1099 / 1182 / 1226 / 1241 (CELEB) | 200918 / 200920 / 201228 / 201952 / 202645 / 202652 | 30 | 18 | EV-1085 Chip & Dale is in the G44 record; 15 page pins; EV-1182 without HSC row 266 (Part E, G49 appends it to the same record); 742104 held |
+| B1 | G53 | EV-1357 (CELEB) | 203092 | 5 | 10 | type 41 x5; window 11-19..12-03 is outside every seasonal Deal: plain Draw Tickets |
+| B2 | G09 | EV-0557 (CELEB) | 200620..200622 | 3 | 3 | 3 one-day rows |
+| B2 | G15 | EV-0661 (CELEB) | 200674..200678 | 5 | 0 | 5 one-day rows |
+| B2 | G33 | EV-0901 (CELEB) | 200799..200803 | 5 | 0 | 5 one-day rows |
+| B2 | G44 + G43 | EV-1085 (CELEB) | 201212 (Chip & Dale, 12 days) + 201213..201217 (countdown) | 10 | 0 | one record, 6 cards |
+| B2 | G44 | EV-1253 (CELEB) | 202660..202664 | 5 | 0 | 5 one-day rows |
+| B3 | G34 | EV-0949 (CELEB) | 200821..200827 | 21 | 7 | 7 day rows x 3; linked to 2019-10, no coins |
+| B3 | G35 | EV-0966 (CELEB) | 200838..200844 | 21 | 0 | raid row 10258 moved (RAID) |
+| B3 | G21 | EV-0728 (BOARD) | 200713..200726 | 28 | 1 | cumulative (210 row refs -> 28 quests); type 19 = alias 20, ids in avatarParts |
+| B4 | G40 | EV-1040b «Speed Gem Drop Event» | 200902 | 4 | 0 | rerun of EV-0988b / EV-1131 quests (rowShare) |
+| B4 | G40 | EV-1068b «March's Big Bonus Challenge» | 200917 | 7 | 7 | Nimble Reaper |
+| B4 | G40c | EV-1101b «Keyblade Wielder Appreciation Event» | 201230 | 10 | 0 | boosterOnly until the Boosters are built |
+| B4 | G40 | EV-1139b «Magic Gem Drop Event! (5/22)» | 201589 | 4 | 0 | rerun of EV-1031 quests (rowShare) |
+| B4 | G40 | EV-1222b «Keyblade Challenge (7/24)» | 202308 | 16 | 21 | |
+| B5 | G48 | EV-1161 (CAMP-LOGIN) | 201935, 201936, 201937, 201938 | 35 | 10 | 201936 shares EV-0576's stages (sharedWith); 201937 / 201938 share its maps (rowShare); A1 x24; 725440 held |
+
+Total: 40 records, 87 rows (evStage 23103..23189 at most; Part A ended at 23102), 329 quests, 112 run rows (dedup over records,
+every model drawn or approved: MISSING.md «model drawn» 78 lines, «new model approved» 35, none missing). Expected served on the
+first pass: 329 − 5 held − 10 boosterOnly − (0..3 page-pin quests that differ) = 311..314; after the Booster pass +10.
+
+## Rulings (asked 28-11; the user answers are in «Part B rulings» above)
+
+- **R1 (G48, finding 1):** the 2020-06 «Find the Target» rerun row 201936 is served in EV-1161 like the other two returning
+  scenario rows (ruling 4). Its quests have EV-0576's own donor stages. They are served through EV-0576's stage rows
+  (`sharedWith`, as EV-0772), so a quest cleared in one run shows as cleared in the other, and its objectives are paid once.
+- **R2 (G21, finding 8):** how the cumulative Org. XIII dailies show in the Shop-week model. **Recommended (a):** one card per
+  Shop week, the latest day row of the week, listing every quest unlocked up to that day (the original card of that day; the
+  week shows its last day, as countdowns show the whole week). (b) One card per day row with its cumulative list: the same quest
+  then repeats on up to 7 cards in one week. (c) No code: each card lists only its 2 new quests, and after 03-14 the week shows 2
+  of 28 (not faithful).
+- **R3 (finding 3):** record types. **Recommended:** keep the census type, and add three Event Catalog chips in
+  event-pages.js TYPE_OPTS: MISSION «Monthly Missions», RANK «Damage Contests», CAMP-LOGIN «Campaign Quests». Alternative, data
+  only: give each record the type of the served series of the same quests (MISSION -> GEM as EV-0825..0886, RANK / CAMP-LOGIN ->
+  EQ, SPEC EV-0505 -> EQ).
+- **R4 (B4):** sibling ids and names, on the EV-0988b precedent (`splitFrom`). The name is the notice's half for that row:
+  EV-1040b «Speed Gem Drop Event» (GEM), EV-1068b «March's Big Bonus Challenge» (EQ), EV-1101b «Keyblade Wielder Appreciation
+  Event» (KEY, as EV-1173 / EV-1217), EV-1139b «Magic Gem Drop Event! (5/22)» (GEM), EV-1222b «Keyblade Challenge (7/24)» (KEY,
+  as EV-1086). Never type HSC (isHsc would make them High Score rows).
+- **R5 (finding 5):** the 5 builder holds stay «not served yet», the way the served records hold them. Or the user rules on each
+  one (725440 is also held in EV-0576 but served in the pilot EV-0772: say whether the A1-like treatment should extend to «differ
+  (other run)»).
+- **R6 (finding 6):** confirm that rulings A1 / A2 of 23-11 apply to new records (Part A did so for A1).
+
+---
+
+### Task B0: re-audit by donor row (finding 1)
+
+**Files:** Create `tmp\i344\partb\audit_rows_b0.py` (read-only).
+- [ ] **Step 1:** for every non-raid ReLux row, count it as served only when an `events.json` row has `donorEvStageId` = the row, or
+  a quest has `donorRow` = the row, or the row is in a record's `rowsMoved` / `evStage`. List the rows that `audit_rows.json`
+  calls served but this test does not.
+  Expected: 201936, plus any other rerun row (each one goes into this Part or a later Part's table; report the list to the user
+  with R1).
+
+### Task B1: env hooks in build_challenge.py (default unchanged)
+
+**Files:** Modify `tmp\events\challenge\build_challenge.py` (private; backup `.bak_i344b`).
+
+**Interfaces:**
+- `KHUX_CHALLENGE_IDS=<ids>`: SEL becomes `['--ids', ids]` (no `--from` / `--types` / `--skip-in`).
+- `KHUX_CHALLENGE_SKIP_ALL=1`: `SKIP_IN` (other_rows, USED_BY) is every record file except `event_anchors.json` and the output
+  file of the driver.
+- `KHUX_CHALLENGE_OUT` (exists): with the two hooks, it is required (the hooks never write the live folders).
+- [ ] **Step 1:** add the three lines (the hard-wired versions are lines 61 / 65 / 250 of `tmp\i344\partb\scratch_build_partb.py`)
+  plus a header paragraph «I-344 Part B».
+- [ ] **Step 2:** zero-drift check, hooks off: `KHUX_CHALLENGE_OUT=D:/Progetto_Restauro_KH_UX/tmp/i344/partb/drift python -I
+  build_challenge.py`, then compare `drift/records/challenge_20xx.json` with the scratch rerun of the same file BEFORE the edit
+  (run it first into `drift0`). Expected: byte-identical. The live records differ from both by the post-builder scripts
+  (add_ev1266, add_i343, add_i344a, patch_surprise, patch_seasonal, round 2), which is why the comparison is with drift0, not
+  with the live files.
+
+### Task B2: page pins for the three 2020 Screen Debut series (finding 2)
+
+**Files:** Modify `tmp\events_p1\pilot\work\build.py` (P4_PAGE_PIN, backup `.bak_i344b`).
+- [ ] **Step 1:** add the loops on the 720470 / EV-0423 pattern, with the evidence (the series name and `nadesc` of each page):
+  742330 + k -> «Huey, Dewey & Louie Screen Debut Celebration - (k+1)/5»; 743120 + k -> «Alice Screen Debut Event - (k+1)/5»;
+  743210 + k -> «Bambi Screen Debut Event - (k+1)/5».
+- [ ] **Step 2:** rerun Task B1 Step 2 (hooks off). Expected: still byte-identical (these stages are not in the EQ / KEY / QUIZ
+  selection).
+- [ ] **Step 3:** scratch Part B run. Expected: the 15 quests have wwCheck `agree`. A quest that differs stays held: report it.
+
+### Task B3: driver build_i344b.py
+
+**Files:** Create `tmp\events\i344\build_i344b.py`, `tmp\events\i344\i344b_table.py` (private). Writes
+`tmp\events\records\celeb_2018_21.json`, `tmp\events\i344\partb_work\` (builder outputs), and `board_sets.json` lines (feeders).
+
+**Interfaces:**
+- `TABLE`: `(recordId, censusId, name|None, type|None, rows [donor ids], expectedStages [..], flags)`, one entry per Part B
+  table line. Sibling entries carry `splitFrom` and the R4 name and type.
+- Produces records `{censusId, name, start, end, type, notices, evStage, quests, builtBy, [splitFrom], [cumulativeRows],
+  [rowsMoved]}`.
+- [ ] **Step 1:** run build_challenge.py with `KHUX_CHALLENGE_IDS=<the 40 census ids> KHUX_CHALLENGE_SKIP_ALL=1
+  KHUX_CHALLENGE_OUT=D:/Progetto_Restauro_KH_UX/tmp/events/i344/partb_work`, and read the year files of `partb_work/records`.
+- [ ] **Step 2:** for each TABLE entry:
+  - keep exactly the listed rows. Every other row goes to `rowsMoved` `{to, why}`: 262..267 -> the HSC record (hsc.json), 266 ->
+    «EV-1182 (Part E, G49)», raid rows as the builder moved them;
+  - assert the kept quests' stage ids = expectedStages;
+  - assert no kept row is a `donorEvStageId` or quest `donorRow` in `server/game_data/events.json` (the row test, not the stage
+    test: rerun stages are allowed, as EV-0772).
+- [ ] **Step 3:** rulings per quest:
+  - A1 when `enemyAgreement == 'agree (other run)'` and the marker row is present (patch_ww_ruling.patch_quest);
+  - A2 when `'no khuxwiki page'` and the JP map ids are among the donor row ids;
+  - anything else held stays as built;
+  - EV-0728 gets `cumulativeRows` with its evidence (the 14 donor ranges 739980..739981+2k).
+- [ ] **Step 4:** write `celeb_2018_21.json` (indent 1, `\n`, records in census order). Idempotent: an equal record prints «already
+  present, equal», a different one stops. Apply the builder's feeder lines to `tmp\events\boards\board_sets.json` (censusRecords
+  -> celeb_2018_21.json for EV-0712 / 0715 / 0834 / 0849; their censusIds are already members), idempotently.
+- [ ] **Step 5:** scratch run `python -I build_i344b.py D:/Progetto_Restauro_KH_UX/tmp/i344/partb/scratch_recs`. Expected: «added»
+  x40, 329 quests, 87 rows. Second run «already present, equal» x40. `analyze.py` on it: held = the 5 of R5 (+ the
+  boosterOnly 10), no `noWiki` left.
+
+### Task B4: run enemy rows
+
+**Files:** Create `tmp\events\i344\add_i344b_rows.py` on the `add_i344a_rows.py` pattern. Modify (by the script)
+`private\events\enemies\event_enemies.json`.
+- [ ] **Step 1:** ids = counted enemy / target ids of the kept quests that are neither in `server/master_data/enemy.json` nor in
+  the private file. Expected: 112 ids. Assert each donor row exists and each model is drawn.
+- [ ] **Step 2:** scratch copy first (`tmp\i344\partb\event_enemies.json`). Expected: «added» x112; second run «already present,
+  equal» x112. Then the live file (backup `tmp\i344\partb\event_enemies.before_b4.json`).
+- [ ] **Step 3:** the driver (Task B3) fills `eventEnemyRows` after this. Run it live (backup `tmp\i344\partb\backup_b3`).
+
+### Task B5: make-events.js `cumulativeRows` (G21, ruling R2 (a)) — TDD
+
+**Files:** Modify `server/make-events.js`, `server/event-calendar.js`, `server/routes-events.js` (keptCards). Test
+`server/test-make-events.js`, `server/test-event-calendar.js`, `server/test-event-routes.js`.
+
+**Interfaces:** record `cumulativeRows: '<evidence>'` -> entry `cumulativeRows: true`. A quest is on every row that lists it
+(`donorRow` or `alsoInRows`). Calendar: of the rows of such an entry that overlap the Shop week, only the last one is listed
+(its quests include those of the earlier rows). Kept: only the last built row.
+
+- [ ] **Step 1: failing tests.**
+  - `cumulative_rows_list_earlier_quests` (test-make-events.js): one record with three 24 h donor rows A (stages s1, s2), B (s1..s4)
+    and C (s1..s6, 10 days). Quests deduped as the builder writes them (s1 / s2 on A with `alsoInRows` [B, C], ...) and
+    `cumulativeRows` set. Assert: `e.cumulativeRows === true`; `e.rows.map(r => r.stageIds.length)` = [2, 4, 6]; the stage rows are
+    6 (not 12); `out.evStage` has 3 rows, C with `stageStartId` = s1's stage and `stageEndId` = s6's stage.
+  - `alsoInRows_without_flag_unchanged` (test-make-events.js): the same record without the flag gives [2, 2, 2], as today (the
+    challenge records with `alsoInRows` on long rows do not change).
+  - `cumulative_one_card_per_week` (test-event-calendar.js): an entry with `cumulativeRows` and rows A (day 1, 2 quests), B (day 2,
+    4 quests), C (days 3-12, 6 quests). Shop week = days 1-2: `currentCards(...).length === 1`, the card is B with 4 quests. Shop
+    week = days 1-7: one card, C with 6 quests. Shop week = day 1 only: one card, A with 2 quests. The same entry without the flag:
+    3 cards (today's rule).
+  - `kept_cumulative_last_row` (test-event-routes.js): a kept `cumulativeRows` entry gives one card with all 6 quests.
+- [ ] **Step 2:** `node server/test-make-events.js` and `node server/test-event-calendar.js` -> FAIL on the new tests only.
+- [ ] **Step 3:** code:
+  - make-events.js `inGroup`: `|| (rec.cumulativeRows && ((srcOf.get(x) || {}).alsoInRows || []).includes(m.eventStageId))`;
+    `entry.cumulativeRows = true` when the record has it (line ~1634);
+  - event-calendar.js `currentCards`: for `e.cumulativeRows`, push only the last overlapping row that has open quests;
+  - routes-events.js `keptCards`: for `e.cumulativeRows`, `builtRows(e).slice(-1)`.
+  Header comments: one line each.
+- [ ] **Step 4:** the three files -> all PASS; full suite (`for f in server/test-*.js`) passes.
+- [ ] **Step 5:** commit `I-344 Part B: cumulative day rows (make-events cumulativeRows, one card per week)`.
+
+(With ruling R2 (b): only the make-events part and its two tests. With (c): no code, the driver sets no flag.)
+
+### Task B6: Event Catalog chips (ruling R3 recommended) — TDD
+
+**Files:** Modify `server/event-pages.js` TYPE_OPTS. Test `server/test-event-pages.js`.
+- [ ] **Step 1:** failing test `type_chips_part_b`: an index with entries of types MISSION, RANK, CAMP-LOGIN renders the chips
+  «Monthly Missions», «Damage Contests», «Campaign Quests» (not the bare codes).
+- [ ] **Step 2:** FAIL; **Step 3:** add the three rows; **Step 4:** PASS; commit with Task B7.
+(With the data-only alternative of R3, the driver's TABLE sets `type` and this task is dropped.)
+
+### Task B7: serve selection and test
+
+**Files:** Modify `server/event_config.json` (`serve.censusIds` + a `censusIdsNote` sentence «I-344 Part B»). Test
+`server/test-make-events.js` (new case `i344_part_b`).
+- [ ] **Step 1: failing test** `i344_part_b`, with synthetic records on the `i344_part_a` pattern and `serve: REAL_CONFIG.serve`:
+  - a countdown record (EV-0557-like, three 24 h rows of one quest each): built, 3 rows, each row's `stageIds` = its own quest,
+    no `days` on entry, rows or quests (daily rule);
+  - a sibling record EV-1040b (`splitFrom: 'EV-1040'`, type GEM) built beside an HSC record EV-1040 with the same notice: both
+    available, the sibling's evStage rows have `eventCategory` = config.eventCategory (not the HSC category), its entry has no
+    `hsc` block;
+  - a rerun record EV-1161-like whose quest has the donor stage of an earlier record's quest: entry available, quest
+    `sharedWith` the earlier id, no second stage row;
+  - a RANK / MISSION / CAMP-LOGIN record listed by id is built (`notSelected` otherwise).
+- [ ] **Step 2:** FAIL (ids not in serve.censusIds).
+- [ ] **Step 3:** add the 35 census ids and the 5 sibling ids (the GEM / EQ / KEY siblings are also selected by type;
+  listing them keeps the note complete).
+- [ ] **Step 4:** PASS, full suite. Commit `I-344 Part B: serve 40 WW event records (pilot builder by id)`.
+
+### Task B8: regen, Boosters, maps, music, cards, resources
+
+- [ ] **Step 1:** backups (`tmp\i344\partb\backup_b8`: master_data, game_data, event_ids.json, records, event_enemies,
+  board_sets). Live regen 1 with the recipe of the Global Constraints. Expected:
+  - +87 evStage rows at most (23103..);
+  - stage rows = served quests minus the `sharedWith` ones (the 10 «Find the Target» quests share EV-0576's rows);
+  - enemy rows +112;
+  - no `mapKeyUsed` on EV-1040b / EV-1139b / EV-1161 201937-201938 (rowShare; if «drops differ», stop and report);
+  - every other entry unchanged (diff of events.json outside the 40 ids = 0).
+- [ ] **Step 2:** `python -I tmp\events\boosters\build_boosters.py`. Expected: + the 30 Boosters 2004011..2004040 and
+  1808007..1808009 built, 0 held (the CROSSCHECK lists their expiry source). Then regen 2: EV-1101b's 10 quests served,
+  EV-0532's boosterLater cleared.
+- [ ] **Step 3:** `python -I tmp\event_bgm\scripts\make_event_bgm.py` (reads every record file). Expected: + the new stages with
+  music, none inferred.
+- [ ] **Step 4:** `python -I recon\tools\import_event_stages.py --stage-dir D:/Progetto_Restauro_KH_UX/stage_gen/files/stage`.
+  Expected: «left out by cause: {}», the new map keys imported (most rows have `imported 0` in evidence.json).
+- [ ] **Step 5:** cards: `KHUX_NOTICE_IMG_BASE=<memory value> python -I recon/tools/make_event_banners.py --fetch --banners
+  D:/Progetto_Restauro_KH_UX/reference/event_banners_ww --ids 23103-23189`, then the same without `--fetch`, then
+  `make_special_banners.py --section event`. Expected: 0 failed, 0 cards without a banner.
+- [ ] **Step 6:** regen 3 (final) with master revision 409 in `cycle.ps1`, `relogin.ps1`, `run-server.ps1`,
+  `update-resources.ps1`; `build-resources.ps1 -Append` (resources 205, never -Quick); `update-resources.ps1` (tap Download).
+- [ ] **Step 7:** `docs/notes/events.md` section «Unserved WW events, Part B» (counts, the cumulativeRows rule, sibling ids, the
+  row-audit finding), ISSUES I-344 progress line. Commit `I-344 Part B: master 409, resources 205`.
+
+### Task B9: bench
+
+- [ ] **Step 1:** maxpower save copy kept EV-0728 (`-RealNow` inside March): one card with the unlocked quests, a quest starts,
+  Pink Agaricus drawn.
+- [ ] **Step 2:** a countdown (EV-1085: Chip & Dale card + 5 countdown cards in the week), a day rotation (EV-0949: 7 cards x 3), a
+  sibling (EV-1222b beside the HSC card of the same week), the rerun EV-1161 (4 cards; a «Find the Target» quest shows EV-0576's
+  clear state). Screenshots `i344b_*`. Bench helper: SKIP every dialogue; AppAlive guard.
+- [ ] **Step 3:** HANDOFF, ISSUES, commit and push.
+
+## Rerun recipe (after any build_challenge.py rerun)
+
+`add_ev1266.py`, `add_i343_records.py`, `add_i344a_records.py`, **`build_i344b.py`** (its own file: unaffected by the challenge
+rerun, but it reruns the builder and must stay equal), `patch_surprise.py`, `patch_seasonal.py` last. patch_seasonal's FILES do
+not include celeb_2018_21.json. No Part B record is inside a 2020-21 seasonal Deal window: EV-1357 ends 12-03 and the Holiday
+Deal starts 12-07. If a later Part adds one, add the file to FILES.
+
+## Risks
+
+- **Builder edits** (B1 hooks, B2 pins) touch the tool that rebuilds 2,000+ served quests. The zero-drift check against a
+  pre-edit scratch run is the guard; never compare with the live files, which carry the post-builder patches.
+- **Shared maps:** rowShare needs equal drops. If the 2020 donor drops of the Agrabah / Captain or the Speed / Magic Gem stages
+  differ from the served run, those quests wait (mapKeyUsed): report them, never force them.
+- **Shared stages (R1):** the EV-1161 «Find the Target» quests reuse EV-0576's stage rows. The clear state and objectives are
+  shared, as with EV-0772.
+- **Two-pass regen** for the Boosters: forgetting `build_boosters.py` leaves EV-1101b unavailable (boosterOnly), with no error.
+- **Card volume:** up to 87 new cards. The banner fetch must run first, else the cards fall back to wrong banners.
+- **G21 calendar rule** is new server code on the event list path: the bench must cover a week before and a week after 03-14.
+- **Census type chips** (R3) change the Event Catalog filters for everyone. The data-only alternative avoids code but hides the
+  census type.
+- **Audit blind spot (Task B0):** more rerun rows may surface. They go into a table (this Part or the next), not into ad-hoc
+  fixes.
+
