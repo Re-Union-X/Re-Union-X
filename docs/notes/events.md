@@ -2063,5 +2063,5 @@ none of them served in its own window. Plan: `docs/superpowers/plans/2026-11-28-
   `make_jp_enemies.py` run. The regen now draws four Coliseum enemies with their own models instead of substitutes:
   - 20114 Cerberus (was 5085);
   - 20257 Colorful Copter Fleet, 21617 Paralysis Platoon, 21630 Gummi Adventurer (were 17).
-  - Renders are in the private review folder; they wait for the user's approval.
+  - Renders (every animation, assembled, private review folder) approved by the user on 28-11.
 - **Cards.** The four missing notice banners were fetched; 8 cards were built.
