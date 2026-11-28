@@ -1987,6 +1987,19 @@ their donor evStage rows under the EQ records of the same notice and moved them 
   Cookies!», also printed on the banner) and EV-1319 («... 50 Spooky Cookies, and Speed Gem!»), Holiday Draw Tickets (type 41
   id 1) for EV-1414 («Complete the challenge and receive Holiday Draw Tickets, Gems, and Subslot Medals!»). Each reward carries
   the notice quote in its `note`. No completion reward: each notice's total is the sum of the objectives.
+- **Seasonal currency on the served 2020-21 records (28-11, user 27-11).** The same rule now covers every served record inside a
+  seasonal Shop Deal window (Spooky Cookies Deal 2020-10-12..11-01, Holiday Draw Tickets Deal 2020-12-07..2021-01-05, Moogle
+  Points Deal 2021-02-08..03-06): 75 objectives of 17 records that still paid donor type 41 id 41 now pay type 41 id 2 Spooky
+  Cookie (EV-1304, EV-1309, EV-1312, EV-1316, EV-1321, EV-1323: 30 objectives), id 1 Holiday Draw Ticket (EV-1381, EV-1388,
+  EV-1392, EV-1397, EV-1400: 26) or id 3 Moogle Point (EV-1485, EV-1486, EV-1488, EV-1497, EV-1501, EV-1508: 19). Each objective
+  changes only when a source names the currency: the khuxwiki conflict of that objective (every one of the 75 has it, with the
+  same count), the objective text, or the record's notice. The reward `note` cites the notice sentence only when exactly one
+  «Complete the challenge ...» sentence states this record's total (e.g. EV-1486 «... receive 30 Moogle Points, 5 Speed Gems, an
+  Axel Doll ...»); otherwise it says that the notice names the currency for the campaign (multi-event notices such as 70277
+  give 50 Spooky Cookies to both EV-1304 and the Surprise EV-1309). Totals agree with the notices (EV-1304 50, EV-1309 / 1316 /
+  1323 50, EV-1312 / 1321 100, EV-1397 10, EV-1400 5, EV-1488 / 1501 50, EV-1485 / 1497 / 1508 20). Private idempotent patch
+  `tmp\events\i343\patch_seasonal.py <records dir>` (rerun after build_challenge.py, add_ev1266.py, add_i343_records.py and
+  patch_surprise.py). Regen: only `stage.json` `submissionItemId` changes (41 -> 2 x30, -> 1 x26, -> 3 x19), master revision 407.
 - **Music** from the donor stage rows through `event_bgm.json` (501000810 / 820 / 130 Halloween and Coco; 501000710 / 720 / 730
   and 501006005 / 006 Countdown; all served).
 - **Served** with `serve.censusIds` EV-1305, EV-1319, EV-1414 (event_config.json), test `ww_celebrations_i343`.
