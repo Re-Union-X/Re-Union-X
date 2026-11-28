@@ -879,8 +879,8 @@
   "I-336": {
    "thread": "1575909755191562312",
    "msg": "1575909755191562312",
-   "group": "OPEN",
-   "hash": "d54c880df64f2fc3",
+   "group": "CLOSED",
+   "hash": "09761337377756c6",
    "name": "I-336 · Event leftovers: pet Steal on Event Coins, Riku & Moogle 6★ sale"
   },
   "I-337": {
@@ -924,6 +924,27 @@
    "group": "OPEN",
    "hash": "f570765cbd8664f7",
    "name": "I-344 · Unserved worldwide events: the «every WW event quest served» claim does not hold"
+  },
+  "I-345": {
+   "thread": "1576161328052047954",
+   "msg": "1576161328052047954",
+   "group": "OPEN",
+   "hash": "e6076ad0f24d8e4d",
+   "name": "I-345 · Coliseum «Select a mode.» popup: plain «Coliseum» / «PVP» buttons instead of the original…"
+  },
+  "I-346": {
+   "thread": "1576161331097370836",
+   "msg": "1576161331097370836",
+   "group": "OPEN",
+   "hash": "a12b618d1212f085",
+   "name": "I-346 · Raid quest «Raid Level: Legendary! Don't go alone!» (stage 980348, Eggcognito LV 25,…"
+  },
+  "I-347": {
+   "thread": "1576161333978603661",
+   "msg": "1576161333978603661",
+   "group": "OPEN",
+   "hash": "d42876f3f1411ebd",
+   "name": "I-347 · Raid Coins screen: a mark when every Raid Board of a raid is complete"
   }
  }
 }
