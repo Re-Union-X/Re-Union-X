@@ -231,7 +231,9 @@ rows.forEach(function(el){el.onclick=function(e){var t=e.target;while(t&&t!==el)
 const TYPE_OPTS = [['all', 'All'], ['EQ', 'Event Quests', 'camp'], ['STORY', 'Story Events', 'avatar'], ['GEM', 'Gem Quests', 'jewel'], ['COIN', 'Event Coins', 'medal'],
   ['KEY', 'Keyblade Challenges', 'skill'], ['QUIZ', 'Quizzes', 'daily'], ['CELEB', 'Celebrations', 'lux'], ['BOARD', 'Avatar Boards', 'avatar'],
   ['HSC', 'High Score Challenges', 'bonus'], ['BOOST', 'Booster Challenges', 'booster'], ['COLLAB', 'Collaborations', 'material'],
-  ['SPEC', 'Daily Presents', 'camp']];
+  ['SPEC', 'Daily Presents', 'camp'],
+  // I-344 Part B (ruling R3, user 28-11): the census types of the monthly mission lists, the damage contests, the campaign quests
+  ['MISSION', 'Monthly Missions', 'daily'], ['RANK', 'Damage Contests', 'raid'], ['CAMP-LOGIN', 'Campaign Quests', 'camp']];
 const typeOf = (e) => String(e.type || 'EQ');
 const SHOW_OPTS = [['all', 'All events'], ['now', 'In Events now', 'now'], ['can', 'Can be kept now', 'pin'], ['kept', 'Kept', 'pin'], ['later', 'Later in the Story', 'later'],
   ['removed', 'Not built yet', 'removed']];

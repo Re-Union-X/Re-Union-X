@@ -1218,6 +1218,18 @@ try {
     [['Booster Challenges', 'booster'], ['Collaborations', 'material'], ['Daily Presents', 'camp']]);
 } catch (e) { failed++; console.error(`FAIL type chips: ${e.stack}`); }
 
+// I-344 Part B Task B6 (ruling R3, user 28-11): the census types of the Part B records MISSION, RANK, CAMP-LOGIN have chips
+try {
+  const { SPECIAL_ICON_KEYS } = require('./special-pages');
+  const want = { MISSION: 'Monthly Missions', RANK: 'Damage Contests', 'CAMP-LOGIN': 'Campaign Quests' };
+  for (const [t, label] of Object.entries(want)) {
+    const o = pages.TYPE_OPTS.find((x) => x[0] === t);
+    assert.ok(o, `type ${t}: a chip`);
+    assert.strictEqual(o[1], label, `type ${t}: label`);
+    assert.ok(SPECIAL_ICON_KEYS.includes(o[2]), `type ${t}: an icon key served (${o[2]})`);
+  }
+} catch (e) { failed++; console.error(`FAIL type_chips_part_b: ${e.stack}`); }
+
 if (failed) { console.error(`test-event-pages: ${failed} FAIL`); process.exit(1); }
 console.log('test-event-pages: OK');
 process.exit(0);

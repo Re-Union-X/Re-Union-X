@@ -487,8 +487,9 @@ const tests = {
     // the 35 Org XIII / Keyblade War ids (Part 5), the High Score Challenges HSC (Part 8) and the 11 CELEB / SPEC / COLLAB quest events
     // of 2016-11..2018-03 (Part 10a), the 6 Booster Challenges of 2017-11..2018-03 (Part 10c), the CELEB row EV-1266 of the ten
     // «Genie Jafar - n/10» quests (I-248), the three CELEB rows EV-1305 / EV-1319 / EV-1414 of the 2020 Halloween, Coco and Year-End
-    // Countdown quests (I-343), the eight records of I-344 Part A
-    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6 + 1 + 3 + 8);
+    // Countdown quests (I-343), the eight records of I-344 Part A, the 41 of I-344 Part B (36 census ids + 5 siblings)
+    assert.strictEqual(REAL_CONFIG.serve.censusIds.length, 13 + 35 + 11 + 6 + 1 + 3 + 8 + 41);
+    for (const id of ['EV-0460', 'EV-0728', 'EV-1040b', 'EV-1093', 'EV-1161', 'EV-1222b', 'EV-1357']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     for (const id of ['EV-1084', 'EV-1091', 'EV-1154', 'EV-1180', 'EV-1349', 'EV-1418', 'EV-1463', 'EV-1473']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
     assert.ok(REAL_CONFIG.serve.censusIds.includes('EV-1266'));
     for (const id of ['EV-1305', 'EV-1319', 'EV-1414']) assert.ok(REAL_CONFIG.serve.censusIds.includes(id), id);
@@ -1405,6 +1406,40 @@ const tests = {
     assert.ok(!(d.days && d.days.length) && d.quests.every((q) => !(q.days && q.days.length)), 'daily coins: the whole week, no weekday');
     assert.deepStrictEqual(d.quests.map((q) => q.window), [week]);
     assert.deepStrictEqual((t.rows || [{ evStageId: t.evStageId }]).map((r) => r.evStageId), [t.evStageId], 'one row: Event & Trait Medals only');
+  },
+  // I-344 Part B Task B7: the Part B records with the real serve selection (event_config.json serve)
+  i344_part_b() {
+    const cfg = { ...CONFIG, serve: REAL_CONFIG.serve };
+    const day = (id, d) => donorEv({ eventStageId: id, startTime: `2018-08-0${d} 07:00:00`, endTime: `2018-08-0${d + 1} 06:59:59`, eventType: 3,
+      stageRange: { validStageId: 1, stageId: [733000 + 10 * d] } });
+    const countdown = record('EV-0557', [1, 2, 3].map((d) => quest(733000 + 10 * d, 1, [501], { evStageId: 200619 + d,
+      window: [`2018-08-0${d} 07:00:00`, `2018-08-0${d + 1} 06:59:59`] })), { type: 'CELEB', start: '2018-08-01', end: '2018-08-03', evStage: [1, 2, 3].map((d) => day(200619 + d, d)) });
+    const hsc = hscRecord('EV-1040', {}, 300650);
+    hsc.notices = [63195];
+    const sibling = record('EV-1040b', [quest(741910, 1, [501])], { type: 'GEM', splitFrom: 'EV-1040', notices: [63195],
+      evStage: [donorEv({ eventStageId: 200902, eventCategory: 2, eventType: 3 })] });
+    const first = record('EV-0576', [quest(723110, 1, [501])], { evStage: [donorEv({ eventStageId: 200640 })] });
+    const rerun = record('EV-1161', [quest(723110, 1, [501], { evStageId: 201936 })], { type: 'CAMP-LOGIN', start: '2020-06-06', end: '2020-06-23',
+      evStage: [donorEv({ eventStageId: 201936, startTime: '2020-06-06 07:00:00', endTime: '2020-06-23 06:59:59' })] });
+    const listed = ['EV-0460', 'EV-0756'].map((id, i) => record(id, [quest(720010 + i, 1, [501])], { type: i ? 'MISSION' : 'RANK', evStage: [donorEv({ eventStageId: 200453 + i })] }));
+    const other = record('EV-0459', [quest(720005, 1, [501])], { type: 'RANK', evStage: [donorEv({ eventStageId: 200452 })] });
+    const out = me.buildEvents([countdown, hsc, sibling, first, rerun, ...listed, other], cfg, master());
+    const c = entry(out, 'EV-0557');
+    assert.ok(c && c.available, JSON.stringify(c && c.quests.map((q) => q.why)));
+    assert.deepStrictEqual(c.rows.map((r) => r.stageIds.length), [1, 1, 1], 'one quest per day row');
+    assert.ok(!c.days && c.rows.every((r) => !r.days) && c.quests.every((q) => !q.days), 'daily rule: no days');
+    const h = entry(out, 'EV-1040'), s = entry(out, 'EV-1040b');
+    assert.ok(h && h.available && s && s.available, 'the HSC record and its sibling are both served');
+    assert.ok(!s.hsc, 'the sibling has no hsc block');
+    for (const r of s.rows.filter((x) => x.available)) {
+      assert.strictEqual(out.evStage.find((x) => x.eventStageId === r.evStageId).eventCategory, cfg.eventCategory, 'sibling rows: event category');
+    }
+    const re = entry(out, 'EV-1161');
+    assert.ok(re && re.available, JSON.stringify(re && re.quests));
+    assert.strictEqual(re.quests[0].sharedWith, 'EV-0576', 'the rerun quest is served by the earlier stage row');
+    assert.strictEqual(out.stage.filter((x) => x.stageBinId === 723110 || x.name === 'Quest 723110').length <= 1, true, 'no second stage row');
+    for (const id of ['EV-0460', 'EV-0756']) assert.ok(entry(out, id) && entry(out, id).available, `${id} built when listed`);
+    assert.deepStrictEqual(out.skipped, [{ censusId: 'EV-0459', reason: 'notSelected' }], 'a RANK record not listed is not built');
   },
   // I-344 Part B Task B5 (ruling R2 (a), user 28-11): EV-0728-like day rows that list their stages cumulatively. The builder writes
   // each quest once, on its first row, with the later rows in alsoInRows; with cumulativeRows every row lists every quest it holds
