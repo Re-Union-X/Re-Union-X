@@ -907,8 +907,8 @@
   "I-340": {
    "thread": "1575909767396724793",
    "msg": "1575909767396724793",
-   "group": "OPEN",
-   "hash": "b49e21b412d7cabb",
+   "group": "CLOSED",
+   "hash": "ae894cd5b0b32c64",
    "name": "I-340 · Raid board cell layouts and Male/Female variants from the khuxwiki screenshots"
   },
   "I-343": {
@@ -942,8 +942,8 @@
   "I-347": {
    "thread": "1576161333978603661",
    "msg": "1576161333978603661",
-   "group": "OPEN",
-   "hash": "d42876f3f1411ebd",
+   "group": "CLOSED",
+   "hash": "1cc5727701a1db78",
    "name": "I-347 · Raid Coins screen: a mark when every Raid Board of a raid is complete"
   }
  }
