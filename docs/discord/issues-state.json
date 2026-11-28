@@ -945,6 +945,13 @@
    "group": "CLOSED",
    "hash": "1cc5727701a1db78",
    "name": "I-347 · Raid Coins screen: a mark when every Raid Board of a raid is complete"
+  },
+  "I-348": {
+   "thread": "1576263998704189673",
+   "msg": "1576263998704189673",
+   "group": "OPEN",
+   "hash": "8d6e44726da10e3d",
+   "name": "I-348 · Non-event WW content found by the I-344 audit, not served"
   }
  }
 }
