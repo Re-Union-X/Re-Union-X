@@ -795,6 +795,8 @@ Level rewards named in an event's notice reach your Presents when you defeat its
 
 The graphics of 18 raid bosses were incomplete in the surviving game files: **Assault Dragon, Adventurer, Jewel Princess, Gear Golem, Heartless Tsum, Loudmouth Parade, Greedy Grouch, Mysterious Sir, Merry-Go-Rowdy, Holiday Sleigh, Demon Tide, Cranky Cake, Mischief Bouquet, Red-Nosed Chariot, Closehanded Captain, Jewel Sorceress, Circus Crab** and **Crabby Cake**. Their missing pieces are (rebuilt) from the game's own files: pieces of their twin or related bosses and enemies, and pieces of the same size chosen by rule. Every one of them was checked by eye against the original look.
 
+In the event quests, **Jewel Princess, Loudmouth Parade, Greedy Grouch** and **Mysterious Sir** now appear **exactly as the game drew them** (see **Enemy graphics** in Event Quests); their raid fights still use the rebuilt pieces above.
+
 The three spiders (**Scourge Spider, Wicked Spider, Malicious Spider**) use the version of their animations that has the **Spinneret** target, and some of their pictures are copied from the same spider or its twin.
 
 **Enraged Arachnid** now appears in the Story raids: its fight is the original 2016 one, and its encounter, escape and defeat scenes are the original Japanese ones with the English subtitle; as for the spiders, some of their pictures are copies of identical files of the same boss or of other raid bosses. Its list banner is (rebuilt) from its original Japanese boss card.

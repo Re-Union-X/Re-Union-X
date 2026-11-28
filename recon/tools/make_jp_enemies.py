@@ -627,7 +627,9 @@ def event_families(path, include_all=False):
 
 
 NO_B2016 = no_b2016(a.event_families)
-STALE_FAMS = {str(d) for d in event_families(a.event_families, True)}  # stale_plain applies to these (event families)
+# stale_plain applies to these: the event families, plus 197 Cheery Ape (I-246, user 28-11: its wait / atk1_o stale piece drew an
+# old 15x7 picture in the 97x24 shadow slot; without it the whole 2016 wait / atk1_o are served, as its other animations)
+STALE_FAMS = {str(d) for d in event_families(a.event_families, True)} | {'197'}
 
 
 def family_of(i):
