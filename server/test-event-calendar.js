@@ -104,6 +104,20 @@ const tests = {
     // an entry without rows (an index before Task 5): one card, the entry itself
     assert.deepStrictEqual(cal.currentCards({ entries: [entry('E-1', '2019-04-01', '2019-04-07')] }, week('2019-04-01', '2019-04-07'), WED).map((c) => c.row.evStageId), [20001]);
   },
+  // I-344 Part B Task B5 (ruling R2 (a)): day rows that list their stages cumulatively (EV-0728) give one card per Shop week, the
+  // latest row overlapping it (its quests include the earlier rows'); without cumulativeRows every row is a card, as before
+  cumulative_one_card_per_week() {
+    const qs = [1, 2, 3, 4, 5, 6].map((n) => quest(4000080 + n));
+    const rows = [{ evStageId: 20081, start: '2019-03-01', end: '2019-03-01', stageIds: [4000081, 4000082], available: true },
+      { evStageId: 20082, start: '2019-03-02', end: '2019-03-02', stageIds: [4000081, 4000082, 4000083, 4000084], available: true },
+      { evStageId: 20083, start: '2019-03-03', end: '2019-03-12', stageIds: qs.map((q) => q.stageId), available: true }];
+    const mk = (flag) => entry('E-8', '2019-03-01', '2019-03-12', { stageIds: qs.map((q) => q.stageId), quests: qs, rows, ...(flag ? { cumulativeRows: true } : {}) });
+    const cards = (e, w) => cal.currentCards({ entries: [e] }, w, WED).map((c) => [c.row.evStageId, c.quests.length]);
+    assert.deepStrictEqual(cards(mk(true), week('2019-03-01', '2019-03-02')), [[20082, 4]], 'days 1-2: B');
+    assert.deepStrictEqual(cards(mk(true), week('2019-03-01', '2019-03-07')), [[20083, 6]], 'days 1-7: C');
+    assert.deepStrictEqual(cards(mk(true), week('2019-03-01', '2019-03-01')), [[20081, 2]], 'day 1: A');
+    assert.deepStrictEqual(cards(mk(false), week('2019-03-01', '2019-03-07')), [[20081, 2], [20082, 4], [20083, 6]], 'no flag: every row');
+  },
   // Events Part 10c Task 5: an entry with «open» time windows (entry.timeWindows, Pacific HH:MM, both minutes inside) lists its quests
   // only inside one of them; a window across midnight (from > to) is open on both sides of it, never closed early
   time_window_open() {

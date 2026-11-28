@@ -137,6 +137,19 @@ const tests = {
     assert.deepStrictEqual([k.eventStageId, k.bannerUrl, k.stages.map((s) => s.stageId)], [29920, `http://x/web/event/img/v${EVENT_IMG_VERSION}/29920-kept.png`, [PAST]]);
     assert.deepStrictEqual(w.ev.keep(29911), { code: 409, body: { ok: false, why: 'now' } });
   },
+  // I-344 Part B Task B5: a kept cumulativeRows entry (EV-0728) is one KEPT card, its last row with every quest
+  kept_cumulative_last_row() {
+    const ix = INDEX();
+    const ids = [PAST, 4009921, 4009922, 4009923, 4009924, 4009925];
+    Object.assign(ix.entries[2], { stageIds: ids, quests: ids.map((id) => quest(id)), cumulativeRows: true, rows: [
+      { evStageId: 29900, start: '2019-03-01', end: '2019-03-01', stageIds: ids.slice(0, 2), available: true },
+      { evStageId: 29921, start: '2019-03-02', end: '2019-03-02', stageIds: ids.slice(0, 4), available: true },
+      { evStageId: 29922, start: '2019-03-03', end: '2019-03-07', stageIds: ids, available: true }] });
+    const w = world({ index: ix });
+    assert.deepStrictEqual(w.ev.keep(29921), { code: 200, body: { ok: true } });
+    const kept = w.ev.events().filter((c) => [29900, 29921, 29922].includes(c.eventStageId));
+    assert.deepStrictEqual(kept.map((c) => [c.eventStageId, c.stages.length]), [[29922, 6]]);
+  },
   // crown: every listed quest with its objectives 1..min(3, validSubmission) done
   complete_crown() {
     const w = world();

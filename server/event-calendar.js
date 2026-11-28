@@ -53,12 +53,15 @@ function currentCards(index, week = {}, nowMs) {
   if (!shopFrom) return [];
   const to = weekTo(week), out = [];
   for (const e of ((index && index.entries) || []).filter(listable)) {
+    const mine = [];
     for (const row of builtRows(e)) {
       const start = row.start || e.start, end = row.end || row.start || e.end || e.start;
       if (!start || start > to || end < shopFrom) continue;
       const quests = rowQuests(e, row, week, nowMs);
-      if (quests.length) out.push({ entry: e, row, quests });
+      if (quests.length) mine.push({ entry: e, row, quests });
     }
+    // cumulative day rows (I-344 Part B, EV-0728): only the latest row of the week, whose quests include the earlier rows'
+    out.push(...(e.cumulativeRows ? mine.slice(-1) : mine));
   }
   return out;
 }

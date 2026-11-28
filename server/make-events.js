@@ -1208,6 +1208,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     if (setOf.has(rec.censusId)) entry.boardSetKey = setOf.get(rec.censusId);
     else if (rec.boardSetKey) entry.boardSetKey = rec.boardSetKey;
     if (rec.sharedWith) entry.sharedWith = rec.sharedWith;
+    if (rec.cumulativeRows) entry.cumulativeRows = true; // I-344 Part B (ruling R2 (a)): day rows that list their stages cumulatively
     if (rec.noQuests) entry.noQuests = rec.noQuests;
     // Part 5 Task 3: the Event Catalog name of a record whose catalogue row the original banner names otherwise (EV-1089, banner
     // «Challenge Organization XIII Pt.1»; event_ids.json keys unchanged), and the record a datesOf line dated
@@ -1632,8 +1633,10 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
     }
     // the quests of a group: by their donor row; a short group also by the stage list / range of each member and the quest's other
     // rows (alsoInRows of the record), so the run of every day lists them
+    // a record with cumulativeRows (I-344 Part B, EV-0728): every row lists the quests of its alsoInRows too, at any length
     const inGroup = (g, x) => g.some((m) => x.donorRow === m.eventStageId || (shortRow(m) && (inStageRange(m, x.donorStageId)
-      || ((srcOf.get(x) || {}).alsoInRows || []).includes(m.eventStageId))));
+      || ((srcOf.get(x) || {}).alsoInRows || []).includes(m.eventStageId)))
+      || (rec.cumulativeRows && ((srcOf.get(x) || {}).alsoInRows || []).includes(m.eventStageId)));
     entry.rows = (donorRows.length ? groups : [[null]]).map((g) => {
       const d = g[0];
       const id = d ? rowIds.get(d.eventStageId) || null : evStageId;

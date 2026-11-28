@@ -307,7 +307,8 @@ function routesEvents({ player, savePlayer, masterRows, eventIndex, storyWeek, r
     if (e.timeWindows && !timeWindows.openNow(e.timeWindows, realMs)) return [];
     const wd = ptWeekday(realMs);
     const onDay = (ds) => !Array.isArray(ds) || !ds.length || ds.some((d) => weekdayOf(d) === wd);
-    return calendar.builtRows(e).map((row) => {
+    // cumulative day rows (I-344 Part B, EV-0728): the last built row only, it lists every quest
+    return (e.cumulativeRows ? calendar.builtRows(e).slice(-1) : calendar.builtRows(e)).map((row) => {
       const ids = new Set(row.stageIds || []);
       return { row, quests: onDay(row.days) ? (e.quests || []).filter((q) => q.served && ids.has(q.stageId) && onDay(q.days)) : [] };
     }).filter((c) => c.quests.length);

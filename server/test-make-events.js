@@ -1406,6 +1406,24 @@ const tests = {
     assert.deepStrictEqual(d.quests.map((q) => q.window), [week]);
     assert.deepStrictEqual((t.rows || [{ evStageId: t.evStageId }]).map((r) => r.evStageId), [t.evStageId], 'one row: Event & Trait Medals only');
   },
+  // I-344 Part B Task B5 (ruling R2 (a), user 28-11): EV-0728-like day rows that list their stages cumulatively. The builder writes
+  // each quest once, on its first row, with the later rows in alsoInRows; with cumulativeRows every row lists every quest it holds
+  cumulative_rows_list_earlier_quests() {
+    const out = build([cumulativeRecord(true)]);
+    const e = entry(out, 'E-CU');
+    assert.strictEqual(e.cumulativeRows, true);
+    assert.deepStrictEqual(e.rows.map((r) => r.stageIds.length), [2, 4, 6]);
+    assert.strictEqual(out.stage.length, 6, 'stage rows once, not 12');
+    assert.strictEqual(out.evStage.length, 3);
+    const c = out.evStage.find((x) => x.eventStageId === e.rows[2].evStageId);
+    const all = e.quests.map((q) => q.stageId);
+    assert.deepStrictEqual([c.stageStartId, c.stageEndId], [Math.min(...all), Math.max(...all)], 'row C: s1 .. s6');
+  },
+  alsoInRows_without_flag_unchanged() {
+    const e = entry(build([cumulativeRecord(false)]), 'E-CU');
+    assert.ok(!e.cumulativeRows);
+    assert.deepStrictEqual(e.rows.map((r) => r.stageIds.length), [2, 2, 2], 'a quest on its first row only, as before');
+  },
   // fix round 1 (M3): a record's own boardSetKey that the board sets do not have stops the run (when board sets are given)
   record_set_key_known() {
     const m = { ...master(), ...BOARD_MASTER() };
@@ -2537,6 +2555,20 @@ const tests = {
     assert.notStrictEqual(me.questSig(q, 'm1', [{ objective: 1, emblemName: 'Power Booster' }]), one);
   },
 };
+
+// three 24 h day rows A (stages s1 s2), B (s1..s4), C (s1..s6, 10 days); quests deduped as build_challenge.py writes them
+function cumulativeRecord(flag) {
+  const s = [700601, 700602, 700603, 700604, 700605, 700606];
+  const row = (id, from, to, n) => donorEv({ eventStageId: id, startTime: from, endTime: to, eventType: 3,
+    stageRange: { validStageId: 0, stageId: [], validStageWidthId: 1, stageStartId: s[0], stageEndId: s[n - 1] } });
+  const rows = [row(900601, '2019-03-01 08:00:00', '2019-03-02 07:59:59', 2), row(900602, '2019-03-02 08:00:00', '2019-03-03 07:59:59', 4),
+    row(900603, '2019-03-03 08:00:00', '2019-03-13 06:59:59', 6)];
+  const later = { 900601: [900602, 900603], 900602: [900603], 900603: null };
+  const own = (i) => [900601, 900601, 900602, 900602, 900603, 900603][i];
+  const qs = s.map((id, i) => quest(id, 1, [501], { evStageId: own(i), window: [rows[Math.floor(i / 2)].startTime, '2019-03-13 06:59:59'],
+    ...(later[own(i)] ? { alsoInRows: later[own(i)] } : {}) }));
+  return record('E-CU', qs, { type: 'BOARD', start: '2019-03-01', end: '2019-03-12', evStage: rows, ...(flag ? { cumulativeRows: 'test evidence' } : {}) });
+}
 
 // a High Score Challenge record (Part 8 Task 2 shape; brackets top first as the private records list them, thresholds lowest -> top
 // as Task 3 writes them)
