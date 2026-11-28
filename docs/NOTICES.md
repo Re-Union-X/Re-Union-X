@@ -147,6 +147,8 @@ The maximum LV is **999**, as in the original game from January 2021. The Lux ne
 
 Limited Missions rotate among the original campaigns: one monthly Lux campaign and one short campaign each week.
 
+The Coliseum **Select a mode.** window is the original one; only its two titles, **PVE** and **PVP**, are (rebuilt) in English, because the surviving files hold the Japanese ones.
+
 ### Medals — rebuilt effects, full artworks
 
 A few Spirit parts without original graphics are replaced by a similar part.

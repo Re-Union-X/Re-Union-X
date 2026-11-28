@@ -1064,3 +1064,36 @@ else:
 # «を習得！» («learned!») after the new Trick; the worldwide banner shows only RANK UP!, the Trick and New! (reference/pet NOTE §3.2):
 # the same size, transparent (import_jp_coco.py JP_DRAWN: the JP texture is never imported)
 save('PetInfo_LvUp_JTxt1.png', Image.new('RGBA', (110, 32), (0, 0, 0, 0)))
+
+
+# I-345 (tester 28-11): Coliseum «Select a mode.» popup (JP PvP_SelectWindow): QuestBut6_Title / QuestBut7_Title are the drawn
+# Japanese «VS エネミー» / «VS プレイヤー» (import_jp_coco.py JP_DRAWN); the worldwide cards read «PVE» / «PVP» (tester's WW
+# screenshot, reference\coliseum\ww_select_mode_titles_tester.png). Rebuilt in the JP style: white top fading into red / blue,
+# white rim, dark outline, soft coloured glow; heavy sans stretched 1.3x like the WW letters. Same size as the JP files, 368x90.
+def mode_title(text, top, bottom, glow, outline=(20, 16, 48)):
+    from PIL import ImageFilter, ImageFont
+    w, h = 368 * S, 90 * S
+    font = ImageFont.truetype(os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts', 'ariblk.ttf'), 74 * S)
+    narrow = int(w / 1.3)
+    m0 = Image.new('L', (narrow, h), 0)
+    d = ImageDraw.Draw(m0)
+    bb = d.textbbox((0, 0), text, font=font)
+    x, y = (narrow - (bb[2] - bb[0])) // 2 - bb[0], (h - (bb[3] - bb[1])) // 2 - bb[1] + 2 * S
+    d.text((x, y), text, font=font, fill=255)
+    mask = m0.resize((w, h), Image.LANCZOS)
+    grad = Image.new('RGBA', (w, h))
+    gd = ImageDraw.Draw(grad)
+    y0, y1 = y + bb[1], y + bb[3]
+    for yy in range(h):
+        t = min(1, max(0, ((yy - y0) / max(1, y1 - y0) - 0.05) / 0.5))
+        gd.line([(0, yy), (w, yy)], fill=tuple(int(top[i] * (1 - t) + bottom[i] * t) for i in range(3)) + (255,))
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    im.paste(Image.new('RGBA', (w, h), glow + (255,)), (0, 0), mask.filter(ImageFilter.MaxFilter(10 * S + 1)).filter(ImageFilter.GaussianBlur(4 * S)))
+    im.paste(Image.new('RGBA', (w, h), outline + (255,)), (0, 0), mask.filter(ImageFilter.MaxFilter(6 * S + 1)))
+    im.paste(Image.new('RGBA', (w, h), (255, 255, 255, 255)), (0, 0), mask.filter(ImageFilter.MaxFilter(2 * S + 1)))
+    im.paste(grad, (0, 0), mask)
+    return im.resize((368, 90), Image.LANCZOS)
+
+
+save('QuestBut6_Title.png', mode_title('PVE', (255, 225, 230), (225, 0, 25), (255, 40, 60)))
+save('QuestBut7_Title.png', mode_title('PVP', (225, 235, 255), (25, 55, 235), (60, 110, 255)))

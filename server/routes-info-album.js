@@ -498,6 +498,7 @@ const DIFFERENCES_BODY = [
   'Completed missions that you did not collect before they end are sent to your Presents.',
   'The maximum LV is **999**, as in the original game from January 2021. The Lux needed for each level up to LV 304 is original; from LV 305 it is {rebuilt} from players’ videos of 2018-2021, because the original values are lost.',
   'Limited Missions rotate among the original campaigns: one monthly Lux campaign and one short campaign each week.',
+  'The Coliseum **Select a mode.** window is the original one; only its two titles, **PVE** and **PVP**, are {rebuilt} in English, because the surviving files hold the Japanese ones.',
   '## Medals',
   'A few Spirit parts without original graphics are replaced by a similar part.',
   'The "Medal STR +N" and "Medal DEF +N" effects of Special Attacks and Supernovas are rebuilt from their descriptions, because the original values are lost.',

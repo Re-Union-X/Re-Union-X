@@ -286,9 +286,11 @@ results (KB, LB, Skill), Continue, AP_Recovery, Ability_MAX, EV_Banner.
 To be decided (the generated ones stay, reason in the list): MedalInfo_Information_R1 (crash after Evolve
 without Panel_MixResult_Area/Tap_Screen_Area), PetInfo_TrainingSlotCheck_ver320 (Win_under required
 by the client), Sphere_Popup_Get_ver240 (Button_Ok/Txt_Ok), Sphere_Popup_Comp_ver310
-(SphereMap_Complete missing, frame different from the reference), PvP_SelectWindow (titles with
-drawn Japanese), AdventureTop2_EV_Button and _Colosseum_Button (World_Ico7/8 missing),
+(SphereMap_Complete missing, frame different from the reference), AdventureTop2_EV_Button and _Colosseum_Button (World_Ico7/8 missing),
 AdventureTop2_Colosseum_Panel and _Raid_Button (names looked up by the cells; online, not testable).
+PvP_SelectWindow (Coliseum «Select a mode.»): the JP original since 28-11 (I-345); its two drawn Japanese titles
+QuestBut6_Title / QuestBut7_Title are rebuilt in English as «PVE» / «PVP» by make_textures.py (style of the JP titles, letters
+after the tester's WW screenshot).
 
 <a id="wipe"></a>
 ## Wipes of the part changes

@@ -141,7 +141,7 @@ AdventureTop2_EV_Banner_ver220.json     need=Image_3
 ? PetInfo_TrainingSlotCheck_ver320.json # l'originale non ha Win_under, che il client usa senza controllo
 ? Sphere_Popup_Get_ver240.json          # l'originale JP non ha Button_Ok/Txt_Ok, che il client usa senza controllo (crash al nodo sbloccato)
 ? Sphere_Popup_Comp_ver310.json         # SphereMap_Complete assente ovunque; cornice diversa dal riferimento WW (ab_ref_title_popup_01)
-? PvP_SelectWindow.json                 # QuestBut6_Title/QuestBut7_Title con giapponese disegnato («VS エネミー»): da ridisegnare
+PvP_SelectWindow.json                   need=Colosseum_But,PvP_But,Txt_PvP_off,Title2,Panel,Txt,Close_Button  # I-345 (28-11): JP original; QuestBut6/7_Title redrawn in English (make_textures.py)
 ? AdventureTop2_EV_Button.json          # World_Ico7A/7B assenti ovunque: pulsante senza icona (il nostro usa World_Ico10)
 ? AdventureTop2_Raid_Button.json        # Button_Last_Member cercato dal client e assente nell'originale; Raid non provabile offline
 
