@@ -192,7 +192,8 @@ when that record is in the file (EV-1080, EV-1089, EV-1150, EV-1350, EV-1417, EV
 ## Part B: pilot builder for census types outside EQ / KEY / QUIZ (detailed, 28-11-2026)
 
 Draft researched on 28-11 (private evidence `tmp\i344\partb\`: scratch build, analyze1.txt, rows_per_record.txt). R5 was checked
-quest by quest (private `tmp\i3445\R5_FINDINGS.md`).
+quest by quest (private `tmp\i344
+5\R5_FINDINGS.md`).
 
 ### Part B rulings (user, 28-11-2026)
 
@@ -213,6 +214,20 @@ quest by quest (private `tmp\i3445\R5_FINDINGS.md`).
     needs Task B5b. Declare it in the Notices (map edited to match the original listing).
   - Enemy rows still to add (in Task B4, never substituted): Chocolate Gargoyle 190210083 (also for 6/7), and the Clarice 2020
     Pretender 2003001001 / Shadow 2003500001. All three are in the donor master.
+
+### Task B0 result (28-11-2026)
+
+Script: private `tmp\i344\partbudit_rows_b0.py`; output: `b0_rows2.txt`. Test: a row is served when a served events.json row
+or quest names it, or a served record holds it in `evStage`. Six rows pass the old «stage served» test but fail this one:
+
+| Row | Window | What it is | Decision |
+|---|---|---|---|
+| 201936 | 2020-06-06..22 | «Find the Target» rerun (EV-1161) | Part B, ruling R1 |
+| 201225 | 2020-04-10..30 | «Dark-Winged Warrior - 1..12/12», FINAL FANTASY VII REMAKE Release Campaign EV-1093 (COLLAB, not served at all); rerun of EV-0565's quests | add to Part B5 (rerun = own entry, ruling 4) |
+| 200817 | 2019-09-23..30 | «Swiftstrike Time Trial», EV-0933 Speedrun Ranking Event; the stage is EV-0931's | Part E (ranking) |
+| 209002 | 2019-09-05..10-02 | «No Continues: Chasm of Challenges #1», second window of #1; EV-1300 holds the other rows | check in Part B (add the row to EV-1300 if its window is original) |
+| 200808 | 2019-09-03..19 | The Keyblade War Pt. 1 scenario (EV-0913, «second notice»); its stages are served by EV-0929 | no gap (same event, served once) |
+| 200615 | 2018-10-15..17 | «A Massive Menace / Fetching the Dwarfs», no notice, no census row | Part F (census addition, with G11's 200616) |
 
 ### Task B5b: `mapTeamRemovals` (R5 option (a)), TDD
 
