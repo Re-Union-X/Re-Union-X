@@ -2056,7 +2056,9 @@ none of them served in its own window. Plan: `docs/superpowers/plans/2026-11-28-
 - **Regen** (master revision 408): 4,321 of 4,321 quests served. Against the previous master:
   - added: +32 stage, +8 evStage (23095-23102), +7 enemy, +2 enemyAttack, +5 reward rows;
   - music: `event_bgm.json` +32 stages, none inferred;
-  - maps: 2,402 imported, none left out.
+  - maps: 2,402 imported, none left out. The import must run with `--stage-dir D:/Progetto_Restauro_KH_UX/stage_gen/files/stage`:
+    without it the maps stay in `stage_gen\event_stages` only, the resources build finds nothing new, and the client crashes
+    (SIGSEGV, null pointer) when an event card of a quest without its map file is tapped (bench 28-11).
 - **Side effect of resources 203.** Families 114, 257, 1617 and 1630 were generated for the first time by the I-246 full
   `make_jp_enemies.py` run. The regen now draws four Coliseum enemies with their own models instead of substitutes:
   - 20114 Cerberus (was 5085);

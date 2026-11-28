@@ -46,7 +46,7 @@ I-344 row of `docs/ISSUES.md`. Models of the method: `tmp\events\i248\add_ev1266
   KHUX_EVENT_DRAMAS=D:/Progetto_Restauro_KH_UX/stage_gen/event_dramas.json KHUX_AVATAR_BOARDS=.../avatar_boards/avatar_boards.json
   node server/make-game-tables.js D:/Progetto_Restauro_KH_UX/wiki/medals.json`; a dry regen on copies first, then the live one
   with a new master revision in the session scripts (`cycle.ps1`, `relogin.ps1`, `run-server.ps1`, `update-resources.ps1`).
-- After any records change: `tmp\event_bgm\scripts\make_event_bgm.py` (music overlay), `import_event_stages.py` for maps not yet
+- After any records change: `tmp\event_bgm\scripts\make_event_bgm.py` (music overlay), `import_event_stages.py --stage-dir D:/Progetto_Restauro_KH_UX/stage_gen/files/stage` (without --stage-dir the maps stay out of the resources and the client crashes on the event card) for maps not yet
   imported, `make_event_banners.py --fetch --ids <new evStage ids>` before the cards are built, then
   `build-resources.ps1 -Append` (never `-Quick` on an incremental version).
 - Public wording: no «AI»; reconstructed things are «rebuilt» (Notices). No private source names or paths in public docs beyond
