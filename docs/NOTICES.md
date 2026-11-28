@@ -167,6 +167,8 @@ The Raid Board cell listed as a **6★ Fantasia Mickey A** gives the **5★ Fant
 
 The **Starlight Ears** and **Dazzling Disco** Spirit parts (Raid Board rewards) each have one (rebuilt) texture: a small twinkling sparkle and a tiny dot were lost and are drawn with the matching sparkle of the same set.
 
+The raid quest **Raid Level: Legendary! Don't go alone!** (Fortress Crab, July 2016) asks you to collect all materials: its map is lost, so its material spots are (rebuilt) along the way, with the original totals (Iron Ore 2, Gold Ore 6, Silver Ore 3, Scorching Sand 2) in 7 spots.
+
 ### Shop and draws — rebuilt rates, presents for bonuses
 
 Shop draw rates are reconstructed where the original game did not publish them (Medal rarities, guarantees and Skill rates are original): Draw Odds and each banner's Details say so.
@@ -373,7 +375,7 @@ Rewards are given once, drops keep their original chances, and **Event Coins** n
 
 The **Event Catalog** lists every event; keep one past event at a time.
 
-552 events · 4,256 of 4,256 quests · 115 Event Boards
+556 events · 4,285 of 4,285 quests · 115 Event Boards
 
 ### Overview — past events following your Story week
 
@@ -381,7 +383,7 @@ The **Event Quests** are back: the limited-time events of the original game, wit
 
 Events follow your Story like the Shop: each week shows the events whose original dates fall in the matching week of the original game. An event that ran for three weeks is listed in each of those weeks.
 
-Today **552 events** are served, with **4256 of their 4256 quests** (583 events are in the data so far, from July 2016 to February 2021). The others follow in later updates: the **Event Catalog** lists every event and, for each quest not served yet, the reason (a map or an enemy whose original files are still missing). A quest whose enemy is missing is not served: no other enemy stands in for it.
+Today **556 events** are served, with **4285 of their 4285 quests** (587 events are in the data so far, from July 2016 to February 2021). The others follow in later updates: the **Event Catalog** lists every event and, for each quest not served yet, the reason (a map or an enemy whose original files are still missing). A quest whose enemy is missing is not served: no other enemy stands in for it.
 
 ### Opening hours — open for the whole original day
 
@@ -485,6 +487,8 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 
 - In the original every player who cleared all the objectives of this event got a bonus sized by how many players did it worldwide (the official result notice gives the count). Here clearing every objective of its quests gives you, once, the bonus the original event reached, in your Presents: the count was of all players then, and is not redone for you alone (not original).
 
+- In the original every player who completed all the challenges of this event by the end of its campaign got this reward, the same for everyone (official notice). Here clearing every objective of its quests gives you the same reward, once, in your Presents.
+
 - The map file of this quest is lost. The same quest series ran again in another month on a map that survives (the same room, the same single enemy and target, every difficulty on the same map): that layout is used, with the enemy of this run, the original enemy row of these quests (its own strength at each difficulty). Layout reconstructed, enemy original.
 
 - The map of this quest is the Japanese map of the same quest, found by its content (the same enemies, counts, target and rooms at the quest's level): the worldwide map file of this run is lost.
@@ -494,8 +498,6 @@ Where a quest or event is not exactly as in the original game, the Event Catalog
 - The stage row and the map file of this quest are those of the same weekly quest in a later run (the row of this run is not in the data we have). Enemies, level, gem and rewards were checked against the khuxwiki page of this run; the AP, the gem and the world follow the page.
 
 - The quest keeps the values of the later game data; the khuxwiki page describes an earlier run of the same quest (2018), so it was not used for this one.
-
-- In the original every player who completed all the challenges of this event by the end of its campaign got this reward, the same for everyone (official notice). Here clearing every objective of its quests gives you the same reward, once, in your Presents.
 
 - The map of this quest spanned several areas (khuxwiki lists them, with the enemies and chests of each area). Its map file is lost, so the areas were rebuilt in that order, in the rooms of the quest's surviving stage data and of the khuxwiki pictures, joined by exits; start points, exits and enemy spots were taken from original maps of the same rooms where they survive, otherwise placed by the generator. The warp portals inside the areas (Xigbar's maze) are not rebuilt. Rebuilt, not original.
 
@@ -551,7 +553,7 @@ The **challenge and battle events** are back (Defeat events, Big Bonus Challenge
 
 **Surprise events** and **Time Missions** are back: today 52 Surprise events and 6 Time Missions events (**175 quests**). As in the original game, each Surprise event is open for **one whole day** (12:00 a.m. to 11:59 p.m. Pacific time, on the real weekday of that day in your Story week) and is gone the next day. In the original game each target of a Time Missions event appeared only at four set hours a day; here every quest of a Time Missions event is open for its **whole original day** (not original), and the event lists all its quests on each of its days.
 
-**Community goals.** Some events of 2020 gave every player who cleared **all their objectives** a bonus whose size depended on how many players around the world did it, announced afterwards in a result notice. Here, when you clear every objective of such an event (a kept event of the Event Catalog too), you get **once** the bonus the original event reached, in your **Presents**: the count was of all the players of the time and is not redone for you alone (not original). The original results: Summon Rush! (732 players: 740 Jewels), Defeat Savage Vanguard (7,237 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Sephiroth! (8,529 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Dragon Maleficent Battle Event (7,701 players: Draw Ticket x10, Power Gem x30, Speed Gem x30, Magic Gem x30), Mean Maiden Battle Event (its «Defeat the Mean Maiden» quests; 3,931 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Flame Core Battle Event (4,370 players: Power Gem x30, Speed Gem x30, Magic Gem x30) and Heartless Battle Event (4,026 players: Power Gem x30, Speed Gem x30, Magic Gem x30). Other events gave a **fixed reward** to every player who completed all their challenges, whatever the number of players: as in the original, clearing every objective gives you that reward **once**, in your **Presents** (a kept event of the Event Catalog too): The Keyblade War Challenge Campaign (Spirit Lord Kyroo [SAB LV 10] x1, Spirit Chef Kyroo [SAB LV 10] x1, Spirit Sir Kyroo [SAB LV 10] x1, NM Lord Kyroo [SAB LV 10] x1, NM Chef Kyroo [SAB LV 10] x1, NM Sir Kyroo [SAB LV 10] x1).
+**Community goals.** Some events of 2020 gave every player who cleared **all their objectives** a bonus whose size depended on how many players around the world did it, announced afterwards in a result notice. Here, when you clear every objective of such an event (a kept event of the Event Catalog too), you get **once** the bonus the original event reached, in your **Presents**: the count was of all the players of the time and is not redone for you alone (not original). The original results: Summon Rush! (732 players: 740 Jewels), Defeat Savage Vanguard (7,237 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Sephiroth! (8,529 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Dragon Maleficent Battle Event (7,701 players: Draw Ticket x10, Power Gem x30, Speed Gem x30, Magic Gem x30), Mean Maiden Battle Event (its «Defeat the Mean Maiden» quests; 3,931 players: Power Gem x30, Speed Gem x30, Magic Gem x30), Defeat Flame Core Battle Event (4,370 players: Power Gem x30, Speed Gem x30, Magic Gem x30) and Heartless Battle Event (4,026 players: Power Gem x30, Speed Gem x30, Magic Gem x30). Other events gave a **fixed reward** to every player who completed all their challenges, whatever the number of players: as in the original, clearing every objective gives you that reward **once**, in your **Presents** (a kept event of the Event Catalog too): The Keyblade War Challenge Campaign (Spirit Lord Kyroo [SAB LV 10] x1, Spirit Chef Kyroo [SAB LV 10] x1, Spirit Sir Kyroo [SAB LV 10] x1, NM Lord Kyroo [SAB LV 10] x1, NM Chef Kyroo [SAB LV 10] x1, NM Sir Kyroo [SAB LV 10] x1) and Japanese ver. 5th Anniversary KHUX & KHDR Campaign (3,000 Jewels, Draw Ticket x50, Spirit Sir Kyroo [SAB LV 7] x10, NM Sir Kyroo [SAB LV 7] x10, Spirit Sir Kyroo [SAB LV 8] x6, NM Sir Kyroo [SAB LV 8] x6, Spirit Sir Kyroo [SAB LV 9] x3, NM Sir Kyroo [SAB LV 9] x3, Spirit Sir Kyroo [SAB LV 10] x1, NM Sir Kyroo [SAB LV 10] x1, Power Gem x10, Speed Gem x10, Magic Gem x10, Sun Gem x1, Moon Gem x1).
 
 The **quiz** events asked their question on a picture board before the quest, and no original board survives in the game files, so every board is (rebuilt): 65 are redrawn in the original style from the question text recorded on the community wiki (obvious typing errors of the wiki corrected), 5 come from screenshots of the original boards and 5 are redrawn from videos of the original game. Today **85 quiz quests** are served with their board; the others wait, mostly for a map file that is incomplete.
 
@@ -1195,7 +1197,7 @@ Some enemies **absorb** the damage of one kind of Medal, as their description sa
 
 ### Enemy counters — counters that trigger enemy moves
 
-**Enemy counters**: from Quest 585 on, many enemies show a counter above them. A red counter goes down with each Medal you use, a blue one with each hit. At 0 the enemy interrupts your attack with a move of its own, then the counter starts again from its first value. They are back for the 24 kinds of enemies whose move is described in their original description, such as the Archers (poison, paralysis, sleep), Green Requiem and Emerald Sonata (heal all enemies), Barrier Master (raises its allies' DEF), Warlock Step and Fortuneteller (lower your STR) or Wight Knight (removes your boosts). Some values of these moves are not recorded anywhere (how much they heal, how long a status or a boost lasts): they are (rebuilt) from the closest original move. Enemies whose counter move is unknown, such as Cy-Bugs or Chocolate Monster, have no counter for now. On bosses the counter is shown next to their HP bar: the original boss bar has no place for it, so that spot is (rebuilt) from the bar of the other enemies.
+**Enemy counters**: from Quest 585 on, many enemies show a counter above them. A red counter goes down with each Medal you use, a blue one with each hit. At 0 the enemy interrupts your attack with a move of its own, then the counter starts again from its first value (some enemies do it only once). Counters, their values and the moves they trigger now come from the original game data of these quests: every enemy has its own original move, such as the Archers (poison, paralysis, sleep), Green Requiem and Emerald Sonata (heal all enemies), Barrier Master (raises its allies' DEF), Warlock Step and Fortuneteller (lower your STR), Wight Knight (removes your boosts), and now also the Cy-Bugs, Flappy Bugs, Chocolate Monster and Darkness. Some enemies also act at the start of the battle or when defeated, as in the original. On bosses the counter is shown next to their HP bar: the original boss bar has no place for it, so that spot is (rebuilt) from the bar of the other enemies.
 
 ### Enemy look — original looks, missing pieces rebuilt
 

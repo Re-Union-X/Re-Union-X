@@ -508,6 +508,7 @@ const DIFFERENCES_BODY = [
   'The **Sora & Moogle B** Medal (JP 5th anniversary, a Raid Board reward) is {rebuilt} from its description: used in a Level Up it adds 100 STR and 100 DEF, like Chip and Dale.',
   'The Raid Board cell listed as a **6★ Fantasia Mickey A** gives the **5★ Fantasia Mickey A**: no 6★ version of that Medal is known, and the board pairs it with Magic Brooms, which evolve the 5★.',
   'The **Starlight Ears** and **Dazzling Disco** Spirit parts (Raid Board rewards) each have one {rebuilt} texture: a small twinkling sparkle and a tiny dot were lost and are drawn with the matching sparkle of the same set.',
+  'The raid quest **Raid Level: Legendary! Don\'t go alone!** (Fortress Crab, July 2016) asks you to collect all materials: its map is lost, so its material spots are {rebuilt} along the way, with the original totals (Iron Ore 2, Gold Ore 6, Silver Ore 3, Scorching Sand 2) in 7 spots.',
   '## Shop and draws',
   'Shop draw rates are reconstructed where the original game did not publish them (Medal rarities, guarantees and Skill rates are original): Draw Odds and each banner\'s Details say so.',
   'Bonus items of a draw (Magic Mirror, Gems...) arrive in your Presents.',
