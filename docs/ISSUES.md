@@ -147,7 +147,7 @@ elux_2026-11erified\stage_story_2021.json): useAp 0 on all 979 (we had 3-25; wi
 | ID | Status | Title | Detail | Proof |
 |---|---|---|---|---|
 | I-268 | DONE (to confirm with the tester) | **Moogle Shop: the top corners of the Traits and Items tabs are cut off** (tester report 12-11, BlueStacks 5, minor; the tester's reference picture shows the full rounded tab) | compare with original screenshots, then the tab texture or layout in the served resources **22-11:** on the bench (resources 139) both tabs show their full rounded top corners: the report (12-11) predates the JP original Moogle Shop scene of resources 127 (I-102, 15-11). Ask the tester to recheck on the next package. | |
-| I-043 | OPEN | Red cursor of the slot to replace too wide; exchange onto a medal with a Spirit Special Trait: bench check first (not re-checked since 10-10) | [moogle_shop](notes/moogle_shop.md#aperti) | a35aab2 |
+| I-043 | DONE 28-11 (benched) | Red cursor of the slot to replace too wide; exchange onto a medal with a Spirit Special Trait: bench check first (not re-checked since 10-10) **Bench 28-11 (save `s343`, JP Moogle Shop layouts of I-102):** «Choose a trait to replace.» highlights the row across the trait list only, as the original (JP video frame `reference\moogle_shopideo_FX5Chfckqkk .png`); STR +1000 set on SN++ - KH Sora A (5/5 traits) replacing Ground Enemy DEF -70%, 1,000 Jewels charged, its Special Trait «Extra Attack: 120% Power» kept (`s043_07`-`s043_09`). | [moogle_shop](notes/moogle_shop.md#aperti) | a35aab2 |
 
 ### Avatar Boards
 
