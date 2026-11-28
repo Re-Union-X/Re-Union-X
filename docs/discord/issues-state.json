@@ -347,8 +347,8 @@
   "I-246": {
    "thread": "1569615912628387954",
    "msg": "1569615912628387954",
-   "group": "OPEN",
-   "hash": "7d09cd0d6663e66e",
+   "group": "IN PROGRESS",
+   "hash": "67a8a64428273a5d",
    "name": "I-246 · Served enemy graphics may draw leftover placeholder pieces"
   },
   "I-247": {
@@ -382,8 +382,8 @@
   "I-252": {
    "thread": "1569615925936660504",
    "msg": "1569615925936660504",
-   "group": "OPEN",
-   "hash": "30594938b726e975",
+   "group": "CLOSED",
+   "hash": "28a2064bd39b6b4c",
    "name": "I-252 · Event enemy renders to recheck"
   },
   "I-253": {
