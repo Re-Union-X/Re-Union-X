@@ -3115,7 +3115,9 @@ function respondStageClear(res, req) {
     userTitles: userTitlesData().filter((t) => !titlesBefore.has(t.titleId) && (player.titles || []).includes(t.titleId)),
     userKeyblades: userKeybladesData(),
     userDecks: userDecksData(),
-    userAvatarParts: [],
+    // the full owned list (an objective can pay a part, e.g. EV-1473 «Terra Doll»): the client merges by userAvatarPartsId, the
+    // position in this list, so a new part shifts the ids after it (test-stage-clear-avatar.js, 28-11)
+    userAvatarParts: userAvatarPartsData(),
     subslotMaxNum: kbEvo().subslotMaxNum(),
     userKeybladeSubslots: userKeybladeSubslotsData(),
     ...guiltBurst().lists(), // guiltBurstFirst/MaxUserMedalIds
