@@ -1191,6 +1191,8 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
   // The outputs are put back in record order after the loop.
   const rankOf = (rec) => Math.min(Infinity, ...(rec.quests || []).map((q) => allIds.entries[questKey(rec, q, allAnchors[rec.censusId])] || Infinity));
   const order = records.map((rec, i) => ({ rec, i, k: rankOf(rec) })).sort((a, b) => a.k - b.k || a.i - b.i);
+  // the donor stage ids of every record quest (I-344 Part A rowShare: a map key that is one of them is a quest's own map)
+  const ownStages = new Set(records.flatMap((rec) => (rec.quests || []).map((q) => q.stageId)));
   const ixMap = new Map();
   let recIx = 0;
   const put = (arr, obj) => { ixMap.set(obj, recIx); arr.push(obj); };
@@ -1503,7 +1505,13 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
       // map (its donor stage id is the key), not only in the data hole
       const binShare = !!(prior && !gen && !shifted && Number.isInteger(donorBin) && donorBin === mapKey && donorBin !== q0.stageId
         && (rec.dataHole || prior.ownKey === mapKey));
-      if (prior && prior.censusId !== rec.censusId && !quizShare && !surpriseShare && !twinShare && !binShare) { item.reason = 'mapKeyUsed'; item.why = `map key ${mapKey} is the map of event stage ${prior.stageId} too`; continue; }
+      // I-344 Part A (28-11-2026): runs of one quest (same name, other donor stages) whose original stage rows all load this map (the map's own stage, or a
+      // stageBinId naming it, when the key is the own stage of a record quest: «Daily Event: Avatar Coins» 743680 / 743830 /
+      // 744210) share it whatever the processing order; the
+      // drops must be equal (the check below)
+      const namesKey = !gen && !shifted && (q0.stageId === mapKey || (Number.isInteger(donorBin) && donorBin === mapKey));
+      const rowShare = !!(prior && namesKey && prior.namesKey && ownStages.has(mapKey) && q0.stageId !== prior.ownKey && prior.mapItem.name === q.name);
+      if (prior && prior.censusId !== rec.censusId && !quizShare && !surpriseShare && !twinShare && !binShare && !rowShare) { item.reason = 'mapKeyUsed'; item.why = `map key ${mapKey} is the map of event stage ${prior.stageId} too`; continue; }
       if (prior && prior.dropsKey !== dropsKey) { item.reason = 'mapKeyUsed'; item.why = `map key ${mapKey} is shared with event stage ${prior.stageId} but the drops differ`; continue; }
       // every candidate goes into event_maps.json (the list import_event_stages.py imports), served or not
       const mapItem = prior ? prior.mapItem : { stageId, key: mapKey, mapStatus: item.mapStatus, censusId: rec.censusId, world: q.worldId, name: q.name, rooms: q.room || [], level: q.level, addLevel: q.addLevel || 0,
@@ -1512,7 +1520,7 @@ function buildEvents(records0, config, master, ids, anchors = {}, maps = null, b
         ...(lt ? { fromKey: lt.fromKey, enemySwaps: lt.swaps || [], layoutTwin: true } : {}),
         // map parts the JP dump dropped as dedup stubs, taken from their source part (recon/tools/import_event_stages.py partSources)
         ...((q.map || {}).partSources ? { partSources: q.map.partSources } : {}) };
-      if (!prior) { builtMaps.set(mapKey, { stageId, censusId: rec.censusId, dropsKey, mapItem, quiz, shortWindow: !!rec.shortWindow, jpTwin: srcMap === 'jpTwin', ownKey: q0.stageId }); if (!gen) put(out.maps, mapItem); }
+      if (!prior) { builtMaps.set(mapKey, { stageId, censusId: rec.censusId, dropsKey, mapItem, quiz, shortWindow: !!rec.shortWindow, jpTwin: srcMap === 'jpTwin', ownKey: q0.stageId, namesKey }); if (!gen) put(out.maps, mapItem); }
       const newRewards = [];
       if (maps && !gen) {
         // the original map file (recon/tools/import_event_stages.py report): not imported -> not served

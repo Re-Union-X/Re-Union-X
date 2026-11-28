@@ -2011,3 +2011,55 @@ their donor evStage rows under the EQ records of the same notice and moved them 
   Countdown keys (9wBFNq1nI, 9wBrNRLji, 9wBaNeMyk, 9wBHN7oXJu) must be fetched (`make_event_banners.py --fetch --ids 23090-23094`)
   before the cards are built: without them the tool falls back to the first banner of the notice, which is another event's
   (a Surprise Event and a Union Cross banner).
+
+## Unserved WW events, Part A: records from quests already built (I-344, 28 November 2026)
+
+The I-344 audit found 58 WW event groups of 2018-04..2021 with no record. A re-check against every served quest, at any date, found
+none of them served in its own window. Plan: `docs/superpowers/plans/2026-11-28-events-i344-unserved.md`. The user's rulings of
+28-11 are listed there.
+
+**Part A** serves the eight events whose quests `build_challenge.py` had already built under a neighbouring census id and moved out
+(`rowsMoved`, rule_window) to an id without a record, the I-248 way:
+
+| Census | Event | Notice | Row | Quests | Card |
+|---|---|---|---|---|---|
+| EV-1084 | Returning Org. XIII Avatar Parts (April 2020) | 64156 | 201210 | 14 | 23095 |
+| EV-1091 | Event & Trait Medals (April 2020) | 64990 | 201223 | 1 | 23096 |
+| EV-1154 | Event & Trait Medals (June 2020) | 66106 | 201931 | 1 | 23097 |
+| EV-1180 | Stitch Screen Debut Celebration 1-5/5 (June 2020) | 66624 | 201950 | 5 | 23098 |
+| EV-1349 | Daily Event: Avatar Coins (Nov 2020) | 71256 | 203094 | 1 | 23099 |
+| EV-1418 | Defeat the White Mushroom 1-5/5 (Jan 2021) | 72710 | 208974 | 5 | 23100 |
+| EV-1463 | Daily Event: Avatar Coins (Feb 2021) | 73874 | 208960 | 1 | 23101 |
+| EV-1473 | Get Avatar Parts (Feb 2021) | 73880 | 208958 | 4 | 23102 |
+
+- **Records.** The private `tmp\events\i344\add_i344a_records.py` writes them into challenge_2020 / 2021, using the builder's own
+  quests (built_all.json), the donor evStage rows and the census rows.
+  - WW check: khuxwiki enemies = JP map for 30 quests.
+  - The two Avatar Coin quests have only another run's page: ruling A1, as EV-1381.
+  - The builder's conflicts are kept, as in the served records.
+  - No seasonal currency: `patch_seasonal.py` changes 0 objectives.
+  - Rerun order after `build_challenge.py`: add_ev1266, add_i343_records, add_i344a_records, patch_surprise, patch_seasonal.
+- **Run rows.** `add_i344a_rows.py` adds 7 rows to the private event enemy file, all models drawn:
+  - Ringmaster 2004000097;
+  - Bad Dog 2004000110, Nimble Bee 2004000170, Creeper Plant 2004000036, Wild Shaman 2004102507, High Wizard 2004000111;
+  - Colorful Copter Fleet 257.
+- **Census BOARD rows with quests** (EV-1084, EV-1349, EV-1463, EV-1473) are selected by id. They are event cards, not
+  board-only entries. Test `i344_part_a`.
+- **Shared map of the Avatar Coin runs (make-events.js `rowShare`, test `map_named_by_rows_shared`).**
+  - The two quests use map 743680: the own map of 743680, and the stageBinId of 744210. The served EV-1381 quest (743830) already
+    held it, so they waited (mapKeyUsed).
+  - New rule: runs of one quest (same name, other donor stages) whose original stage rows all name the map share it, when the key
+    is the own stage of a record quest and the drops are equal.
+  - Any other quest naming a Surprise map still waits (surprise_map_shared).
+- **Same content.** These two Avatar Coin quests have the name and map of the served EV-1381 quest; their own donor rewards are
+  kept (20 / 15 / 15 Avatar Coins). The user ruled on 28-11 that they are served with their own dates.
+- **Regen** (master revision 408): 4,321 of 4,321 quests served. Against the previous master:
+  - added: +32 stage, +8 evStage (23095-23102), +7 enemy, +2 enemyAttack, +5 reward rows;
+  - music: `event_bgm.json` +32 stages, none inferred;
+  - maps: 2,402 imported, none left out.
+- **Side effect of resources 203.** Families 114, 257, 1617 and 1630 were generated for the first time by the I-246 full
+  `make_jp_enemies.py` run. The regen now draws four Coliseum enemies with their own models instead of substitutes:
+  - 20114 Cerberus (was 5085);
+  - 20257 Colorful Copter Fleet, 21617 Paralysis Platoon, 21630 Gummi Adventurer (were 17).
+  - Renders are in the private review folder; they wait for the user's approval.
+- **Cards.** The four missing notice banners were fetched; 8 cards were built.

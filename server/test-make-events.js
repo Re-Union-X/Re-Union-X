@@ -1330,6 +1330,26 @@ const tests = {
       'one Pacific day per quest');
     assert.strictEqual(new Set(y.quests.map((q) => q.evStageId)).size, 4, 'one evStage row per day');
   },
+  // I-344 Part A (28-11-2026): runs of one quest in several records whose original stage rows all load the same map (the map's own
+  // stage, or a stageBinId naming it: «Daily Event: Avatar Coins» 743680 / 743830 / 744210) share it, whatever the processing
+  // order; a stage row that does not name the key still waits (mapKeyUsed), and so does another quest naming it (surprise_map_shared)
+  map_named_by_rows_shared() {
+    const ev = (id) => ({ evStage: [donorEv({ eventStageId: id })] });
+    const recs = [
+      record('R-1', [quest(800030, 1, [501], { name: 'Daily Event', map: { key: 800010, stageBinId: 800010, status: 'ok' } })], ev(900101)),
+      record('R-2', [quest(800010, 1, [501], { name: 'Daily Event', map: { key: 800010, stageBinId: 0, status: 'ok' } })], ev(900102)),
+      record('R-3', [quest(800040, 1, [501], { name: 'Daily Event', map: { key: 800010, stageBinId: 800010, status: 'ok' } })], ev(900103)),
+      record('R-4', [quest(800050, 1, [501], { name: 'Daily Event', map: { key: 800010, stageBinId: 0, status: 'ok' } })], ev(900104)),
+    ];
+    const out = build(recs);
+    for (const id of ['R-1', 'R-2', 'R-3']) {
+      const e = entry(out, id);
+      assert.ok(e && e.quests.every((q) => q.served), `${id}: ${JSON.stringify(e && e.quests.map((q) => q.why))}`);
+    }
+    const w = entry(out, 'R-4');
+    assert.ok(w.quests.every((q) => !q.served && q.reason === 'mapKeyUsed'), JSON.stringify(w.quests));
+    assert.strictEqual(out.maps.filter((m) => m.key === 800010).length, 1, 'one map file');
+  },
   // I-344 Part A (28-11-2026): WW event records written from quests build_challenge.py had built under a neighbouring census id.
   // Census BOARD rows with quests (EV-1084, EV-1349, EV-1463, EV-1473) are listed by id, not by type, and are event cards (they
   // have quests, so routes-events.js / event-pages.js boardOnly is false); a weekly daily-coin row has no weekday; EV-1091 holds
