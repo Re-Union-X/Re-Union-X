@@ -1350,6 +1350,29 @@ const tests = {
     assert.ok(w.quests.every((q) => !q.served && q.reason === 'mapKeyUsed'), JSON.stringify(w.quests));
     assert.strictEqual(out.maps.filter((m) => m.key === 800010).length, 1, 'one map file');
   },
+  // the rowShare guards (final review of I-344 Part A): a holder whose own stage row does not name the key keeps it alone; a key
+  // that is no record quest's own stage is not shared by two borrowers naming it; other drops still clash
+  map_named_by_rows_guards() {
+    const ev = (id) => ({ evStage: [donorEv({ eventStageId: id })] });
+    const named = (id, key, bin, extra = {}) => quest(id, 1, [501], { name: 'Daily Event', map: { key, stageBinId: bin, status: 'ok' }, ...extra });
+    const reason = (out, id) => entry(out, id).quests[0].reason;
+    // holder 800130 on key 800110 without naming it, then the owner 800110: the owner waits
+    const a = build([record('G-1', [named(800130, 800110, 0)], ev(900111)), record('G-2', [named(800110, 800110, 0)], ev(900112))]);
+    assert.ok(entry(a, 'G-1').quests[0].served);
+    assert.strictEqual(reason(a, 'G-2'), 'mapKeyUsed', 'the holder never loaded this map');
+    // two borrowers naming 800210, which no record quest owns: the second waits
+    const b = build([record('G-3', [named(800230, 800210, 800210)], ev(900113)), record('G-4', [named(800240, 800210, 800210)], ev(900114))]);
+    assert.ok(entry(b, 'G-3').quests[0].served);
+    assert.strictEqual(reason(b, 'G-4'), 'mapKeyUsed', 'no record owns the key');
+    // owner first, then a borrower with other drops: still a clash
+    const drops = { enemies: [{ enemy: 501, rewardId: 999, rows: [] }], chests: [] };
+    const c = build([record('G-5', [named(800310, 800310, 0)], ev(900115)), record('G-6', [named(800330, 800310, 800310, { drops })], ev(900116))]);
+    assert.ok(entry(c, 'G-5').quests[0].served);
+    assert.strictEqual(reason(c, 'G-6'), 'mapKeyUsed', 'other drops');
+    // owner first, then a borrower with equal drops: shared
+    const d = build([record('G-7', [named(800410, 800410, 0)], ev(900117)), record('G-8', [named(800430, 800410, 800410)], ev(900118))]);
+    assert.ok(entry(d, 'G-8').quests[0].served, JSON.stringify(entry(d, 'G-8').quests[0].why));
+  },
   // I-344 Part A (28-11-2026): WW event records written from quests build_challenge.py had built under a neighbouring census id.
   // Census BOARD rows with quests (EV-1084, EV-1349, EV-1463, EV-1473) are listed by id, not by type, and are event cards (they
   // have quests, so routes-events.js / event-pages.js boardOnly is false); a weekly daily-coin row has no weekday; EV-1091 holds
