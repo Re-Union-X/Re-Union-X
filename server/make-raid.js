@@ -59,6 +59,7 @@ const RANGES = { stage: ['stageId', 980000, 989999], evStage: ['eventStageId', 8
 // master tables read for the board rewards (name -> item), never rewritten
 const ITEM_TABLES = ['medal', 'material', 'petParts', 'avatarParts', 'title'];
 const EV_BASE = 8000, EGG_ID = 100, EGG = 'Eggcognito', ENEMY_REWARD = 1;
+const COLLECT_ALL_MATERIALS = 18; // objective code «Collect all materials» (I-346)
 // Raid Catalog banner (Task 9): evStage 8000 (EV_BASE, never a census row), Details -> /web/raid/catalog. An evStage needs a quest
 // and a tap always opens the banner's quest list, so it holds the Training Grounds of the Special Catalog (make-special.js
 // TRAINING_STAGE): our own quest (no Lux, no drops), never raid content. Emitted only when that stage row is in the master.
@@ -1197,8 +1198,14 @@ function buildRaid({ census, values, rewards, orig2016, boards, eventRewards, ma
       stageIds.push(entry.stageId);
       // map: one target plus two, each worth raidPoint 3000 (enemy row 100); `world` is the room's world, for the room choice
       const egg = () => ({ name: EGG, enemyId: EGG_ID, n: 1, reward: ENEMY_REWARD });
+      // I-346: an objective «Collect all materials» (code 18) needs material spots on the generated map: the khuxwiki unit totals
+      // of the quest (raid_config.json questMaterials, written by gen_story_maps.py as ceil(n/2) spots each), declared rebuilt
+      const collect = !donor && (stage.submissionRequire || []).includes(COLLECT_ALL_MATERIALS);
+      const materials = collect ? (config.questMaterials || {})[questKey] : null;
+      if (collect && !(materials || []).length) throw new Error(`raid: «${questKey}» asks «Collect all materials» but questMaterials of raid_config.json has no materials for it`);
+      if (materials) reconstructed.push('materialSpots');
       if (!donor) out.maps.push({ stageId: entry.stageId, world: worldReal, name: questKey, room: w.map, target: EGG, targetId: EGG_ID, targetReward: ENEMY_REWARD, level: entry.level,
-        enemies: [[egg(), egg()]], treasures: [], rooms: 1 });
+        enemies: [[egg(), egg()]], treasures: [], rooms: 1, ...(materials ? { materials: materials.map((m) => ({ materialId: m.materialId, n: m.n })) } : {}) });
       entry.available = true;
     });
     // Details of the banner: the raid's original notice (make-raid-notices.js), only when there is one (no dead button). A JP

@@ -232,7 +232,12 @@
       "epic": 50000
     }
   },
+  "questMaterials": {
+    "_note": "I-346: khuxwiki unit totals of the raid quests whose objectives ask «Collect all materials» (code 18); make-raid.js stops when one is missing. Source: https://www.khuxwiki.com/wiki/Raid_Level:_Legendary!_Don't_go_alone!",
+    "Raid Level: Legendary! Don't go alone!": [{ "materialId": 12, "n": 2, "name": "Iron Ore" }, { "materialId": 18, "n": 6, "name": "Gold Ore" }, { "materialId": 17, "n": 3, "name": "Silver Ore" }, { "materialId": 20, "n": 2, "name": "Scorching Sand" }]
+  },
   "reconstructedWhy": {
+    "materialSpots": "The material spots of this quest's map are lost with the map. They were rebuilt along the way: the totals of each material match the original results (khuxwiki), the number of spots follows the footage of the original event quests (about one spot for every two units), their positions are not the original ones. Rebuilt, not original.",
     "atk": "No ATK of a raid is known after 2016. Story enemy ATK of the period, times the median boss/story ratio of the 23 weekly bosses with 2016 rows, times a tier share that has no source. Table and rule: raid_stats.json, docs/notes/raid.md.",
     "def": "No DEF of a raid is known after 2016. 1000, or 1100 for rare 2: community calculators. Epic 50,000: a player report of no damage below about 50,000 STR, read as DEF without reading the damage formula; it may stop the deck that passed the Part 1 spike at about 1200 DEF. To change it, edit def in statsRule of raid_config.json and run node server/make-raid.js --stats, which copies it into raid_stats.json.",
     "hp": "This boss, tier and week were not read on video: HP comes from the tier and period table. Before 2019-08-12 the shares below the cap at LV 30 are ours too (singleEra).",

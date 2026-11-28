@@ -838,6 +838,23 @@ const tests = {
     // review M-1: one-off and monthly rows end on the Pacific day before their Monday 07:00Z end too
     assert.deepStrictEqual(mr.eventPeriods(eventRow('WW-E12-1', 'monthly', '2016-11-21', '2016-11-28', ['Trickmaster'])), [['2016-11-21', '2016-11-27']]);
   },
+  collect_all_materials_i346() {
+    // I-346: a raid quest asking «Collect all materials» gets material spots (raid_config.json questMaterials, khuxwiki totals),
+    // labelled materialSpots; without them make-raid stops instead of serving a map with nothing to collect
+    const rows = [eventRow('WW-E19294-1', 'one-off event', '2016-07-04', '2016-07-11', ['Trickmaster'])];
+    const quest = { ...eventQuest('Trickmaster', 25, '25', [objective('Defeat all enemies within 1 turn', 'Event Coin', 10),
+      objective('Collect all materials', 'Event Coin', 5), objective('Use 5 or more special attacks', 'Event Coin', 5)]), page: 'Legendary Test (Quest)' };
+    const mats = [{ materialId: 12, n: 2 }, { materialId: 18, n: 6 }];
+    const cfg = (m) => (f) => { f.config.questMaterials = m; f.config.reconstructedWhy = { ...f.config.reconstructedWhy, materialSpots: REAL_CONFIG.reconstructedWhy.materialSpots }; };
+    const out = build((f) => { eventFixture(rows, { 'WW-E19294-1': [quest] })(f); cfg({ 'Legendary Test': mats })(f); });
+    const [e] = out.index.entries;
+    const st = out.stageRows.find((s) => s.stageId === e.stageId);
+    assert.ok(st.submissionRequire.includes(18), 'the objective is served');
+    assert.deepStrictEqual(out.maps.find((m) => m.stageId === e.stageId).materials, mats);
+    assert.ok(e.reconstructed.includes('materialSpots') && out.index.reasons.materialSpots);
+    assert.throws(() => build((f) => { eventFixture(rows, { 'WW-E19294-1': [quest] })(f); cfg({})(f); }), /Collect all materials/);
+    assert.ok(REAL_CONFIG.questMaterials["Raid Level: Legendary! Don't go alone!"].length === 4);
+  },
   raid_windows_labels() {
     // I-228, served rule weekdayWeekend (06-11): every raid carries weekRule, a tier whose original AP is 0 weekdayAp too, and its master
     // quest the weekday price (the census value, 5 for a 0); no opening-hours label

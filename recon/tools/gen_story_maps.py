@@ -1640,7 +1640,7 @@ if generated:
             extra = {}
             part, areas, ens, chests = build_part(folder, start, dist, groups, len(sp.get('treasures', [])), sp.get('level', 1), lay,
                                                   zero_arena=is_event, chance=set(sp.get('chance') or ()) if is_event else (),
-                                                  materials=sp.get('materials') if is_event else (), extra=extra)
+                                                  materials=sp.get('materials') or (), extra=extra)  # raid maps too (I-346)
         # the target group is placed last (arena), the target first in it (then its targetWith escorts)
         target_id = ens[struct.unpack_from('<i', areas[-1], 0)[0]][2]
         # STG [11] = quest level, as every story stage (import_orig_stages.py: [11] = wiki Lv = enemy record level): the
