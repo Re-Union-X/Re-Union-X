@@ -209,9 +209,15 @@ quest by quest (private `tmp\i344
     objective is copied from 2/7. This is the I-251 one-run donor rule.
   - 732160 Incredibles 2 Challenge 6/10: served on the JP map as it is (Armored Knight x2). The khuxwiki «Armored Archer» line
     contradicts the page's own enemy list. The user OK overrules it.
-  - 714790 Find the Keyblade Wielders #9 and 742104 Clarice Screen Debut 5/5 (2020): **option (a), follow khuxwiki**. The extra
-    JP team is removed: the lone Great Pretender (part 1, team 7) and the Pretender in the Shadow's room (part 4, team 11). This
-    needs Task B5b. Declare it in the Notices (map edited to match the original listing).
+  - 714790 Find the Keyblade Wielders #9 and 742104 Clarice Screen Debut 5/5 (2020): **served as the JP map** (user, 28-11, after
+    the check in private `tmp\i3445\R5_VERIFY_EXTRA.md`). The extra team is in the original file: one copy, no revision, no
+    reconstruction, counts agree. It is a normal team: Great Pretender 1002 (in our master) / Pretender 2003001001 (run row, Task
+    B4). khuxwiki likely missed a chance squad, and no source settles it. The driver drops the builder's «(no WW enemy)» hold marker
+    and keeps the map counts.
+    - Objectives checked: #9 «Open all treasure chests», «Equip the %s Keyblade», «Complete without having to continue»; Clarice 5/5
+      «Open 3 treasure chests», «Complete without having to continue» x2. None counts enemies, so the extra team never blocks
+      them.
+    - No map edit: Task B5b is dropped.
   - Enemy rows still to add (in Task B4, never substituted): Chocolate Gargoyle 190210083 (also for 6/7), and the Clarice 2020
     Pretender 2003001001 / Shadow 2003500001. All three are in the donor master.
 
@@ -229,25 +235,7 @@ or quest names it, or a served record holds it in `evStage`. Six rows pass the o
 | 200808 | 2019-09-03..19 | The Keyblade War Pt. 1 scenario (EV-0913, «second notice»); its stages are served by EV-0929 | no gap (same event, served once) |
 | 200615 | 2018-10-15..17 | «A Massive Menace / Fetching the Dwarfs», no notice, no census row | Part F (census addition, with G11's 200616) |
 
-### Task B5b: `mapTeamRemovals` (R5 option (a)), TDD
-
-**Files:** Modify `recon/tools/import_event_stages.py`, `server/event_config.json` (`mapTeamRemovals`), `server/make-events.js`
-(quest enemy counts). Test `recon/tools/test_import_event_stages.py`, `server/test-make-events.js`.
-
-**Interfaces:** `event_config.json` `mapTeamRemovals`: `{"<mapKey>": [{"part": n, "team": t, "why": "..."}]}`.
-- The import tool drops that enemy team from its copy of the map part (never from the JP file) and fixes the part's counts.
-- make-events.js removes the team's enemies from the quest's counted enemies and labels the quest `mapTeamRemoved`.
-
-- [ ] **Step 1: failing tests.**
-  - `test_team_removed` (test_import_event_stages.py): a fixture part with 3 teams gives 2 teams after removal. The team count
-    and the enemy count drop, and the other teams' bytes are unchanged.
-  - `map_team_removed` (test-make-events.js): a quest whose map key lists a removal loses that team's enemy count and gets the
-    label.
-- [ ] **Step 2:** both fail.
-- [ ] **Step 3:** implement.
-- [ ] **Step 4:** both pass; the full suite passes.
-- [ ] **Step 5:** commit `I-344 Part B: mapTeamRemovals (R5 option a)`.
-- [ ] **Step 6:** fill `mapTeamRemovals` for the two maps from R5_FINDINGS.md, and add one Notices line.
+### Task B5b: dropped (28-11: R5 #9 and Clarice 5/5 are served as the JP map, no map edit)
 
 **Goal:** serve the 40 Part B records (35 census ids + 5 sibling ids), 87 donor evStage rows and 329 quests of inventory §3b:
 B1 plain lists, B2 one-quest-a-day countdowns, B3 day-row rotations (G21 cumulative), B4 HSC side rows (sibling ids), B5 the
